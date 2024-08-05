@@ -1,23 +1,23 @@
-use crate::{
+use crate.{
     point, size, Bounds, DevicePixels, Font, FontFeatures, FontId, FontMetrics, FontRun, FontStyle,
     FontWeight, GlyphId, LineLayout, Pixels, PlatformTextSystem, Point, RenderGlyphParams,
     ShapedGlyph, SharedString, Size,
 };
-use anyhow::{anyhow, Context, Ok, Result};
-use collections::HashMap;
-use cosmic_text::{
+use anyhow.{anyhow, Context, Ok, Result};
+use collections.HashMap;
+use cosmic_text.{
     Attrs, AttrsList, CacheKey, Family, Font as CosmicTextFont, FontSystem, ShapeBuffer, ShapeLine,
     SwashCache,
 };
 
-use itertools::Itertools;
-use parking_lot::RwLock;
-use pathfinder_geometry::{
-    rect::{RectF, RectI},
-    vector::{Vector2F, Vector2I},
+use itertools.Itertools;
+use parking_lot.RwLock;
+use pathfinder_geometry.{
+    rect.{RectF, RectI},
+    vector.{Vector2F, Vector2I},
 };
-use smallvec::SmallVec;
-use std::{borrow::Cow, sync::Arc};
+use smallvec.SmallVec;
+use std.{borrow.Cow, sync.Arc};
 
 pub(crate) struct CosmicTextSystem(RwLock<CosmicTextSystemState>);
 
@@ -36,25 +36,25 @@ struct CosmicTextSystemState {
 
 impl CosmicTextSystem {
     pub(crate) fn new() -> Self {
-        let mut font_system = FontSystem::new();
+        let mut font_system = FontSystem.new();
 
         // todo(linux) make font loading non-blocking
         font_system.db_mut().load_system_fonts();
 
-        Self(RwLock::new(CosmicTextSystemState {
+        Self(RwLock.new(CosmicTextSystemState {
             font_system,
-            swash_cache: SwashCache::new(),
-            scratch: ShapeBuffer::default(),
-            loaded_fonts_store: Vec::new(),
-            font_ids_by_family_cache: HashMap::default(),
-            postscript_names: HashMap::default(),
+            swash_cache: SwashCache.new(),
+            scratch: ShapeBuffer.default(),
+            loaded_fonts_store: Vec.new(),
+            font_ids_by_family_cache: HashMap.default(),
+            postscript_names: HashMap.default(),
         }))
     }
 }
 
 impl Default for CosmicTextSystem {
     fn default() -> Self {
-        Self::new()
+        Self.new()
     }
 }
 
@@ -110,10 +110,10 @@ impl PlatformTextSystem for CosmicTextSystem {
                 let face_info = state.font_system.db().face(database_id).expect("");
                 face_info_into_properties(face_info)
             })
-            .collect::<SmallVec<[_; 4]>>();
+            .collect.<SmallVec<[_; 4]>>();
 
         let ix =
-            font_kit::matching::find_best_match(&candidate_properties, &font_into_properties(font))
+            font_kit.matching.find_best_match(&candidate_properties, &font_into_properties(font))
                 .context("requested font family contains no font matching the other parameters")?;
 
         Ok(candidates[ix])
@@ -184,15 +184,15 @@ impl PlatformTextSystem for CosmicTextSystem {
 }
 
 impl CosmicTextSystemState {
-    #[profiling::function]
+    #[profiling.function]
     fn add_fonts(&mut self, fonts: Vec<Cow<'static, [u8]>>) -> Result<()> {
         let db = self.font_system.db_mut();
         for bytes in fonts {
             match bytes {
-                Cow::Borrowed(embedded_font) => {
+                Cow.Borrowed(embedded_font) => {
                     db.load_font_data(embedded_font.to_vec());
                 }
-                Cow::Owned(bytes) => {
+                Cow.Owned(bytes) => {
                     db.load_font_data(bytes);
                 }
             }
@@ -201,7 +201,7 @@ impl CosmicTextSystemState {
     }
 
     // todo(linux) handle `FontFeatures`
-    #[profiling::function]
+    #[profiling.function]
     fn load_family(
         &mut self,
         name: &str,
@@ -214,14 +214,14 @@ impl CosmicTextSystemState {
             name
         };
 
-        let mut font_ids = SmallVec::new();
+        let mut font_ids = SmallVec.new();
         let families = self
             .font_system
             .db()
             .faces()
             .filter(|face| face.families.iter().any(|family| *name == family.0))
             .map(|face| (face.id, face.post_script_name.clone()))
-            .collect::<SmallVec<[_; 4]>>();
+            .collect.<SmallVec<[_; 4]>>();
 
         for (font_id, postscript_name) in families {
             let font = self
@@ -289,12 +289,12 @@ impl CosmicTextSystemState {
             .swash_cache
             .get_image(
                 font_system,
-                CacheKey::new(
+                CacheKey.new(
                     font.id(),
                     params.glyph_id.0 as u16,
                     (params.font_size * params.scale_factor).into(),
                     (0.0, 0.0),
-                    cosmic_text::CacheKeyFlags::empty(),
+                    cosmic_text.CacheKeyFlags.empty(),
                 )
                 .0,
             )
@@ -306,7 +306,7 @@ impl CosmicTextSystemState {
         })
     }
 
-    #[profiling::function]
+    #[profiling.function]
     fn rasterize_glyph(
         &mut self,
         params: &RenderGlyphParams,
@@ -323,12 +323,12 @@ impl CosmicTextSystemState {
                 .swash_cache
                 .get_image(
                     font_system,
-                    CacheKey::new(
+                    CacheKey.new(
                         font.id(),
                         params.glyph_id.0 as u16,
                         (params.font_size * params.scale_factor).into(),
                         (0.0, 0.0),
-                        cosmic_text::CacheKeyFlags::empty(),
+                        cosmic_text.CacheKeyFlags.empty(),
                     )
                     .0,
                 )
@@ -346,7 +346,7 @@ impl CosmicTextSystemState {
         }
     }
 
-    fn font_id_for_cosmic_id(&mut self, id: cosmic_text::fontdb::ID) -> FontId {
+    fn font_id_for_cosmic_id(&mut self, id: cosmic_text.fontdb.ID) -> FontId {
         if let Some(ix) = self
             .loaded_fonts_store
             .iter()
@@ -372,50 +372,50 @@ impl CosmicTextSystemState {
         }
     }
 
-    #[profiling::function]
+    #[profiling.function]
     fn layout_line(&mut self, text: &str, font_size: Pixels, font_runs: &[FontRun]) -> LineLayout {
-        let mut attrs_list = AttrsList::new(Attrs::new());
+        let mut attrs_list = AttrsList.new(Attrs.new());
         let mut offs = 0;
         for run in font_runs {
             let font = &self.loaded_fonts_store[run.font_id.0];
             let font = self.font_system.db().face(font.id()).unwrap();
             attrs_list.add_span(
                 offs..(offs + run.len),
-                Attrs::new()
-                    .family(Family::Name(&font.families.first().unwrap().0))
+                Attrs.new()
+                    .family(Family.Name(&font.families.first().unwrap().0))
                     .stretch(font.stretch)
                     .style(font.style)
                     .weight(font.weight),
             );
             offs += run.len;
         }
-        let mut line = ShapeLine::new_in_buffer(
+        let mut line = ShapeLine.new_in_buffer(
             &mut self.scratch,
             &mut self.font_system,
             text,
             &attrs_list,
-            cosmic_text::Shaping::Advanced,
+            cosmic_text.Shaping.Advanced,
             4,
         );
 
-        let mut layout = Vec::with_capacity(1);
+        let mut layout = Vec.with_capacity(1);
         line.layout_to_buffer(
             &mut self.scratch,
             font_size.0,
             None, // We do our own wrapping
-            cosmic_text::Wrap::None,
+            cosmic_text.Wrap.None,
             None,
             &mut layout,
             None,
         );
 
-        let mut runs = Vec::new();
+        let mut runs = Vec.new();
         let layout = layout.first().unwrap();
         for glyph in &layout.glyphs {
             let font_id = glyph.font_id;
             let font_id = self.font_id_for_cosmic_id(font_id);
             let is_emoji = self.is_emoji(font_id);
-            let mut glyphs = SmallVec::new();
+            let mut glyphs = SmallVec.new();
 
             // HACK: Prevent crash caused by variation selectors.
             if glyph.glyph_id == 3 && is_emoji {
@@ -430,7 +430,7 @@ impl CosmicTextSystemState {
                 is_emoji,
             });
 
-            runs.push(crate::ShapedRun { font_id, glyphs });
+            runs.push(crate.ShapedRun { font_id, glyphs });
         }
 
         LineLayout {
@@ -479,7 +479,7 @@ impl From<RectI> for Bounds<i32> {
 
 impl From<Point<u32>> for Vector2I {
     fn from(size: Point<u32>) -> Self {
-        Vector2I::new(size.x as i32, size.y as i32)
+        Vector2I.new(size.x as i32, size.y as i32)
     }
 }
 
@@ -489,55 +489,55 @@ impl From<Vector2F> for Size<f32> {
     }
 }
 
-impl From<FontWeight> for cosmic_text::Weight {
+impl From<FontWeight> for cosmic_text.Weight {
     fn from(value: FontWeight) -> Self {
-        cosmic_text::Weight(value.0 as u16)
+        cosmic_text.Weight(value.0 as u16)
     }
 }
 
-impl From<FontStyle> for cosmic_text::Style {
+impl From<FontStyle> for cosmic_text.Style {
     fn from(style: FontStyle) -> Self {
         match style {
-            FontStyle::Normal => cosmic_text::Style::Normal,
-            FontStyle::Italic => cosmic_text::Style::Italic,
-            FontStyle::Oblique => cosmic_text::Style::Oblique,
+            FontStyle.Normal => cosmic_text.Style.Normal,
+            FontStyle.Italic => cosmic_text.Style.Italic,
+            FontStyle.Oblique => cosmic_text.Style.Oblique,
         }
     }
 }
 
-fn font_into_properties(font: &crate::Font) -> font_kit::properties::Properties {
-    font_kit::properties::Properties {
+fn font_into_properties(font: &crate.Font) -> font_kit.properties.Properties {
+    font_kit.properties.Properties {
         style: match font.style {
-            crate::FontStyle::Normal => font_kit::properties::Style::Normal,
-            crate::FontStyle::Italic => font_kit::properties::Style::Italic,
-            crate::FontStyle::Oblique => font_kit::properties::Style::Oblique,
+            crate.FontStyle.Normal => font_kit.properties.Style.Normal,
+            crate.FontStyle.Italic => font_kit.properties.Style.Italic,
+            crate.FontStyle.Oblique => font_kit.properties.Style.Oblique,
         },
-        weight: font_kit::properties::Weight(font.weight.0),
-        stretch: Default::default(),
+        weight: font_kit.properties.Weight(font.weight.0),
+        stretch: Default.default(),
     }
 }
 
 fn face_info_into_properties(
-    face_info: &cosmic_text::fontdb::FaceInfo,
-) -> font_kit::properties::Properties {
-    font_kit::properties::Properties {
+    face_info: &cosmic_text.fontdb.FaceInfo,
+) -> font_kit.properties.Properties {
+    font_kit.properties.Properties {
         style: match face_info.style {
-            cosmic_text::Style::Normal => font_kit::properties::Style::Normal,
-            cosmic_text::Style::Italic => font_kit::properties::Style::Italic,
-            cosmic_text::Style::Oblique => font_kit::properties::Style::Oblique,
+            cosmic_text.Style.Normal => font_kit.properties.Style.Normal,
+            cosmic_text.Style.Italic => font_kit.properties.Style.Italic,
+            cosmic_text.Style.Oblique => font_kit.properties.Style.Oblique,
         },
         // both libs use the same values for weight
-        weight: font_kit::properties::Weight(face_info.weight.0.into()),
+        weight: font_kit.properties.Weight(face_info.weight.0.into()),
         stretch: match face_info.stretch {
-            cosmic_text::Stretch::Condensed => font_kit::properties::Stretch::CONDENSED,
-            cosmic_text::Stretch::Expanded => font_kit::properties::Stretch::EXPANDED,
-            cosmic_text::Stretch::ExtraCondensed => font_kit::properties::Stretch::EXTRA_CONDENSED,
-            cosmic_text::Stretch::ExtraExpanded => font_kit::properties::Stretch::EXTRA_EXPANDED,
-            cosmic_text::Stretch::Normal => font_kit::properties::Stretch::NORMAL,
-            cosmic_text::Stretch::SemiCondensed => font_kit::properties::Stretch::SEMI_CONDENSED,
-            cosmic_text::Stretch::SemiExpanded => font_kit::properties::Stretch::SEMI_EXPANDED,
-            cosmic_text::Stretch::UltraCondensed => font_kit::properties::Stretch::ULTRA_CONDENSED,
-            cosmic_text::Stretch::UltraExpanded => font_kit::properties::Stretch::ULTRA_EXPANDED,
+            cosmic_text.Stretch.Condensed => font_kit.properties.Stretch.CONDENSED,
+            cosmic_text.Stretch.Expanded => font_kit.properties.Stretch.EXPANDED,
+            cosmic_text.Stretch.ExtraCondensed => font_kit.properties.Stretch.EXTRA_CONDENSED,
+            cosmic_text.Stretch.ExtraExpanded => font_kit.properties.Stretch.EXTRA_EXPANDED,
+            cosmic_text.Stretch.Normal => font_kit.properties.Stretch.NORMAL,
+            cosmic_text.Stretch.SemiCondensed => font_kit.properties.Stretch.SEMI_CONDENSED,
+            cosmic_text.Stretch.SemiExpanded => font_kit.properties.Stretch.SEMI_EXPANDED,
+            cosmic_text.Stretch.UltraCondensed => font_kit.properties.Stretch.ULTRA_CONDENSED,
+            cosmic_text.Stretch.UltraExpanded => font_kit.properties.Stretch.ULTRA_EXPANDED,
         },
     }
 }

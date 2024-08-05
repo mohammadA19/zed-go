@@ -1,11 +1,11 @@
 // todo("windows"): remove
 #![cfg_attr(windows, allow(dead_code))]
 
-use crate::{
-    bounds_tree::BoundsTree, point, AtlasTextureId, AtlasTile, Bounds, ContentMask, Corners, Edges,
+use crate.{
+    bounds_tree.BoundsTree, point, AtlasTextureId, AtlasTile, Bounds, ContentMask, Corners, Edges,
     Hsla, Pixels, Point, Radians, ScaledPixels, Size,
 };
-use std::{fmt::Debug, iter::Peekable, ops::Range, slice};
+use std.{fmt.Debug, iter.Peekable, ops.Range, slice};
 
 #[allow(non_camel_case_types, unused)]
 pub(crate) type PathVertex_ScaledPixels = PathVertex<ScaledPixels>;
@@ -52,12 +52,12 @@ impl Scene {
         let order = self.primitive_bounds.insert(bounds);
         self.layer_stack.push(order);
         self.paint_operations
-            .push(PaintOperation::StartLayer(bounds));
+            .push(PaintOperation.StartLayer(bounds));
     }
 
     pub fn pop_layer(&mut self) {
         self.layer_stack.pop();
-        self.paint_operations.push(PaintOperation::EndLayer);
+        self.paint_operations.push(PaintOperation.EndLayer);
     }
 
     pub fn insert_primitive(&mut self, primitive: impl Into<Primitive>) {
@@ -76,46 +76,46 @@ impl Scene {
             .copied()
             .unwrap_or_else(|| self.primitive_bounds.insert(clipped_bounds));
         match &mut primitive {
-            Primitive::Shadow(shadow) => {
+            Primitive.Shadow(shadow) => {
                 shadow.order = order;
                 self.shadows.push(shadow.clone());
             }
-            Primitive::Quad(quad) => {
+            Primitive.Quad(quad) => {
                 quad.order = order;
                 self.quads.push(quad.clone());
             }
-            Primitive::Path(path) => {
+            Primitive.Path(path) => {
                 path.order = order;
                 path.id = PathId(self.paths.len());
                 self.paths.push(path.clone());
             }
-            Primitive::Underline(underline) => {
+            Primitive.Underline(underline) => {
                 underline.order = order;
                 self.underlines.push(underline.clone());
             }
-            Primitive::MonochromeSprite(sprite) => {
+            Primitive.MonochromeSprite(sprite) => {
                 sprite.order = order;
                 self.monochrome_sprites.push(sprite.clone());
             }
-            Primitive::PolychromeSprite(sprite) => {
+            Primitive.PolychromeSprite(sprite) => {
                 sprite.order = order;
                 self.polychrome_sprites.push(sprite.clone());
             }
-            Primitive::Surface(surface) => {
+            Primitive.Surface(surface) => {
                 surface.order = order;
                 self.surfaces.push(surface.clone());
             }
         }
         self.paint_operations
-            .push(PaintOperation::Primitive(primitive));
+            .push(PaintOperation.Primitive(primitive));
     }
 
     pub fn replay(&mut self, range: Range<usize>, prev_scene: &Scene) {
         for operation in &prev_scene.paint_operations[range] {
             match operation {
-                PaintOperation::Primitive(primitive) => self.insert_primitive(primitive.clone()),
-                PaintOperation::StartLayer(bounds) => self.push_layer(*bounds),
-                PaintOperation::EndLayer => self.pop_layer(),
+                PaintOperation.Primitive(primitive) => self.insert_primitive(primitive.clone()),
+                PaintOperation.StartLayer(bounds) => self.push_layer(*bounds),
+                PaintOperation.EndLayer => self.pop_layer(),
             }
         }
     }
@@ -189,25 +189,25 @@ pub(crate) enum Primitive {
 impl Primitive {
     pub fn bounds(&self) -> &Bounds<ScaledPixels> {
         match self {
-            Primitive::Shadow(shadow) => &shadow.bounds,
-            Primitive::Quad(quad) => &quad.bounds,
-            Primitive::Path(path) => &path.bounds,
-            Primitive::Underline(underline) => &underline.bounds,
-            Primitive::MonochromeSprite(sprite) => &sprite.bounds,
-            Primitive::PolychromeSprite(sprite) => &sprite.bounds,
-            Primitive::Surface(surface) => &surface.bounds,
+            Primitive.Shadow(shadow) => &shadow.bounds,
+            Primitive.Quad(quad) => &quad.bounds,
+            Primitive.Path(path) => &path.bounds,
+            Primitive.Underline(underline) => &underline.bounds,
+            Primitive.MonochromeSprite(sprite) => &sprite.bounds,
+            Primitive.PolychromeSprite(sprite) => &sprite.bounds,
+            Primitive.Surface(surface) => &surface.bounds,
         }
     }
 
     pub fn content_mask(&self) -> &ContentMask<ScaledPixels> {
         match self {
-            Primitive::Shadow(shadow) => &shadow.content_mask,
-            Primitive::Quad(quad) => &quad.content_mask,
-            Primitive::Path(path) => &path.content_mask,
-            Primitive::Underline(underline) => &underline.content_mask,
-            Primitive::MonochromeSprite(sprite) => &sprite.content_mask,
-            Primitive::PolychromeSprite(sprite) => &sprite.content_mask,
-            Primitive::Surface(surface) => &surface.content_mask,
+            Primitive.Shadow(shadow) => &shadow.content_mask,
+            Primitive.Quad(quad) => &quad.content_mask,
+            Primitive.Path(path) => &path.content_mask,
+            Primitive.Underline(underline) => &underline.content_mask,
+            Primitive.MonochromeSprite(sprite) => &sprite.content_mask,
+            Primitive.PolychromeSprite(sprite) => &sprite.content_mask,
+            Primitive.Surface(surface) => &surface.content_mask,
         }
     }
 }
@@ -215,67 +215,67 @@ impl Primitive {
 struct BatchIterator<'a> {
     shadows: &'a [Shadow],
     shadows_start: usize,
-    shadows_iter: Peekable<slice::Iter<'a, Shadow>>,
+    shadows_iter: Peekable<slice.Iter<'a, Shadow>>,
     quads: &'a [Quad],
     quads_start: usize,
-    quads_iter: Peekable<slice::Iter<'a, Quad>>,
+    quads_iter: Peekable<slice.Iter<'a, Quad>>,
     paths: &'a [Path<ScaledPixels>],
     paths_start: usize,
-    paths_iter: Peekable<slice::Iter<'a, Path<ScaledPixels>>>,
+    paths_iter: Peekable<slice.Iter<'a, Path<ScaledPixels>>>,
     underlines: &'a [Underline],
     underlines_start: usize,
-    underlines_iter: Peekable<slice::Iter<'a, Underline>>,
+    underlines_iter: Peekable<slice.Iter<'a, Underline>>,
     monochrome_sprites: &'a [MonochromeSprite],
     monochrome_sprites_start: usize,
-    monochrome_sprites_iter: Peekable<slice::Iter<'a, MonochromeSprite>>,
+    monochrome_sprites_iter: Peekable<slice.Iter<'a, MonochromeSprite>>,
     polychrome_sprites: &'a [PolychromeSprite],
     polychrome_sprites_start: usize,
-    polychrome_sprites_iter: Peekable<slice::Iter<'a, PolychromeSprite>>,
+    polychrome_sprites_iter: Peekable<slice.Iter<'a, PolychromeSprite>>,
     surfaces: &'a [Surface],
     surfaces_start: usize,
-    surfaces_iter: Peekable<slice::Iter<'a, Surface>>,
+    surfaces_iter: Peekable<slice.Iter<'a, Surface>>,
 }
 
 impl<'a> Iterator for BatchIterator<'a> {
     type Item = PrimitiveBatch<'a>;
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Self.Item> {
         let mut orders_and_kinds = [
             (
                 self.shadows_iter.peek().map(|s| s.order),
-                PrimitiveKind::Shadow,
+                PrimitiveKind.Shadow,
             ),
-            (self.quads_iter.peek().map(|q| q.order), PrimitiveKind::Quad),
-            (self.paths_iter.peek().map(|q| q.order), PrimitiveKind::Path),
+            (self.quads_iter.peek().map(|q| q.order), PrimitiveKind.Quad),
+            (self.paths_iter.peek().map(|q| q.order), PrimitiveKind.Path),
             (
                 self.underlines_iter.peek().map(|u| u.order),
-                PrimitiveKind::Underline,
+                PrimitiveKind.Underline,
             ),
             (
                 self.monochrome_sprites_iter.peek().map(|s| s.order),
-                PrimitiveKind::MonochromeSprite,
+                PrimitiveKind.MonochromeSprite,
             ),
             (
                 self.polychrome_sprites_iter.peek().map(|s| s.order),
-                PrimitiveKind::PolychromeSprite,
+                PrimitiveKind.PolychromeSprite,
             ),
             (
                 self.surfaces_iter.peek().map(|s| s.order),
-                PrimitiveKind::Surface,
+                PrimitiveKind.Surface,
             ),
         ];
-        orders_and_kinds.sort_by_key(|(order, kind)| (order.unwrap_or(u32::MAX), *kind));
+        orders_and_kinds.sort_by_key(|(order, kind)| (order.unwrap_or(u32.MAX), *kind));
 
         let first = orders_and_kinds[0];
         let second = orders_and_kinds[1];
         let (batch_kind, max_order_and_kind) = if first.0.is_some() {
-            (first.1, (second.0.unwrap_or(u32::MAX), second.1))
+            (first.1, (second.0.unwrap_or(u32.MAX), second.1))
         } else {
             return None;
         };
 
         match batch_kind {
-            PrimitiveKind::Shadow => {
+            PrimitiveKind.Shadow => {
                 let shadows_start = self.shadows_start;
                 let mut shadows_end = shadows_start + 1;
                 self.shadows_iter.next();
@@ -287,11 +287,11 @@ impl<'a> Iterator for BatchIterator<'a> {
                     shadows_end += 1;
                 }
                 self.shadows_start = shadows_end;
-                Some(PrimitiveBatch::Shadows(
+                Some(PrimitiveBatch.Shadows(
                     &self.shadows[shadows_start..shadows_end],
                 ))
             }
-            PrimitiveKind::Quad => {
+            PrimitiveKind.Quad => {
                 let quads_start = self.quads_start;
                 let mut quads_end = quads_start + 1;
                 self.quads_iter.next();
@@ -303,9 +303,9 @@ impl<'a> Iterator for BatchIterator<'a> {
                     quads_end += 1;
                 }
                 self.quads_start = quads_end;
-                Some(PrimitiveBatch::Quads(&self.quads[quads_start..quads_end]))
+                Some(PrimitiveBatch.Quads(&self.quads[quads_start..quads_end]))
             }
-            PrimitiveKind::Path => {
+            PrimitiveKind.Path => {
                 let paths_start = self.paths_start;
                 let mut paths_end = paths_start + 1;
                 self.paths_iter.next();
@@ -317,9 +317,9 @@ impl<'a> Iterator for BatchIterator<'a> {
                     paths_end += 1;
                 }
                 self.paths_start = paths_end;
-                Some(PrimitiveBatch::Paths(&self.paths[paths_start..paths_end]))
+                Some(PrimitiveBatch.Paths(&self.paths[paths_start..paths_end]))
             }
-            PrimitiveKind::Underline => {
+            PrimitiveKind.Underline => {
                 let underlines_start = self.underlines_start;
                 let mut underlines_end = underlines_start + 1;
                 self.underlines_iter.next();
@@ -331,11 +331,11 @@ impl<'a> Iterator for BatchIterator<'a> {
                     underlines_end += 1;
                 }
                 self.underlines_start = underlines_end;
-                Some(PrimitiveBatch::Underlines(
+                Some(PrimitiveBatch.Underlines(
                     &self.underlines[underlines_start..underlines_end],
                 ))
             }
-            PrimitiveKind::MonochromeSprite => {
+            PrimitiveKind.MonochromeSprite => {
                 let texture_id = self.monochrome_sprites_iter.peek().unwrap().tile.texture_id;
                 let sprites_start = self.monochrome_sprites_start;
                 let mut sprites_end = sprites_start + 1;
@@ -351,12 +351,12 @@ impl<'a> Iterator for BatchIterator<'a> {
                     sprites_end += 1;
                 }
                 self.monochrome_sprites_start = sprites_end;
-                Some(PrimitiveBatch::MonochromeSprites {
+                Some(PrimitiveBatch.MonochromeSprites {
                     texture_id,
                     sprites: &self.monochrome_sprites[sprites_start..sprites_end],
                 })
             }
-            PrimitiveKind::PolychromeSprite => {
+            PrimitiveKind.PolychromeSprite => {
                 let texture_id = self.polychrome_sprites_iter.peek().unwrap().tile.texture_id;
                 let sprites_start = self.polychrome_sprites_start;
                 let mut sprites_end = self.polychrome_sprites_start + 1;
@@ -372,12 +372,12 @@ impl<'a> Iterator for BatchIterator<'a> {
                     sprites_end += 1;
                 }
                 self.polychrome_sprites_start = sprites_end;
-                Some(PrimitiveBatch::PolychromeSprites {
+                Some(PrimitiveBatch.PolychromeSprites {
                     texture_id,
                     sprites: &self.polychrome_sprites[sprites_start..sprites_end],
                 })
             }
-            PrimitiveKind::Surface => {
+            PrimitiveKind.Surface => {
                 let surfaces_start = self.surfaces_start;
                 let mut surfaces_end = surfaces_start + 1;
                 self.surfaces_iter.next();
@@ -389,7 +389,7 @@ impl<'a> Iterator for BatchIterator<'a> {
                     surfaces_end += 1;
                 }
                 self.surfaces_start = surfaces_end;
-                Some(PrimitiveBatch::Surfaces(
+                Some(PrimitiveBatch.Surfaces(
                     &self.surfaces[surfaces_start..surfaces_end],
                 ))
             }
@@ -428,20 +428,20 @@ pub(crate) struct Quad {
 }
 
 impl Ord for Quad {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         self.order.cmp(&other.order)
     }
 }
 
 impl PartialOrd for Quad {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl From<Quad> for Primitive {
     fn from(quad: Quad) -> Self {
-        Primitive::Quad(quad)
+        Primitive.Quad(quad)
     }
 }
 
@@ -458,20 +458,20 @@ pub(crate) struct Underline {
 }
 
 impl Ord for Underline {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         self.order.cmp(&other.order)
     }
 }
 
 impl PartialOrd for Underline {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl From<Underline> for Primitive {
     fn from(underline: Underline) -> Self {
-        Primitive::Underline(underline)
+        Primitive.Underline(underline)
     }
 }
 
@@ -487,20 +487,20 @@ pub(crate) struct Shadow {
 }
 
 impl Ord for Shadow {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         self.order.cmp(&other.order)
     }
 }
 
 impl PartialOrd for Shadow {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl From<Shadow> for Primitive {
     fn from(shadow: Shadow) -> Self {
-        Primitive::Shadow(shadow)
+        Primitive.Shadow(shadow)
     }
 }
 
@@ -558,7 +558,7 @@ impl TransformationMatrix {
     /// applying both transformations: first, `other`, then `self`.
     #[inline]
     pub fn compose(self, other: TransformationMatrix) -> TransformationMatrix {
-        if other == Self::unit() {
+        if other == Self.unit() {
             return self;
         }
         // Perform matrix multiplication
@@ -597,13 +597,13 @@ impl TransformationMatrix {
                 output[i] += self.rotation_scale[i][k] * input[k];
             }
         }
-        Point::new(output[0].into(), output[1].into())
+        Point.new(output[0].into(), output[1].into())
     }
 }
 
 impl Default for TransformationMatrix {
     fn default() -> Self {
-        Self::unit()
+        Self.unit()
     }
 }
 
@@ -620,23 +620,23 @@ pub(crate) struct MonochromeSprite {
 }
 
 impl Ord for MonochromeSprite {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         match self.order.cmp(&other.order) {
-            std::cmp::Ordering::Equal => self.tile.tile_id.cmp(&other.tile.tile_id),
+            std.cmp.Ordering.Equal => self.tile.tile_id.cmp(&other.tile.tile_id),
             order => order,
         }
     }
 }
 
 impl PartialOrd for MonochromeSprite {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl From<MonochromeSprite> for Primitive {
     fn from(sprite: MonochromeSprite) -> Self {
-        Primitive::MonochromeSprite(sprite)
+        Primitive.MonochromeSprite(sprite)
     }
 }
 
@@ -652,23 +652,23 @@ pub(crate) struct PolychromeSprite {
 }
 
 impl Ord for PolychromeSprite {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         match self.order.cmp(&other.order) {
-            std::cmp::Ordering::Equal => self.tile.tile_id.cmp(&other.tile.tile_id),
+            std.cmp.Ordering.Equal => self.tile.tile_id.cmp(&other.tile.tile_id),
             order => order,
         }
     }
 }
 
 impl PartialOrd for PolychromeSprite {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl From<PolychromeSprite> for Primitive {
     fn from(sprite: PolychromeSprite) -> Self {
-        Primitive::PolychromeSprite(sprite)
+        Primitive.PolychromeSprite(sprite)
     }
 }
 
@@ -678,24 +678,24 @@ pub(crate) struct Surface {
     pub bounds: Bounds<ScaledPixels>,
     pub content_mask: ContentMask<ScaledPixels>,
     #[cfg(target_os = "macos")]
-    pub image_buffer: media::core_video::CVImageBuffer,
+    pub image_buffer: media.core_video.CVImageBuffer,
 }
 
 impl Ord for Surface {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         self.order.cmp(&other.order)
     }
 }
 
 impl PartialOrd for Surface {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl From<Surface> for Primitive {
     fn from(surface: Surface) -> Self {
-        Primitive::Surface(surface)
+        Primitive.Surface(surface)
     }
 }
 
@@ -721,16 +721,16 @@ impl Path<Pixels> {
     pub fn new(start: Point<Pixels>) -> Self {
         Self {
             id: PathId(0),
-            order: DrawOrder::default(),
-            vertices: Vec::new(),
+            order: DrawOrder.default(),
+            vertices: Vec.new(),
             start,
             current: start,
             bounds: Bounds {
                 origin: start,
-                size: Default::default(),
+                size: Default.default(),
             },
-            content_mask: Default::default(),
-            color: Default::default(),
+            content_mask: Default.default(),
+            color: Default.default(),
             contour_count: 0,
         }
     }
@@ -792,31 +792,31 @@ impl Path<Pixels> {
             .bounds
             .union(&Bounds {
                 origin: xy.0,
-                size: Default::default(),
+                size: Default.default(),
             })
             .union(&Bounds {
                 origin: xy.1,
-                size: Default::default(),
+                size: Default.default(),
             })
             .union(&Bounds {
                 origin: xy.2,
-                size: Default::default(),
+                size: Default.default(),
             });
 
         self.vertices.push(PathVertex {
             xy_position: xy.0,
             st_position: st.0,
-            content_mask: Default::default(),
+            content_mask: Default.default(),
         });
         self.vertices.push(PathVertex {
             xy_position: xy.1,
             st_position: st.1,
-            content_mask: Default::default(),
+            content_mask: Default.default(),
         });
         self.vertices.push(PathVertex {
             xy_position: xy.2,
             st_position: st.2,
-            content_mask: Default::default(),
+            content_mask: Default.default(),
         });
     }
 }
@@ -830,20 +830,20 @@ impl PartialEq for Path<ScaledPixels> {
 }
 
 impl Ord for Path<ScaledPixels> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         self.order.cmp(&other.order)
     }
 }
 
 impl PartialOrd for Path<ScaledPixels> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl From<Path<ScaledPixels>> for Primitive {
     fn from(path: Path<ScaledPixels>) -> Self {
-        Primitive::Path(path)
+        Primitive.Path(path)
     }
 }
 

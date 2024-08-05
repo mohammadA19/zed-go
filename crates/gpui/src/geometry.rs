@@ -2,18 +2,18 @@
 //! can be used to describe common units, concepts, and the relationships
 //! between them.
 
-use core::fmt::Debug;
-use derive_more::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub, SubAssign};
-use refineable::Refineable;
-use serde_derive::{Deserialize, Serialize};
-use std::{
-    cmp::{self, PartialOrd},
+use core.fmt.Debug;
+use derive_more.{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub, SubAssign};
+use refineable.Refineable;
+use serde_derive.{Deserialize, Serialize};
+use std.{
+    cmp.{self, PartialOrd},
     fmt,
-    hash::Hash,
-    ops::{Add, Div, Mul, MulAssign, Sub},
+    hash.Hash,
+    ops.{Add, Div, Mul, MulAssign, Sub},
 };
 
-use crate::{AppContext, DisplayId};
+use crate.{AppContext, DisplayId};
 
 /// An axis along which a measurement can be made.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -28,8 +28,8 @@ impl Axis {
     /// Swap this axis to the opposite axis.
     pub fn invert(self) -> Self {
         match self {
-            Axis::Vertical => Axis::Horizontal,
-            Axis::Horizontal => Axis::Vertical,
+            Axis.Vertical => Axis.Horizontal,
+            Axis.Horizontal => Axis.Vertical,
         }
     }
 }
@@ -40,10 +40,10 @@ pub trait Along {
     type Unit;
 
     /// Returns the unit along the given axis.
-    fn along(&self, axis: Axis) -> Self::Unit;
+    fn along(&self, axis: Axis) -> Self.Unit;
 
     /// Applies the given function to the unit along the given axis and returns a new value.
-    fn apply_along(&self, axis: Axis, f: impl FnOnce(Self::Unit) -> Self::Unit) -> Self;
+    fn apply_along(&self, axis: Axis, f: impl FnOnce(Self.Unit) -> Self.Unit) -> Self;
 }
 
 /// Describes a location in a 2D cartesian coordinate space.
@@ -54,7 +54,7 @@ pub trait Along {
 /// # Examples
 ///
 /// ```
-/// # use zed::Point;
+/// # use zed.Point;
 /// let point = Point { x: 10, y: 20 };
 /// println!("{:?}", point); // Outputs: Point { x: 10, y: 20 }
 /// ```
@@ -82,7 +82,7 @@ pub struct Point<T: Default + Clone + Debug> {
 /// # Examples
 ///
 /// ```
-/// # use zed::Point;
+/// # use zed.Point;
 /// let p = point(10, 20);
 /// assert_eq!(p.x, 10);
 /// assert_eq!(p.y, 20);
@@ -102,7 +102,7 @@ impl<T: Clone + Debug + Default> Point<T> {
     /// # Examples
     ///
     /// ```
-    /// let p = Point::new(10, 20);
+    /// let p = Point.new(10, 20);
     /// assert_eq!(p.x, 10);
     /// assert_eq!(p.y, 20);
     /// ```
@@ -123,7 +123,7 @@ impl<T: Clone + Debug + Default> Point<T> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Point;
+    /// # use zed.Point;
     /// let p = Point { x: 3, y: 4 };
     /// let p_float = p.map(|coord| coord as f32);
     /// assert_eq!(p_float, Point { x: 3.0, y: 4.0 });
@@ -141,18 +141,18 @@ impl<T: Clone + Debug + Default> Along for Point<T> {
 
     fn along(&self, axis: Axis) -> T {
         match axis {
-            Axis::Horizontal => self.x.clone(),
-            Axis::Vertical => self.y.clone(),
+            Axis.Horizontal => self.x.clone(),
+            Axis.Vertical => self.y.clone(),
         }
     }
 
     fn apply_along(&self, axis: Axis, f: impl FnOnce(T) -> T) -> Point<T> {
         match axis {
-            Axis::Horizontal => Point {
+            Axis.Horizontal => Point {
                 x: f(self.x.clone()),
                 y: self.y.clone(),
             },
-            Axis::Vertical => Point {
+            Axis.Vertical => Point {
                 x: self.x.clone(),
                 y: f(self.y.clone()),
             },
@@ -162,7 +162,7 @@ impl<T: Clone + Debug + Default> Along for Point<T> {
 
 impl<T: Clone + Debug + Default + Negate> Negate for Point<T> {
     fn negate(self) -> Self {
-        self.map(Negate::negate)
+        self.map(Negate.negate)
     }
 }
 
@@ -177,7 +177,7 @@ impl Point<Pixels> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Point, Pixels, ScaledPixels};
+    /// # use zed.{Point, Pixels, ScaledPixels};
     /// let p = Point { x: Pixels(10.0), y: Pixels(20.0) };
     /// let scaled_p = p.scale(1.5);
     /// assert_eq!(scaled_p, Point { x: ScaledPixels(15.0), y: ScaledPixels(30.0) });
@@ -194,8 +194,8 @@ impl Point<Pixels> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Point;
-    /// # use zed::Pixels;
+    /// # use zed.Point;
+    /// # use zed.Pixels;
     /// let p = Point { x: Pixels(3.0), y: Pixels(4.0) };
     /// assert_eq!(p.magnitude(), 5.0);
     /// ```
@@ -211,7 +211,7 @@ where
 {
     type Output = Point<T>;
 
-    fn mul(self, rhs: Rhs) -> Self::Output {
+    fn mul(self, rhs: Rhs) -> Self.Output {
         Point {
             x: self.x * rhs.clone(),
             y: self.y * rhs,
@@ -237,7 +237,7 @@ where
 {
     type Output = Self;
 
-    fn div(self, rhs: S) -> Self::Output {
+    fn div(self, rhs: S) -> Self.Output {
         Self {
             x: self.x / rhs.clone(),
             y: self.y / rhs,
@@ -258,7 +258,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::Point;
+    /// # use zed.Point;
     /// let p1 = Point { x: 3, y: 7 };
     /// let p2 = Point { x: 5, y: 2 };
     /// let max_point = p1.max(&p2);
@@ -288,7 +288,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::Point;
+    /// # use zed.Point;
     /// let p1 = Point { x: 3, y: 7 };
     /// let p2 = Point { x: 5, y: 2 };
     /// let min_point = p1.min(&p2);
@@ -324,7 +324,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::Point;
+    /// # use zed.Point;
     /// let p = Point { x: 10, y: 20 };
     /// let min = Point { x: 0, y: 5 };
     /// let max = Point { x: 15, y: 25 };
@@ -373,7 +373,7 @@ pub struct Size<T: Clone + Default + Debug> {
 /// # Examples
 ///
 /// ```
-/// # use zed::Size;
+/// # use zed.Size;
 /// let my_size = size(10, 20);
 /// assert_eq!(my_size.width, 10);
 /// assert_eq!(my_size.height, 20);
@@ -402,7 +402,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::Size;
+    /// # use zed.Size;
     /// let my_size = Size { width: 10, height: 20 };
     /// let my_new_size = my_size.map(|dimension| dimension as f32 * 1.5);
     /// assert_eq!(my_new_size, Size { width: 15.0, height: 30.0 });
@@ -445,7 +445,7 @@ impl Size<Pixels> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Size, Pixels, ScaledPixels};
+    /// # use zed.{Size, Pixels, ScaledPixels};
     /// let size = Size { width: Pixels(100.0), height: Pixels(50.0) };
     /// let scaled_size = size.scale(2.0);
     /// assert_eq!(scaled_size, Size { width: ScaledPixels(200.0), height: ScaledPixels(100.0) });
@@ -466,19 +466,19 @@ where
 
     fn along(&self, axis: Axis) -> T {
         match axis {
-            Axis::Horizontal => self.width.clone(),
-            Axis::Vertical => self.height.clone(),
+            Axis.Horizontal => self.width.clone(),
+            Axis.Vertical => self.height.clone(),
         }
     }
 
     /// Returns the value of this size along the given axis.
     fn apply_along(&self, axis: Axis, f: impl FnOnce(T) -> T) -> Self {
         match axis {
-            Axis::Horizontal => Size {
+            Axis.Horizontal => Size {
                 width: f(self.width.clone()),
                 height: self.height.clone(),
             },
-            Axis::Vertical => Size {
+            Axis.Vertical => Size {
                 width: self.width.clone(),
                 height: f(self.height.clone()),
             },
@@ -499,7 +499,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::Size;
+    /// # use zed.Size;
     /// let size1 = Size { width: 30, height: 40 };
     /// let size2 = Size { width: 50, height: 20 };
     /// let max_size = size1.max(&size2);
@@ -528,7 +528,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::Size;
+    /// # use zed.Size;
     /// let size1 = Size { width: 30, height: 40 };
     /// let size2 = Size { width: 50, height: 20 };
     /// let min_size = size1.min(&size2);
@@ -556,7 +556,7 @@ where
 {
     type Output = Size<T>;
 
-    fn sub(self, rhs: Self) -> Self::Output {
+    fn sub(self, rhs: Self) -> Self.Output {
         Size {
             width: self.width - rhs.width,
             height: self.height - rhs.height,
@@ -570,7 +570,7 @@ where
 {
     type Output = Size<T>;
 
-    fn add(self, rhs: Self) -> Self::Output {
+    fn add(self, rhs: Self) -> Self.Output {
         Size {
             width: self.width + rhs.width,
             height: self.height + rhs.height,
@@ -585,7 +585,7 @@ where
 {
     type Output = Size<Rhs>;
 
-    fn mul(self, rhs: Rhs) -> Self::Output {
+    fn mul(self, rhs: Rhs) -> Self.Output {
         Size {
             width: self.width * rhs.clone(),
             height: self.height * rhs,
@@ -610,7 +610,7 @@ impl<T> Debug for Size<T>
 where
     T: Clone + Default + Debug,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter) -> fmt.Result {
         write!(f, "Size {{ {:?} × {:?} }}", self.width, self.height)
     }
 }
@@ -645,7 +645,7 @@ impl From<Size<Pixels>> for Size<AbsoluteLength> {
 impl Size<Length> {
     /// Returns a `Size` with both width and height set to fill the available space.
     ///
-    /// This function creates a `Size` instance where both the width and height are set to `Length::Definite(DefiniteLength::Fraction(1.0))`,
+    /// This function creates a `Size` instance where both the width and height are set to `Length.Definite(DefiniteLength.Fraction(1.0))`,
     /// which represents 100% of the available space in both dimensions.
     ///
     /// # Returns
@@ -662,17 +662,17 @@ impl Size<Length> {
 impl Size<Length> {
     /// Returns a `Size` with both width and height set to `auto`, which allows the layout engine to determine the size.
     ///
-    /// This function creates a `Size` instance where both the width and height are set to `Length::Auto`,
+    /// This function creates a `Size` instance where both the width and height are set to `Length.Auto`,
     /// indicating that their size should be computed based on the layout context, such as the content size or
     /// available space.
     ///
     /// # Returns
     ///
-    /// A `Size<Length>` with width and height set to `Length::Auto`.
+    /// A `Size<Length>` with width and height set to `Length.Auto`.
     pub fn auto() -> Self {
         Self {
-            width: Length::Auto,
-            height: Length::Auto,
+            width: Length.Auto,
+            height: Length.Auto,
         }
     }
 }
@@ -686,10 +686,10 @@ impl Size<Length> {
 /// # Examples
 ///
 /// ```
-/// # use zed::{Bounds, Point, Size};
+/// # use zed.{Bounds, Point, Size};
 /// let origin = Point { x: 0, y: 0 };
 /// let size = Size { width: 10, height: 20 };
-/// let bounds = Bounds::new(origin, size);
+/// let bounds = Bounds.new(origin, size);
 ///
 /// assert_eq!(bounds.origin, origin);
 /// assert_eq!(bounds.size, size);
@@ -766,10 +766,10 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point};
+    /// # use zed.{Bounds, Point};
     /// let upper_left = Point { x: 0, y: 0 };
     /// let lower_right = Point { x: 10, y: 10 };
-    /// let bounds = Bounds::from_corners(upper_left, lower_right);
+    /// let bounds = Bounds.from_corners(upper_left, lower_right);
     ///
     /// assert_eq!(bounds.origin, upper_left);
     /// assert_eq!(bounds.size.width, 10);
@@ -822,7 +822,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds1 = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 10 },
@@ -864,7 +864,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let mut bounds = Bounds {
     ///     origin: Point { x: 10, y: 10 },
     ///     size: Size { width: 10, height: 10 },
@@ -887,7 +887,7 @@ where
     /// Note that this may panic if T does not support negative values
     pub fn inset(&self, amount: T) -> Self {
         let mut result = self.clone();
-        result.dilate(T::default() - amount);
+        result.dilate(T.default() - amount);
         result
     }
 
@@ -904,7 +904,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 20 },
@@ -929,7 +929,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 20 },
@@ -947,7 +947,7 @@ where
             x: center.x - size.width.half(),
             y: center.y - size.height.half(),
         };
-        Self::new(origin, size)
+        Self.new(origin, size)
     }
 }
 
@@ -969,7 +969,7 @@ impl<T: Clone + Default + Debug + PartialOrd + Add<T, Output = T> + Sub<Output =
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds1 = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 10 },
@@ -988,7 +988,7 @@ impl<T: Clone + Default + Debug + PartialOrd + Add<T, Output = T> + Sub<Output =
     pub fn intersect(&self, other: &Self) -> Self {
         let upper_left = self.origin.max(&other.origin);
         let lower_right = self.lower_right().min(&other.lower_right());
-        Self::from_corners(upper_left, lower_right)
+        Self.from_corners(upper_left, lower_right)
     }
 
     /// Computes the union of two `Bounds`.
@@ -1008,7 +1008,7 @@ impl<T: Clone + Default + Debug + PartialOrd + Add<T, Output = T> + Sub<Output =
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds1 = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 10 },
@@ -1027,7 +1027,7 @@ impl<T: Clone + Default + Debug + PartialOrd + Add<T, Output = T> + Sub<Output =
     pub fn union(&self, other: &Self) -> Self {
         let top_left = self.origin.min(&other.origin);
         let bottom_right = self.lower_right().max(&other.lower_right());
-        Bounds::from_corners(top_left, bottom_right)
+        Bounds.from_corners(top_left, bottom_right)
     }
 }
 
@@ -1039,7 +1039,7 @@ where
 {
     type Output = Bounds<Rhs>;
 
-    fn mul(self, rhs: Rhs) -> Self::Output {
+    fn mul(self, rhs: Rhs) -> Self.Output {
         Bounds {
             origin: self.origin * rhs.clone(),
             size: self.size * rhs,
@@ -1123,7 +1123,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 20 },
@@ -1147,7 +1147,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 20 },
@@ -1171,7 +1171,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 20 },
@@ -1209,7 +1209,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Point, Bounds};
+    /// # use zed.{Point, Bounds};
     /// let bounds = Bounds {
     ///     origin: Point { x: 0, y: 0 },
     ///     size: Size { width: 10, height: 10 },
@@ -1244,7 +1244,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 10.0, y: 10.0 },
     ///     size: Size { width: 10.0, height: 20.0 },
@@ -1271,7 +1271,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 10.0, y: 10.0 },
     ///     size: Size { width: 10.0, height: 20.0 },
@@ -1295,7 +1295,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size};
+    /// # use zed.{Bounds, Point, Size};
     /// let bounds = Bounds {
     ///     origin: Point { x: 10.0, y: 10.0 },
     ///     size: Size { width: 10.0, height: 20.0 },
@@ -1327,7 +1327,7 @@ impl<T: PartialOrd + Default + Debug + Clone> Bounds<T> {
     ///
     /// Returns `true` if either the width or the height of the bounds is less than or equal to zero, indicating an empty area.
     pub fn is_empty(&self) -> bool {
-        self.size.width <= T::default() || self.size.height <= T::default()
+        self.size.width <= T.default() || self.size.height <= T.default()
     }
 }
 
@@ -1370,7 +1370,7 @@ impl Bounds<Pixels> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Bounds, Point, Size, Pixels};
+    /// # use zed.{Bounds, Point, Size, Pixels};
     /// let bounds = Bounds {
     ///     origin: Point { x: Pixels(10.0), y: Pixels(20.0) },
     ///     size: Size { width: Pixels(30.0), height: Pixels(40.0) },
@@ -1423,7 +1423,7 @@ impl<T: Clone + Debug + Copy + Default> Copy for Bounds<T> {}
 /// # Examples
 ///
 /// ```
-/// # use zed::Edges;
+/// # use zed.Edges;
 /// let edges = Edges {
 ///     top: 10.0,
 ///     right: 20.0,
@@ -1456,7 +1456,7 @@ where
 {
     type Output = Self;
 
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn mul(self, rhs: Self) -> Self.Output {
         Self {
             top: self.top.clone() * rhs.top,
             right: self.right.clone() * rhs.right,
@@ -1499,8 +1499,8 @@ impl<T: Clone + Default + Debug> Edges<T> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Edges;
-    /// let uniform_edges = Edges::all(10.0);
+    /// # use zed.Edges;
+    /// let uniform_edges = Edges.all(10.0);
     /// assert_eq!(uniform_edges.top, 10.0);
     /// assert_eq!(uniform_edges.right, 10.0);
     /// assert_eq!(uniform_edges.bottom, 10.0);
@@ -1532,7 +1532,7 @@ impl<T: Clone + Default + Debug> Edges<T> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Edges;
+    /// # use zed.Edges;
     /// let edges = Edges { top: 10, right: 20, bottom: 30, left: 40 };
     /// let edges_float = edges.map(|&value| value as f32 * 1.1);
     /// assert_eq!(edges_float, Edges { top: 11.0, right: 22.0, bottom: 33.0, left: 44.0 });
@@ -1564,7 +1564,7 @@ impl<T: Clone + Default + Debug> Edges<T> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Edges;
+    /// # use zed.Edges;
     /// let edges = Edges {
     ///     top: 10,
     ///     right: 0,
@@ -1591,24 +1591,24 @@ impl Edges<Length> {
     ///
     /// # Returns
     ///
-    /// Returns an `Edges<Length>` with all edges set to `Length::Auto`.
+    /// Returns an `Edges<Length>` with all edges set to `Length.Auto`.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use zed::Edges;
-    /// let auto_edges = Edges::auto();
-    /// assert_eq!(auto_edges.top, Length::Auto);
-    /// assert_eq!(auto_edges.right, Length::Auto);
-    /// assert_eq!(auto_edges.bottom, Length::Auto);
-    /// assert_eq!(auto_edges.left, Length::Auto);
+    /// # use zed.Edges;
+    /// let auto_edges = Edges.auto();
+    /// assert_eq!(auto_edges.top, Length.Auto);
+    /// assert_eq!(auto_edges.right, Length.Auto);
+    /// assert_eq!(auto_edges.bottom, Length.Auto);
+    /// assert_eq!(auto_edges.left, Length.Auto);
     /// ```
     pub fn auto() -> Self {
         Self {
-            top: Length::Auto,
-            right: Length::Auto,
-            bottom: Length::Auto,
-            left: Length::Auto,
+            top: Length.Auto,
+            right: Length.Auto,
+            bottom: Length.Auto,
+            left: Length.Auto,
         }
     }
 
@@ -1624,12 +1624,12 @@ impl Edges<Length> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Edges;
-    /// let no_edges = Edges::zero();
-    /// assert_eq!(no_edges.top, Length::Definite(DefiniteLength::from(Pixels(0.))));
-    /// assert_eq!(no_edges.right, Length::Definite(DefiniteLength::from(Pixels(0.))));
-    /// assert_eq!(no_edges.bottom, Length::Definite(DefiniteLength::from(Pixels(0.))));
-    /// assert_eq!(no_edges.left, Length::Definite(DefiniteLength::from(Pixels(0.))));
+    /// # use zed.Edges;
+    /// let no_edges = Edges.zero();
+    /// assert_eq!(no_edges.top, Length.Definite(DefiniteLength.from(Pixels(0.))));
+    /// assert_eq!(no_edges.right, Length.Definite(DefiniteLength.from(Pixels(0.))));
+    /// assert_eq!(no_edges.bottom, Length.Definite(DefiniteLength.from(Pixels(0.))));
+    /// assert_eq!(no_edges.left, Length.Definite(DefiniteLength.from(Pixels(0.))));
     /// ```
     pub fn zero() -> Self {
         Self {
@@ -1654,12 +1654,12 @@ impl Edges<DefiniteLength> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Edges;
-    /// let no_edges = Edges::zero();
-    /// assert_eq!(no_edges.top, DefiniteLength::from(zed::px(0.)));
-    /// assert_eq!(no_edges.right, DefiniteLength::from(zed::px(0.)));
-    /// assert_eq!(no_edges.bottom, DefiniteLength::from(zed::px(0.)));
-    /// assert_eq!(no_edges.left, DefiniteLength::from(zed::px(0.)));
+    /// # use zed.Edges;
+    /// let no_edges = Edges.zero();
+    /// assert_eq!(no_edges.top, DefiniteLength.from(zed.px(0.)));
+    /// assert_eq!(no_edges.right, DefiniteLength.from(zed.px(0.)));
+    /// assert_eq!(no_edges.bottom, DefiniteLength.from(zed.px(0.)));
+    /// assert_eq!(no_edges.left, DefiniteLength.from(zed.px(0.)));
     /// ```
     pub fn zero() -> Self {
         Self {
@@ -1687,16 +1687,16 @@ impl Edges<DefiniteLength> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Edges, DefiniteLength, px, AbsoluteLength, Size};
+    /// # use zed.{Edges, DefiniteLength, px, AbsoluteLength, Size};
     /// let edges = Edges {
-    ///     top: DefiniteLength::Absolute(AbsoluteLength::Pixels(px(10.0))),
-    ///     right: DefiniteLength::Fraction(0.5),
-    ///     bottom: DefiniteLength::Absolute(AbsoluteLength::Rems(rems(2.0))),
-    ///     left: DefiniteLength::Fraction(0.25),
+    ///     top: DefiniteLength.Absolute(AbsoluteLength.Pixels(px(10.0))),
+    ///     right: DefiniteLength.Fraction(0.5),
+    ///     bottom: DefiniteLength.Absolute(AbsoluteLength.Rems(rems(2.0))),
+    ///     left: DefiniteLength.Fraction(0.25),
     /// };
     /// let parent_size = Size {
-    ///     width: AbsoluteLength::Pixels(px(200.0)),
-    ///     height: AbsoluteLength::Pixels(px(100.0)),
+    ///     width: AbsoluteLength.Pixels(px(200.0)),
+    ///     height: AbsoluteLength.Pixels(px(100.0)),
     /// };
     /// let rem_size = px(16.0);
     /// let edges_in_pixels = edges.to_pixels(parent_size, rem_size);
@@ -1729,12 +1729,12 @@ impl Edges<AbsoluteLength> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::Edges;
-    /// let no_edges = Edges::zero();
-    /// assert_eq!(no_edges.top, AbsoluteLength::Pixels(Pixels(0.0)));
-    /// assert_eq!(no_edges.right, AbsoluteLength::Pixels(Pixels(0.0)));
-    /// assert_eq!(no_edges.bottom, AbsoluteLength::Pixels(Pixels(0.0)));
-    /// assert_eq!(no_edges.left, AbsoluteLength::Pixels(Pixels(0.0)));
+    /// # use zed.Edges;
+    /// let no_edges = Edges.zero();
+    /// assert_eq!(no_edges.top, AbsoluteLength.Pixels(Pixels(0.0)));
+    /// assert_eq!(no_edges.right, AbsoluteLength.Pixels(Pixels(0.0)));
+    /// assert_eq!(no_edges.bottom, AbsoluteLength.Pixels(Pixels(0.0)));
+    /// assert_eq!(no_edges.left, AbsoluteLength.Pixels(Pixels(0.0)));
     /// ```
     pub fn zero() -> Self {
         Self {
@@ -1761,12 +1761,12 @@ impl Edges<AbsoluteLength> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Edges, AbsoluteLength, Pixels, px};
+    /// # use zed.{Edges, AbsoluteLength, Pixels, px};
     /// let edges = Edges {
-    ///     top: AbsoluteLength::Pixels(px(10.0)),
-    ///     right: AbsoluteLength::Rems(rems(1.0)),
-    ///     bottom: AbsoluteLength::Pixels(px(20.0)),
-    ///     left: AbsoluteLength::Rems(rems(2.0)),
+    ///     top: AbsoluteLength.Pixels(px(10.0)),
+    ///     right: AbsoluteLength.Rems(rems(1.0)),
+    ///     bottom: AbsoluteLength.Pixels(px(20.0)),
+    ///     left: AbsoluteLength.Rems(rems(2.0)),
     /// };
     /// let rem_size = px(16.0);
     /// let edges_in_pixels = edges.to_pixels(rem_size);
@@ -1802,7 +1802,7 @@ impl Edges<Pixels> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Edges, Pixels};
+    /// # use zed.{Edges, Pixels};
     /// let edges = Edges {
     ///     top: Pixels(10.0),
     ///     right: Pixels(20.0),
@@ -1883,8 +1883,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use zed::Corners;
-    /// let uniform_corners = Corners::all(5.0);
+    /// # use zed.Corners;
+    /// let uniform_corners = Corners.all(5.0);
     /// assert_eq!(uniform_corners.top_left, 5.0);
     /// assert_eq!(uniform_corners.top_right, 5.0);
     /// assert_eq!(uniform_corners.bottom_right, 5.0);
@@ -1920,12 +1920,12 @@ impl Corners<AbsoluteLength> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Corners, AbsoluteLength, Pixels, Size};
+    /// # use zed.{Corners, AbsoluteLength, Pixels, Size};
     /// let corners = Corners {
-    ///     top_left: AbsoluteLength::Pixels(Pixels(15.0)),
-    ///     top_right: AbsoluteLength::Rems(Rems(1.0)),
-    ///     bottom_right: AbsoluteLength::Pixels(Pixels(20.0)),
-    ///     bottom_left: AbsoluteLength::Rems(Rems(2.0)),
+    ///     top_left: AbsoluteLength.Pixels(Pixels(15.0)),
+    ///     top_right: AbsoluteLength.Rems(Rems(1.0)),
+    ///     bottom_right: AbsoluteLength.Pixels(Pixels(20.0)),
+    ///     bottom_left: AbsoluteLength.Rems(Rems(2.0)),
     /// };
     /// let size = Size { width: Pixels(100.0), height: Pixels(50.0) };
     /// let rem_size = Pixels(16.0);
@@ -1964,7 +1964,7 @@ impl Corners<Pixels> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Corners, Pixels};
+    /// # use zed.{Corners, Pixels};
     /// let corners = Corners {
     ///     top_left: Pixels(10.0),
     ///     top_right: Pixels(20.0),
@@ -2017,7 +2017,7 @@ impl<T: Clone + Default + Debug> Corners<T> {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{Corners, Pixels};
+    /// # use zed.{Corners, Pixels};
     /// let corners = Corners {
     ///     top_left: Pixels(10.0),
     ///     top_right: Pixels(20.0),
@@ -2051,7 +2051,7 @@ where
 {
     type Output = Self;
 
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn mul(self, rhs: Self) -> Self.Output {
         Self {
             top_left: self.top_left.clone() * rhs.top_left,
             top_right: self.top_right.clone() * rhs.top_right,
@@ -2154,7 +2154,7 @@ pub fn percentage(value: f32) -> Percentage {
 
 impl From<Percentage> for Radians {
     fn from(value: Percentage) -> Self {
-        radians(value.0 * std::f32::consts::PI * 2.0)
+        radians(value.0 * std.f32.consts.PI * 2.0)
     }
 }
 
@@ -2171,7 +2171,7 @@ impl From<Percentage> for Radians {
 /// # Examples
 ///
 /// ```
-/// use zed::Pixels;
+/// use zed.Pixels;
 ///
 /// // Define a length of 10 pixels
 /// let length = Pixels(10.0);
@@ -2198,33 +2198,33 @@ impl From<Percentage> for Radians {
 #[repr(transparent)]
 pub struct Pixels(pub f32);
 
-impl std::fmt::Display for Pixels {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl std.fmt.Display for Pixels {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         f.write_fmt(format_args!("{}px", self.0))
     }
 }
 
-impl std::ops::Div for Pixels {
+impl std.ops.Div for Pixels {
     type Output = f32;
 
-    fn div(self, rhs: Self) -> Self::Output {
+    fn div(self, rhs: Self) -> Self.Output {
         self.0 / rhs.0
     }
 }
 
-impl std::ops::DivAssign for Pixels {
+impl std.ops.DivAssign for Pixels {
     fn div_assign(&mut self, rhs: Self) {
         *self = Self(self.0 / rhs.0);
     }
 }
 
-impl std::ops::RemAssign for Pixels {
+impl std.ops.RemAssign for Pixels {
     fn rem_assign(&mut self, rhs: Self) {
         self.0 %= rhs.0;
     }
 }
 
-impl std::ops::Rem for Pixels {
+impl std.ops.Rem for Pixels {
     type Output = Self;
 
     fn rem(self, rhs: Self) -> Self {
@@ -2251,7 +2251,7 @@ impl Mul<usize> for Pixels {
 impl Mul<Pixels> for f32 {
     type Output = Pixels;
 
-    fn mul(self, rhs: Pixels) -> Self::Output {
+    fn mul(self, rhs: Pixels) -> Self.Output {
         Pixels(self * rhs.0)
     }
 }
@@ -2266,7 +2266,7 @@ impl Pixels {
     /// Represents zero pixels.
     pub const ZERO: Pixels = Pixels(0.0);
     /// The maximum value that can be represented by `Pixels`.
-    pub const MAX: Pixels = Pixels(f32::MAX);
+    pub const MAX: Pixels = Pixels(f32.MAX);
 
     /// Floors the `Pixels` value to the nearest whole number.
     ///
@@ -2354,7 +2354,7 @@ impl Pixels {
 impl Mul<Pixels> for Pixels {
     type Output = Pixels;
 
-    fn mul(self, rhs: Pixels) -> Self::Output {
+    fn mul(self, rhs: Pixels) -> Self.Output {
         Pixels(self.0 * rhs.0)
     }
 }
@@ -2362,19 +2362,19 @@ impl Mul<Pixels> for Pixels {
 impl Eq for Pixels {}
 
 impl PartialOrd for Pixels {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for Pixels {
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
+    fn cmp(&self, other: &Self) -> cmp.Ordering {
         self.0.total_cmp(&other.0)
     }
 }
 
-impl std::hash::Hash for Pixels {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+impl std.hash.Hash for Pixels {
+    fn hash<H: std.hash.Hasher>(&self, state: &mut H) {
         self.0.to_bits().hash(state);
     }
 }
@@ -2392,7 +2392,7 @@ impl From<f32> for Pixels {
 }
 
 impl Debug for Pixels {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{} px", self.0)
     }
 }
@@ -2469,7 +2469,7 @@ impl DevicePixels {
     /// # Examples
     ///
     /// ```
-    /// # use zed::DevicePixels;
+    /// # use zed.DevicePixels;
     /// let pixels = DevicePixels(10); // 10 device pixels
     /// let bytes_per_pixel = 4; // Assume each pixel is represented by 4 bytes (e.g., RGBA)
     /// let total_bytes = pixels.to_bytes(bytes_per_pixel);
@@ -2480,8 +2480,8 @@ impl DevicePixels {
     }
 }
 
-impl fmt::Debug for DevicePixels {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Debug for DevicePixels {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{} px (device)", self.0)
     }
 }
@@ -2568,7 +2568,7 @@ impl ScaledPixels {
 impl Eq for ScaledPixels {}
 
 impl Debug for ScaledPixels {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{} px (scaled)", self.0)
     }
 }
@@ -2591,7 +2591,7 @@ impl From<ScaledPixels> for f64 {
     }
 }
 
-/// Represents a length in rems, a unit based on the font-size of the window, which can be assigned with [`WindowContext::set_rem_size`][set_rem_size].
+/// Represents a length in rems, a unit based on the font-size of the window, which can be assigned with [`WindowContext.set_rem_size`][set_rem_size].
 ///
 /// Rems are used for defining lengths that are scalable and consistent across different UI elements.
 /// The value of `1rem` is typically equal to the font-size of the root element (often the `<html>` element in browsers),
@@ -2600,7 +2600,7 @@ impl From<ScaledPixels> for f64 {
 ///
 /// For example, if the root element's font-size is `16px`, then `1rem` equals `16px`. A length of `2rems` would then be `32px`.
 ///
-/// [set_rem_size]: crate::WindowContext::set_rem_size
+/// [set_rem_size]: crate.WindowContext.set_rem_size
 #[derive(Clone, Copy, Default, Add, Sub, Mul, Div, Neg, PartialEq)]
 pub struct Rems(pub f32);
 
@@ -2620,7 +2620,7 @@ impl Mul<Pixels> for Rems {
 }
 
 impl Debug for Rems {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{} rem", self.0)
     }
 }
@@ -2643,21 +2643,21 @@ impl AbsoluteLength {
     /// Checks if the absolute length is zero.
     pub fn is_zero(&self) -> bool {
         match self {
-            AbsoluteLength::Pixels(px) => px.0 == 0.0,
-            AbsoluteLength::Rems(rems) => rems.0 == 0.0,
+            AbsoluteLength.Pixels(px) => px.0 == 0.0,
+            AbsoluteLength.Rems(rems) => rems.0 == 0.0,
         }
     }
 }
 
 impl From<Pixels> for AbsoluteLength {
     fn from(pixels: Pixels) -> Self {
-        AbsoluteLength::Pixels(pixels)
+        AbsoluteLength.Pixels(pixels)
     }
 }
 
 impl From<Rems> for AbsoluteLength {
     fn from(rems: Rems) -> Self {
-        AbsoluteLength::Rems(rems)
+        AbsoluteLength.Rems(rems)
     }
 }
 
@@ -2675,9 +2675,9 @@ impl AbsoluteLength {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{AbsoluteLength, Pixels};
-    /// let length_in_pixels = AbsoluteLength::Pixels(Pixels(42.0));
-    /// let length_in_rems = AbsoluteLength::Rems(Rems(2.0));
+    /// # use zed.{AbsoluteLength, Pixels};
+    /// let length_in_pixels = AbsoluteLength.Pixels(Pixels(42.0));
+    /// let length_in_rems = AbsoluteLength.Rems(Rems(2.0));
     /// let rem_size = Pixels(16.0);
     ///
     /// assert_eq!(length_in_pixels.to_pixels(rem_size), Pixels(42.0));
@@ -2685,8 +2685,8 @@ impl AbsoluteLength {
     /// ```
     pub fn to_pixels(&self, rem_size: Pixels) -> Pixels {
         match self {
-            AbsoluteLength::Pixels(pixels) => *pixels,
-            AbsoluteLength::Rems(rems) => rems.to_pixels(rem_size),
+            AbsoluteLength.Pixels(pixels) => *pixels,
+            AbsoluteLength.Rems(rems) => rems.to_pixels(rem_size),
         }
     }
 }
@@ -2728,11 +2728,11 @@ impl DefiniteLength {
     /// # Examples
     ///
     /// ```
-    /// # use zed::{DefiniteLength, AbsoluteLength, Pixels, px, rems};
-    /// let length_in_pixels = DefiniteLength::Absolute(AbsoluteLength::Pixels(px(42.0)));
-    /// let length_in_rems = DefiniteLength::Absolute(AbsoluteLength::Rems(rems(2.0)));
-    /// let length_as_fraction = DefiniteLength::Fraction(0.5);
-    /// let base_size = AbsoluteLength::Pixels(px(100.0));
+    /// # use zed.{DefiniteLength, AbsoluteLength, Pixels, px, rems};
+    /// let length_in_pixels = DefiniteLength.Absolute(AbsoluteLength.Pixels(px(42.0)));
+    /// let length_in_rems = DefiniteLength.Absolute(AbsoluteLength.Rems(rems(2.0)));
+    /// let length_as_fraction = DefiniteLength.Fraction(0.5);
+    /// let base_size = AbsoluteLength.Pixels(px(100.0));
     /// let rem_size = px(16.0);
     ///
     /// assert_eq!(length_in_pixels.to_pixels(base_size, rem_size), Pixels(42.0));
@@ -2741,45 +2741,45 @@ impl DefiniteLength {
     /// ```
     pub fn to_pixels(&self, base_size: AbsoluteLength, rem_size: Pixels) -> Pixels {
         match self {
-            DefiniteLength::Absolute(size) => size.to_pixels(rem_size),
-            DefiniteLength::Fraction(fraction) => match base_size {
-                AbsoluteLength::Pixels(px) => px * *fraction,
-                AbsoluteLength::Rems(rems) => rems * rem_size * *fraction,
+            DefiniteLength.Absolute(size) => size.to_pixels(rem_size),
+            DefiniteLength.Fraction(fraction) => match base_size {
+                AbsoluteLength.Pixels(px) => px * *fraction,
+                AbsoluteLength.Rems(rems) => rems * rem_size * *fraction,
             },
         }
     }
 }
 
 impl Debug for DefiniteLength {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         match self {
-            DefiniteLength::Absolute(length) => Debug::fmt(length, f),
-            DefiniteLength::Fraction(fract) => write!(f, "{}%", (fract * 100.0) as i32),
+            DefiniteLength.Absolute(length) => Debug.fmt(length, f),
+            DefiniteLength.Fraction(fract) => write!(f, "{}%", (fract * 100.0) as i32),
         }
     }
 }
 
 impl From<Pixels> for DefiniteLength {
     fn from(pixels: Pixels) -> Self {
-        Self::Absolute(pixels.into())
+        Self.Absolute(pixels.into())
     }
 }
 
 impl From<Rems> for DefiniteLength {
     fn from(rems: Rems) -> Self {
-        Self::Absolute(rems.into())
+        Self.Absolute(rems.into())
     }
 }
 
 impl From<AbsoluteLength> for DefiniteLength {
     fn from(length: AbsoluteLength) -> Self {
-        Self::Absolute(length)
+        Self.Absolute(length)
     }
 }
 
 impl Default for DefiniteLength {
     fn default() -> Self {
-        Self::Absolute(AbsoluteLength::default())
+        Self.Absolute(AbsoluteLength.default())
     }
 }
 
@@ -2793,10 +2793,10 @@ pub enum Length {
 }
 
 impl Debug for Length {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         match self {
-            Length::Definite(definite_length) => write!(f, "{:?}", definite_length),
-            Length::Auto => write!(f, "auto"),
+            Length.Definite(definite_length) => write!(f, "{:?}", definite_length),
+            Length.Auto => write!(f, "auto"),
         }
     }
 }
@@ -2814,7 +2814,7 @@ impl Debug for Length {
 ///
 /// A `DefiniteLength` representing the relative length as a fraction of the parent's size.
 pub fn relative(fraction: f32) -> DefiniteLength {
-    DefiniteLength::Fraction(fraction)
+    DefiniteLength.Fraction(fraction)
 }
 
 /// Returns the Golden Ratio, i.e. `~(1.0 + sqrt(5.0)) / 2.0`.
@@ -2860,42 +2860,42 @@ pub const fn px(pixels: f32) -> Pixels {
 ///
 /// A `Length` variant set to `Auto`.
 pub fn auto() -> Length {
-    Length::Auto
+    Length.Auto
 }
 
 impl From<Pixels> for Length {
     fn from(pixels: Pixels) -> Self {
-        Self::Definite(pixels.into())
+        Self.Definite(pixels.into())
     }
 }
 
 impl From<Rems> for Length {
     fn from(rems: Rems) -> Self {
-        Self::Definite(rems.into())
+        Self.Definite(rems.into())
     }
 }
 
 impl From<DefiniteLength> for Length {
     fn from(length: DefiniteLength) -> Self {
-        Self::Definite(length)
+        Self.Definite(length)
     }
 }
 
 impl From<AbsoluteLength> for Length {
     fn from(length: AbsoluteLength) -> Self {
-        Self::Definite(length.into())
+        Self.Definite(length.into())
     }
 }
 
 impl Default for Length {
     fn default() -> Self {
-        Self::Definite(DefiniteLength::default())
+        Self.Definite(DefiniteLength.default())
     }
 }
 
 impl From<()> for Length {
     fn from(_: ()) -> Self {
-        Self::Definite(DefiniteLength::default())
+        Self.Definite(DefiniteLength.default())
     }
 }
 
@@ -3033,8 +3033,8 @@ impl IsZero for Rems {
 impl IsZero for AbsoluteLength {
     fn is_zero(&self) -> bool {
         match self {
-            AbsoluteLength::Pixels(pixels) => pixels.is_zero(),
-            AbsoluteLength::Rems(rems) => rems.is_zero(),
+            AbsoluteLength.Pixels(pixels) => pixels.is_zero(),
+            AbsoluteLength.Rems(rems) => rems.is_zero(),
         }
     }
 }
@@ -3042,8 +3042,8 @@ impl IsZero for AbsoluteLength {
 impl IsZero for DefiniteLength {
     fn is_zero(&self) -> bool {
         match self {
-            DefiniteLength::Absolute(length) => length.is_zero(),
-            DefiniteLength::Fraction(fraction) => *fraction == 0.,
+            DefiniteLength.Absolute(length) => length.is_zero(),
+            DefiniteLength.Fraction(fraction) => *fraction == 0.,
         }
     }
 }
@@ -3051,8 +3051,8 @@ impl IsZero for DefiniteLength {
 impl IsZero for Length {
     fn is_zero(&self) -> bool {
         match self {
-            Length::Definite(length) => length.is_zero(),
-            Length::Auto => false,
+            Length.Definite(length) => length.is_zero(),
+            Length.Auto => false,
         }
     }
 }
@@ -3092,7 +3092,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_bounds_intersects() {

@@ -1,9 +1,9 @@
-use crate::SharedString;
-use anyhow::{anyhow, Context, Result};
-use collections::HashMap;
-pub use no_action::NoAction;
-use serde_json::json;
-use std::any::{Any, TypeId};
+use crate.SharedString;
+use anyhow.{anyhow, Context, Result};
+use collections.HashMap;
+pub use no_action.NoAction;
+use serde_json.json;
+use std.any.{Any, TypeId};
 
 /// Actions are used to implement keyboard-driven UI.
 /// When you declare an action, you can bind keys to the action in the keymap and
@@ -15,10 +15,10 @@ use std::any::{Any, TypeId};
 /// actions!(editor, [MoveUp, MoveDown, MoveLeft, MoveRight, Newline]);
 /// ```
 /// More complex data types can also be actions, providing they implement Clone, PartialEq,
-/// and serde_derive::Deserialize.
+/// and serde_derive.Deserialize.
 /// Use `impl_actions!` to automatically implement the action in the given namespace.
 /// ```
-/// #[derive(Clone, PartialEq, serde_derive::Deserialize)]
+/// #[derive(Clone, PartialEq, serde_derive.Deserialize)]
 /// pub struct SelectNext {
 ///     pub replace_newest: bool,
 /// }
@@ -29,12 +29,12 @@ use std::any::{Any, TypeId};
 /// macro, which only generates the code needed to register your action before `main`.
 ///
 /// ```
-/// #[derive(gpui::private::serde::Deserialize, std::cmp::PartialEq, std::clone::Clone)]
+/// #[derive(gpui.private.serde.Deserialize, std.cmp.PartialEq, std.clone.Clone)]
 /// pub struct Paste {
 ///     pub content: SharedString,
 /// }
 ///
-/// impl gpui::Action for Paste {
+/// impl gpui.Action for Paste {
 ///      ///...
 /// }
 /// register_action!(Paste);
@@ -59,13 +59,13 @@ pub trait Action: 'static + Send {
 
     /// Build this action from a JSON value. This is used to construct actions from the keymap.
     /// A value of `{}` will be passed for actions that don't have any parameters.
-    fn build(value: serde_json::Value) -> Result<Box<dyn Action>>
+    fn build(value: serde_json.Value) -> Result<Box<dyn Action>>
     where
         Self: Sized;
 }
 
-impl std::fmt::Debug for dyn Action {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Debug for dyn Action {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         f.debug_struct("dyn Action")
             .field("name", &self.name())
             .finish()
@@ -79,7 +79,7 @@ impl dyn Action {
     }
 }
 
-type ActionBuilder = fn(json: serde_json::Value) -> anyhow::Result<Box<dyn Action>>;
+type ActionBuilder = fn(json: serde_json.Value) -> anyhow.Result<Box<dyn Action>>;
 
 pub(crate) struct ActionRegistry {
     builders_by_name: HashMap<SharedString, ActionBuilder>,
@@ -90,9 +90,9 @@ pub(crate) struct ActionRegistry {
 impl Default for ActionRegistry {
     fn default() -> Self {
         let mut this = ActionRegistry {
-            builders_by_name: Default::default(),
-            names_by_type_id: Default::default(),
-            all_names: Default::default(),
+            builders_by_name: Default.default(),
+            names_by_type_id: Default.default(),
+            all_names: Default.default(),
         };
 
         this.load_actions();
@@ -118,7 +118,7 @@ pub struct ActionData {
 /// This constant must be public to be accessible from other crates.
 /// But its existence is an implementation detail and should not be used directly.
 #[doc(hidden)]
-#[linkme::distributed_slice]
+#[linkme.distributed_slice]
 pub static __GPUI_ACTIONS: [MacroActionBuilder];
 
 impl ActionRegistry {
@@ -133,9 +133,9 @@ impl ActionRegistry {
     #[cfg(test)]
     pub(crate) fn load_action<A: Action>(&mut self) {
         self.insert_action(ActionData {
-            name: A::debug_name(),
-            type_id: TypeId::of::<A>(),
-            build: A::build,
+            name: A.debug_name(),
+            type_id: TypeId.of.<A>(),
+            build: A.build,
         });
     }
 
@@ -161,7 +161,7 @@ impl ActionRegistry {
     pub fn build_action(
         &self,
         name: &str,
-        params: Option<serde_json::Value>,
+        params: Option<serde_json.Value>,
     ) -> Result<Box<dyn Action>> {
         let build_action = self
             .builders_by_name
@@ -184,18 +184,18 @@ macro_rules! actions {
         $(
             #[doc = "The `"]
             #[doc = stringify!($name)]
-            #[doc = "` action, see [`gpui::actions!`]"]
-            #[derive(::std::cmp::PartialEq, ::std::clone::Clone, ::std::default::Default, ::std::fmt::Debug, gpui::private::serde_derive::Deserialize)]
-            #[serde(crate = "gpui::private::serde")]
+            #[doc = "` action, see [`gpui.actions!`]"]
+            #[derive(.std.cmp.PartialEq, .std.clone.Clone, .std.default.Default, .std.fmt.Debug, gpui.private.serde_derive.Deserialize)]
+            #[serde(crate = "gpui.private.serde")]
             pub struct $name;
 
-            gpui::__impl_action!($namespace, $name, $name,
-                fn build(_: gpui::private::serde_json::Value) -> gpui::Result<::std::boxed::Box<dyn gpui::Action>> {
-                    Ok(Box::new(Self))
+            gpui.__impl_action!($namespace, $name, $name,
+                fn build(_: gpui.private.serde_json.Value) -> gpui.Result<.std.boxed.Box<dyn gpui.Action>> {
+                    Ok(Box.new(Self))
                 }
             );
 
-            gpui::register_action!($name);
+            gpui.register_action!($name);
         )*
     };
 }
@@ -210,67 +210,67 @@ macro_rules! action_as {
     ($namespace:path, $name:ident as $visual_name:tt) => {
         #[doc = "The `"]
         #[doc = stringify!($name)]
-        #[doc = "` action, see [`gpui::actions!`]"]
+        #[doc = "` action, see [`gpui.actions!`]"]
         #[derive(
-            ::std::cmp::PartialEq,
-            ::std::clone::Clone,
-            ::std::default::Default,
-            ::std::fmt::Debug,
-            gpui::private::serde_derive::Deserialize,
+            .std.cmp.PartialEq,
+            .std.clone.Clone,
+            .std.default.Default,
+            .std.fmt.Debug,
+            gpui.private.serde_derive.Deserialize,
         )]
-        #[serde(crate = "gpui::private::serde")]
+        #[serde(crate = "gpui.private.serde")]
         pub struct $name;
 
-        gpui::__impl_action!(
+        gpui.__impl_action!(
             $namespace,
             $name,
             $visual_name,
             fn build(
-                _: gpui::private::serde_json::Value,
-            ) -> gpui::Result<::std::boxed::Box<dyn gpui::Action>> {
-                Ok(Box::new(Self))
+                _: gpui.private.serde_json.Value,
+            ) -> gpui.Result<.std.boxed.Box<dyn gpui.Action>> {
+                Ok(Box.new(Self))
             }
         );
 
-        gpui::register_action!($name);
+        gpui.register_action!($name);
     };
 }
 
-/// Implements the Action trait for any struct that implements Clone, Default, PartialEq, and serde_deserialize::Deserialize
+/// Implements the Action trait for any struct that implements Clone, Default, PartialEq, and serde_deserialize.Deserialize
 #[macro_export]
 macro_rules! impl_actions {
     ($namespace:path, [ $($name:ident),* $(,)? ]) => {
         $(
-            gpui::__impl_action!($namespace, $name, $name,
-                fn build(value: gpui::private::serde_json::Value) -> gpui::Result<::std::boxed::Box<dyn gpui::Action>> {
-                    Ok(std::boxed::Box::new(gpui::private::serde_json::from_value::<Self>(value)?))
+            gpui.__impl_action!($namespace, $name, $name,
+                fn build(value: gpui.private.serde_json.Value) -> gpui.Result<.std.boxed.Box<dyn gpui.Action>> {
+                    Ok(std.boxed.Box.new(gpui.private.serde_json.from_value.<Self>(value)?))
                 }
             );
 
-            gpui::register_action!($name);
+            gpui.register_action!($name);
         )*
     };
 }
 
-/// Implements the Action trait for a struct that implements Clone, Default, PartialEq, and serde_deserialize::Deserialize
+/// Implements the Action trait for a struct that implements Clone, Default, PartialEq, and serde_deserialize.Deserialize
 /// Allows you to rename the action visually, without changing the struct's name
 #[macro_export]
 macro_rules! impl_action_as {
     ($namespace:path, $name:ident as $visual_name:tt ) => {
-        gpui::__impl_action!(
+        gpui.__impl_action!(
             $namespace,
             $name,
             $visual_name,
             fn build(
-                value: gpui::private::serde_json::Value,
-            ) -> gpui::Result<::std::boxed::Box<dyn gpui::Action>> {
-                Ok(std::boxed::Box::new(
-                    gpui::private::serde_json::from_value::<Self>(value)?,
+                value: gpui.private.serde_json.Value,
+            ) -> gpui.Result<.std.boxed.Box<dyn gpui.Action>> {
+                Ok(std.boxed.Box.new(
+                    gpui.private.serde_json.from_value.<Self>(value)?,
                 ))
             }
         );
 
-        gpui::register_action!($name);
+        gpui.register_action!($name);
     };
 }
 
@@ -278,41 +278,41 @@ macro_rules! impl_action_as {
 #[macro_export]
 macro_rules! __impl_action {
     ($namespace:path, $name:ident, $visual_name:tt, $build:item) => {
-        impl gpui::Action for $name {
+        impl gpui.Action for $name {
             fn name(&self) -> &'static str
             {
                 concat!(
                     stringify!($namespace),
-                    "::",
+                    ".",
                     stringify!($visual_name),
                 )
             }
 
             fn debug_name() -> &'static str
             where
-                Self: ::std::marker::Sized
+                Self: .std.marker.Sized
             {
                 concat!(
                     stringify!($namespace),
-                    "::",
+                    ".",
                     stringify!($visual_name),
                 )
             }
 
             $build
 
-            fn partial_eq(&self, action: &dyn gpui::Action) -> bool {
+            fn partial_eq(&self, action: &dyn gpui.Action) -> bool {
                 action
                     .as_any()
-                    .downcast_ref::<Self>()
+                    .downcast_ref.<Self>()
                     .map_or(false, |a| self == a)
             }
 
-            fn boxed_clone(&self) ->  std::boxed::Box<dyn gpui::Action> {
-                ::std::boxed::Box::new(self.clone())
+            fn boxed_clone(&self) ->  std.boxed.Box<dyn gpui.Action> {
+                .std.boxed.Box.new(self.clone())
             }
 
-            fn as_any(&self) -> &dyn ::std::any::Any {
+            fn as_any(&self) -> &dyn .std.any.Any {
                 self
             }
         }

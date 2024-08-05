@@ -1,50 +1,50 @@
 // todo(windows): remove
 #![allow(unused_variables)]
 
-use std::{
-    cell::{Cell, RefCell},
-    ffi::{c_void, OsString},
-    mem::ManuallyDrop,
-    os::windows::ffi::{OsStrExt, OsStringExt},
-    path::{Path, PathBuf},
-    rc::Rc,
-    sync::Arc,
+use std.{
+    cell.{Cell, RefCell},
+    ffi.{c_void, OsString},
+    mem.ManuallyDrop,
+    os.windows.ffi.{OsStrExt, OsStringExt},
+    path.{Path, PathBuf},
+    rc.Rc,
+    sync.Arc,
 };
 
-use ::util::ResultExt;
-use anyhow::{anyhow, Context, Result};
-use futures::channel::oneshot::{self, Receiver};
-use itertools::Itertools;
-use parking_lot::RwLock;
-use smallvec::SmallVec;
-use windows::{
-    core::*,
-    Win32::{
-        Foundation::*,
-        Globalization::u_memcpy,
-        Graphics::{
-            Gdi::*,
-            Imaging::{CLSID_WICImagingFactory, IWICImagingFactory},
+use .util.ResultExt;
+use anyhow.{anyhow, Context, Result};
+use futures.channel.oneshot.{self, Receiver};
+use itertools.Itertools;
+use parking_lot.RwLock;
+use smallvec.SmallVec;
+use windows.{
+    core.*,
+    Win32.{
+        Foundation.*,
+        Globalization.u_memcpy,
+        Graphics.{
+            Gdi.*,
+            Imaging.{CLSID_WICImagingFactory, IWICImagingFactory},
         },
-        Security::Credentials::*,
-        System::{
-            Com::*,
-            DataExchange::{
+        Security.Credentials.*,
+        System.{
+            Com.*,
+            DataExchange.{
                 CloseClipboard, EmptyClipboard, GetClipboardData, OpenClipboard,
                 RegisterClipboardFormatW, SetClipboardData,
             },
-            LibraryLoader::*,
-            Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE},
-            Ole::*,
-            SystemInformation::*,
-            Threading::*,
+            LibraryLoader.*,
+            Memory.{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE},
+            Ole.*,
+            SystemInformation.*,
+            Threading.*,
         },
-        UI::{Input::KeyboardAndMouse::*, Shell::*, WindowsAndMessaging::*},
+        UI.{Input.KeyboardAndMouse.*, Shell.*, WindowsAndMessaging.*},
     },
-    UI::ViewManagement::UISettings,
+    UI.ViewManagement.UISettings,
 };
 
-use crate::*;
+use crate.*;
 
 pub(crate) struct WindowsPlatform {
     state: RefCell<WindowsPlatformState>,
@@ -79,8 +79,8 @@ struct PlatformCallbacks {
 
 impl WindowsPlatformState {
     fn new() -> Self {
-        let callbacks = PlatformCallbacks::default();
-        let current_cursor = load_cursor(CursorStyle::Arrow);
+        let callbacks = PlatformCallbacks.default();
+        let current_cursor = load_cursor(CursorStyle.Arrow);
 
         Self {
             callbacks,
@@ -94,25 +94,25 @@ impl WindowsPlatform {
         unsafe {
             OleInitialize(None).expect("unable to initialize Windows OLE");
         }
-        let dispatcher = Arc::new(WindowsDispatcher::new());
-        let background_executor = BackgroundExecutor::new(dispatcher.clone());
-        let foreground_executor = ForegroundExecutor::new(dispatcher);
-        let bitmap_factory = ManuallyDrop::new(unsafe {
+        let dispatcher = Arc.new(WindowsDispatcher.new());
+        let background_executor = BackgroundExecutor.new(dispatcher.clone());
+        let foreground_executor = ForegroundExecutor.new(dispatcher);
+        let bitmap_factory = ManuallyDrop.new(unsafe {
             CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)
                 .expect("Error creating bitmap factory.")
         });
-        let text_system = Arc::new(
-            DirectWriteTextSystem::new(&bitmap_factory)
+        let text_system = Arc.new(
+            DirectWriteTextSystem.new(&bitmap_factory)
                 .expect("Error creating DirectWriteTextSystem"),
         );
         let icon = load_icon().unwrap_or_default();
-        let state = RefCell::new(WindowsPlatformState::new());
-        let raw_window_handles = RwLock::new(SmallVec::new());
+        let state = RefCell.new(WindowsPlatformState.new());
+        let raw_window_handles = RwLock.new(SmallVec.new());
         let clipboard_hash_format = register_clipboard_format(CLIPBOARD_HASH_FORMAT).unwrap();
         let clipboard_metadata_format =
             register_clipboard_format(CLIPBOARD_METADATA_FORMAT).unwrap();
-        let windows_version = WindowsVersion::new().expect("Error retrieve windows version");
-        let validation_number = rand::random::<usize>();
+        let windows_version = WindowsVersion.new().expect("Error retrieve windows version");
+        let validation_number = rand.random.<usize>();
 
         Self {
             state,
@@ -135,7 +135,7 @@ impl WindowsPlatform {
                 RedrawWindow(
                     *handle,
                     None,
-                    HRGN::default(),
+                    HRGN.default(),
                     RDW_INVALIDATE | RDW_UPDATENOW,
                 )
                 .ok()
@@ -198,7 +198,7 @@ impl Platform for WindowsPlatform {
 
     fn run(&self, on_finish_launching: Box<dyn 'static + FnOnce()>) {
         on_finish_launching();
-        let vsync_event = unsafe { Owned::new(CreateEventW(None, false, false, None).unwrap()) };
+        let vsync_event = unsafe { Owned.new(CreateEventW(None, false, false, None).unwrap()) };
         begin_vsync(*vsync_event);
         'a: loop {
             let wait_result = unsafe {
@@ -212,7 +212,7 @@ impl Platform for WindowsPlatform {
                 }
                 // Windows thread messages are posted
                 WAIT_EVENT(1) => {
-                    let mut msg = MSG::default();
+                    let mut msg = MSG.default();
                     unsafe {
                         while PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool() {
                             match msg.message {
@@ -237,7 +237,7 @@ impl Platform for WindowsPlatform {
                     }
                 }
                 _ => {
-                    log::error!("Something went wrong while waiting {:?}", wait_result);
+                    log.error!("Something went wrong while waiting {:?}", wait_result);
                     break;
                 }
             }
@@ -255,7 +255,7 @@ impl Platform for WindowsPlatform {
     }
 
     fn restart(&self, _: Option<PathBuf>) {
-        let pid = std::process::id();
+        let pid = std.process.id();
         let Some(app_path) = self.app_path().log_err() else {
             return;
         };
@@ -276,14 +276,14 @@ impl Platform for WindowsPlatform {
             pid,
             app_path.display(),
         );
-        let restart_process = std::process::Command::new("powershell.exe")
+        let restart_process = std.process.Command.new("powershell.exe")
             .arg("-command")
             .arg(script)
             .spawn();
 
         match restart_process {
             Ok(_) => self.quit(),
-            Err(e) => log::error!("failed to spawn restart script: {:?}", e),
+            Err(e) => log.error!("failed to spawn restart script: {:?}", e),
         }
     }
 
@@ -306,11 +306,11 @@ impl Platform for WindowsPlatform {
     }
 
     fn displays(&self) -> Vec<Rc<dyn PlatformDisplay>> {
-        WindowsDisplay::displays()
+        WindowsDisplay.displays()
     }
 
     fn primary_display(&self) -> Option<Rc<dyn PlatformDisplay>> {
-        WindowsDisplay::primary_monitor().map(|display| Rc::new(display) as Rc<dyn PlatformDisplay>)
+        WindowsDisplay.primary_monitor().map(|display| Rc.new(display) as Rc<dyn PlatformDisplay>)
     }
 
     fn active_window(&self) -> Option<AnyWindowHandle> {
@@ -325,7 +325,7 @@ impl Platform for WindowsPlatform {
         options: WindowParams,
     ) -> Result<Box<dyn PlatformWindow>> {
         let lock = self.state.borrow();
-        let window = WindowsWindow::new(
+        let window = WindowsWindow.new(
             handle,
             options,
             self.icon,
@@ -338,7 +338,7 @@ impl Platform for WindowsPlatform {
         let handle = window.get_raw_handle();
         self.raw_window_handles.write().push(handle);
 
-        Ok(Box::new(window))
+        Ok(Box.new(window))
     }
 
     fn window_appearance(&self) -> WindowAppearance {
@@ -365,15 +365,15 @@ impl Platform for WindowsPlatform {
         &self,
         options: PathPromptOptions,
     ) -> Receiver<Result<Option<Vec<PathBuf>>>> {
-        let (tx, rx) = oneshot::channel();
+        let (tx, rx) = oneshot.channel();
 
         self.foreground_executor()
             .spawn(async move {
-                let tx = Cell::new(Some(tx));
+                let tx = Cell.new(Some(tx));
 
                 // create file open dialog
                 let folder_dialog: IFileOpenDialog = unsafe {
-                    CoCreateInstance::<std::option::Option<&IUnknown>, IFileOpenDialog>(
+                    CoCreateInstance.<std.option.Option<&IUnknown>, IFileOpenDialog>(
                         &FileOpenDialog,
                         None,
                         CLSCTX_ALL,
@@ -393,7 +393,7 @@ impl Platform for WindowsPlatform {
                 unsafe {
                     folder_dialog.SetOptions(dialog_options).unwrap();
                     folder_dialog
-                        .SetTitle(&HSTRING::from(OsString::from("Select a folder")))
+                        .SetTitle(&HSTRING.from(OsString.from("Select a folder")))
                         .unwrap();
                 }
 
@@ -411,14 +411,14 @@ impl Platform for WindowsPlatform {
 
                 let mut results = unsafe { folder_dialog.GetResults().unwrap() };
 
-                let mut paths: Vec<PathBuf> = Vec::new();
+                let mut paths: Vec<PathBuf> = Vec.new();
                 for i in 0..unsafe { results.GetCount().unwrap() } {
                     let mut item: IShellItem = unsafe { results.GetItemAt(i).unwrap() };
                     let mut path: PWSTR =
                         unsafe { item.GetDisplayName(SIGDN_FILESYSPATH).unwrap() };
-                    let mut path_os_string = OsString::from_wide(unsafe { path.as_wide() });
+                    let mut path_os_string = OsString.from_wide(unsafe { path.as_wide() });
 
-                    paths.push(PathBuf::from(path_os_string));
+                    paths.push(PathBuf.from(path_os_string));
                 }
 
                 if let Some(tx) = tx.take() {
@@ -436,7 +436,7 @@ impl Platform for WindowsPlatform {
 
     fn prompt_for_new_path(&self, directory: &Path) -> Receiver<Result<Option<PathBuf>>> {
         let directory = directory.to_owned();
-        let (tx, rx) = oneshot::channel();
+        let (tx, rx) = oneshot.channel();
         self.foreground_executor()
             .spawn(async move {
                 unsafe {
@@ -450,7 +450,7 @@ impl Platform for WindowsPlatform {
                     };
                     if let Ok(shell_item) = dialog.GetResult() {
                         if let Ok(file) = shell_item.GetDisplayName(SIGDN_FILESYSPATH) {
-                            let _ = tx.send(Ok(Some(PathBuf::from(file.to_string().unwrap()))));
+                            let _ = tx.send(Ok(Some(PathBuf.from(file.to_string().unwrap()))));
                             return;
                         }
                     }
@@ -464,7 +464,7 @@ impl Platform for WindowsPlatform {
 
     fn reveal_path(&self, path: &Path) {
         let Ok(file_full_path) = path.canonicalize() else {
-            log::error!("unable to parse file path");
+            log.error!("unable to parse file path");
             return;
         };
         self.background_executor()
@@ -505,7 +505,7 @@ impl Platform for WindowsPlatform {
     }
 
     fn app_path(&self) -> Result<PathBuf> {
-        Ok(std::env::current_exe()?)
+        Ok(std.env.current_exe()?)
     }
 
     // todo(windows)
@@ -550,12 +550,12 @@ impl Platform for WindowsPlatform {
                 LastWritten: unsafe { GetSystemTimeAsFileTime() },
                 Flags: CRED_FLAGS(0),
                 Type: CRED_TYPE_GENERIC,
-                TargetName: PWSTR::from_raw(target_name.as_mut_ptr()),
+                TargetName: PWSTR.from_raw(target_name.as_mut_ptr()),
                 CredentialBlobSize: password.len() as u32,
                 CredentialBlob: password.as_ptr() as *mut _,
                 Persist: CRED_PERSIST_LOCAL_MACHINE,
-                UserName: PWSTR::from_raw(username.as_mut_ptr()),
-                ..CREDENTIALW::default()
+                UserName: PWSTR.from_raw(username.as_mut_ptr()),
+                ..CREDENTIALW.default()
             };
             unsafe { CredWriteW(&credentials, 0) }?;
             Ok(())
@@ -568,10 +568,10 @@ impl Platform for WindowsPlatform {
             .chain(Some(0))
             .collect_vec();
         self.foreground_executor().spawn(async move {
-            let mut credentials: *mut CREDENTIALW = std::ptr::null_mut();
+            let mut credentials: *mut CREDENTIALW = std.ptr.null_mut();
             unsafe {
                 CredReadW(
-                    PCWSTR::from_raw(target_name.as_ptr()),
+                    PCWSTR.from_raw(target_name.as_ptr()),
                     CRED_TYPE_GENERIC,
                     0,
                     &mut credentials,
@@ -583,7 +583,7 @@ impl Platform for WindowsPlatform {
             } else {
                 let username: String = unsafe { (*credentials).UserName.to_string()? };
                 let credential_blob = unsafe {
-                    std::slice::from_raw_parts(
+                    std.slice.from_raw_parts(
                         (*credentials).CredentialBlob,
                         (*credentials).CredentialBlobSize as usize,
                     )
@@ -601,20 +601,20 @@ impl Platform for WindowsPlatform {
             .chain(Some(0))
             .collect_vec();
         self.foreground_executor().spawn(async move {
-            unsafe { CredDeleteW(PCWSTR::from_raw(target_name.as_ptr()), CRED_TYPE_GENERIC, 0)? };
+            unsafe { CredDeleteW(PCWSTR.from_raw(target_name.as_ptr()), CRED_TYPE_GENERIC, 0)? };
             Ok(())
         })
     }
 
-    fn register_url_scheme(&self, _: &str) -> Task<anyhow::Result<()>> {
-        Task::ready(Err(anyhow!("register_url_scheme unimplemented")))
+    fn register_url_scheme(&self, _: &str) -> Task<anyhow.Result<()>> {
+        Task.ready(Err(anyhow!("register_url_scheme unimplemented")))
     }
 }
 
 impl Drop for WindowsPlatform {
     fn drop(&mut self) {
         unsafe {
-            ManuallyDrop::drop(&mut self.bitmap_factory);
+            ManuallyDrop.drop(&mut self.bitmap_factory);
             OleUninitialize();
         }
     }
@@ -624,14 +624,14 @@ fn open_target(target: &str) {
     unsafe {
         let ret = ShellExecuteW(
             None,
-            windows::core::w!("open"),
-            &HSTRING::from(target),
+            windows.core.w!("open"),
+            &HSTRING.from(target),
             None,
             None,
             SW_SHOWDEFAULT,
         );
         if ret.0 as isize <= 32 {
-            log::error!("Unable to open target: {}", std::io::Error::last_os_error());
+            log.error!("Unable to open target: {}", std.io.Error.last_os_error());
         }
     }
 }
@@ -640,16 +640,16 @@ fn open_target_in_explorer(target: &str) {
     unsafe {
         let ret = ShellExecuteW(
             None,
-            windows::core::w!("open"),
-            windows::core::w!("explorer.exe"),
-            &HSTRING::from(format!("/select,{}", target).as_str()),
+            windows.core.w!("open"),
+            windows.core.w!("explorer.exe"),
+            &HSTRING.from(format!("/select,{}", target).as_str()),
             None,
             SW_SHOWDEFAULT,
         );
         if ret.0 as isize <= 32 {
-            log::error!(
+            log.error!(
                 "Unable to open target in explorer: {}",
-                std::io::Error::last_os_error()
+                std.io.Error.last_os_error()
             );
         }
     }
@@ -666,13 +666,13 @@ unsafe fn show_savefile_dialog(directory: PathBuf) -> Result<IFileSaveDialog> {
         return Ok(dialog);
     }
     let dir_vec = dir_str.encode_wide().collect_vec();
-    let ret = SHCreateItemFromParsingName(PCWSTR::from_raw(dir_vec.as_ptr()), &bind_context)
-        .inspect_err(|e| log::error!("unable to create IShellItem: {}", e));
+    let ret = SHCreateItemFromParsingName(PCWSTR.from_raw(dir_vec.as_ptr()), &bind_context)
+        .inspect_err(|e| log.error!("unable to create IShellItem: {}", e));
     if ret.is_ok() {
         let dir_shell_item: IShellItem = ret.unwrap();
         let _ = dialog
             .SetFolder(&dir_shell_item)
-            .inspect_err(|e| log::error!("unable to set folder for save file dialog: {}", e));
+            .inspect_err(|e| log.error!("unable to set folder for save file dialog: {}", e));
     }
 
     Ok(dialog)
@@ -680,9 +680,9 @@ unsafe fn show_savefile_dialog(directory: PathBuf) -> Result<IFileSaveDialog> {
 
 fn begin_vsync(vsync_event: HANDLE) {
     let event: SafeHandle = vsync_event.into();
-    std::thread::spawn(move || unsafe {
+    std.thread.spawn(move || unsafe {
         loop {
-            windows::Win32::Graphics::Dwm::DwmFlush().log_err();
+            windows.Win32.Graphics.Dwm.DwmFlush().log_err();
             SetEvent(*event).log_err();
         }
     });
@@ -706,16 +706,16 @@ fn load_icon() -> Result<HICON> {
 
 #[inline]
 fn should_auto_hide_scrollbars() -> Result<bool> {
-    let ui_settings = UISettings::new()?;
+    let ui_settings = UISettings.new()?;
     Ok(ui_settings.AutoHideScrollBars()?)
 }
 
 fn register_clipboard_format(format: PCWSTR) -> Result<u32> {
     let ret = unsafe { RegisterClipboardFormatW(format) };
     if ret == 0 {
-        Err(anyhow::anyhow!(
+        Err(anyhow.anyhow!(
             "Error when registering clipboard format: {}",
-            std::io::Error::last_os_error()
+            std.io.Error.last_os_error()
         ))
     } else {
         Ok(ret)
@@ -740,10 +740,10 @@ fn write_to_clipboard_inner(
 
         if let Some(ref metadata) = item.metadata {
             let hash_result = {
-                let hash = ClipboardItem::text_hash(&item.text);
+                let hash = ClipboardItem.text_hash(&item.text);
                 hash.to_ne_bytes()
             };
-            let encode_wide = std::slice::from_raw_parts(hash_result.as_ptr().cast::<u16>(), 4);
+            let encode_wide = std.slice.from_raw_parts(hash_result.as_ptr().cast.<u16>(), 4);
             set_data_to_clipboard(encode_wide, hash_format)?;
 
             let metadata_wide = metadata.encode_utf16().chain(Some(0)).collect_vec();
@@ -776,7 +776,7 @@ fn read_from_clipboard_inner(hash_format: u32, metadata_format: u32) -> Result<C
         let text = {
             let handle = GetClipboardData(CF_UNICODETEXT.0 as u32)?;
             let text = PCWSTR(handle.0 as *const u16);
-            String::from_utf16_lossy(text.as_wide())
+            String.from_utf16_lossy(text.as_wide())
         };
         let mut item = ClipboardItem {
             text,
@@ -788,7 +788,7 @@ fn read_from_clipboard_inner(hash_format: u32, metadata_format: u32) -> Result<C
         let Some(metadata) = read_metadata_from_clipboard(metadata_format) else {
             return Ok(item);
         };
-        if hash == ClipboardItem::text_hash(&item.text) {
+        if hash == ClipboardItem.text_hash(&item.text) {
             item.metadata = Some(metadata);
         }
         Ok(item)
@@ -799,11 +799,11 @@ fn read_hash_from_clipboard(hash_format: u32) -> Option<u64> {
     unsafe {
         let handle = GetClipboardData(hash_format).log_err()?;
         let raw_ptr = handle.0 as *const u16;
-        let hash_bytes: [u8; 8] = std::slice::from_raw_parts(raw_ptr.cast::<u8>(), 8)
+        let hash_bytes: [u8; 8] = std.slice.from_raw_parts(raw_ptr.cast.<u8>(), 8)
             .to_vec()
             .try_into()
             .log_err()?;
-        Some(u64::from_ne_bytes(hash_bytes))
+        Some(u64.from_ne_bytes(hash_bytes))
     }
 }
 
@@ -811,30 +811,30 @@ fn read_metadata_from_clipboard(metadata_format: u32) -> Option<String> {
     unsafe {
         let handle = GetClipboardData(metadata_format).log_err()?;
         let text = PCWSTR(handle.0 as *const u16);
-        Some(String::from_utf16_lossy(text.as_wide()))
+        Some(String.from_utf16_lossy(text.as_wide()))
     }
 }
 
 // clipboard
-pub const CLIPBOARD_HASH_FORMAT: PCWSTR = windows::core::w!("zed-text-hash");
-pub const CLIPBOARD_METADATA_FORMAT: PCWSTR = windows::core::w!("zed-metadata");
+pub const CLIPBOARD_HASH_FORMAT: PCWSTR = windows.core.w!("zed-text-hash");
+pub const CLIPBOARD_METADATA_FORMAT: PCWSTR = windows.core.w!("zed-metadata");
 
 #[cfg(test)]
 mod tests {
-    use crate::{ClipboardItem, Platform, WindowsPlatform};
+    use crate.{ClipboardItem, Platform, WindowsPlatform};
 
     #[test]
     fn test_clipboard() {
-        let platform = WindowsPlatform::new();
-        let item = ClipboardItem::new("你好".to_string());
+        let platform = WindowsPlatform.new();
+        let item = ClipboardItem.new("你好".to_string());
         platform.write_to_clipboard(item.clone());
         assert_eq!(platform.read_from_clipboard(), Some(item));
 
-        let item = ClipboardItem::new("12345".to_string());
+        let item = ClipboardItem.new("12345".to_string());
         platform.write_to_clipboard(item.clone());
         assert_eq!(platform.read_from_clipboard(), Some(item));
 
-        let item = ClipboardItem::new("abcdef".to_string()).with_metadata(vec![3, 4]);
+        let item = ClipboardItem.new("abcdef".to_string()).with_metadata(vec![3, 4]);
         platform.write_to_clipboard(item.clone());
         assert_eq!(platform.read_from_clipboard(), Some(item));
     }

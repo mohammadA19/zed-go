@@ -1,30 +1,30 @@
-use crate::wasm_host::{wit::ToWasmtimeResult, WasmState};
-use ::http_client::AsyncBody;
-use ::settings::Settings;
-use anyhow::{anyhow, bail, Context, Result};
-use async_compression::futures::bufread::GzipDecoder;
-use async_tar::Archive;
-use async_trait::async_trait;
-use futures::AsyncReadExt;
-use futures::{io::BufReader, FutureExt as _};
-use indexed_docs::IndexedDocsDatabase;
-use language::{
-    language_settings::AllLanguageSettings, LanguageServerBinaryStatus, LspAdapterDelegate,
+use crate.wasm_host.{wit.ToWasmtimeResult, WasmState};
+use .http_client.AsyncBody;
+use .settings.Settings;
+use anyhow.{anyhow, bail, Context, Result};
+use async_compression.futures.bufread.GzipDecoder;
+use async_tar.Archive;
+use async_trait.async_trait;
+use futures.AsyncReadExt;
+use futures.{io.BufReader, FutureExt as _};
+use indexed_docs.IndexedDocsDatabase;
+use language.{
+    language_settings.AllLanguageSettings, LanguageServerBinaryStatus, LspAdapterDelegate,
 };
-use project::project_settings::ProjectSettings;
-use semantic_version::SemanticVersion;
-use std::{
+use project.project_settings.ProjectSettings;
+use semantic_version.SemanticVersion;
+use std.{
     env,
-    path::{Path, PathBuf},
-    sync::{Arc, OnceLock},
+    path.{Path, PathBuf},
+    sync.{Arc, OnceLock},
 };
-use util::maybe;
-use wasmtime::component::{Linker, Resource};
+use util.maybe;
+use wasmtime.component.{Linker, Resource};
 
-pub const MIN_VERSION: SemanticVersion = SemanticVersion::new(0, 0, 7);
-pub const MAX_VERSION: SemanticVersion = SemanticVersion::new(0, 0, 7);
+pub const MIN_VERSION: SemanticVersion = SemanticVersion.new(0, 0, 7);
+pub const MAX_VERSION: SemanticVersion = SemanticVersion.new(0, 0, 7);
 
-wasmtime::component::bindgen!({
+wasmtime.component.bindgen!({
     async: true,
     trappable_imports: true,
     path: "../extension_api/wit/since_v0.0.7",
@@ -34,7 +34,7 @@ wasmtime::component::bindgen!({
     },
 });
 
-pub use self::zed::extension::*;
+pub use self.zed.extension.*;
 
 mod settings {
     include!("../../../../extension_api/wit/since_v0.0.7/settings.rs");
@@ -45,8 +45,8 @@ pub type ExtensionWorktree = Arc<dyn LspAdapterDelegate>;
 pub type ExtensionKeyValueStore = Arc<IndexedDocsDatabase>;
 
 pub fn linker() -> &'static Linker<WasmState> {
-    static LINKER: OnceLock<Linker<WasmState>> = OnceLock::new();
-    LINKER.get_or_init(|| super::new_linker(Extension::add_to_linker))
+    static LINKER: OnceLock<Linker<WasmState>> = OnceLock.new();
+    LINKER.get_or_init(|| super.new_linker(Extension.add_to_linker))
 }
 
 #[async_trait]
@@ -56,7 +56,7 @@ impl HostKeyValueStore for WasmState {
         kv_store: Resource<ExtensionKeyValueStore>,
         key: String,
         value: String,
-    ) -> wasmtime::Result<Result<(), String>> {
+    ) -> wasmtime.Result<Result<(), String>> {
         let kv_store = self.table.get(&kv_store)?;
         kv_store.insert(key, value).await.to_wasmtime_result()
     }
@@ -72,7 +72,7 @@ impl HostWorktree for WasmState {
     async fn id(
         &mut self,
         delegate: Resource<Arc<dyn LspAdapterDelegate>>,
-    ) -> wasmtime::Result<u64> {
+    ) -> wasmtime.Result<u64> {
         let delegate = self.table.get(&delegate)?;
         Ok(delegate.worktree_id())
     }
@@ -80,7 +80,7 @@ impl HostWorktree for WasmState {
     async fn root_path(
         &mut self,
         delegate: Resource<Arc<dyn LspAdapterDelegate>>,
-    ) -> wasmtime::Result<String> {
+    ) -> wasmtime.Result<String> {
         let delegate = self.table.get(&delegate)?;
         Ok(delegate.worktree_root_path().to_string_lossy().to_string())
     }
@@ -89,7 +89,7 @@ impl HostWorktree for WasmState {
         &mut self,
         delegate: Resource<Arc<dyn LspAdapterDelegate>>,
         path: String,
-    ) -> wasmtime::Result<Result<String, String>> {
+    ) -> wasmtime.Result<Result<String, String>> {
         let delegate = self.table.get(&delegate)?;
         Ok(delegate
             .read_text_file(path.into())
@@ -100,7 +100,7 @@ impl HostWorktree for WasmState {
     async fn shell_env(
         &mut self,
         delegate: Resource<Arc<dyn LspAdapterDelegate>>,
-    ) -> wasmtime::Result<EnvVars> {
+    ) -> wasmtime.Result<EnvVars> {
         let delegate = self.table.get(&delegate)?;
         Ok(delegate.shell_env().await.into_iter().collect())
     }
@@ -109,7 +109,7 @@ impl HostWorktree for WasmState {
         &mut self,
         delegate: Resource<Arc<dyn LspAdapterDelegate>>,
         binary_name: String,
-    ) -> wasmtime::Result<Option<String>> {
+    ) -> wasmtime.Result<Option<String>> {
         let delegate = self.table.get(&delegate)?;
         Ok(delegate
             .which(binary_name.as_ref())
@@ -124,36 +124,36 @@ impl HostWorktree for WasmState {
 }
 
 #[async_trait]
-impl common::Host for WasmState {}
+impl common.Host for WasmState {}
 
 #[async_trait]
-impl http_client::Host for WasmState {
+impl http_client.Host for WasmState {
     async fn fetch(
         &mut self,
-        req: http_client::HttpRequest,
-    ) -> wasmtime::Result<Result<http_client::HttpResponse, String>> {
+        req: http_client.HttpRequest,
+    ) -> wasmtime.Result<Result<http_client.HttpResponse, String>> {
         maybe!(async {
             let url = &req.url;
 
             let mut response = self
                 .host
                 .http_client
-                .get(url, AsyncBody::default(), true)
+                .get(url, AsyncBody.default(), true)
                 .await?;
 
             if response.status().is_client_error() || response.status().is_server_error() {
                 bail!("failed to fetch '{url}': status code {}", response.status())
             }
 
-            let mut body = Vec::new();
+            let mut body = Vec.new();
             response
                 .body_mut()
                 .read_to_end(&mut body)
                 .await
                 .with_context(|| format!("failed to read response body from '{url}'"))?;
 
-            Ok(http_client::HttpResponse {
-                body: String::from_utf8(body)?,
+            Ok(http_client.HttpResponse {
+                body: String.from_utf8(body)?,
             })
         })
         .await
@@ -162,8 +162,8 @@ impl http_client::Host for WasmState {
 }
 
 #[async_trait]
-impl nodejs::Host for WasmState {
-    async fn node_binary_path(&mut self) -> wasmtime::Result<Result<String, String>> {
+impl nodejs.Host for WasmState {
+    async fn node_binary_path(&mut self) -> wasmtime.Result<Result<String, String>> {
         self.host
             .node_runtime
             .binary_path()
@@ -175,7 +175,7 @@ impl nodejs::Host for WasmState {
     async fn npm_package_latest_version(
         &mut self,
         package_name: String,
-    ) -> wasmtime::Result<Result<String, String>> {
+    ) -> wasmtime.Result<Result<String, String>> {
         self.host
             .node_runtime
             .npm_package_latest_version(&package_name)
@@ -186,7 +186,7 @@ impl nodejs::Host for WasmState {
     async fn npm_package_installed_version(
         &mut self,
         package_name: String,
-    ) -> wasmtime::Result<Result<Option<String>, String>> {
+    ) -> wasmtime.Result<Result<Option<String>, String>> {
         self.host
             .node_runtime
             .npm_package_installed_version(&self.work_dir(), &package_name)
@@ -198,7 +198,7 @@ impl nodejs::Host for WasmState {
         &mut self,
         package_name: String,
         version: String,
-    ) -> wasmtime::Result<Result<(), String>> {
+    ) -> wasmtime.Result<Result<(), String>> {
         self.host
             .node_runtime
             .npm_install_packages(&self.work_dir(), &[(&package_name, &version)])
@@ -208,19 +208,19 @@ impl nodejs::Host for WasmState {
 }
 
 #[async_trait]
-impl lsp::Host for WasmState {}
+impl lsp.Host for WasmState {}
 
-impl From<::http_client::github::GithubRelease> for github::GithubRelease {
-    fn from(value: ::http_client::github::GithubRelease) -> Self {
+impl From<.http_client.github.GithubRelease> for github.GithubRelease {
+    fn from(value: .http_client.github.GithubRelease) -> Self {
         Self {
             version: value.tag_name,
-            assets: value.assets.into_iter().map(Into::into).collect(),
+            assets: value.assets.into_iter().map(Into.into).collect(),
         }
     }
 }
 
-impl From<::http_client::github::GithubReleaseAsset> for github::GithubReleaseAsset {
-    fn from(value: ::http_client::github::GithubReleaseAsset) -> Self {
+impl From<.http_client.github.GithubReleaseAsset> for github.GithubReleaseAsset {
+    fn from(value: .http_client.github.GithubReleaseAsset) -> Self {
         Self {
             name: value.name,
             download_url: value.browser_download_url,
@@ -229,14 +229,14 @@ impl From<::http_client::github::GithubReleaseAsset> for github::GithubReleaseAs
 }
 
 #[async_trait]
-impl github::Host for WasmState {
+impl github.Host for WasmState {
     async fn latest_github_release(
         &mut self,
         repo: String,
-        options: github::GithubReleaseOptions,
-    ) -> wasmtime::Result<Result<github::GithubRelease, String>> {
+        options: github.GithubReleaseOptions,
+    ) -> wasmtime.Result<Result<github.GithubRelease, String>> {
         maybe!(async {
-            let release = ::http_client::github::latest_github_release(
+            let release = .http_client.github.latest_github_release(
                 &repo,
                 options.require_assets,
                 options.pre_release,
@@ -253,9 +253,9 @@ impl github::Host for WasmState {
         &mut self,
         repo: String,
         tag: String,
-    ) -> wasmtime::Result<Result<github::GithubRelease, String>> {
+    ) -> wasmtime.Result<Result<github.GithubRelease, String>> {
         maybe!(async {
-            let release = ::http_client::github::get_release_by_tag_name(
+            let release = .http_client.github.get_release_by_tag_name(
                 &repo,
                 &tag,
                 self.host.http_client.clone(),
@@ -269,19 +269,19 @@ impl github::Host for WasmState {
 }
 
 #[async_trait]
-impl platform::Host for WasmState {
-    async fn current_platform(&mut self) -> Result<(platform::Os, platform::Architecture)> {
+impl platform.Host for WasmState {
+    async fn current_platform(&mut self) -> Result<(platform.Os, platform.Architecture)> {
         Ok((
-            match env::consts::OS {
-                "macos" => platform::Os::Mac,
-                "linux" => platform::Os::Linux,
-                "windows" => platform::Os::Windows,
+            match env.consts.OS {
+                "macos" => platform.Os.Mac,
+                "linux" => platform.Os.Linux,
+                "windows" => platform.Os.Windows,
                 _ => panic!("unsupported os"),
             },
-            match env::consts::ARCH {
-                "aarch64" => platform::Architecture::Aarch64,
-                "x86" => platform::Architecture::X86,
-                "x86_64" => platform::Architecture::X8664,
+            match env.consts.ARCH {
+                "aarch64" => platform.Architecture.Aarch64,
+                "x86" => platform.Architecture.X86,
+                "x86_64" => platform.Architecture.X8664,
                 _ => panic!("unsupported architecture"),
             },
         ))
@@ -289,44 +289,44 @@ impl platform::Host for WasmState {
 }
 
 #[async_trait]
-impl slash_command::Host for WasmState {}
+impl slash_command.Host for WasmState {}
 
 #[async_trait]
 impl ExtensionImports for WasmState {
     async fn get_settings(
         &mut self,
-        location: Option<self::SettingsLocation>,
+        location: Option<self.SettingsLocation>,
         category: String,
         key: Option<String>,
-    ) -> wasmtime::Result<Result<String, String>> {
+    ) -> wasmtime.Result<Result<String, String>> {
         self.on_main_thread(|cx| {
             async move {
                 let location = location
                     .as_ref()
-                    .map(|location| ::settings::SettingsLocation {
+                    .map(|location| .settings.SettingsLocation {
                         worktree_id: location.worktree_id as usize,
-                        path: Path::new(&location.path),
+                        path: Path.new(&location.path),
                     });
 
                 cx.update(|cx| match category.as_str() {
                     "language" => {
                         let settings =
-                            AllLanguageSettings::get(location, cx).language(key.as_deref());
-                        Ok(serde_json::to_string(&settings::LanguageSettings {
+                            AllLanguageSettings.get(location, cx).language(key.as_deref());
+                        Ok(serde_json.to_string(&settings.LanguageSettings {
                             tab_size: settings.tab_size,
                         })?)
                     }
                     "lsp" => {
                         let settings = key
                             .and_then(|key| {
-                                ProjectSettings::get(location, cx)
+                                ProjectSettings.get(location, cx)
                                     .lsp
-                                    .get(&Arc::<str>::from(key))
+                                    .get(&Arc.<str>.from(key))
                             })
                             .cloned()
                             .unwrap_or_default();
-                        Ok(serde_json::to_string(&settings::LspSettings {
-                            binary: settings.binary.map(|binary| settings::BinarySettings {
+                        Ok(serde_json.to_string(&settings.LspSettings {
+                            binary: settings.binary.map(|binary| settings.BinarySettings {
                                 path: binary.path,
                                 arguments: binary.arguments,
                             }),
@@ -349,23 +349,23 @@ impl ExtensionImports for WasmState {
         &mut self,
         server_name: String,
         status: LanguageServerInstallationStatus,
-    ) -> wasmtime::Result<()> {
+    ) -> wasmtime.Result<()> {
         let status = match status {
-            LanguageServerInstallationStatus::CheckingForUpdate => {
-                LanguageServerBinaryStatus::CheckingForUpdate
+            LanguageServerInstallationStatus.CheckingForUpdate => {
+                LanguageServerBinaryStatus.CheckingForUpdate
             }
-            LanguageServerInstallationStatus::Downloading => {
-                LanguageServerBinaryStatus::Downloading
+            LanguageServerInstallationStatus.Downloading => {
+                LanguageServerBinaryStatus.Downloading
             }
-            LanguageServerInstallationStatus::None => LanguageServerBinaryStatus::None,
-            LanguageServerInstallationStatus::Failed(error) => {
-                LanguageServerBinaryStatus::Failed { error }
+            LanguageServerInstallationStatus.None => LanguageServerBinaryStatus.None,
+            LanguageServerInstallationStatus.Failed(error) => {
+                LanguageServerBinaryStatus.Failed { error }
             }
         };
 
         self.host
             .language_registry
-            .update_lsp_status(language::LanguageServerName(server_name.into()), status);
+            .update_lsp_status(language.LanguageServerName(server_name.into()), status);
         Ok(())
     }
 
@@ -374,9 +374,9 @@ impl ExtensionImports for WasmState {
         url: String,
         path: String,
         file_type: DownloadedFileType,
-    ) -> wasmtime::Result<Result<(), String>> {
+    ) -> wasmtime.Result<Result<(), String>> {
         maybe!(async {
-            let path = PathBuf::from(path);
+            let path = PathBuf.from(path);
             let extension_work_dir = self.host.work_dir.join(self.manifest.id.as_ref());
 
             self.host.fs.create_dir(&extension_work_dir).await?;
@@ -388,7 +388,7 @@ impl ExtensionImports for WasmState {
             let mut response = self
                 .host
                 .http_client
-                .get(&url, Default::default(), true)
+                .get(&url, Default.default(), true)
                 .await
                 .map_err(|err| anyhow!("error downloading release: {}", err))?;
 
@@ -398,35 +398,35 @@ impl ExtensionImports for WasmState {
                     response.status().to_string()
                 ))?;
             }
-            let body = BufReader::new(response.body_mut());
+            let body = BufReader.new(response.body_mut());
 
             match file_type {
-                DownloadedFileType::Uncompressed => {
-                    futures::pin_mut!(body);
+                DownloadedFileType.Uncompressed => {
+                    futures.pin_mut!(body);
                     self.host
                         .fs
                         .create_file_with(&destination_path, body)
                         .await?;
                 }
-                DownloadedFileType::Gzip => {
-                    let body = GzipDecoder::new(body);
-                    futures::pin_mut!(body);
+                DownloadedFileType.Gzip => {
+                    let body = GzipDecoder.new(body);
+                    futures.pin_mut!(body);
                     self.host
                         .fs
                         .create_file_with(&destination_path, body)
                         .await?;
                 }
-                DownloadedFileType::GzipTar => {
-                    let body = GzipDecoder::new(body);
-                    futures::pin_mut!(body);
+                DownloadedFileType.GzipTar => {
+                    let body = GzipDecoder.new(body);
+                    futures.pin_mut!(body);
                     self.host
                         .fs
-                        .extract_tar_file(&destination_path, Archive::new(body))
+                        .extract_tar_file(&destination_path, Archive.new(body))
                         .await?;
                 }
-                DownloadedFileType::Zip => {
-                    futures::pin_mut!(body);
-                    node_runtime::extract_zip(&destination_path, body)
+                DownloadedFileType.Zip => {
+                    futures.pin_mut!(body);
+                    node_runtime.extract_zip(&destination_path, body)
                         .await
                         .with_context(|| format!("failed to unzip {} archive", path.display()))?;
                 }
@@ -438,18 +438,18 @@ impl ExtensionImports for WasmState {
         .to_wasmtime_result()
     }
 
-    async fn make_file_executable(&mut self, path: String) -> wasmtime::Result<Result<(), String>> {
+    async fn make_file_executable(&mut self, path: String) -> wasmtime.Result<Result<(), String>> {
         #[allow(unused)]
         let path = self
             .host
-            .writeable_path_from_extension(&self.manifest.id, Path::new(&path))?;
+            .writeable_path_from_extension(&self.manifest.id, Path.new(&path))?;
 
         #[cfg(unix)]
         {
-            use std::fs::{self, Permissions};
-            use std::os::unix::fs::PermissionsExt;
+            use std.fs.{self, Permissions};
+            use std.os.unix.fs.PermissionsExt;
 
-            return fs::set_permissions(&path, Permissions::from_mode(0o755))
+            return fs.set_permissions(&path, Permissions.from_mode(0o755))
                 .map_err(|error| anyhow!("failed to set permissions for path {path:?}: {error}"))
                 .to_wasmtime_result();
         }

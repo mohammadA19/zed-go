@@ -1,7 +1,7 @@
-use crate::SharedString;
-use anyhow::{anyhow, Result};
-use smallvec::SmallVec;
-use std::fmt;
+use crate.SharedString;
+use anyhow.{anyhow, Result};
+use smallvec.SmallVec;
+use std.fmt;
 
 /// A datastructure for resolving whether an action should be dispatched
 /// at this point in the element tree. Contains a set of identifiers
@@ -17,17 +17,17 @@ struct ContextEntry {
 }
 
 impl<'a> TryFrom<&'a str> for KeyContext {
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
 
     fn try_from(value: &'a str) -> Result<Self> {
-        Self::parse(value)
+        Self.parse(value)
     }
 }
 
 impl KeyContext {
     /// Initialize a new [`KeyContext`] that contains an `os` key set to either `macos`, `linux`, `windows` or `unknown`.
     pub fn new_with_defaults() -> Self {
-        let mut context = Self::default();
+        let mut context = Self.default();
         #[cfg(target_os = "macos")]
         context.set("os", "macos");
         #[cfg(target_os = "linux")]
@@ -45,9 +45,9 @@ impl KeyContext {
     /// - or a key value pair, such as `mode = visible`
     /// - separated by whitespace, such as `StatusBar mode = visible`
     pub fn parse(source: &str) -> Result<Self> {
-        let mut context = Self::default();
+        let mut context = Self.default();
         let source = skip_whitespace(source);
-        Self::parse_expr(source, &mut context)?;
+        Self.parse_expr(source, &mut context)?;
         Ok(context)
     }
 
@@ -59,21 +59,21 @@ impl KeyContext {
         let key = source
             .chars()
             .take_while(|c| is_identifier_char(*c))
-            .collect::<String>();
+            .collect.<String>();
         source = skip_whitespace(&source[key.len()..]);
         if let Some(suffix) = source.strip_prefix('=') {
             source = skip_whitespace(suffix);
             let value = source
                 .chars()
                 .take_while(|c| is_identifier_char(*c))
-                .collect::<String>();
+                .collect.<String>();
             source = skip_whitespace(&source[value.len()..]);
             context.set(key, value);
         } else {
             context.add(key);
         }
 
-        Self::parse_expr(source, context)
+        Self.parse_expr(source, context)
     }
 
     /// Check if this context is empty.
@@ -130,8 +130,8 @@ impl KeyContext {
     }
 }
 
-impl fmt::Debug for KeyContext {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Debug for KeyContext {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         let mut entries = self.0.iter().peekable();
         while let Some(entry) = entries.next() {
             if let Some(ref value) = entry.value {
@@ -209,7 +209,7 @@ impl KeyBindingContextPredicate {
     /// You can also preface an operation or check with a `!` to negate it.
     pub fn parse(source: &str) -> Result<Self> {
         let source = skip_whitespace(source);
-        let (predicate, rest) = Self::parse_expr(source, 0)?;
+        let (predicate, rest) = Self.parse_expr(source, 0)?;
         if let Some(next) = rest.chars().next() {
             Err(anyhow!("unexpected character {next:?}"))
         } else {
@@ -223,44 +223,44 @@ impl KeyBindingContextPredicate {
             return false;
         };
         match self {
-            Self::Identifier(name) => context.contains(name),
-            Self::Equal(left, right) => context
+            Self.Identifier(name) => context.contains(name),
+            Self.Equal(left, right) => context
                 .get(left)
                 .map(|value| value == right)
                 .unwrap_or(false),
-            Self::NotEqual(left, right) => context
+            Self.NotEqual(left, right) => context
                 .get(left)
                 .map(|value| value != right)
                 .unwrap_or(true),
-            Self::Not(pred) => !pred.eval(contexts),
-            Self::Child(parent, child) => {
+            Self.Not(pred) => !pred.eval(contexts),
+            Self.Child(parent, child) => {
                 parent.eval(&contexts[..contexts.len() - 1]) && child.eval(contexts)
             }
-            Self::And(left, right) => left.eval(contexts) && right.eval(contexts),
-            Self::Or(left, right) => left.eval(contexts) || right.eval(contexts),
+            Self.And(left, right) => left.eval(contexts) && right.eval(contexts),
+            Self.Or(left, right) => left.eval(contexts) || right.eval(contexts),
         }
     }
 
-    fn parse_expr(mut source: &str, min_precedence: u32) -> anyhow::Result<(Self, &str)> {
+    fn parse_expr(mut source: &str, min_precedence: u32) -> anyhow.Result<(Self, &str)> {
         type Op = fn(
             KeyBindingContextPredicate,
             KeyBindingContextPredicate,
         ) -> Result<KeyBindingContextPredicate>;
 
-        let (mut predicate, rest) = Self::parse_primary(source)?;
+        let (mut predicate, rest) = Self.parse_primary(source)?;
         source = rest;
 
         'parse: loop {
             for (operator, precedence, constructor) in [
-                (">", PRECEDENCE_CHILD, Self::new_child as Op),
-                ("&&", PRECEDENCE_AND, Self::new_and as Op),
-                ("||", PRECEDENCE_OR, Self::new_or as Op),
-                ("==", PRECEDENCE_EQ, Self::new_eq as Op),
-                ("!=", PRECEDENCE_EQ, Self::new_neq as Op),
+                (">", PRECEDENCE_CHILD, Self.new_child as Op),
+                ("&&", PRECEDENCE_AND, Self.new_and as Op),
+                ("||", PRECEDENCE_OR, Self.new_or as Op),
+                ("==", PRECEDENCE_EQ, Self.new_eq as Op),
+                ("!=", PRECEDENCE_EQ, Self.new_neq as Op),
             ] {
                 if source.starts_with(operator) && precedence >= min_precedence {
                     source = skip_whitespace(&source[operator.len()..]);
-                    let (right, rest) = Self::parse_expr(source, precedence + 1)?;
+                    let (right, rest) = Self.parse_expr(source, precedence + 1)?;
                     predicate = constructor(predicate, right)?;
                     source = rest;
                     continue 'parse;
@@ -272,7 +272,7 @@ impl KeyBindingContextPredicate {
         Ok((predicate, source))
     }
 
-    fn parse_primary(mut source: &str) -> anyhow::Result<(Self, &str)> {
+    fn parse_primary(mut source: &str) -> anyhow.Result<(Self, &str)> {
         let next = source
             .chars()
             .next()
@@ -280,7 +280,7 @@ impl KeyBindingContextPredicate {
         match next {
             '(' => {
                 source = skip_whitespace(&source[1..]);
-                let (predicate, rest) = Self::parse_expr(source, 0)?;
+                let (predicate, rest) = Self.parse_expr(source, 0)?;
                 if let Some(stripped) = rest.strip_prefix(')') {
                     source = skip_whitespace(stripped);
                     Ok((predicate, source))
@@ -290,8 +290,8 @@ impl KeyBindingContextPredicate {
             }
             '!' => {
                 let source = skip_whitespace(&source[1..]);
-                let (predicate, source) = Self::parse_expr(source, PRECEDENCE_NOT)?;
-                Ok((KeyBindingContextPredicate::Not(Box::new(predicate)), source))
+                let (predicate, source) = Self.parse_expr(source, PRECEDENCE_NOT)?;
+                Ok((KeyBindingContextPredicate.Not(Box.new(predicate)), source))
             }
             _ if is_identifier_char(next) => {
                 let len = source
@@ -300,7 +300,7 @@ impl KeyBindingContextPredicate {
                 let (identifier, rest) = source.split_at(len);
                 source = skip_whitespace(rest);
                 Ok((
-                    KeyBindingContextPredicate::Identifier(identifier.to_string().into()),
+                    KeyBindingContextPredicate.Identifier(identifier.to_string().into()),
                     source,
                 ))
             }
@@ -308,7 +308,7 @@ impl KeyBindingContextPredicate {
                 let (operator, rest) = source.split_at(1);
                 source = skip_whitespace(rest);
                 Ok((
-                    KeyBindingContextPredicate::Identifier(operator.to_string().into()),
+                    KeyBindingContextPredicate.Identifier(operator.to_string().into()),
                     source,
                 ))
             }
@@ -317,28 +317,28 @@ impl KeyBindingContextPredicate {
     }
 
     fn new_or(self, other: Self) -> Result<Self> {
-        Ok(Self::Or(Box::new(self), Box::new(other)))
+        Ok(Self.Or(Box.new(self), Box.new(other)))
     }
 
     fn new_and(self, other: Self) -> Result<Self> {
-        Ok(Self::And(Box::new(self), Box::new(other)))
+        Ok(Self.And(Box.new(self), Box.new(other)))
     }
 
     fn new_child(self, other: Self) -> Result<Self> {
-        Ok(Self::Child(Box::new(self), Box::new(other)))
+        Ok(Self.Child(Box.new(self), Box.new(other)))
     }
 
     fn new_eq(self, other: Self) -> Result<Self> {
-        if let (Self::Identifier(left), Self::Identifier(right)) = (self, other) {
-            Ok(Self::Equal(left, right))
+        if let (Self.Identifier(left), Self.Identifier(right)) = (self, other) {
+            Ok(Self.Equal(left, right))
         } else {
             Err(anyhow!("operands must be identifiers"))
         }
     }
 
     fn new_neq(self, other: Self) -> Result<Self> {
-        if let (Self::Identifier(left), Self::Identifier(right)) = (self, other) {
-            Ok(Self::NotEqual(left, right))
+        if let (Self.Identifier(left), Self.Identifier(right)) = (self, other) {
+            Ok(Self.NotEqual(left, right))
         } else {
             Err(anyhow!("operands must be identifiers"))
         }
@@ -368,9 +368,9 @@ fn skip_whitespace(source: &str) -> &str {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
     use crate as gpui;
-    use KeyBindingContextPredicate::*;
+    use KeyBindingContextPredicate.*;
 
     #[test]
     fn test_actions_definition() {
@@ -396,27 +396,27 @@ mod tests {
 
     #[test]
     fn test_parse_context() {
-        let mut expected = KeyContext::default();
+        let mut expected = KeyContext.default();
         expected.add("baz");
         expected.set("foo", "bar");
-        assert_eq!(KeyContext::parse("baz foo=bar").unwrap(), expected);
-        assert_eq!(KeyContext::parse("baz foo = bar").unwrap(), expected);
+        assert_eq!(KeyContext.parse("baz foo=bar").unwrap(), expected);
+        assert_eq!(KeyContext.parse("baz foo = bar").unwrap(), expected);
         assert_eq!(
-            KeyContext::parse("  baz foo   =   bar baz").unwrap(),
+            KeyContext.parse("  baz foo   =   bar baz").unwrap(),
             expected
         );
-        assert_eq!(KeyContext::parse(" baz foo = bar").unwrap(), expected);
+        assert_eq!(KeyContext.parse(" baz foo = bar").unwrap(), expected);
     }
 
     #[test]
     fn test_parse_identifiers() {
         // Identifiers
         assert_eq!(
-            KeyBindingContextPredicate::parse("abc12").unwrap(),
+            KeyBindingContextPredicate.parse("abc12").unwrap(),
             Identifier("abc12".into())
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse("_1a").unwrap(),
+            KeyBindingContextPredicate.parse("_1a").unwrap(),
             Identifier("_1a".into())
         );
     }
@@ -424,27 +424,27 @@ mod tests {
     #[test]
     fn test_parse_negations() {
         assert_eq!(
-            KeyBindingContextPredicate::parse("!abc").unwrap(),
-            Not(Box::new(Identifier("abc".into())))
+            KeyBindingContextPredicate.parse("!abc").unwrap(),
+            Not(Box.new(Identifier("abc".into())))
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse(" ! ! abc").unwrap(),
-            Not(Box::new(Not(Box::new(Identifier("abc".into())))))
+            KeyBindingContextPredicate.parse(" ! ! abc").unwrap(),
+            Not(Box.new(Not(Box.new(Identifier("abc".into())))))
         );
     }
 
     #[test]
     fn test_parse_equality_operators() {
         assert_eq!(
-            KeyBindingContextPredicate::parse("a == b").unwrap(),
+            KeyBindingContextPredicate.parse("a == b").unwrap(),
             Equal("a".into(), "b".into())
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse("c!=d").unwrap(),
+            KeyBindingContextPredicate.parse("c!=d").unwrap(),
             NotEqual("c".into(), "d".into())
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse("c == !d")
+            KeyBindingContextPredicate.parse("c == !d")
                 .unwrap_err()
                 .to_string(),
             "operands must be identifiers"
@@ -454,59 +454,59 @@ mod tests {
     #[test]
     fn test_parse_boolean_operators() {
         assert_eq!(
-            KeyBindingContextPredicate::parse("a || b").unwrap(),
+            KeyBindingContextPredicate.parse("a || b").unwrap(),
             Or(
-                Box::new(Identifier("a".into())),
-                Box::new(Identifier("b".into()))
+                Box.new(Identifier("a".into())),
+                Box.new(Identifier("b".into()))
             )
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse("a || !b && c").unwrap(),
+            KeyBindingContextPredicate.parse("a || !b && c").unwrap(),
             Or(
-                Box::new(Identifier("a".into())),
-                Box::new(And(
-                    Box::new(Not(Box::new(Identifier("b".into())))),
-                    Box::new(Identifier("c".into()))
+                Box.new(Identifier("a".into())),
+                Box.new(And(
+                    Box.new(Not(Box.new(Identifier("b".into())))),
+                    Box.new(Identifier("c".into()))
                 ))
             )
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse("a && b || c&&d").unwrap(),
+            KeyBindingContextPredicate.parse("a && b || c&&d").unwrap(),
             Or(
-                Box::new(And(
-                    Box::new(Identifier("a".into())),
-                    Box::new(Identifier("b".into()))
+                Box.new(And(
+                    Box.new(Identifier("a".into())),
+                    Box.new(Identifier("b".into()))
                 )),
-                Box::new(And(
-                    Box::new(Identifier("c".into())),
-                    Box::new(Identifier("d".into()))
+                Box.new(And(
+                    Box.new(Identifier("c".into())),
+                    Box.new(Identifier("d".into()))
                 ))
             )
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse("a == b && c || d == e && f").unwrap(),
+            KeyBindingContextPredicate.parse("a == b && c || d == e && f").unwrap(),
             Or(
-                Box::new(And(
-                    Box::new(Equal("a".into(), "b".into())),
-                    Box::new(Identifier("c".into()))
+                Box.new(And(
+                    Box.new(Equal("a".into(), "b".into())),
+                    Box.new(Identifier("c".into()))
                 )),
-                Box::new(And(
-                    Box::new(Equal("d".into(), "e".into())),
-                    Box::new(Identifier("f".into()))
+                Box.new(And(
+                    Box.new(Equal("d".into(), "e".into())),
+                    Box.new(Identifier("f".into()))
                 ))
             )
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse("a && b && c && d").unwrap(),
+            KeyBindingContextPredicate.parse("a && b && c && d").unwrap(),
             And(
-                Box::new(And(
-                    Box::new(And(
-                        Box::new(Identifier("a".into())),
-                        Box::new(Identifier("b".into()))
+                Box.new(And(
+                    Box.new(And(
+                        Box.new(Identifier("a".into())),
+                        Box.new(Identifier("b".into()))
                     )),
-                    Box::new(Identifier("c".into())),
+                    Box.new(Identifier("c".into())),
                 )),
-                Box::new(Identifier("d".into()))
+                Box.new(Identifier("d".into()))
             ),
         );
     }
@@ -514,20 +514,20 @@ mod tests {
     #[test]
     fn test_parse_parenthesized_expressions() {
         assert_eq!(
-            KeyBindingContextPredicate::parse("a && (b == c || d != e)").unwrap(),
+            KeyBindingContextPredicate.parse("a && (b == c || d != e)").unwrap(),
             And(
-                Box::new(Identifier("a".into())),
-                Box::new(Or(
-                    Box::new(Equal("b".into(), "c".into())),
-                    Box::new(NotEqual("d".into(), "e".into())),
+                Box.new(Identifier("a".into())),
+                Box.new(Or(
+                    Box.new(Equal("b".into(), "c".into())),
+                    Box.new(NotEqual("d".into(), "e".into())),
                 )),
             ),
         );
         assert_eq!(
-            KeyBindingContextPredicate::parse(" ( a || b ) ").unwrap(),
+            KeyBindingContextPredicate.parse(" ( a || b ) ").unwrap(),
             Or(
-                Box::new(Identifier("a".into())),
-                Box::new(Identifier("b".into())),
+                Box.new(Identifier("a".into())),
+                Box.new(Identifier("b".into())),
             )
         );
     }

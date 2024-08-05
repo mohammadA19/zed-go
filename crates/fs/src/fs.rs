@@ -1,48 +1,48 @@
-use anyhow::{anyhow, Result};
-use git::GitHostingProviderRegistry;
+use anyhow.{anyhow, Result};
+use git.GitHostingProviderRegistry;
 
 #[cfg(target_os = "linux")]
-use ashpd::desktop::trash;
+use ashpd.desktop.trash;
 #[cfg(target_os = "linux")]
-use std::{fs::File, os::fd::AsFd};
+use std.{fs.File, os.fd.AsFd};
 
 #[cfg(unix)]
-use std::os::unix::fs::MetadataExt;
+use std.os.unix.fs.MetadataExt;
 
-use async_tar::Archive;
-use futures::{future::BoxFuture, AsyncRead, Stream, StreamExt};
-use git::repository::{GitRepository, RealGitRepository};
-use gpui::{AppContext, Global, ReadGlobal};
-use rope::Rope;
-use smol::io::AsyncWriteExt;
-use std::{
-    io::{self, Write},
-    path::{Component, Path, PathBuf},
-    pin::Pin,
-    sync::Arc,
-    time::{Duration, SystemTime},
+use async_tar.Archive;
+use futures.{future.BoxFuture, AsyncRead, Stream, StreamExt};
+use git.repository.{GitRepository, RealGitRepository};
+use gpui.{AppContext, Global, ReadGlobal};
+use rope.Rope;
+use smol.io.AsyncWriteExt;
+use std.{
+    io.{self, Write},
+    path.{Component, Path, PathBuf},
+    pin.Pin,
+    sync.Arc,
+    time.{Duration, SystemTime},
 };
-use tempfile::{NamedTempFile, TempDir};
-use text::LineEnding;
-use util::ResultExt;
+use tempfile.{NamedTempFile, TempDir};
+use text.LineEnding;
+use util.ResultExt;
 
 #[cfg(any(test, feature = "test-support"))]
-use collections::{btree_map, BTreeMap};
+use collections.{btree_map, BTreeMap};
 #[cfg(any(test, feature = "test-support"))]
-use git::repository::{FakeGitRepositoryState, GitFileStatus};
+use git.repository.{FakeGitRepositoryState, GitFileStatus};
 #[cfg(any(test, feature = "test-support"))]
-use parking_lot::Mutex;
+use parking_lot.Mutex;
 #[cfg(any(test, feature = "test-support"))]
-use smol::io::AsyncReadExt;
+use smol.io.AsyncReadExt;
 #[cfg(any(test, feature = "test-support"))]
-use std::ffi::OsStr;
+use std.ffi.OsStr;
 
 pub trait Watcher: Send + Sync {
     fn add(&self, path: &Path) -> Result<()>;
     fn remove(&self, path: &Path) -> Result<()>;
 }
 
-#[async_trait::async_trait]
+#[async_trait.async_trait]
 pub trait Fs: Send + Sync {
     async fn create_dir(&self, path: &Path) -> Result<()>;
     async fn create_symlink(&self, path: &Path, target: PathBuf) -> Result<()>;
@@ -67,9 +67,9 @@ pub trait Fs: Send + Sync {
     async fn trash_file(&self, path: &Path, options: RemoveOptions) -> Result<()> {
         self.remove_file(path, options).await
     }
-    async fn open_sync(&self, path: &Path) -> Result<Box<dyn io::Read>>;
+    async fn open_sync(&self, path: &Path) -> Result<Box<dyn io.Read>>;
     async fn load(&self, path: &Path) -> Result<String> {
-        Ok(String::from_utf8(self.load_bytes(path).await?)?)
+        Ok(String.from_utf8(self.load_bytes(path).await?)?)
     }
     async fn load_bytes(&self, path: &Path) -> Result<Vec<u8>>;
     async fn atomic_write(&self, path: PathBuf, text: String) -> Result<()>;
@@ -110,7 +110,7 @@ impl Global for GlobalFs {}
 impl dyn Fs {
     /// Returns the global [`Fs`].
     pub fn global(cx: &AppContext) -> Arc<Self> {
-        GlobalFs::global(cx).0.clone()
+        GlobalFs.global(cx).0.clone()
     }
 
     /// Sets the global [`Fs`].
@@ -171,28 +171,28 @@ impl RealFs {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait.async_trait]
 impl Fs for RealFs {
     async fn create_dir(&self, path: &Path) -> Result<()> {
-        Ok(smol::fs::create_dir_all(path).await?)
+        Ok(smol.fs.create_dir_all(path).await?)
     }
 
     async fn create_symlink(&self, path: &Path, target: PathBuf) -> Result<()> {
         #[cfg(unix)]
-        smol::fs::unix::symlink(target, path).await?;
+        smol.fs.unix.symlink(target, path).await?;
 
         #[cfg(windows)]
-        if smol::fs::metadata(&target).await?.is_dir() {
-            smol::fs::windows::symlink_dir(target, path).await?
+        if smol.fs.metadata(&target).await?.is_dir() {
+            smol.fs.windows.symlink_dir(target, path).await?
         } else {
-            smol::fs::windows::symlink_file(target, path).await?
+            smol.fs.windows.symlink_file(target, path).await?
         }
 
         Ok(())
     }
 
     async fn create_file(&self, path: &Path, options: CreateOptions) -> Result<()> {
-        let mut open_options = smol::fs::OpenOptions::new();
+        let mut open_options = smol.fs.OpenOptions.new();
         open_options.write(true).create(true);
         if options.overwrite {
             open_options.truncate(true);
@@ -208,8 +208,8 @@ impl Fs for RealFs {
         path: &Path,
         content: Pin<&mut (dyn AsyncRead + Send)>,
     ) -> Result<()> {
-        let mut file = smol::fs::File::create(&path).await?;
-        futures::io::copy(content, &mut file).await?;
+        let mut file = smol.fs.File.create(&path).await?;
+        futures.io.copy(content, &mut file).await?;
         Ok(())
     }
 
@@ -223,7 +223,7 @@ impl Fs for RealFs {
     }
 
     async fn copy_file(&self, source: &Path, target: &Path, options: CopyOptions) -> Result<()> {
-        if !options.overwrite && smol::fs::metadata(target).await.is_ok() {
+        if !options.overwrite && smol.fs.metadata(target).await.is_ok() {
             if options.ignore_if_exists {
                 return Ok(());
             } else {
@@ -231,12 +231,12 @@ impl Fs for RealFs {
             }
         }
 
-        smol::fs::copy(source, target).await?;
+        smol.fs.copy(source, target).await?;
         Ok(())
     }
 
     async fn rename(&self, source: &Path, target: &Path, options: RenameOptions) -> Result<()> {
-        if !options.overwrite && smol::fs::metadata(target).await.is_ok() {
+        if !options.overwrite && smol.fs.metadata(target).await.is_ok() {
             if options.ignore_if_exists {
                 return Ok(());
             } else {
@@ -244,19 +244,19 @@ impl Fs for RealFs {
             }
         }
 
-        smol::fs::rename(source, target).await?;
+        smol.fs.rename(source, target).await?;
         Ok(())
     }
 
     async fn remove_dir(&self, path: &Path, options: RemoveOptions) -> Result<()> {
         let result = if options.recursive {
-            smol::fs::remove_dir_all(path).await
+            smol.fs.remove_dir_all(path).await
         } else {
-            smol::fs::remove_dir(path).await
+            smol.fs.remove_dir(path).await
         };
         match result {
             Ok(()) => Ok(()),
-            Err(err) if err.kind() == io::ErrorKind::NotFound && options.ignore_if_not_exists => {
+            Err(err) if err.kind() == io.ErrorKind.NotFound && options.ignore_if_not_exists => {
                 Ok(())
             }
             Err(err) => Err(err)?,
@@ -279,9 +279,9 @@ impl Fs for RealFs {
             }
         }
 
-        match smol::fs::remove_file(path).await {
+        match smol.fs.remove_file(path).await {
             Ok(()) => Ok(()),
-            Err(err) if err.kind() == io::ErrorKind::NotFound && options.ignore_if_not_exists => {
+            Err(err) if err.kind() == io.ErrorKind.NotFound && options.ignore_if_not_exists => {
                 Ok(())
             }
             Err(err) => Err(err)?,
@@ -290,15 +290,15 @@ impl Fs for RealFs {
 
     #[cfg(target_os = "macos")]
     async fn trash_file(&self, path: &Path, _options: RemoveOptions) -> Result<()> {
-        use cocoa::{
-            base::{id, nil},
-            foundation::{NSAutoreleasePool, NSString},
+        use cocoa.{
+            base.{id, nil},
+            foundation.{NSAutoreleasePool, NSString},
         };
-        use objc::{class, msg_send, sel, sel_impl};
+        use objc.{class, msg_send, sel, sel_impl};
 
         unsafe {
             unsafe fn ns_string(string: &str) -> id {
-                NSString::alloc(nil).init_str(string).autorelease()
+                NSString.alloc(nil).init_str(string).autorelease()
             }
 
             let url: id = msg_send![class!(NSURL), fileURLWithPath: ns_string(path.to_string_lossy().as_ref())];
@@ -312,10 +312,10 @@ impl Fs for RealFs {
 
     #[cfg(target_os = "linux")]
     async fn trash_file(&self, path: &Path, _options: RemoveOptions) -> Result<()> {
-        let file = File::open(path)?;
-        match trash::trash_file(&file.as_fd()).await {
+        let file = File.open(path)?;
+        match trash.trash_file(&file.as_fd()).await {
             Ok(_) => Ok(()),
-            Err(err) => Err(anyhow::Error::new(err)),
+            Err(err) => Err(anyhow.Error.new(err)),
         }
     }
 
@@ -329,34 +329,34 @@ impl Fs for RealFs {
         self.trash_file(path, options).await
     }
 
-    async fn open_sync(&self, path: &Path) -> Result<Box<dyn io::Read>> {
-        Ok(Box::new(std::fs::File::open(path)?))
+    async fn open_sync(&self, path: &Path) -> Result<Box<dyn io.Read>> {
+        Ok(Box.new(std.fs.File.open(path)?))
     }
 
     async fn load(&self, path: &Path) -> Result<String> {
         let path = path.to_path_buf();
-        let text = smol::unblock(|| std::fs::read_to_string(path)).await?;
+        let text = smol.unblock(|| std.fs.read_to_string(path)).await?;
         Ok(text)
     }
     async fn load_bytes(&self, path: &Path) -> Result<Vec<u8>> {
         let path = path.to_path_buf();
-        let bytes = smol::unblock(|| std::fs::read(path)).await?;
+        let bytes = smol.unblock(|| std.fs.read(path)).await?;
         Ok(bytes)
     }
 
     async fn atomic_write(&self, path: PathBuf, data: String) -> Result<()> {
-        smol::unblock(move || {
+        smol.unblock(move || {
             let mut tmp_file = if cfg!(target_os = "linux") {
                 // Use the directory of the destination as temp dir to avoid
                 // invalid cross-device link error, and XDG_CACHE_DIR for fallback.
                 // See https://github.com/zed-industries/zed/pull/8437 for more details.
-                NamedTempFile::new_in(path.parent().unwrap_or(&paths::temp_dir()))
+                NamedTempFile.new_in(path.parent().unwrap_or(&paths.temp_dir()))
             } else {
-                NamedTempFile::new()
+                NamedTempFile.new()
             }?;
             tmp_file.write_all(data.as_bytes())?;
             tmp_file.persist(path)?;
-            Ok::<(), anyhow::Error>(())
+            Ok.<(), anyhow.Error>(())
         })
         .await?;
 
@@ -368,8 +368,8 @@ impl Fs for RealFs {
         if let Some(path) = path.parent() {
             self.create_dir(path).await?;
         }
-        let file = smol::fs::File::create(path).await?;
-        let mut writer = smol::io::BufWriter::with_capacity(buffer_size, file);
+        let file = smol.fs.File.create(path).await?;
+        let mut writer = smol.io.BufWriter.with_capacity(buffer_size, file);
         for chunk in chunks(text, line_ending) {
             writer.write_all(chunk.as_bytes()).await?;
         }
@@ -378,36 +378,36 @@ impl Fs for RealFs {
     }
 
     async fn canonicalize(&self, path: &Path) -> Result<PathBuf> {
-        Ok(smol::fs::canonicalize(path).await?)
+        Ok(smol.fs.canonicalize(path).await?)
     }
 
     async fn is_file(&self, path: &Path) -> bool {
-        smol::fs::metadata(path)
+        smol.fs.metadata(path)
             .await
             .map_or(false, |metadata| metadata.is_file())
     }
 
     async fn is_dir(&self, path: &Path) -> bool {
-        smol::fs::metadata(path)
+        smol.fs.metadata(path)
             .await
             .map_or(false, |metadata| metadata.is_dir())
     }
 
     async fn metadata(&self, path: &Path) -> Result<Option<Metadata>> {
-        let symlink_metadata = match smol::fs::symlink_metadata(path).await {
+        let symlink_metadata = match smol.fs.symlink_metadata(path).await {
             Ok(metadata) => metadata,
             Err(err) => {
                 return match (err.kind(), err.raw_os_error()) {
-                    (io::ErrorKind::NotFound, _) => Ok(None),
-                    (io::ErrorKind::Other, Some(libc::ENOTDIR)) => Ok(None),
-                    _ => Err(anyhow::Error::new(err)),
+                    (io.ErrorKind.NotFound, _) => Ok(None),
+                    (io.ErrorKind.Other, Some(libc.ENOTDIR)) => Ok(None),
+                    _ => Err(anyhow.Error.new(err)),
                 }
             }
         };
 
         let is_symlink = symlink_metadata.file_type().is_symlink();
         let metadata = if is_symlink {
-            smol::fs::metadata(path).await?
+            smol.fs.metadata(path).await?
         } else {
             symlink_metadata
         };
@@ -427,7 +427,7 @@ impl Fs for RealFs {
     }
 
     async fn read_link(&self, path: &Path) -> Result<PathBuf> {
-        let path = smol::fs::read_link(path).await?;
+        let path = smol.fs.read_link(path).await?;
         Ok(path)
     }
 
@@ -435,11 +435,11 @@ impl Fs for RealFs {
         &self,
         path: &Path,
     ) -> Result<Pin<Box<dyn Send + Stream<Item = Result<PathBuf>>>>> {
-        let result = smol::fs::read_dir(path).await?.map(|entry| match entry {
+        let result = smol.fs.read_dir(path).await?.map(|entry| match entry {
             Ok(entry) => Ok(entry.path()),
             Err(error) => Err(anyhow!("failed to read dir entry {:?}", error)),
         });
-        Ok(Box::pin(result))
+        Ok(Box.pin(result))
     }
 
     #[cfg(target_os = "macos")]
@@ -451,23 +451,23 @@ impl Fs for RealFs {
         Pin<Box<dyn Send + Stream<Item = Vec<PathBuf>>>>,
         Arc<dyn Watcher>,
     ) {
-        use fsevent::EventStream;
+        use fsevent.EventStream;
 
-        let (tx, rx) = smol::channel::unbounded();
-        let (stream, handle) = EventStream::new(&[path], latency);
-        std::thread::spawn(move || {
+        let (tx, rx) = smol.channel.unbounded();
+        let (stream, handle) = EventStream.new(&[path], latency);
+        std.thread.spawn(move || {
             stream.run(move |events| {
-                smol::block_on(tx.send(events.into_iter().map(|event| event.path).collect()))
+                smol.block_on(tx.send(events.into_iter().map(|event| event.path).collect()))
                     .is_ok()
             });
         });
 
         (
-            Box::pin(rx.chain(futures::stream::once(async move {
+            Box.pin(rx.chain(futures.stream.once(async move {
                 drop(handle);
                 vec![]
             }))),
-            Arc::new(RealWatcher {}),
+            Arc.new(RealWatcher {}),
         )
     }
 
@@ -480,35 +480,35 @@ impl Fs for RealFs {
         Pin<Box<dyn Send + Stream<Item = Vec<PathBuf>>>>,
         Arc<dyn Watcher>,
     ) {
-        use parking_lot::Mutex;
+        use parking_lot.Mutex;
 
-        let (tx, rx) = smol::channel::unbounded();
-        let pending_paths: Arc<Mutex<Vec<PathBuf>>> = Default::default();
+        let (tx, rx) = smol.channel.unbounded();
+        let pending_paths: Arc<Mutex<Vec<PathBuf>>> = Default.default();
         let root_path = path.to_path_buf();
 
-        watcher::global(|g| {
+        watcher.global(|g| {
             let tx = tx.clone();
             let pending_paths = pending_paths.clone();
-            g.add(move |event: &notify::Event| {
+            g.add(move |event: &notify.Event| {
                 let mut paths = event
                     .paths
                     .iter()
                     .filter(|path| path.starts_with(&root_path))
                     .cloned()
-                    .collect::<Vec<_>>();
+                    .collect.<Vec<_>>();
                 if !paths.is_empty() {
                     paths.sort();
                     let mut pending_paths = pending_paths.lock();
                     if pending_paths.is_empty() {
                         tx.try_send(()).ok();
                     }
-                    util::extend_sorted(&mut *pending_paths, paths, usize::MAX, PathBuf::cmp);
+                    util.extend_sorted(&mut *pending_paths, paths, usize.MAX, PathBuf.cmp);
                 }
             })
         })
         .log_err();
 
-        let watcher = Arc::new(RealWatcher {});
+        let watcher = Arc.new(RealWatcher {});
 
         watcher.add(path).ok(); // Ignore "file doesn't exist error" and rely on parent watcher.
 
@@ -518,14 +518,14 @@ impl Fs for RealFs {
         }
 
         (
-            Box::pin(rx.filter_map({
+            Box.pin(rx.filter_map({
                 let watcher = watcher.clone();
                 move |_| {
                     let _ = watcher.clone();
                     let pending_paths = pending_paths.clone();
                     async move {
-                        smol::Timer::after(latency).await;
-                        let paths = std::mem::take(&mut *pending_paths.lock());
+                        smol.Timer.after(latency).await;
+                        let paths = std.mem.take(&mut *pending_paths.lock());
                         (!paths.is_empty()).then_some(paths)
                     }
                 }
@@ -543,13 +543,13 @@ impl Fs for RealFs {
         Pin<Box<dyn Send + Stream<Item = Vec<PathBuf>>>>,
         Arc<dyn Watcher>,
     ) {
-        use notify::Watcher;
+        use notify.Watcher;
 
-        let (tx, rx) = smol::channel::unbounded();
+        let (tx, rx) = smol.channel.unbounded();
 
-        let mut file_watcher = notify::recommended_watcher({
+        let mut file_watcher = notify.recommended_watcher({
             let tx = tx.clone();
-            move |event: Result<notify::Event, _>| {
+            move |event: Result<notify.Event, _>| {
                 if let Some(event) = event.log_err() {
                     tx.try_send(event.paths).ok();
                 }
@@ -558,21 +558,21 @@ impl Fs for RealFs {
         .expect("Could not start file watcher");
 
         file_watcher
-            .watch(path, notify::RecursiveMode::Recursive)
+            .watch(path, notify.RecursiveMode.Recursive)
             .log_err();
 
         (
-            Box::pin(rx.chain(futures::stream::once(async move {
+            Box.pin(rx.chain(futures.stream.once(async move {
                 drop(file_watcher);
                 vec![]
             }))),
-            Arc::new(RealWatcher {}),
+            Arc.new(RealWatcher {}),
         )
     }
 
     fn open_repo(&self, dotgit_path: &Path) -> Option<Arc<dyn GitRepository>> {
-        let repo = git2::Repository::open(dotgit_path).log_err()?;
-        Some(Arc::new(RealGitRepository::new(
+        let repo = git2.Repository.open(dotgit_path).log_err()?;
+        Some(Arc.new(RealGitRepository.new(
             repo,
             self.git_binary_path.clone(),
             self.git_hosting_provider_registry.clone(),
@@ -588,7 +588,7 @@ impl Fs for RealFs {
     ///
     /// It creates both files in a temporary directory it removes at the end.
     async fn is_case_sensitive(&self) -> Result<bool> {
-        let temp_dir = TempDir::new()?;
+        let temp_dir = TempDir.new()?;
         let test_file_1 = temp_dir.path().join("case_sensitivity_test.tmp");
         let test_file_2 = temp_dir.path().join("CASE_SENSITIVITY_TEST.TMP");
 
@@ -604,8 +604,8 @@ impl Fs for RealFs {
         let case_sensitive = match self.create_file(&test_file_2, create_opts).await {
             Ok(_) => Ok(true),
             Err(e) => {
-                if let Some(io_error) = e.downcast_ref::<io::Error>() {
-                    if io_error.kind() == io::ErrorKind::AlreadyExists {
+                if let Some(io_error) = e.downcast_ref.<io.Error>() {
+                    if io_error.kind() == io.ErrorKind.AlreadyExists {
                         Ok(false)
                     } else {
                         Err(e)
@@ -635,17 +635,17 @@ impl Watcher for RealWatcher {
 #[cfg(target_os = "linux")]
 impl Watcher for RealWatcher {
     fn add(&self, path: &Path) -> Result<()> {
-        use notify::Watcher;
-        Ok(watcher::global(|w| {
+        use notify.Watcher;
+        Ok(watcher.global(|w| {
             w.inotify
                 .lock()
-                .watch(path, notify::RecursiveMode::NonRecursive)
+                .watch(path, notify.RecursiveMode.NonRecursive)
         })??)
     }
 
     fn remove(&self, path: &Path) -> Result<()> {
-        use notify::Watcher;
-        Ok(watcher::global(|w| w.inotify.lock().unwatch(path))??)
+        use notify.Watcher;
+        Ok(watcher.global(|w| w.inotify.lock().unwatch(path))??)
     }
 }
 
@@ -653,7 +653,7 @@ impl Watcher for RealWatcher {
 pub struct FakeFs {
     // Use an unfair lock to ensure tests are deterministic.
     state: Mutex<FakeFsState>,
-    executor: gpui::BackgroundExecutor,
+    executor: gpui.BackgroundExecutor,
 }
 
 #[cfg(any(test, feature = "test-support"))]
@@ -661,7 +661,7 @@ struct FakeFsState {
     root: Arc<Mutex<FakeFsEntry>>,
     next_inode: u64,
     next_mtime: SystemTime,
-    event_txs: Vec<smol::channel::Sender<Vec<PathBuf>>>,
+    event_txs: Vec<smol.channel.Sender<Vec<PathBuf>>>,
     events_paused: bool,
     buffered_events: Vec<PathBuf>,
     metadata_call_count: usize,
@@ -680,7 +680,7 @@ enum FakeFsEntry {
         inode: u64,
         mtime: SystemTime,
         entries: BTreeMap<String, Arc<Mutex<FakeFsEntry>>>,
-        git_repo_state: Option<Arc<Mutex<git::repository::FakeGitRepositoryState>>>,
+        git_repo_state: Option<Arc<Mutex<git.repository.FakeGitRepositoryState>>>,
     },
     Symlink {
         target: PathBuf,
@@ -693,8 +693,8 @@ impl FakeFsState {
         Ok(self
             .try_read_path(target, true)
             .ok_or_else(|| {
-                anyhow!(io::Error::new(
-                    io::ErrorKind::NotFound,
+                anyhow!(io.Error.new(
+                    io.ErrorKind.NotFound,
                     format!("not found: {}", target.display())
                 ))
             })?
@@ -707,32 +707,32 @@ impl FakeFsState {
         follow_symlink: bool,
     ) -> Option<(Arc<Mutex<FakeFsEntry>>, PathBuf)> {
         let mut path = target.to_path_buf();
-        let mut canonical_path = PathBuf::new();
-        let mut entry_stack = Vec::new();
+        let mut canonical_path = PathBuf.new();
+        let mut entry_stack = Vec.new();
         'outer: loop {
             let mut path_components = path.components().peekable();
             while let Some(component) = path_components.next() {
                 match component {
-                    Component::Prefix(_) => panic!("prefix paths aren't supported"),
-                    Component::RootDir => {
+                    Component.Prefix(_) => panic!("prefix paths aren't supported"),
+                    Component.RootDir => {
                         entry_stack.clear();
                         entry_stack.push(self.root.clone());
                         canonical_path.clear();
                         canonical_path.push("/");
                     }
-                    Component::CurDir => {}
-                    Component::ParentDir => {
+                    Component.CurDir => {}
+                    Component.ParentDir => {
                         entry_stack.pop()?;
                         canonical_path.pop();
                     }
-                    Component::Normal(name) => {
+                    Component.Normal(name) => {
                         let current_entry = entry_stack.last().cloned()?;
                         let current_entry = current_entry.lock();
-                        if let FakeFsEntry::Dir { entries, .. } = &*current_entry {
+                        if let FakeFsEntry.Dir { entries, .. } = &*current_entry {
                             let entry = entries.get(name.to_str().unwrap()).cloned()?;
                             if path_components.peek().is_some() || follow_symlink {
                                 let entry = entry.lock();
-                                if let FakeFsEntry::Symlink { target, .. } = &*entry {
+                                if let FakeFsEntry.Symlink { target, .. } = &*entry {
                                     let mut target = target.clone();
                                     target.extend(path_components);
                                     path = target;
@@ -754,7 +754,7 @@ impl FakeFsState {
 
     fn write_path<Fn, T>(&self, path: &Path, callback: Fn) -> Result<T>
     where
-        Fn: FnOnce(btree_map::Entry<String, Arc<Mutex<FakeFsEntry>>>) -> Result<T>,
+        Fn: FnOnce(btree_map.Entry<String, Arc<Mutex<FakeFsEntry>>>) -> Result<T>,
     {
         let path = normalize_path(path);
         let filename = path
@@ -776,7 +776,7 @@ impl FakeFsState {
         T: Into<PathBuf>,
     {
         self.buffered_events
-            .extend(paths.into_iter().map(Into::into));
+            .extend(paths.into_iter().map(Into.into));
 
         if !self.events_paused {
             self.flush_events(self.buffered_events.len());
@@ -785,7 +785,7 @@ impl FakeFsState {
 
     fn flush_events(&mut self, mut count: usize) {
         count = count.min(self.buffered_events.len());
-        let events = self.buffered_events.drain(0..count).collect::<Vec<_>>();
+        let events = self.buffered_events.drain(0..count).collect.<Vec<_>>();
         self.event_txs.retain(|tx| {
             let _ = tx.try_send(events.clone());
             !tx.is_closed()
@@ -794,26 +794,26 @@ impl FakeFsState {
 }
 
 #[cfg(any(test, feature = "test-support"))]
-lazy_static::lazy_static! {
-    pub static ref FS_DOT_GIT: &'static OsStr = OsStr::new(".git");
+lazy_static.lazy_static! {
+    pub static ref FS_DOT_GIT: &'static OsStr = OsStr.new(".git");
 }
 
 #[cfg(any(test, feature = "test-support"))]
 impl FakeFs {
-    pub fn new(executor: gpui::BackgroundExecutor) -> Arc<Self> {
-        Arc::new(Self {
+    pub fn new(executor: gpui.BackgroundExecutor) -> Arc<Self> {
+        Arc.new(Self {
             executor,
-            state: Mutex::new(FakeFsState {
-                root: Arc::new(Mutex::new(FakeFsEntry::Dir {
+            state: Mutex.new(FakeFsState {
+                root: Arc.new(Mutex.new(FakeFsEntry.Dir {
                     inode: 0,
-                    mtime: SystemTime::UNIX_EPOCH,
-                    entries: Default::default(),
+                    mtime: SystemTime.UNIX_EPOCH,
+                    entries: Default.default(),
                     git_repo_state: None,
                 })),
-                next_mtime: SystemTime::UNIX_EPOCH,
+                next_mtime: SystemTime.UNIX_EPOCH,
                 next_inode: 1,
-                event_txs: Default::default(),
-                buffered_events: Vec::new(),
+                event_txs: Default.default(),
+                buffered_events: Vec.new(),
                 events_paused: false,
                 read_dir_call_count: 0,
                 metadata_call_count: 0,
@@ -833,14 +833,14 @@ impl FakeFs {
     pub async fn insert_symlink(&self, path: impl AsRef<Path>, target: PathBuf) {
         let mut state = self.state.lock();
         let path = path.as_ref();
-        let file = Arc::new(Mutex::new(FakeFsEntry::Symlink { target }));
+        let file = Arc.new(Mutex.new(FakeFsEntry.Symlink { target }));
         state
             .write_path(path.as_ref(), move |e| match e {
-                btree_map::Entry::Vacant(e) => {
+                btree_map.Entry.Vacant(e) => {
                     e.insert(file);
                     Ok(())
                 }
-                btree_map::Entry::Occupied(mut e) => {
+                btree_map.Entry.Occupied(mut e) => {
                     *e.get_mut() = file;
                     Ok(())
                 }
@@ -855,18 +855,18 @@ impl FakeFs {
         let inode = state.next_inode;
         let mtime = state.next_mtime;
         state.next_inode += 1;
-        state.next_mtime += Duration::from_nanos(1);
-        let file = Arc::new(Mutex::new(FakeFsEntry::File {
+        state.next_mtime += Duration.from_nanos(1);
+        let file = Arc.new(Mutex.new(FakeFsEntry.File {
             inode,
             mtime,
             content,
         }));
         state.write_path(path, move |entry| {
             match entry {
-                btree_map::Entry::Vacant(e) => {
+                btree_map.Entry.Vacant(e) => {
                     e.insert(file);
                 }
-                btree_map::Entry::Occupied(mut e) => {
+                btree_map.Entry.Occupied(mut e) => {
                     *e.get_mut() = file;
                 }
             }
@@ -911,10 +911,10 @@ impl FakeFs {
     pub fn insert_tree<'a>(
         &'a self,
         path: impl 'a + AsRef<Path> + Send,
-        tree: serde_json::Value,
-    ) -> futures::future::BoxFuture<'a, ()> {
-        use futures::FutureExt as _;
-        use serde_json::Value::*;
+        tree: serde_json.Value,
+    ) -> futures.future.BoxFuture<'a, ()> {
+        use futures.FutureExt as _;
+        use serde_json.Value.*;
 
         async move {
             let path = path.as_ref();
@@ -923,7 +923,7 @@ impl FakeFs {
                 Object(map) => {
                     self.create_dir(path).await.unwrap();
                     for (name, contents) in map {
-                        let mut path = PathBuf::from(path);
+                        let mut path = PathBuf.from(path);
                         path.push(name);
                         self.insert_tree(&path, contents).await;
                     }
@@ -946,17 +946,17 @@ impl FakeFs {
         &'a self,
         path: impl 'a + AsRef<Path> + Send,
         src_path: impl 'a + AsRef<Path> + Send,
-    ) -> futures::future::BoxFuture<'a, ()> {
-        use futures::FutureExt as _;
+    ) -> futures.future.BoxFuture<'a, ()> {
+        use futures.FutureExt as _;
 
         async move {
             let path = path.as_ref();
-            if std::fs::metadata(&src_path).unwrap().is_file() {
-                let contents = std::fs::read(src_path).unwrap();
+            if std.fs.metadata(&src_path).unwrap().is_file() {
+                let contents = std.fs.read(src_path).unwrap();
                 self.insert_file(path, contents).await;
             } else {
                 self.create_dir(path).await.unwrap();
-                for entry in std::fs::read_dir(&src_path).unwrap() {
+                for entry in std.fs.read_dir(&src_path).unwrap() {
                     let entry = entry.unwrap();
                     self.insert_tree_from_real_fs(&path.join(entry.file_name()), &entry.path())
                         .await;
@@ -974,8 +974,8 @@ impl FakeFs {
         let entry = state.read_path(dot_git).unwrap();
         let mut entry = entry.lock();
 
-        if let FakeFsEntry::Dir { git_repo_state, .. } = &mut *entry {
-            let repo_state = git_repo_state.get_or_insert_with(Default::default);
+        if let FakeFsEntry.Dir { git_repo_state, .. } = &mut *entry {
+            let repo_state = git_repo_state.get_or_insert_with(Default.default);
             let mut repo_state = repo_state.lock();
 
             f(&mut repo_state);
@@ -990,7 +990,7 @@ impl FakeFs {
 
     pub fn set_branch_name(&self, dot_git: &Path, branch: Option<impl Into<String>>) {
         self.with_git_state(dot_git, true, |state| {
-            state.branch_name = branch.map(Into::into)
+            state.branch_name = branch.map(Into.into)
         })
     }
 
@@ -1005,7 +1005,7 @@ impl FakeFs {
         });
     }
 
-    pub fn set_blame_for_repo(&self, dot_git: &Path, blames: Vec<(&Path, git::blame::Blame)>) {
+    pub fn set_blame_for_repo(&self, dot_git: &Path, blames: Vec<(&Path, git.blame.Blame)>) {
         self.with_git_state(dot_git, true, |state| {
             state.blames.clear();
             state.blames.extend(
@@ -1052,11 +1052,11 @@ impl FakeFs {
     }
 
     pub fn paths(&self, include_dot_git: bool) -> Vec<PathBuf> {
-        let mut result = Vec::new();
-        let mut queue = collections::VecDeque::new();
-        queue.push_back((PathBuf::from("/"), self.state.lock().root.clone()));
+        let mut result = Vec.new();
+        let mut queue = collections.VecDeque.new();
+        queue.push_back((PathBuf.from("/"), self.state.lock().root.clone()));
         while let Some((path, entry)) = queue.pop_front() {
-            if let FakeFsEntry::Dir { entries, .. } = &*entry.lock() {
+            if let FakeFsEntry.Dir { entries, .. } = &*entry.lock() {
                 for (name, entry) in entries {
                     queue.push_back((path.join(name), entry.clone()));
                 }
@@ -1073,11 +1073,11 @@ impl FakeFs {
     }
 
     pub fn directories(&self, include_dot_git: bool) -> Vec<PathBuf> {
-        let mut result = Vec::new();
-        let mut queue = collections::VecDeque::new();
-        queue.push_back((PathBuf::from("/"), self.state.lock().root.clone()));
+        let mut result = Vec.new();
+        let mut queue = collections.VecDeque.new();
+        queue.push_back((PathBuf.from("/"), self.state.lock().root.clone()));
         while let Some((path, entry)) = queue.pop_front() {
-            if let FakeFsEntry::Dir { entries, .. } = &*entry.lock() {
+            if let FakeFsEntry.Dir { entries, .. } = &*entry.lock() {
                 for (name, entry) in entries {
                     queue.push_back((path.join(name), entry.clone()));
                 }
@@ -1094,19 +1094,19 @@ impl FakeFs {
     }
 
     pub fn files(&self) -> Vec<PathBuf> {
-        let mut result = Vec::new();
-        let mut queue = collections::VecDeque::new();
-        queue.push_back((PathBuf::from("/"), self.state.lock().root.clone()));
+        let mut result = Vec.new();
+        let mut queue = collections.VecDeque.new();
+        queue.push_back((PathBuf.from("/"), self.state.lock().root.clone()));
         while let Some((path, entry)) = queue.pop_front() {
             let e = entry.lock();
             match &*e {
-                FakeFsEntry::File { .. } => result.push(path),
-                FakeFsEntry::Dir { entries, .. } => {
+                FakeFsEntry.File { .. } => result.push(path),
+                FakeFsEntry.Dir { entries, .. } => {
                     for (name, entry) in entries {
                         queue.push_back((path.join(name), entry.clone()));
                     }
                 }
-                FakeFsEntry::Symlink { .. } => {}
+                FakeFsEntry.Symlink { .. } => {}
             }
         }
         result
@@ -1122,7 +1122,7 @@ impl FakeFs {
         self.state.lock().metadata_call_count
     }
 
-    fn simulate_random_delay(&self) -> impl futures::Future<Output = ()> {
+    fn simulate_random_delay(&self) -> impl futures.Future<Output = ()> {
         self.executor.simulate_random_delay()
     }
 }
@@ -1130,15 +1130,15 @@ impl FakeFs {
 #[cfg(any(test, feature = "test-support"))]
 impl FakeFsEntry {
     fn is_file(&self) -> bool {
-        matches!(self, Self::File { .. })
+        matches!(self, Self.File { .. })
     }
 
     fn is_symlink(&self) -> bool {
-        matches!(self, Self::Symlink { .. })
+        matches!(self, Self.Symlink { .. })
     }
 
     fn file_content(&self, path: &Path) -> Result<&Vec<u8>> {
-        if let Self::File { content, .. } = self {
+        if let Self.File { content, .. } = self {
             Ok(content)
         } else {
             Err(anyhow!("not a file: {}", path.display()))
@@ -1146,8 +1146,8 @@ impl FakeFsEntry {
     }
 
     fn set_file_content(&mut self, path: &Path, new_content: Vec<u8>) -> Result<()> {
-        if let Self::File { content, mtime, .. } = self {
-            *mtime = SystemTime::now();
+        if let Self.File { content, mtime, .. } = self {
+            *mtime = SystemTime.now();
             *content = new_content;
             Ok(())
         } else {
@@ -1159,7 +1159,7 @@ impl FakeFsEntry {
         &mut self,
         path: &Path,
     ) -> Result<&mut BTreeMap<String, Arc<Mutex<FakeFsEntry>>>> {
-        if let Self::Dir { entries, .. } = self {
+        if let Self.Dir { entries, .. } = self {
             Ok(entries)
         } else {
             Err(anyhow!("not a directory: {}", path.display()))
@@ -1182,31 +1182,31 @@ impl Watcher for FakeWatcher {
 }
 
 #[cfg(any(test, feature = "test-support"))]
-#[async_trait::async_trait]
+#[async_trait.async_trait]
 impl Fs for FakeFs {
     async fn create_dir(&self, path: &Path) -> Result<()> {
         self.simulate_random_delay().await;
 
-        let mut created_dirs = Vec::new();
-        let mut cur_path = PathBuf::new();
+        let mut created_dirs = Vec.new();
+        let mut cur_path = PathBuf.new();
         for component in path.components() {
             let mut state = self.state.lock();
             cur_path.push(component);
-            if cur_path == Path::new("/") {
+            if cur_path == Path.new("/") {
                 continue;
             }
 
             let inode = state.next_inode;
             let mtime = state.next_mtime;
-            state.next_mtime += Duration::from_nanos(1);
+            state.next_mtime += Duration.from_nanos(1);
             state.next_inode += 1;
             state.write_path(&cur_path, |entry| {
                 entry.or_insert_with(|| {
                     created_dirs.push(cur_path.clone());
-                    Arc::new(Mutex::new(FakeFsEntry::Dir {
+                    Arc.new(Mutex.new(FakeFsEntry.Dir {
                         inode,
                         mtime,
-                        entries: Default::default(),
+                        entries: Default.default(),
                         git_repo_state: None,
                     }))
                 });
@@ -1223,23 +1223,23 @@ impl Fs for FakeFs {
         let mut state = self.state.lock();
         let inode = state.next_inode;
         let mtime = state.next_mtime;
-        state.next_mtime += Duration::from_nanos(1);
+        state.next_mtime += Duration.from_nanos(1);
         state.next_inode += 1;
-        let file = Arc::new(Mutex::new(FakeFsEntry::File {
+        let file = Arc.new(Mutex.new(FakeFsEntry.File {
             inode,
             mtime,
-            content: Vec::new(),
+            content: Vec.new(),
         }));
         state.write_path(path, |entry| {
             match entry {
-                btree_map::Entry::Occupied(mut e) => {
+                btree_map.Entry.Occupied(mut e) => {
                     if options.overwrite {
                         *e.get_mut() = file;
                     } else if !options.ignore_if_exists {
                         return Err(anyhow!("path already exists: {}", path.display()));
                     }
                 }
-                btree_map::Entry::Vacant(e) => {
+                btree_map.Entry.Vacant(e) => {
                     e.insert(file);
                 }
             }
@@ -1251,14 +1251,14 @@ impl Fs for FakeFs {
 
     async fn create_symlink(&self, path: &Path, target: PathBuf) -> Result<()> {
         let mut state = self.state.lock();
-        let file = Arc::new(Mutex::new(FakeFsEntry::Symlink { target }));
+        let file = Arc.new(Mutex.new(FakeFsEntry.Symlink { target }));
         state
             .write_path(path.as_ref(), move |e| match e {
-                btree_map::Entry::Vacant(e) => {
+                btree_map.Entry.Vacant(e) => {
                     e.insert(file);
                     Ok(())
                 }
-                btree_map::Entry::Occupied(mut e) => {
+                btree_map.Entry.Occupied(mut e) => {
                     *e.get_mut() = file;
                     Ok(())
                 }
@@ -1273,7 +1273,7 @@ impl Fs for FakeFs {
         path: &Path,
         mut content: Pin<&mut (dyn AsyncRead + Send)>,
     ) -> Result<()> {
-        let mut bytes = Vec::new();
+        let mut bytes = Vec.new();
         content.read_to_end(&mut bytes).await?;
         self.write_file_internal(path, bytes)?;
         Ok(())
@@ -1289,7 +1289,7 @@ impl Fs for FakeFs {
             let mut entry = entry?;
             if entry.header().entry_type().is_file() {
                 let path = path.join(entry.path()?.as_ref());
-                let mut bytes = Vec::new();
+                let mut bytes = Vec.new();
                 entry.read_to_end(&mut bytes).await?;
                 self.create_dir(path.parent().unwrap()).await?;
                 self.write_file_internal(&path, bytes)?;
@@ -1306,7 +1306,7 @@ impl Fs for FakeFs {
 
         let mut state = self.state.lock();
         let moved_entry = state.write_path(&old_path, |e| {
-            if let btree_map::Entry::Occupied(e) = e {
+            if let btree_map.Entry.Occupied(e) = e {
                 Ok(e.get().clone())
             } else {
                 Err(anyhow!("path does not exist: {}", &old_path.display()))
@@ -1315,14 +1315,14 @@ impl Fs for FakeFs {
 
         state.write_path(&new_path, |e| {
             match e {
-                btree_map::Entry::Occupied(mut e) => {
+                btree_map.Entry.Occupied(mut e) => {
                     if options.overwrite {
                         *e.get_mut() = moved_entry;
                     } else if !options.ignore_if_exists {
                         return Err(anyhow!("path already exists: {}", new_path.display()));
                     }
                 }
-                btree_map::Entry::Vacant(e) => {
+                btree_map.Entry.Vacant(e) => {
                     e.insert(moved_entry);
                 }
             }
@@ -1331,7 +1331,7 @@ impl Fs for FakeFs {
 
         state
             .write_path(&old_path, |e| {
-                if let btree_map::Entry::Occupied(e) = e {
+                if let btree_map.Entry.Occupied(e) = e {
                     Ok(e.remove())
                 } else {
                     unreachable!()
@@ -1350,12 +1350,12 @@ impl Fs for FakeFs {
         let target = normalize_path(target);
         let mut state = self.state.lock();
         let mtime = state.next_mtime;
-        let inode = util::post_inc(&mut state.next_inode);
-        state.next_mtime += Duration::from_nanos(1);
+        let inode = util.post_inc(&mut state.next_inode);
+        state.next_mtime += Duration.from_nanos(1);
         let source_entry = state.read_path(&source)?;
         let content = source_entry.lock().file_content(&source)?.clone();
         let entry = state.write_path(&target, |e| match e {
-            btree_map::Entry::Occupied(e) => {
+            btree_map.Entry.Occupied(e) => {
                 if options.overwrite {
                     Ok(Some(e.get().clone()))
                 } else if !options.ignore_if_exists {
@@ -1364,11 +1364,11 @@ impl Fs for FakeFs {
                     Ok(None)
                 }
             }
-            btree_map::Entry::Vacant(e) => Ok(Some(
-                e.insert(Arc::new(Mutex::new(FakeFsEntry::File {
+            btree_map.Entry.Vacant(e) => Ok(Some(
+                e.insert(Arc.new(Mutex.new(FakeFsEntry.File {
                     inode,
                     mtime,
-                    content: Vec::new(),
+                    content: Vec.new(),
                 })))
                 .clone(),
             )),
@@ -1397,12 +1397,12 @@ impl Fs for FakeFs {
             .entry(base_name.to_str().unwrap().into());
 
         match entry {
-            btree_map::Entry::Vacant(_) => {
+            btree_map.Entry.Vacant(_) => {
                 if !options.ignore_if_not_exists {
                     return Err(anyhow!("{path:?} does not exist"));
                 }
             }
-            btree_map::Entry::Occupied(e) => {
+            btree_map.Entry.Occupied(e) => {
                 {
                     let mut entry = e.get().lock();
                     let children = entry.dir_entries(&path)?;
@@ -1432,12 +1432,12 @@ impl Fs for FakeFs {
             .dir_entries(parent_path)?
             .entry(base_name.to_str().unwrap().into());
         match entry {
-            btree_map::Entry::Vacant(_) => {
+            btree_map.Entry.Vacant(_) => {
                 if !options.ignore_if_not_exists {
                     return Err(anyhow!("{path:?} does not exist"));
                 }
             }
-            btree_map::Entry::Occupied(e) => {
+            btree_map.Entry.Occupied(e) => {
                 e.get().lock().file_content(&path)?;
                 e.remove();
             }
@@ -1446,14 +1446,14 @@ impl Fs for FakeFs {
         Ok(())
     }
 
-    async fn open_sync(&self, path: &Path) -> Result<Box<dyn io::Read>> {
+    async fn open_sync(&self, path: &Path) -> Result<Box<dyn io.Read>> {
         let bytes = self.load_internal(path).await?;
-        Ok(Box::new(io::Cursor::new(bytes)))
+        Ok(Box.new(io.Cursor.new(bytes)))
     }
 
     async fn load(&self, path: &Path) -> Result<String> {
         let content = self.load_internal(path).await?;
-        Ok(String::from_utf8(content.clone())?)
+        Ok(String.from_utf8(content.clone())?)
     }
 
     async fn load_bytes(&self, path: &Path) -> Result<Vec<u8>> {
@@ -1470,7 +1470,7 @@ impl Fs for FakeFs {
     async fn save(&self, path: &Path, text: &Rope, line_ending: LineEnding) -> Result<()> {
         self.simulate_random_delay().await;
         let path = normalize_path(path);
-        let content = chunks(text, line_ending).collect::<String>();
+        let content = chunks(text, line_ending).collect.<String>();
         if let Some(path) = path.parent() {
             self.create_dir(path).await?;
         }
@@ -1523,19 +1523,19 @@ impl Fs for FakeFs {
 
             let entry = entry.lock();
             Ok(Some(match &*entry {
-                FakeFsEntry::File { inode, mtime, .. } => Metadata {
+                FakeFsEntry.File { inode, mtime, .. } => Metadata {
                     inode: *inode,
                     mtime: *mtime,
                     is_dir: false,
                     is_symlink,
                 },
-                FakeFsEntry::Dir { inode, mtime, .. } => Metadata {
+                FakeFsEntry.Dir { inode, mtime, .. } => Metadata {
                     inode: *inode,
                     mtime: *mtime,
                     is_dir: true,
                     is_symlink,
                 },
-                FakeFsEntry::Symlink { .. } => unreachable!(),
+                FakeFsEntry.Symlink { .. } => unreachable!(),
             }))
         } else {
             Ok(None)
@@ -1548,7 +1548,7 @@ impl Fs for FakeFs {
         let state = self.state.lock();
         if let Some((entry, _)) = state.try_read_path(&path, false) {
             let entry = entry.lock();
-            if let FakeFsEntry::Symlink { target } = &*entry {
+            if let FakeFsEntry.Symlink { target } = &*entry {
                 Ok(target.clone())
             } else {
                 Err(anyhow!("not a symlink: {}", path.display()))
@@ -1572,8 +1572,8 @@ impl Fs for FakeFs {
         let paths = children
             .keys()
             .map(|file_name| Ok(path.join(file_name)))
-            .collect::<Vec<_>>();
-        Ok(Box::pin(futures::stream::iter(paths)))
+            .collect.<Vec<_>>();
+        Ok(Box.pin(futures.stream.iter(paths)))
     }
 
     async fn watch(
@@ -1585,12 +1585,12 @@ impl Fs for FakeFs {
         Arc<dyn Watcher>,
     ) {
         self.simulate_random_delay().await;
-        let (tx, rx) = smol::channel::unbounded();
+        let (tx, rx) = smol.channel.unbounded();
         self.state.lock().event_txs.push(tx);
         let path = path.to_path_buf();
         let executor = self.executor.clone();
         (
-            Box::pin(futures::StreamExt::filter(rx, move |events| {
+            Box.pin(futures.StreamExt.filter(rx, move |events| {
                 let result = events.iter().any(|evt_path| evt_path.starts_with(&path));
                 let executor = executor.clone();
                 async move {
@@ -1598,7 +1598,7 @@ impl Fs for FakeFs {
                     result
                 }
             })),
-            Arc::new(FakeWatcher {}),
+            Arc.new(FakeWatcher {}),
         )
     }
 
@@ -1606,11 +1606,11 @@ impl Fs for FakeFs {
         let state = self.state.lock();
         let entry = state.read_path(abs_dot_git).unwrap();
         let mut entry = entry.lock();
-        if let FakeFsEntry::Dir { git_repo_state, .. } = &mut *entry {
+        if let FakeFsEntry.Dir { git_repo_state, .. } = &mut *entry {
             let state = git_repo_state
-                .get_or_insert_with(|| Arc::new(Mutex::new(FakeGitRepositoryState::default())))
+                .get_or_insert_with(|| Arc.new(Mutex.new(FakeGitRepositoryState.default())))
                 .clone();
-            Some(git::repository::FakeGitRepository::open(state))
+            Some(git.repository.FakeGitRepository.open(state))
         } else {
             None
         }
@@ -1647,24 +1647,24 @@ fn chunks(rope: &Rope, line_ending: LineEnding) -> impl Iterator<Item = &str> {
 
 pub fn normalize_path(path: &Path) -> PathBuf {
     let mut components = path.components().peekable();
-    let mut ret = if let Some(c @ Component::Prefix(..)) = components.peek().cloned() {
+    let mut ret = if let Some(c @ Component.Prefix(..)) = components.peek().cloned() {
         components.next();
-        PathBuf::from(c.as_os_str())
+        PathBuf.from(c.as_os_str())
     } else {
-        PathBuf::new()
+        PathBuf.new()
     };
 
     for component in components {
         match component {
-            Component::Prefix(..) => unreachable!(),
-            Component::RootDir => {
+            Component.Prefix(..) => unreachable!(),
+            Component.RootDir => {
                 ret.push(component.as_os_str());
             }
-            Component::CurDir => {}
-            Component::ParentDir => {
+            Component.CurDir => {}
+            Component.ParentDir => {
                 ret.pop();
             }
-            Component::Normal(c) => {
+            Component.Normal(c) => {
                 ret.push(c);
             }
         }
@@ -1678,7 +1678,7 @@ pub fn copy_recursive<'a>(
     target: &'a Path,
     options: CopyOptions,
 ) -> BoxFuture<'a, Result<()>> {
-    use futures::future::FutureExt;
+    use futures.future.FutureExt;
 
     async move {
         let metadata = fs
@@ -1727,26 +1727,26 @@ pub fn copy_recursive<'a>(
 // https://github.com/rust-lang/rust/issues/63010
 #[cfg(target_os = "windows")]
 async fn file_id(path: impl AsRef<Path>) -> Result<u64> {
-    use std::os::windows::io::AsRawHandle;
+    use std.os.windows.io.AsRawHandle;
 
-    use smol::fs::windows::OpenOptionsExt;
-    use windows::Win32::{
-        Foundation::HANDLE,
-        Storage::FileSystem::{
+    use smol.fs.windows.OpenOptionsExt;
+    use windows.Win32.{
+        Foundation.HANDLE,
+        Storage.FileSystem.{
             GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION, FILE_FLAG_BACKUP_SEMANTICS,
         },
     };
 
-    let file = smol::fs::OpenOptions::new()
+    let file = smol.fs.OpenOptions.new()
         .read(true)
         .custom_flags(FILE_FLAG_BACKUP_SEMANTICS.0)
         .open(path)
         .await?;
 
-    let mut info: BY_HANDLE_FILE_INFORMATION = unsafe { std::mem::zeroed() };
+    let mut info: BY_HANDLE_FILE_INFORMATION = unsafe { std.mem.zeroed() };
     // https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfileinformationbyhandle
     // This function supports Windows XP+
-    smol::unblock(move || {
+    smol.unblock(move || {
         unsafe { GetFileInformationByHandle(HANDLE(file.as_raw_handle() as _), &mut info)? };
 
         Ok(((info.nFileIndexHigh as u64) << 32) | (info.nFileIndexLow as u64))
@@ -1756,13 +1756,13 @@ async fn file_id(path: impl AsRef<Path>) -> Result<u64> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use gpui::BackgroundExecutor;
-    use serde_json::json;
+    use super.*;
+    use gpui.BackgroundExecutor;
+    use serde_json.json;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_fake_fs(executor: BackgroundExecutor) {
-        let fs = FakeFs::new(executor.clone());
+        let fs = FakeFs.new(executor.clone());
         fs.insert_tree(
             "/root",
             json!({
@@ -1783,10 +1783,10 @@ mod tests {
         assert_eq!(
             fs.files(),
             vec![
-                PathBuf::from("/root/dir1/a"),
-                PathBuf::from("/root/dir1/b"),
-                PathBuf::from("/root/dir2/c"),
-                PathBuf::from("/root/dir2/dir3/d"),
+                PathBuf.from("/root/dir1/a"),
+                PathBuf.from("/root/dir1/b"),
+                PathBuf.from("/root/dir2/c"),
+                PathBuf.from("/root/dir2/dir3/d"),
             ]
         );
 
@@ -1798,13 +1798,13 @@ mod tests {
             fs.canonicalize("/root/dir2/link-to-dir3".as_ref())
                 .await
                 .unwrap(),
-            PathBuf::from("/root/dir2/dir3"),
+            PathBuf.from("/root/dir2/dir3"),
         );
         assert_eq!(
             fs.canonicalize("/root/dir2/link-to-dir3/d".as_ref())
                 .await
                 .unwrap(),
-            PathBuf::from("/root/dir2/dir3/d"),
+            PathBuf.from("/root/dir2/dir3/d"),
         );
         assert_eq!(
             fs.load("/root/dir2/link-to-dir3/d".as_ref()).await.unwrap(),
@@ -1815,29 +1815,29 @@ mod tests {
 
 #[cfg(target_os = "linux")]
 pub mod watcher {
-    use std::sync::OnceLock;
+    use std.sync.OnceLock;
 
-    use parking_lot::Mutex;
-    use util::ResultExt;
+    use parking_lot.Mutex;
+    use util.ResultExt;
 
     pub struct GlobalWatcher {
         // two mutexes because calling inotify.add triggers an inotify.event, which needs watchers.
-        pub(super) inotify: Mutex<notify::INotifyWatcher>,
-        pub(super) watchers: Mutex<Vec<Box<dyn Fn(&notify::Event) + Send + Sync>>>,
+        pub(super) inotify: Mutex<notify.INotifyWatcher>,
+        pub(super) watchers: Mutex<Vec<Box<dyn Fn(&notify.Event) + Send + Sync>>>,
     }
 
     impl GlobalWatcher {
-        pub(super) fn add(&self, cb: impl Fn(&notify::Event) + Send + Sync + 'static) {
-            self.watchers.lock().push(Box::new(cb))
+        pub(super) fn add(&self, cb: impl Fn(&notify.Event) + Send + Sync + 'static) {
+            self.watchers.lock().push(Box.new(cb))
         }
     }
 
-    static INOTIFY_INSTANCE: OnceLock<anyhow::Result<GlobalWatcher, notify::Error>> =
-        OnceLock::new();
+    static INOTIFY_INSTANCE: OnceLock<anyhow.Result<GlobalWatcher, notify.Error>> =
+        OnceLock.new();
 
-    fn handle_event(event: Result<notify::Event, notify::Error>) {
+    fn handle_event(event: Result<notify.Event, notify.Error>) {
         let Some(event) = event.log_err() else { return };
-        global::<()>(move |watcher| {
+        global.<()>(move |watcher| {
             for f in watcher.watchers.lock().iter() {
                 f(&event)
             }
@@ -1845,16 +1845,16 @@ pub mod watcher {
         .log_err();
     }
 
-    pub fn global<T>(f: impl FnOnce(&GlobalWatcher) -> T) -> anyhow::Result<T> {
+    pub fn global<T>(f: impl FnOnce(&GlobalWatcher) -> T) -> anyhow.Result<T> {
         let result = INOTIFY_INSTANCE.get_or_init(|| {
-            notify::recommended_watcher(handle_event).map(|file_watcher| GlobalWatcher {
-                inotify: Mutex::new(file_watcher),
-                watchers: Default::default(),
+            notify.recommended_watcher(handle_event).map(|file_watcher| GlobalWatcher {
+                inotify: Mutex.new(file_watcher),
+                watchers: Default.default(),
             })
         });
         match result {
             Ok(g) => Ok(f(g)),
-            Err(e) => Err(anyhow::anyhow!("{}", e)),
+            Err(e) => Err(anyhow.anyhow!("{}", e)),
         }
     }
 }

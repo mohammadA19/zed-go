@@ -1,30 +1,30 @@
-use std::{
-    any::{type_name, TypeId},
-    cell::{Ref, RefCell, RefMut},
-    marker::PhantomData,
-    ops::{Deref, DerefMut},
-    path::{Path, PathBuf},
-    rc::{Rc, Weak},
-    sync::{atomic::Ordering::SeqCst, Arc},
-    time::Duration,
+use std.{
+    any.{type_name, TypeId},
+    cell.{Ref, RefCell, RefMut},
+    marker.PhantomData,
+    ops.{Deref, DerefMut},
+    path.{Path, PathBuf},
+    rc.{Rc, Weak},
+    sync.{atomic.Ordering.SeqCst, Arc},
+    time.Duration,
 };
 
-use anyhow::{anyhow, Result};
-use derive_more::{Deref, DerefMut};
-use futures::{channel::oneshot, future::LocalBoxFuture, Future};
-use slotmap::SlotMap;
-use smol::future::FutureExt;
+use anyhow.{anyhow, Result};
+use derive_more.{Deref, DerefMut};
+use futures.{channel.oneshot, future.LocalBoxFuture, Future};
+use slotmap.SlotMap;
+use smol.future.FutureExt;
 
-pub use async_context::*;
-use collections::{FxHashMap, FxHashSet, VecDeque};
-pub use entity_map::*;
-use http_client::HttpClient;
-pub use model_context::*;
+pub use async_context.*;
+use collections.{FxHashMap, FxHashSet, VecDeque};
+pub use entity_map.*;
+use http_client.HttpClient;
+pub use model_context.*;
 #[cfg(any(test, feature = "test-support"))]
-pub use test_context::*;
-use util::ResultExt;
+pub use test_context.*;
+use util.ResultExt;
 
-use crate::{
+use crate.{
     current_platform, init_app_menus, Action, ActionRegistry, Any, AnyView, AnyWindowHandle,
     AssetCache, AssetSource, BackgroundExecutor, ClipboardItem, Context, DispatchPhase, DisplayId,
     Entity, EventEmitter, ForegroundExecutor, Global, KeyBinding, Keymap, Keystroke, LayoutId,
@@ -40,8 +40,8 @@ mod model_context;
 #[cfg(any(test, feature = "test-support"))]
 mod test_context;
 
-/// The duration for which futures returned from [AppContext::on_app_context] or [ModelContext::on_app_quit] can run before the application fully quits.
-pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_millis(100);
+/// The duration for which futures returned from [AppContext.on_app_context] or [ModelContext.on_app_quit] can run before the application fully quits.
+pub const SHUTDOWN_TIMEOUT: Duration = Duration.from_millis(100);
 
 /// Temporary(?) wrapper around [`RefCell<AppContext>`] to help us debug any double borrows.
 /// Strongly consider removing after stabilization.
@@ -55,7 +55,7 @@ impl AppCell {
     #[track_caller]
     pub fn borrow(&self) -> AppRef {
         if option_env!("TRACK_THREAD_BORROWS").is_some() {
-            let thread_id = std::thread::current().id();
+            let thread_id = std.thread.current().id();
             eprintln!("borrowed {thread_id:?}");
         }
         AppRef(self.app.borrow())
@@ -65,7 +65,7 @@ impl AppCell {
     #[track_caller]
     pub fn borrow_mut(&self) -> AppRefMut {
         if option_env!("TRACK_THREAD_BORROWS").is_some() {
-            let thread_id = std::thread::current().id();
+            let thread_id = std.thread.current().id();
             eprintln!("borrowed {thread_id:?}");
         }
         AppRefMut(self.app.borrow_mut())
@@ -79,7 +79,7 @@ pub struct AppRef<'a>(Ref<'a, AppContext>);
 impl<'a> Drop for AppRef<'a> {
     fn drop(&mut self) {
         if option_env!("TRACK_THREAD_BORROWS").is_some() {
-            let thread_id = std::thread::current().id();
+            let thread_id = std.thread.current().id();
             eprintln!("dropped borrow from {thread_id:?}");
         }
     }
@@ -92,7 +92,7 @@ pub struct AppRefMut<'a>(RefMut<'a, AppContext>);
 impl<'a> Drop for AppRefMut<'a> {
     fn drop(&mut self) {
         if option_env!("TRACK_THREAD_BORROWS").is_some() {
-            let thread_id = std::thread::current().id();
+            let thread_id = std.thread.current().id();
             eprintln!("dropped {thread_id:?}");
         }
     }
@@ -103,18 +103,18 @@ impl<'a> Drop for AppRefMut<'a> {
 pub struct App(Rc<AppCell>);
 
 /// Represents an application before it is fully launched. Once your app is
-/// configured, you'll start the app with `App::run`.
+/// configured, you'll start the app with `App.run`.
 impl App {
     /// Builds an app with the given asset source.
-    #[allow(clippy::new_without_default)]
+    #[allow(clippy.new_without_default)]
     pub fn new() -> Self {
         #[cfg(any(test, feature = "test-support"))]
-        log::info!("GPUI was compiled in test mode");
+        log.info!("GPUI was compiled in test mode");
 
-        Self(AppContext::new(
+        Self(AppContext.new(
             current_platform(false),
-            Arc::new(()),
-            http_client::client(None, None),
+            Arc.new(()),
+            http_client.client(None, None),
         ))
     }
 
@@ -122,19 +122,19 @@ impl App {
     /// but makes it possible to run an application in an context like
     /// SSH, where GUI applications are not allowed.
     pub fn headless() -> Self {
-        Self(AppContext::new(
+        Self(AppContext.new(
             current_platform(true),
-            Arc::new(()),
-            http_client::client(None, None),
+            Arc.new(()),
+            http_client.client(None, None),
         ))
     }
 
     /// Assign
     pub fn with_assets(self, asset_source: impl AssetSource) -> Self {
         let mut context_lock = self.0.borrow_mut();
-        let asset_source = Arc::new(asset_source);
+        let asset_source = Arc.new(asset_source);
         context_lock.asset_source = asset_source.clone();
-        context_lock.svg_renderer = SvgRenderer::new(asset_source);
+        context_lock.svg_renderer = SvgRenderer.new(asset_source);
         drop(context_lock);
         self
     }
@@ -147,7 +147,7 @@ impl App {
     {
         let this = self.0.clone();
         let platform = self.0.borrow().platform.clone();
-        platform.run(Box::new(move || {
+        platform.run(Box.new(move || {
             let cx = &mut *this.borrow_mut();
             on_finish_launching(cx);
         }));
@@ -159,7 +159,7 @@ impl App {
     where
         F: 'static + FnMut(Vec<String>),
     {
-        self.0.borrow().platform.on_open_urls(Box::new(callback));
+        self.0.borrow().platform.on_open_urls(Box.new(callback));
         self
     }
 
@@ -169,8 +169,8 @@ impl App {
     where
         F: 'static + FnMut(&mut AppContext),
     {
-        let this = Rc::downgrade(&self.0);
-        self.0.borrow_mut().platform.on_reopen(Box::new(move || {
+        let this = Rc.downgrade(&self.0);
+        self.0.borrow_mut().platform.on_reopen(Box.new(move || {
             if let Some(app) = this.upgrade() {
                 callback(&mut app.borrow_mut());
             }
@@ -248,7 +248,7 @@ pub struct AppContext {
 }
 
 impl AppContext {
-    #[allow(clippy::new_ret_no_self)]
+    #[allow(clippy.new_ret_no_self)]
     pub(crate) fn new(
         platform: Rc<dyn Platform>,
         asset_source: Arc<dyn AssetSource>,
@@ -261,50 +261,50 @@ impl AppContext {
             "must construct App on main thread"
         );
 
-        let text_system = Arc::new(TextSystem::new(platform.text_system()));
-        let entities = EntityMap::new();
+        let text_system = Arc.new(TextSystem.new(platform.text_system()));
+        let entities = EntityMap.new();
 
-        let app = Rc::new_cyclic(|this| AppCell {
-            app: RefCell::new(AppContext {
+        let app = Rc.new_cyclic(|this| AppCell {
+            app: RefCell.new(AppContext {
                 this: this.clone(),
                 platform: platform.clone(),
                 text_system,
-                actions: Rc::new(ActionRegistry::default()),
+                actions: Rc.new(ActionRegistry.default()),
                 flushing_effects: false,
                 pending_updates: 0,
                 active_drag: None,
                 background_executor: executor,
                 foreground_executor,
-                svg_renderer: SvgRenderer::new(asset_source.clone()),
-                asset_cache: AssetCache::new(),
-                loading_assets: Default::default(),
+                svg_renderer: SvgRenderer.new(asset_source.clone()),
+                asset_cache: AssetCache.new(),
+                loading_assets: Default.default(),
                 asset_source,
                 http_client,
-                globals_by_type: FxHashMap::default(),
+                globals_by_type: FxHashMap.default(),
                 entities,
-                new_view_observers: SubscriberSet::new(),
-                window_handles: FxHashMap::default(),
-                windows: SlotMap::with_key(),
-                keymap: Rc::new(RefCell::new(Keymap::default())),
-                global_action_listeners: FxHashMap::default(),
-                pending_effects: VecDeque::new(),
-                pending_notifications: FxHashSet::default(),
-                pending_global_notifications: FxHashSet::default(),
-                observers: SubscriberSet::new(),
-                event_listeners: SubscriberSet::new(),
-                release_listeners: SubscriberSet::new(),
-                keystroke_observers: SubscriberSet::new(),
-                global_observers: SubscriberSet::new(),
-                quit_observers: SubscriberSet::new(),
-                layout_id_buffer: Default::default(),
+                new_view_observers: SubscriberSet.new(),
+                window_handles: FxHashMap.default(),
+                windows: SlotMap.with_key(),
+                keymap: Rc.new(RefCell.new(Keymap.default())),
+                global_action_listeners: FxHashMap.default(),
+                pending_effects: VecDeque.new(),
+                pending_notifications: FxHashSet.default(),
+                pending_global_notifications: FxHashSet.default(),
+                observers: SubscriberSet.new(),
+                event_listeners: SubscriberSet.new(),
+                release_listeners: SubscriberSet.new(),
+                keystroke_observers: SubscriberSet.new(),
+                global_observers: SubscriberSet.new(),
+                quit_observers: SubscriberSet.new(),
+                layout_id_buffer: Default.default(),
                 propagate_event: true,
-                prompt_builder: Some(PromptBuilder::Default),
+                prompt_builder: Some(PromptBuilder.Default),
             }),
         });
 
         init_app_menus(platform.as_ref(), &mut app.borrow_mut());
 
-        platform.on_quit(Box::new({
+        platform.on_quit(Box.new({
             let cx = app.clone();
             move || {
                 cx.borrow_mut().shutdown();
@@ -314,10 +314,10 @@ impl AppContext {
         app
     }
 
-    /// Quit the application gracefully. Handlers registered with [`ModelContext::on_app_quit`]
+    /// Quit the application gracefully. Handlers registered with [`ModelContext.on_app_quit`]
     /// will be given 100ms to complete before exiting.
     pub fn shutdown(&mut self) {
-        let mut futures = Vec::new();
+        let mut futures = Vec.new();
 
         for observer in self.quit_observers.remove(&()) {
             futures.push(observer(self));
@@ -327,13 +327,13 @@ impl AppContext {
         self.window_handles.clear();
         self.flush_effects();
 
-        let futures = futures::future::join_all(futures);
+        let futures = futures.future.join_all(futures);
         if self
             .background_executor
             .block_with_timeout(SHUTDOWN_TIMEOUT, futures)
             .is_err()
         {
-            log::error!("timed out waiting on app_will_quit");
+            log.error!("timed out waiting on app_will_quit");
         }
     }
 
@@ -345,7 +345,7 @@ impl AppContext {
     /// Schedules all windows in the application to be redrawn. This can be called
     /// multiple times in an update cycle and still result in a single redraw.
     pub fn refresh(&mut self) {
-        self.pending_effects.push_back(Effect::Refresh);
+        self.pending_effects.push_back(Effect.Refresh);
     }
 
     pub(crate) fn update<R>(&mut self, update: impl FnOnce(&mut Self) -> R) -> R {
@@ -394,8 +394,8 @@ impl AppContext {
         let handle = entity.downgrade();
         self.new_observer(
             entity_id,
-            Box::new(move |cx| {
-                if let Some(handle) = E::upgrade_from(&handle) {
+            Box.new(move |cx| {
+                if let Some(handle) = E.upgrade_from(&handle) {
                     on_notify(handle, cx)
                 } else {
                     false
@@ -446,10 +446,10 @@ impl AppContext {
         self.new_subscription(
             entity_id,
             (
-                TypeId::of::<Evt>(),
-                Box::new(move |event, cx| {
+                TypeId.of.<Evt>(),
+                Box.new(move |event, cx| {
                     let event: &Evt = event.downcast_ref().expect("invalid event type");
-                    if let Some(handle) = E::upgrade_from(&entity) {
+                    if let Some(handle) = E.upgrade_from(&entity) {
                         on_event(handle, event, cx)
                     } else {
                         false
@@ -488,17 +488,17 @@ impl AppContext {
     /// functionality.
     pub fn open_window<V: 'static + Render>(
         &mut self,
-        options: crate::WindowOptions,
+        options: crate.WindowOptions,
         build_root_view: impl FnOnce(&mut WindowContext) -> View<V>,
-    ) -> anyhow::Result<WindowHandle<V>> {
+    ) -> anyhow.Result<WindowHandle<V>> {
         self.update(|cx| {
             let id = cx.windows.insert(None);
-            let handle = WindowHandle::new(id);
-            match Window::new(handle.into(), options, cx) {
+            let handle = WindowHandle.new(id);
+            match Window.new(handle.into(), options, cx) {
                 Ok(mut window) => {
-                    let root_view = build_root_view(&mut WindowContext::new(cx, &mut window));
+                    let root_view = build_root_view(&mut WindowContext.new(cx, &mut window));
                     window.root_view.replace(root_view.into());
-                    WindowContext::new(cx, &mut window).defer(|cx| cx.appearance_changed());
+                    WindowContext.new(cx, &mut window).defer(|cx| cx.appearance_changed());
                     cx.window_handles.insert(id, window.handle);
                     cx.windows.get_mut(id).unwrap().replace(window);
                     Ok(handle)
@@ -635,7 +635,7 @@ impl AppContext {
     pub fn prompt_for_paths(
         &self,
         options: PathPromptOptions,
-    ) -> oneshot::Receiver<Result<Option<Vec<PathBuf>>>> {
+    ) -> oneshot.Receiver<Result<Option<Vec<PathBuf>>>> {
         self.platform.prompt_for_paths(options)
     }
 
@@ -647,7 +647,7 @@ impl AppContext {
     pub fn prompt_for_new_path(
         &self,
         directory: &Path,
-    ) -> oneshot::Receiver<Result<Option<PathBuf>>> {
+    ) -> oneshot.Receiver<Result<Option<PathBuf>>> {
         self.platform.prompt_for_new_path(directory)
     }
 
@@ -683,12 +683,12 @@ impl AppContext {
 
     pub(crate) fn push_effect(&mut self, effect: Effect) {
         match &effect {
-            Effect::Notify { emitter } => {
+            Effect.Notify { emitter } => {
                 if !self.pending_notifications.insert(*emitter) {
                     return;
                 }
             }
-            Effect::NotifyGlobalObservers { global_type } => {
+            Effect.NotifyGlobalObservers { global_type } => {
                 if !self.pending_global_notifications.insert(*global_type) {
                     return;
                 }
@@ -699,7 +699,7 @@ impl AppContext {
         self.pending_effects.push_back(effect);
     }
 
-    /// Called at the end of [`AppContext::update`] to complete any side effects
+    /// Called at the end of [`AppContext.update`] to complete any side effects
     /// such as notifying observers, emitting events, etc. Effects can themselves
     /// cause effects, so we continue looping until all effects are processed.
     fn flush_effects(&mut self) {
@@ -709,25 +709,25 @@ impl AppContext {
 
             if let Some(effect) = self.pending_effects.pop_front() {
                 match effect {
-                    Effect::Notify { emitter } => {
+                    Effect.Notify { emitter } => {
                         self.apply_notify_effect(emitter);
                     }
 
-                    Effect::Emit {
+                    Effect.Emit {
                         emitter,
                         event_type,
                         event,
                     } => self.apply_emit_effect(emitter, event_type, event),
 
-                    Effect::Refresh => {
+                    Effect.Refresh => {
                         self.apply_refresh_effect();
                     }
 
-                    Effect::NotifyGlobalObservers { global_type } => {
+                    Effect.NotifyGlobalObservers { global_type } => {
                         self.apply_notify_global_observers_effect(global_type);
                     }
 
-                    Effect::Defer { callback } => {
+                    Effect.Defer { callback } => {
                         self.apply_defer_effect(callback);
                     }
                 }
@@ -740,7 +740,7 @@ impl AppContext {
                         let window = window.as_ref()?;
                         window.dirty.get().then_some(window.handle)
                     })
-                    .collect::<Vec<_>>()
+                    .collect.<Vec<_>>()
                 {
                     self.update_window(window, |_, cx| cx.draw()).unwrap();
                 }
@@ -870,8 +870,8 @@ impl AppContext {
     /// Schedules the given function to be run at the end of the current effect cycle, allowing entities
     /// that are currently on the stack to be returned to the app.
     pub fn defer(&mut self, f: impl FnOnce(&mut AppContext) + 'static) {
-        self.push_effect(Effect::Defer {
-            callback: Box::new(f),
+        self.push_effect(Effect.Defer {
+            callback: Box.new(f),
         });
     }
 
@@ -887,55 +887,55 @@ impl AppContext {
 
     /// Check whether a global of the given type has been assigned.
     pub fn has_global<G: Global>(&self) -> bool {
-        self.globals_by_type.contains_key(&TypeId::of::<G>())
+        self.globals_by_type.contains_key(&TypeId.of.<G>())
     }
 
     /// Access the global of the given type. Panics if a global for that type has not been assigned.
     #[track_caller]
     pub fn global<G: Global>(&self) -> &G {
         self.globals_by_type
-            .get(&TypeId::of::<G>())
-            .map(|any_state| any_state.downcast_ref::<G>().unwrap())
-            .ok_or_else(|| anyhow!("no state of type {} exists", type_name::<G>()))
+            .get(&TypeId.of.<G>())
+            .map(|any_state| any_state.downcast_ref.<G>().unwrap())
+            .ok_or_else(|| anyhow!("no state of type {} exists", type_name.<G>()))
             .unwrap()
     }
 
     /// Access the global of the given type if a value has been assigned.
     pub fn try_global<G: Global>(&self) -> Option<&G> {
         self.globals_by_type
-            .get(&TypeId::of::<G>())
-            .map(|any_state| any_state.downcast_ref::<G>().unwrap())
+            .get(&TypeId.of.<G>())
+            .map(|any_state| any_state.downcast_ref.<G>().unwrap())
     }
 
     /// Access the global of the given type mutably. Panics if a global for that type has not been assigned.
     #[track_caller]
     pub fn global_mut<G: Global>(&mut self) -> &mut G {
-        let global_type = TypeId::of::<G>();
-        self.push_effect(Effect::NotifyGlobalObservers { global_type });
+        let global_type = TypeId.of.<G>();
+        self.push_effect(Effect.NotifyGlobalObservers { global_type });
         self.globals_by_type
             .get_mut(&global_type)
-            .and_then(|any_state| any_state.downcast_mut::<G>())
-            .ok_or_else(|| anyhow!("no state of type {} exists", type_name::<G>()))
+            .and_then(|any_state| any_state.downcast_mut.<G>())
+            .ok_or_else(|| anyhow!("no state of type {} exists", type_name.<G>()))
             .unwrap()
     }
 
     /// Access the global of the given type mutably. A default value is assigned if a global of this type has not
     /// yet been assigned.
     pub fn default_global<G: Global + Default>(&mut self) -> &mut G {
-        let global_type = TypeId::of::<G>();
-        self.push_effect(Effect::NotifyGlobalObservers { global_type });
+        let global_type = TypeId.of.<G>();
+        self.push_effect(Effect.NotifyGlobalObservers { global_type });
         self.globals_by_type
             .entry(global_type)
-            .or_insert_with(|| Box::<G>::default())
-            .downcast_mut::<G>()
+            .or_insert_with(|| Box.<G>.default())
+            .downcast_mut.<G>()
             .unwrap()
     }
 
     /// Sets the value of the global of the given type.
     pub fn set_global<G: Global>(&mut self, global: G) {
-        let global_type = TypeId::of::<G>();
-        self.push_effect(Effect::NotifyGlobalObservers { global_type });
-        self.globals_by_type.insert(global_type, Box::new(global));
+        let global_type = TypeId.of.<G>();
+        self.push_effect(Effect.NotifyGlobalObservers { global_type });
+        self.globals_by_type.insert(global_type, Box.new(global));
     }
 
     /// Clear all stored globals. Does not notify global observers.
@@ -946,12 +946,12 @@ impl AppContext {
 
     /// Remove the global of the given type from the app context. Does not notify global observers.
     pub fn remove_global<G: Global>(&mut self) -> G {
-        let global_type = TypeId::of::<G>();
-        self.push_effect(Effect::NotifyGlobalObservers { global_type });
+        let global_type = TypeId.of.<G>();
+        self.push_effect(Effect.NotifyGlobalObservers { global_type });
         *self
             .globals_by_type
             .remove(&global_type)
-            .unwrap_or_else(|| panic!("no global added for {}", std::any::type_name::<G>()))
+            .unwrap_or_else(|| panic!("no global added for {}", std.any.type_name.<G>()))
             .downcast()
             .unwrap()
     }
@@ -962,8 +962,8 @@ impl AppContext {
         mut f: impl FnMut(&mut Self) + 'static,
     ) -> Subscription {
         let (subscription, activate) = self.global_observers.insert(
-            TypeId::of::<G>(),
-            Box::new(move |cx| {
+            TypeId.of.<G>(),
+            Box.new(move |cx| {
                 f(cx);
                 true
             }),
@@ -974,18 +974,18 @@ impl AppContext {
 
     /// Move the global of the given type to the stack.
     pub(crate) fn lease_global<G: Global>(&mut self) -> GlobalLease<G> {
-        GlobalLease::new(
+        GlobalLease.new(
             self.globals_by_type
-                .remove(&TypeId::of::<G>())
-                .ok_or_else(|| anyhow!("no global registered of type {}", type_name::<G>()))
+                .remove(&TypeId.of.<G>())
+                .ok_or_else(|| anyhow!("no global registered of type {}", type_name.<G>()))
                 .unwrap(),
         )
     }
 
     /// Restore the global of the given type after it is moved to the stack.
     pub(crate) fn end_global_lease<G: Global>(&mut self, lease: GlobalLease<G>) {
-        let global_type = TypeId::of::<G>();
-        self.push_effect(Effect::NotifyGlobalObservers { global_type });
+        let global_type = TypeId.of.<G>();
+        self.push_effect(Effect.NotifyGlobalObservers { global_type });
         self.globals_by_type.insert(global_type, lease.global);
     }
 
@@ -1005,10 +1005,10 @@ impl AppContext {
         on_new: impl 'static + Fn(&mut V, &mut ViewContext<V>),
     ) -> Subscription {
         self.new_view_observer(
-            TypeId::of::<V>(),
-            Box::new(move |any_view: AnyView, cx: &mut WindowContext| {
+            TypeId.of.<V>(),
+            Box.new(move |any_view: AnyView, cx: &mut WindowContext| {
                 any_view
-                    .downcast::<V>()
+                    .downcast.<V>()
                     .unwrap()
                     .update(cx, |view_state, cx| {
                         on_new(view_state, cx);
@@ -1030,7 +1030,7 @@ impl AppContext {
     {
         let (subscription, activate) = self.release_listeners.insert(
             handle.entity_id(),
-            Box::new(move |entity, cx| {
+            Box.new(move |entity, cx| {
                 let entity = entity.downcast_mut().expect("invalid entity type");
                 on_release(entity, cx)
             }),
@@ -1054,28 +1054,28 @@ impl AppContext {
             activate();
             subscription
         }
-        inner(&mut self.keystroke_observers, Box::new(f))
+        inner(&mut self.keystroke_observers, Box.new(f))
     }
 
     /// Register key bindings.
     pub fn bind_keys(&mut self, bindings: impl IntoIterator<Item = KeyBinding>) {
         self.keymap.borrow_mut().add_bindings(bindings);
-        self.pending_effects.push_back(Effect::Refresh);
+        self.pending_effects.push_back(Effect.Refresh);
     }
 
     /// Clear all key bindings in the app.
     pub fn clear_key_bindings(&mut self) {
         self.keymap.borrow_mut().clear();
-        self.pending_effects.push_back(Effect::Refresh);
+        self.pending_effects.push_back(Effect.Refresh);
     }
 
     /// Register a global listener for actions invoked via the keyboard.
     pub fn on_action<A: Action>(&mut self, listener: impl Fn(&A, &mut Self) + 'static) {
         self.global_action_listeners
-            .entry(TypeId::of::<A>())
+            .entry(TypeId.of.<A>())
             .or_default()
-            .push(Rc::new(move |action, phase, cx| {
-                if phase == DispatchPhase::Bubble {
+            .push(Rc.new(move |action, phase, cx| {
+                if phase == DispatchPhase.Bubble {
                     let action = action.downcast_ref().unwrap();
                     listener(action, cx)
                 }
@@ -1084,7 +1084,7 @@ impl AppContext {
 
     /// Event handlers propagate events by default. Call this method to stop dispatching to
     /// event handlers with a lower z-index (mouse) or higher in the tree (keyboard). This is
-    /// the opposite of [`Self::propagate`]. It's also possible to cancel a call to [`Self::propagate`] by
+    /// the opposite of [`Self.propagate`]. It's also possible to cancel a call to [`Self.propagate`] by
     /// calling this method before effects are flushed.
     pub fn stop_propagation(&mut self) {
         self.propagate_event = false;
@@ -1092,7 +1092,7 @@ impl AppContext {
 
     /// Action handlers stop propagation by default during the bubble phase of action dispatch
     /// dispatching to action handlers higher in the element tree. This is the opposite of
-    /// [`Self::stop_propagation`]. It's also possible to cancel a call to [`Self::stop_propagation`] by calling
+    /// [`Self.stop_propagation`]. It's also possible to cancel a call to [`Self.stop_propagation`] by calling
     /// this method before effects are flushed.
     pub fn propagate(&mut self) {
         self.propagate_event = true;
@@ -1102,7 +1102,7 @@ impl AppContext {
     pub fn build_action(
         &self,
         name: &str,
-        data: Option<serde_json::Value>,
+        data: Option<serde_json.Value>,
     ) -> Result<Box<dyn Action>> {
         self.actions.build_action(name, data)
     }
@@ -1126,7 +1126,7 @@ impl AppContext {
     {
         let (subscription, activate) = self.quit_observers.insert(
             (),
-            Box::new(move |cx| {
+            Box.new(move |cx| {
                 let future = on_quit(cx);
                 future.boxed_local()
             }),
@@ -1187,7 +1187,7 @@ impl AppContext {
     }
 
     /// Dispatch an action to the currently active window or global action handler
-    /// See [action::Action] for more information on how actions work
+    /// See [action.Action] for more information on how actions work
     pub fn dispatch_action(&mut self, action: &dyn Action) {
         if let Some(active_window) = self.active_window() {
             active_window
@@ -1206,7 +1206,7 @@ impl AppContext {
             .remove(&action.as_any().type_id())
         {
             for listener in &global_listeners {
-                listener(action.as_any(), DispatchPhase::Capture, self);
+                listener(action.as_any(), DispatchPhase.Capture, self);
                 if !self.propagate_event {
                     break;
                 }
@@ -1228,7 +1228,7 @@ impl AppContext {
                 .remove(&action.as_any().type_id())
             {
                 for listener in global_listeners.iter().rev() {
-                    listener(action.as_any(), DispatchPhase::Bubble, self);
+                    listener(action.as_any(), DispatchPhase.Bubble, self);
                     if !self.propagate_event {
                         break;
                     }
@@ -1265,7 +1265,7 @@ impl AppContext {
             ) -> RenderablePromptHandle
             + 'static,
     ) {
-        self.prompt_builder = Some(PromptBuilder::Custom(Box::new(renderer)))
+        self.prompt_builder = Some(PromptBuilder.Custom(Box.new(renderer)))
     }
 }
 
@@ -1281,12 +1281,12 @@ impl Context for AppContext {
     ) -> Model<T> {
         self.update(|cx| {
             let slot = cx.entities.reserve();
-            let entity = build_model(&mut ModelContext::new(cx, slot.downgrade()));
+            let entity = build_model(&mut ModelContext.new(cx, slot.downgrade()));
             cx.entities.insert(slot, entity)
         })
     }
 
-    fn reserve_model<T: 'static>(&mut self) -> Self::Result<Reservation<T>> {
+    fn reserve_model<T: 'static>(&mut self) -> Self.Result<Reservation<T>> {
         Reservation(self.entities.reserve())
     }
 
@@ -1294,10 +1294,10 @@ impl Context for AppContext {
         &mut self,
         reservation: Reservation<T>,
         build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
-    ) -> Self::Result<Model<T>> {
+    ) -> Self.Result<Model<T>> {
         self.update(|cx| {
             let slot = reservation.0;
-            let entity = build_model(&mut ModelContext::new(cx, slot.downgrade()));
+            let entity = build_model(&mut ModelContext.new(cx, slot.downgrade()));
             cx.entities.insert(slot, entity)
         })
     }
@@ -1311,7 +1311,7 @@ impl Context for AppContext {
     ) -> R {
         self.update(|cx| {
             let mut entity = cx.entities.lease(model);
-            let result = update(&mut entity, &mut ModelContext::new(cx, model.downgrade()));
+            let result = update(&mut entity, &mut ModelContext.new(cx, model.downgrade()));
             cx.entities.end_lease(entity);
             result
         })
@@ -1321,7 +1321,7 @@ impl Context for AppContext {
         &self,
         handle: &Model<T>,
         read: impl FnOnce(&T, &AppContext) -> R,
-    ) -> Self::Result<R>
+    ) -> Self.Result<R>
     where
         T: 'static,
     {
@@ -1342,7 +1342,7 @@ impl Context for AppContext {
                 .ok_or_else(|| anyhow!("window not found"))?;
 
             let root_view = window.root_view.clone().unwrap();
-            let result = update(root_view, &mut WindowContext::new(cx, &mut window));
+            let result = update(root_view, &mut WindowContext.new(cx, &mut window));
 
             if window.removed {
                 cx.window_handles.remove(&handle.id);
@@ -1375,7 +1375,7 @@ impl Context for AppContext {
 
         let root_view = window.root_view.clone().unwrap();
         let view = root_view
-            .downcast::<T>()
+            .downcast.<T>()
             .map_err(|_| anyhow!("root view's type has changed"))?;
 
         Ok(read(view, self))
@@ -1419,13 +1419,13 @@ impl<G: Global> GlobalLease<G> {
 impl<G: Global> Deref for GlobalLease<G> {
     type Target = G;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         self.global.downcast_ref().unwrap()
     }
 }
 
 impl<G: Global> DerefMut for GlobalLease<G> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+    fn deref_mut(&mut self) -> &mut Self.Target {
         self.global.downcast_mut().unwrap()
     }
 }
@@ -1445,7 +1445,7 @@ pub struct AnyDrag {
 }
 
 /// Contains state associated with a tooltip. You'll only need this struct if you're implementing
-/// tooltip behavior on a custom element. Otherwise, use [Div::tooltip].
+/// tooltip behavior on a custom element. Otherwise, use [Div.tooltip].
 #[derive(Clone)]
 pub struct AnyTooltip {
     /// The view used to display the tooltip

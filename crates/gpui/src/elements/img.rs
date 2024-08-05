@@ -1,26 +1,26 @@
-use crate::{
+use crate.{
     point, px, size, AbsoluteLength, Asset, Bounds, DefiniteLength, DevicePixels, Element,
     ElementId, GlobalElementId, Hitbox, ImageData, InteractiveElement, Interactivity, IntoElement,
     LayoutId, Length, Pixels, SharedString, SharedUri, Size, StyleRefinement, Styled, SvgSize,
     UriOrPath, WindowContext,
 };
-use futures::{AsyncReadExt, Future};
+use futures.{AsyncReadExt, Future};
 use http_client;
-use image::{
-    codecs::gif::GifDecoder, AnimationDecoder, Frame, ImageBuffer, ImageError, ImageFormat,
+use image.{
+    codecs.gif.GifDecoder, AnimationDecoder, Frame, ImageBuffer, ImageError, ImageFormat,
 };
 #[cfg(target_os = "macos")]
-use media::core_video::CVImageBuffer;
-use smallvec::SmallVec;
-use std::{
+use media.core_video.CVImageBuffer;
+use smallvec.SmallVec;
+use std.{
     fs,
-    io::Cursor,
-    path::PathBuf,
-    sync::Arc,
-    time::{Duration, Instant},
+    io.Cursor,
+    path.PathBuf,
+    sync.Arc,
+    time.{Duration, Instant},
 };
-use thiserror::Error;
-use util::ResultExt;
+use thiserror.Error;
+use util.ResultExt;
 
 /// A source of image content.
 #[derive(Clone, Debug)]
@@ -45,16 +45,16 @@ fn is_uri(uri: &str) -> bool {
 
 impl From<SharedUri> for ImageSource {
     fn from(value: SharedUri) -> Self {
-        Self::Uri(value)
+        Self.Uri(value)
     }
 }
 
 impl From<&'static str> for ImageSource {
     fn from(s: &'static str) -> Self {
         if is_uri(&s) {
-            Self::Uri(s.into())
+            Self.Uri(s.into())
         } else {
-            Self::Asset(s.into())
+            Self.Asset(s.into())
         }
     }
 }
@@ -62,9 +62,9 @@ impl From<&'static str> for ImageSource {
 impl From<String> for ImageSource {
     fn from(s: String) -> Self {
         if is_uri(&s) {
-            Self::Uri(s.into())
+            Self.Uri(s.into())
         } else {
-            Self::Asset(s.into())
+            Self.Asset(s.into())
         }
     }
 }
@@ -72,35 +72,35 @@ impl From<String> for ImageSource {
 impl From<SharedString> for ImageSource {
     fn from(s: SharedString) -> Self {
         if is_uri(&s) {
-            Self::Uri(s.into())
+            Self.Uri(s.into())
         } else {
-            Self::Asset(s)
+            Self.Asset(s)
         }
     }
 }
 
 impl From<Arc<PathBuf>> for ImageSource {
     fn from(value: Arc<PathBuf>) -> Self {
-        Self::File(value)
+        Self.File(value)
     }
 }
 
 impl From<PathBuf> for ImageSource {
     fn from(value: PathBuf) -> Self {
-        Self::File(value.into())
+        Self.File(value.into())
     }
 }
 
 impl From<Arc<ImageData>> for ImageSource {
     fn from(value: Arc<ImageData>) -> Self {
-        Self::Data(value)
+        Self.Data(value)
     }
 }
 
 #[cfg(target_os = "macos")]
 impl From<CVImageBuffer> for ImageSource {
     fn from(value: CVImageBuffer) -> Self {
-        Self::Surface(value)
+        Self.Surface(value)
     }
 }
 
@@ -115,10 +115,10 @@ pub struct Img {
 /// Create a new image element.
 pub fn img(source: impl Into<ImageSource>) -> Img {
     Img {
-        interactivity: Interactivity::default(),
+        interactivity: Interactivity.default(),
         source: source.into(),
         grayscale: false,
-        object_fit: ObjectFit::Contain,
+        object_fit: ObjectFit.Contain,
     }
 }
 
@@ -143,13 +143,13 @@ impl ObjectFit {
         bounds: Bounds<Pixels>,
         image_size: Size<DevicePixels>,
     ) -> Bounds<Pixels> {
-        let image_size = image_size.map(|dimension| Pixels::from(u32::from(dimension)));
+        let image_size = image_size.map(|dimension| Pixels.from(u32.from(dimension)));
         let image_ratio = image_size.width / image_size.height;
         let bounds_ratio = bounds.size.width / bounds.size.height;
 
         let result_bounds = match self {
-            ObjectFit::Fill => bounds,
-            ObjectFit::Contain => {
+            ObjectFit.Fill => bounds,
+            ObjectFit.Contain => {
                 let new_size = if bounds_ratio > image_ratio {
                     size(
                         image_size.width * (bounds.size.height / image_size.height),
@@ -170,7 +170,7 @@ impl ObjectFit {
                     size: new_size,
                 }
             }
-            ObjectFit::ScaleDown => {
+            ObjectFit.ScaleDown => {
                 // Check if the image is larger than the bounds in either dimension.
                 if image_size.width > bounds.size.width || image_size.height > bounds.size.height {
                     // If the image is larger, use the same logic as Contain to scale it down.
@@ -206,7 +206,7 @@ impl ObjectFit {
                     }
                 }
             }
-            ObjectFit::Cover => {
+            ObjectFit.Cover => {
                 let new_size = if bounds_ratio > image_ratio {
                     size(
                         bounds.size.width,
@@ -227,7 +227,7 @@ impl ObjectFit {
                     size: new_size,
                 }
             }
-            ObjectFit::None => Bounds {
+            ObjectFit.None => Bounds {
                 origin: bounds.origin,
                 size: image_size,
             },
@@ -240,7 +240,7 @@ impl ObjectFit {
 impl Img {
     /// A list of all format extensions currently supported by this img element
     pub fn extensions() -> &'static [&'static str] {
-        // This is the list in [image::ImageFormat::from_extension] + `svg`
+        // This is the list in [image.ImageFormat.from_extension] + `svg`
         &[
             "avif", "jpg", "jpeg", "png", "gif", "webp", "tif", "tiff", "tga", "dds", "bmp", "ico",
             "hdr", "exr", "pbm", "pam", "ppm", "pgm", "ff", "farbfeld", "qoi", "svg",
@@ -277,7 +277,7 @@ impl Element for Img {
         &mut self,
         global_id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         cx.with_optional_element_state(global_id, |state, cx| {
             let mut state = state.map(|state| {
                 state.unwrap_or(ImgState {
@@ -295,11 +295,11 @@ impl Element for Img {
                         if let Some(state) = &mut state {
                             let frame_count = data.frame_count();
                             if frame_count > 1 {
-                                let current_time = Instant::now();
+                                let current_time = Instant.now();
                                 if let Some(last_frame_time) = state.last_frame_time {
                                     let elapsed = current_time - last_frame_time;
                                     let frame_duration =
-                                        Duration::from(data.delay(state.frame_index));
+                                        Duration.from(data.delay(state.frame_index));
 
                                     if elapsed >= frame_duration {
                                         state.frame_index = (state.frame_index + 1) % frame_count;
@@ -314,13 +314,13 @@ impl Element for Img {
 
                         let image_size = data.size(frame_index);
                         match (style.size.width, style.size.height) {
-                            (Length::Auto, Length::Auto) => {
+                            (Length.Auto, Length.Auto) => {
                                 style.size = Size {
-                                    width: Length::Definite(DefiniteLength::Absolute(
-                                        AbsoluteLength::Pixels(px(image_size.width.0 as f32)),
+                                    width: Length.Definite(DefiniteLength.Absolute(
+                                        AbsoluteLength.Pixels(px(image_size.width.0 as f32)),
                                     )),
-                                    height: Length::Definite(DefiniteLength::Absolute(
-                                        AbsoluteLength::Pixels(px(image_size.height.0 as f32)),
+                                    height: Length.Definite(DefiniteLength.Absolute(
+                                        AbsoluteLength.Pixels(px(image_size.height.0 as f32)),
                                     )),
                                 }
                             }
@@ -343,7 +343,7 @@ impl Element for Img {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
+        _request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) -> Option<Hitbox> {
         self.interactivity
@@ -354,8 +354,8 @@ impl Element for Img {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        frame_index: &mut Self::RequestLayoutState,
-        hitbox: &mut Self::PrepaintState,
+        frame_index: &mut Self.RequestLayoutState,
+        hitbox: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         let source = self.source.clone();
@@ -377,7 +377,7 @@ impl Element for Img {
 
                 match source {
                     #[cfg(target_os = "macos")]
-                    ImageSource::Surface(surface) => {
+                    ImageSource.Surface(surface) => {
                         let size = size(surface.width().into(), surface.height().into());
                         let new_bounds = self.object_fit.get_bounds(bounds, size);
                         // TODO: Add support for corner_radii and grayscale.
@@ -392,7 +392,7 @@ impl Element for Img {
 impl IntoElement for Img {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -412,20 +412,20 @@ impl InteractiveElement for Img {
 impl ImageSource {
     fn data(&self, cx: &mut WindowContext) -> Option<Arc<ImageData>> {
         match self {
-            ImageSource::Uri(_) | ImageSource::Asset(_) | ImageSource::File(_) => {
+            ImageSource.Uri(_) | ImageSource.Asset(_) | ImageSource.File(_) => {
                 let uri_or_path: UriOrPath = match self {
-                    ImageSource::Uri(uri) => uri.clone().into(),
-                    ImageSource::File(path) => path.clone().into(),
-                    ImageSource::Asset(path) => UriOrPath::Asset(path.clone()),
+                    ImageSource.Uri(uri) => uri.clone().into(),
+                    ImageSource.File(path) => path.clone().into(),
+                    ImageSource.Asset(path) => UriOrPath.Asset(path.clone()),
                     _ => unreachable!(),
                 };
 
-                cx.use_cached_asset::<Image>(&uri_or_path)?.log_err()
+                cx.use_cached_asset.<Image>(&uri_or_path)?.log_err()
             }
 
-            ImageSource::Data(data) => Some(data.to_owned()),
+            ImageSource.Data(data) => Some(data.to_owned()),
             #[cfg(target_os = "macos")]
-            ImageSource::Surface(_) => None,
+            ImageSource.Surface(_) => None,
         }
     }
 }
@@ -438,46 +438,46 @@ impl Asset for Image {
     type Output = Result<Arc<ImageData>, ImageCacheError>;
 
     fn load(
-        source: Self::Source,
+        source: Self.Source,
         cx: &mut WindowContext,
-    ) -> impl Future<Output = Self::Output> + Send + 'static {
+    ) -> impl Future<Output = Self.Output> + Send + 'static {
         let client = cx.http_client();
         let scale_factor = cx.scale_factor();
         let svg_renderer = cx.svg_renderer();
         let asset_source = cx.asset_source().clone();
         async move {
             let bytes = match source.clone() {
-                UriOrPath::Path(uri) => fs::read(uri.as_ref())?,
-                UriOrPath::Uri(uri) => {
+                UriOrPath.Path(uri) => fs.read(uri.as_ref())?,
+                UriOrPath.Uri(uri) => {
                     let mut response = client.get(uri.as_ref(), ().into(), true).await?;
-                    let mut body = Vec::new();
+                    let mut body = Vec.new();
                     response.body_mut().read_to_end(&mut body).await?;
                     if !response.status().is_success() {
-                        return Err(ImageCacheError::BadStatus {
+                        return Err(ImageCacheError.BadStatus {
                             uri,
                             status: response.status(),
-                            body: String::from_utf8_lossy(&body).into_owned(),
+                            body: String.from_utf8_lossy(&body).into_owned(),
                         });
                     }
                     body
                 }
-                UriOrPath::Asset(path) => {
+                UriOrPath.Asset(path) => {
                     let data = asset_source.load(&path).ok().flatten();
                     if let Some(data) = data {
                         data.to_vec()
                     } else {
-                        return Err(ImageCacheError::Asset(
+                        return Err(ImageCacheError.Asset(
                             format!("not found: {}", path).into(),
                         ));
                     }
                 }
             };
 
-            let data = if let Ok(format) = image::guess_format(&bytes) {
+            let data = if let Ok(format) = image.guess_format(&bytes) {
                 let data = match format {
-                    ImageFormat::Gif => {
-                        let decoder = GifDecoder::new(Cursor::new(&bytes))?;
-                        let mut frames = SmallVec::new();
+                    ImageFormat.Gif => {
+                        let decoder = GifDecoder.new(Cursor.new(&bytes))?;
+                        let mut frames = SmallVec.new();
 
                         for frame in decoder.into_frames() {
                             let mut frame = frame?;
@@ -492,29 +492,29 @@ impl Asset for Image {
                     }
                     _ => {
                         let mut data =
-                            image::load_from_memory_with_format(&bytes, format)?.into_rgba8();
+                            image.load_from_memory_with_format(&bytes, format)?.into_rgba8();
 
                         // Convert from RGBA to BGRA.
                         for pixel in data.chunks_exact_mut(4) {
                             pixel.swap(0, 2);
                         }
 
-                        SmallVec::from_elem(Frame::new(data), 1)
+                        SmallVec.from_elem(Frame.new(data), 1)
                     }
                 };
 
-                ImageData::new(data)
+                ImageData.new(data)
             } else {
                 let pixmap =
-                    svg_renderer.render_pixmap(&bytes, SvgSize::ScaleFactor(scale_factor))?;
+                    svg_renderer.render_pixmap(&bytes, SvgSize.ScaleFactor(scale_factor))?;
 
                 let buffer =
-                    ImageBuffer::from_raw(pixmap.width(), pixmap.height(), pixmap.take()).unwrap();
+                    ImageBuffer.from_raw(pixmap.width(), pixmap.height(), pixmap.take()).unwrap();
 
-                ImageData::new(SmallVec::from_elem(Frame::new(buffer), 1))
+                ImageData.new(SmallVec.from_elem(Frame.new(buffer), 1))
             };
 
-            Ok(Arc::new(data))
+            Ok(Arc.new(data))
         }
     }
 }
@@ -524,17 +524,17 @@ impl Asset for Image {
 pub enum ImageCacheError {
     /// An error that occurred while fetching an image from a remote source.
     #[error("http error: {0}")]
-    Client(#[from] http_client::Error),
+    Client(#[from] http_client.Error),
     /// An error that occurred while reading the image from disk.
     #[error("IO error: {0}")]
-    Io(Arc<std::io::Error>),
+    Io(Arc<std.io.Error>),
     /// An error that occurred while processing an image.
     #[error("unexpected http status for {uri}: {status}, body: {body}")]
     BadStatus {
         /// The URI of the image.
         uri: SharedUri,
         /// The HTTP status code.
-        status: http_client::StatusCode,
+        status: http_client.StatusCode,
         /// The HTTP response body.
         body: String,
     },
@@ -546,23 +546,23 @@ pub enum ImageCacheError {
     Image(Arc<ImageError>),
     /// An error that occurred while processing an SVG.
     #[error("svg error: {0}")]
-    Usvg(Arc<usvg::Error>),
+    Usvg(Arc<usvg.Error>),
 }
 
-impl From<std::io::Error> for ImageCacheError {
-    fn from(error: std::io::Error) -> Self {
-        Self::Io(Arc::new(error))
+impl From<std.io.Error> for ImageCacheError {
+    fn from(error: std.io.Error) -> Self {
+        Self.Io(Arc.new(error))
     }
 }
 
 impl From<ImageError> for ImageCacheError {
     fn from(error: ImageError) -> Self {
-        Self::Image(Arc::new(error))
+        Self.Image(Arc.new(error))
     }
 }
 
-impl From<usvg::Error> for ImageCacheError {
-    fn from(error: usvg::Error) -> Self {
-        Self::Usvg(Arc::new(error))
+impl From<usvg.Error> for ImageCacheError {
+    fn from(error: usvg.Error) -> Self {
+        Self.Usvg(Arc.new(error))
     }
 }

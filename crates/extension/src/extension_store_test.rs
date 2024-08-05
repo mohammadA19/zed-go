@@ -1,47 +1,47 @@
-use crate::extension_manifest::SchemaVersion;
-use crate::extension_settings::ExtensionSettings;
-use crate::{
+use crate.extension_manifest.SchemaVersion;
+use crate.extension_settings.ExtensionSettings;
+use crate.{
     Event, ExtensionIndex, ExtensionIndexEntry, ExtensionIndexLanguageEntry,
     ExtensionIndexThemeEntry, ExtensionManifest, ExtensionStore, GrammarManifestEntry,
     RELOAD_DEBOUNCE_DURATION,
 };
-use assistant_slash_command::SlashCommandRegistry;
-use async_compression::futures::bufread::GzipEncoder;
-use collections::BTreeMap;
-use fs::{FakeFs, Fs, RealFs};
-use futures::{io::BufReader, AsyncReadExt, StreamExt};
-use gpui::{Context, SemanticVersion, TestAppContext};
-use http_client::{FakeHttpClient, Response};
-use indexed_docs::IndexedDocsRegistry;
-use language::{LanguageMatcher, LanguageRegistry, LanguageServerBinaryStatus, LanguageServerName};
-use node_runtime::FakeNodeRuntime;
-use parking_lot::Mutex;
-use project::{Project, DEFAULT_COMPLETION_CONTEXT};
-use serde_json::json;
-use settings::{Settings as _, SettingsStore};
-use snippet_provider::SnippetRegistry;
-use std::{
-    ffi::OsString,
-    path::{Path, PathBuf},
-    sync::Arc,
+use assistant_slash_command.SlashCommandRegistry;
+use async_compression.futures.bufread.GzipEncoder;
+use collections.BTreeMap;
+use fs.{FakeFs, Fs, RealFs};
+use futures.{io.BufReader, AsyncReadExt, StreamExt};
+use gpui.{Context, SemanticVersion, TestAppContext};
+use http_client.{FakeHttpClient, Response};
+use indexed_docs.IndexedDocsRegistry;
+use language.{LanguageMatcher, LanguageRegistry, LanguageServerBinaryStatus, LanguageServerName};
+use node_runtime.FakeNodeRuntime;
+use parking_lot.Mutex;
+use project.{Project, DEFAULT_COMPLETION_CONTEXT};
+use serde_json.json;
+use settings.{Settings as _, SettingsStore};
+use snippet_provider.SnippetRegistry;
+use std.{
+    ffi.OsString,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
-use theme::ThemeRegistry;
-use util::test::temp_tree;
+use theme.ThemeRegistry;
+use util.test.temp_tree;
 
 #[cfg(test)]
-#[ctor::ctor]
+#[ctor.ctor]
 fn init_logger() {
-    if std::env::var("RUST_LOG").is_ok() {
-        env_logger::init();
+    if std.env.var("RUST_LOG").is_ok() {
+        env_logger.init();
     }
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_extension_store(cx: &mut TestAppContext) {
     init_test(cx);
 
-    let fs = FakeFs::new(cx.executor());
-    let http_client = FakeHttpClient::with_200_response();
+    let fs = FakeFs.new(cx.executor());
+    let http_client = FakeHttpClient.with_200_response();
 
     fs.insert_tree(
         "/the-extension-dir",
@@ -141,26 +141,26 @@ async fn test_extension_store(cx: &mut TestAppContext) {
             (
                 "zed-ruby".into(),
                 ExtensionIndexEntry {
-                    manifest: Arc::new(ExtensionManifest {
+                    manifest: Arc.new(ExtensionManifest {
                         id: "zed-ruby".into(),
                         name: "Zed Ruby".into(),
                         version: "1.0.0".into(),
-                        schema_version: SchemaVersion::ZERO,
+                        schema_version: SchemaVersion.ZERO,
                         description: None,
-                        authors: Vec::new(),
+                        authors: Vec.new(),
                         repository: None,
-                        themes: Default::default(),
-                        lib: Default::default(),
+                        themes: Default.default(),
+                        lib: Default.default(),
                         languages: vec!["languages/erb".into(), "languages/ruby".into()],
                         grammars: [
-                            ("embedded_template".into(), GrammarManifestEntry::default()),
-                            ("ruby".into(), GrammarManifestEntry::default()),
+                            ("embedded_template".into(), GrammarManifestEntry.default()),
+                            ("ruby".into(), GrammarManifestEntry.default()),
                         ]
                         .into_iter()
                         .collect(),
-                        language_servers: BTreeMap::default(),
-                        slash_commands: BTreeMap::default(),
-                        indexed_docs_providers: BTreeMap::default(),
+                        language_servers: BTreeMap.default(),
+                        slash_commands: BTreeMap.default(),
+                        indexed_docs_providers: BTreeMap.default(),
                         snippets: None,
                     }),
                     dev: false,
@@ -169,11 +169,11 @@ async fn test_extension_store(cx: &mut TestAppContext) {
             (
                 "zed-monokai".into(),
                 ExtensionIndexEntry {
-                    manifest: Arc::new(ExtensionManifest {
+                    manifest: Arc.new(ExtensionManifest {
                         id: "zed-monokai".into(),
                         name: "Zed Monokai".into(),
                         version: "2.0.0".into(),
-                        schema_version: SchemaVersion::ZERO,
+                        schema_version: SchemaVersion.ZERO,
                         description: None,
                         authors: vec![],
                         repository: None,
@@ -181,12 +181,12 @@ async fn test_extension_store(cx: &mut TestAppContext) {
                             "themes/monokai-pro.json".into(),
                             "themes/monokai.json".into(),
                         ],
-                        lib: Default::default(),
-                        languages: Default::default(),
-                        grammars: BTreeMap::default(),
-                        language_servers: BTreeMap::default(),
-                        slash_commands: BTreeMap::default(),
-                        indexed_docs_providers: BTreeMap::default(),
+                        lib: Default.default(),
+                        languages: Default.default(),
+                        grammars: BTreeMap.default(),
+                        language_servers: BTreeMap.default(),
+                        slash_commands: BTreeMap.default(),
+                        indexed_docs_providers: BTreeMap.default(),
                         snippets: None,
                     }),
                     dev: false,
@@ -257,16 +257,16 @@ async fn test_extension_store(cx: &mut TestAppContext) {
         .collect(),
     };
 
-    let language_registry = Arc::new(LanguageRegistry::test(cx.executor()));
-    let theme_registry = Arc::new(ThemeRegistry::new(Box::new(())));
-    let slash_command_registry = SlashCommandRegistry::new();
-    let indexed_docs_registry = Arc::new(IndexedDocsRegistry::new(cx.executor()));
-    let snippet_registry = Arc::new(SnippetRegistry::new());
-    let node_runtime = FakeNodeRuntime::new();
+    let language_registry = Arc.new(LanguageRegistry.test(cx.executor()));
+    let theme_registry = Arc.new(ThemeRegistry.new(Box.new(())));
+    let slash_command_registry = SlashCommandRegistry.new();
+    let indexed_docs_registry = Arc.new(IndexedDocsRegistry.new(cx.executor()));
+    let snippet_registry = Arc.new(SnippetRegistry.new());
+    let node_runtime = FakeNodeRuntime.new();
 
     let store = cx.new_model(|cx| {
-        ExtensionStore::new(
-            PathBuf::from("/the-extension-dir"),
+        ExtensionStore.new(
+            PathBuf.from("/the-extension-dir"),
             None,
             fs.clone(),
             http_client.clone(),
@@ -281,7 +281,7 @@ async fn test_extension_store(cx: &mut TestAppContext) {
         )
     });
 
-    cx.executor().advance_clock(super::RELOAD_DEBOUNCE_DURATION);
+    cx.executor().advance_clock(super.RELOAD_DEBOUNCE_DURATION);
     store.read_with(cx, |store, _| {
         let index = &store.extension_index;
         assert_eq!(index.extensions, expected_index.extensions);
@@ -335,21 +335,21 @@ async fn test_extension_store(cx: &mut TestAppContext) {
     expected_index.extensions.insert(
         "zed-gruvbox".into(),
         ExtensionIndexEntry {
-            manifest: Arc::new(ExtensionManifest {
+            manifest: Arc.new(ExtensionManifest {
                 id: "zed-gruvbox".into(),
                 name: "Zed Gruvbox".into(),
                 version: "1.0.0".into(),
-                schema_version: SchemaVersion::ZERO,
+                schema_version: SchemaVersion.ZERO,
                 description: None,
                 authors: vec![],
                 repository: None,
                 themes: vec!["themes/gruvbox.json".into()],
-                lib: Default::default(),
-                languages: Default::default(),
-                grammars: BTreeMap::default(),
-                language_servers: BTreeMap::default(),
-                slash_commands: BTreeMap::default(),
-                indexed_docs_providers: BTreeMap::default(),
+                lib: Default.default(),
+                languages: Default.default(),
+                grammars: BTreeMap.default(),
+                language_servers: BTreeMap.default(),
+                slash_commands: BTreeMap.default(),
+                indexed_docs_providers: BTreeMap.default(),
                 snippets: None,
             }),
             dev: false,
@@ -363,7 +363,7 @@ async fn test_extension_store(cx: &mut TestAppContext) {
         },
     );
 
-    #[allow(clippy::let_underscore_future)]
+    #[allow(clippy.let_underscore_future)]
     let _ = store.update(cx, |store, cx| store.reload(None, cx));
 
     cx.executor().advance_clock(RELOAD_DEBOUNCE_DURATION);
@@ -392,8 +392,8 @@ async fn test_extension_store(cx: &mut TestAppContext) {
     // Create new extension store, as if Zed were restarting.
     drop(store);
     let store = cx.new_model(|cx| {
-        ExtensionStore::new(
-            PathBuf::from("/the-extension-dir"),
+        ExtensionStore.new(
+            PathBuf.from("/the-extension-dir"),
             None,
             fs.clone(),
             http_client.clone(),
@@ -453,12 +453,12 @@ async fn test_extension_store(cx: &mut TestAppContext) {
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
     init_test(cx);
     cx.executor().allow_parking();
 
-    let root_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+    let root_dir = Path.new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .unwrap()
         .parent()
@@ -467,7 +467,7 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
     let test_extension_id = "test-extension";
     let test_extension_dir = root_dir.join("extensions").join(test_extension_id);
 
-    let fs = Arc::new(RealFs::default());
+    let fs = Arc.new(RealFs.default());
     let extensions_dir = temp_tree(json!({
         "installed": {},
         "work": {}
@@ -479,14 +479,14 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
     let extensions_dir = extensions_dir.path().canonicalize().unwrap();
     let project_dir = project_dir.path().canonicalize().unwrap();
 
-    let project = Project::test(fs.clone(), [project_dir.as_path()], cx).await;
+    let project = Project.test(fs.clone(), [project_dir.as_path()], cx).await;
 
     let language_registry = project.read_with(cx, |project, _cx| project.languages().clone());
-    let theme_registry = Arc::new(ThemeRegistry::new(Box::new(())));
-    let slash_command_registry = SlashCommandRegistry::new();
-    let indexed_docs_registry = Arc::new(IndexedDocsRegistry::new(cx.executor()));
-    let snippet_registry = Arc::new(SnippetRegistry::new());
-    let node_runtime = FakeNodeRuntime::new();
+    let theme_registry = Arc.new(ThemeRegistry.new(Box.new(())));
+    let slash_command_registry = SlashCommandRegistry.new();
+    let indexed_docs_registry = Arc.new(IndexedDocsRegistry.new(cx.executor()));
+    let snippet_registry = Arc.new(SnippetRegistry.new());
+    let node_runtime = FakeNodeRuntime.new();
 
     let mut status_updates = language_registry.language_server_binary_statuses();
 
@@ -496,13 +496,13 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
         http_request_count: usize,
     }
 
-    let language_server_version = Arc::new(Mutex::new(FakeLanguageServerVersion {
+    let language_server_version = Arc.new(Mutex.new(FakeLanguageServerVersion {
         version: "v1.2.3".into(),
         binary_contents: "the-binary-contents".into(),
         http_request_count: 0,
     }));
 
-    let http_client = FakeHttpClient::create({
+    let http_client = FakeHttpClient.create({
         let language_server_version = language_server_version.clone();
         move |request| {
             let language_server_version = language_server_version.clone();
@@ -517,7 +517,7 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
                 let uri = request.uri().to_string();
                 if uri == github_releases_uri {
                     language_server_version.lock().http_request_count += 1;
-                    Ok(Response::new(
+                    Ok(Response.new(
                         json!([
                             {
                                 "tag_name": version,
@@ -545,28 +545,28 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
                     ))
                 } else if uri == asset_download_uri {
                     language_server_version.lock().http_request_count += 1;
-                    let mut bytes = Vec::<u8>::new();
-                    let mut archive = async_tar::Builder::new(&mut bytes);
-                    let mut header = async_tar::Header::new_gnu();
+                    let mut bytes = Vec.<u8>.new();
+                    let mut archive = async_tar.Builder.new(&mut bytes);
+                    let mut header = async_tar.Header.new_gnu();
                     header.set_size(binary_contents.len() as u64);
                     archive
                         .append_data(&mut header, "gleam", binary_contents.as_bytes())
                         .await
                         .unwrap();
                     archive.into_inner().await.unwrap();
-                    let mut gzipped_bytes = Vec::new();
-                    let mut encoder = GzipEncoder::new(BufReader::new(bytes.as_slice()));
+                    let mut gzipped_bytes = Vec.new();
+                    let mut encoder = GzipEncoder.new(BufReader.new(bytes.as_slice()));
                     encoder.read_to_end(&mut gzipped_bytes).await.unwrap();
-                    Ok(Response::new(gzipped_bytes.into()))
+                    Ok(Response.new(gzipped_bytes.into()))
                 } else {
-                    Ok(Response::builder().status(404).body("not found".into())?)
+                    Ok(Response.builder().status(404).body("not found".into())?)
                 }
             }
         }
     });
 
     let extension_store = cx.new_model(|cx| {
-        ExtensionStore::new(
+        ExtensionStore.new(
             extensions_dir.clone(),
             Some(cache_dir),
             fs.clone(),
@@ -588,7 +588,7 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
     let _task = cx.executor().spawn(async move {
         while let Some(event) = events.next().await {
             match event {
-                crate::Event::StartedReloading => {
+                crate.Event.StartedReloading => {
                     executor.advance_clock(RELOAD_DEBOUNCE_DURATION);
                 }
                 _ => (),
@@ -598,7 +598,7 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
 
     extension_store.update(cx, |_, cx| {
         cx.subscribe(&extension_store, |_, _, event, _| {
-            if matches!(event, Event::ExtensionFailedToLoad(_)) {
+            if matches!(event, Event.ExtensionFailedToLoad(_)) {
                 panic!("extension failed to load");
             }
         })
@@ -627,7 +627,7 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
     let expected_binary_contents = language_server_version.lock().binary_contents.clone();
 
     assert_eq!(fake_server.binary.path, expected_server_path);
-    assert_eq!(fake_server.binary.arguments, [OsString::from("lsp")]);
+    assert_eq!(fake_server.binary.arguments, [OsString.from("lsp")]);
     assert_eq!(
         fs.load(&expected_server_path).await.unwrap(),
         expected_binary_contents
@@ -642,45 +642,45 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
         [
             (
                 LanguageServerName("gleam".into()),
-                LanguageServerBinaryStatus::CheckingForUpdate
+                LanguageServerBinaryStatus.CheckingForUpdate
             ),
             (
                 LanguageServerName("gleam".into()),
-                LanguageServerBinaryStatus::Downloading
+                LanguageServerBinaryStatus.Downloading
             ),
             (
                 LanguageServerName("gleam".into()),
-                LanguageServerBinaryStatus::None
+                LanguageServerBinaryStatus.None
             )
         ]
     );
 
     // The extension creates custom labels for completion items.
-    fake_server.handle_request::<lsp::request::Completion, _, _>(|_, _| async move {
-        Ok(Some(lsp::CompletionResponse::Array(vec![
-            lsp::CompletionItem {
+    fake_server.handle_request.<lsp.request.Completion, _, _>(|_, _| async move {
+        Ok(Some(lsp.CompletionResponse.Array(vec![
+            lsp.CompletionItem {
                 label: "foo".into(),
-                kind: Some(lsp::CompletionItemKind::FUNCTION),
+                kind: Some(lsp.CompletionItemKind.FUNCTION),
                 detail: Some("fn() -> Result(Nil, Error)".into()),
-                ..Default::default()
+                ..Default.default()
             },
-            lsp::CompletionItem {
+            lsp.CompletionItem {
                 label: "bar.baz".into(),
-                kind: Some(lsp::CompletionItemKind::FUNCTION),
+                kind: Some(lsp.CompletionItemKind.FUNCTION),
                 detail: Some("fn(List(a)) -> a".into()),
-                ..Default::default()
+                ..Default.default()
             },
-            lsp::CompletionItem {
+            lsp.CompletionItem {
                 label: "Quux".into(),
-                kind: Some(lsp::CompletionItemKind::CONSTRUCTOR),
+                kind: Some(lsp.CompletionItemKind.CONSTRUCTOR),
                 detail: Some("fn(String) -> T".into()),
-                ..Default::default()
+                ..Default.default()
             },
-            lsp::CompletionItem {
+            lsp.CompletionItem {
                 label: "my_string".into(),
-                kind: Some(lsp::CompletionItemKind::CONSTANT),
+                kind: Some(lsp.CompletionItemKind.CONSTANT),
                 detail: Some("String".into()),
-                ..Default::default()
+                ..Default.default()
             },
         ])))
     });
@@ -693,7 +693,7 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
         .unwrap()
         .into_iter()
         .map(|c| c.label.text)
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     assert_eq!(
         completion_labels,
         [
@@ -741,7 +741,7 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
         extensions_dir.join(format!("work/{test_extension_id}/gleam-v2.0.0/gleam"));
     let expected_binary_contents = language_server_version.lock().binary_contents.clone();
     assert_eq!(fake_server.binary.path, new_expected_server_path);
-    assert_eq!(fake_server.binary.arguments, [OsString::from("lsp")]);
+    assert_eq!(fake_server.binary.arguments, [OsString.from("lsp")]);
     assert_eq!(
         fs.load(&new_expected_server_path).await.unwrap(),
         expected_binary_contents
@@ -753,12 +753,12 @@ async fn test_extension_store_with_test_extension(cx: &mut TestAppContext) {
 
 fn init_test(cx: &mut TestAppContext) {
     cx.update(|cx| {
-        let store = SettingsStore::test(cx);
+        let store = SettingsStore.test(cx);
         cx.set_global(store);
-        release_channel::init(SemanticVersion::default(), cx);
-        theme::init(theme::LoadThemes::JustBase, cx);
-        Project::init_settings(cx);
-        ExtensionSettings::register(cx);
-        language::init(cx);
+        release_channel.init(SemanticVersion.default(), cx);
+        theme.init(theme.LoadThemes.JustBase, cx);
+        Project.init_settings(cx);
+        ExtensionSettings.register(cx);
+        language.init(cx);
     });
 }

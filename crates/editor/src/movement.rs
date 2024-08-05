@@ -1,20 +1,20 @@
 //! Movement module contains helper functions for calculating intended position
 //! in editor given a given motion (e.g. it handles converting a "move left" command into coordinates in editor). It is exposed mostly for use by vim crate.
 
-use super::{Bias, DisplayPoint, DisplaySnapshot, SelectionGoal, ToDisplayPoint};
-use crate::{
-    char_kind, scroll::ScrollAnchor, CharKind, DisplayRow, EditorStyle, RowExt, ToOffset, ToPoint,
+use super.{Bias, DisplayPoint, DisplaySnapshot, SelectionGoal, ToDisplayPoint};
+use crate.{
+    char_kind, scroll.ScrollAnchor, CharKind, DisplayRow, EditorStyle, RowExt, ToOffset, ToPoint,
 };
-use gpui::{px, Pixels, WindowTextSystem};
-use language::Point;
-use multi_buffer::{MultiBufferRow, MultiBufferSnapshot};
-use serde::Deserialize;
+use gpui.{px, Pixels, WindowTextSystem};
+use language.Point;
+use multi_buffer.{MultiBufferRow, MultiBufferSnapshot};
+use serde.Deserialize;
 
-use std::{ops::Range, sync::Arc};
+use std.{ops.Range, sync.Arc};
 
 /// Defines search strategy for items in `movement` module.
-/// `FindRange::SingeLine` only looks for a match on a single line at a time, whereas
-/// `FindRange::MultiLine` keeps going until the end of a string.
+/// `FindRange.SingeLine` only looks for a match on a single line at a time, whereas
+/// `FindRange.MultiLine` keeps going until the end of a string.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 pub enum FindRange {
     SingleLine,
@@ -41,7 +41,7 @@ pub fn left(map: &DisplaySnapshot, mut point: DisplayPoint) -> DisplayPoint {
         *point.row_mut() -= 1;
         *point.column_mut() = map.line_len(point.row());
     }
-    map.clip_point(point, Bias::Left)
+    map.clip_point(point, Bias.Left)
 }
 
 /// Returns a column to the left of the current point, doing nothing if
@@ -52,11 +52,11 @@ pub fn saturating_left(map: &DisplaySnapshot, mut point: DisplayPoint) -> Displa
     } else if point.column() == 0 {
         // If the current sofr_wrap mode is used, the column corresponding to the display is 0,
         //  which does not necessarily mean that the actual beginning of a paragraph
-        if map.display_point_to_fold_point(point, Bias::Left).column() > 0 {
+        if map.display_point_to_fold_point(point, Bias.Left).column() > 0 {
             return left(map, point);
         }
     }
-    map.clip_point(point, Bias::Left)
+    map.clip_point(point, Bias.Left)
 }
 
 /// Returns a column to the right of the current point, doing nothing
@@ -68,14 +68,14 @@ pub fn right(map: &DisplaySnapshot, mut point: DisplayPoint) -> DisplayPoint {
         *point.row_mut() += 1;
         *point.column_mut() = 0;
     }
-    map.clip_point(point, Bias::Right)
+    map.clip_point(point, Bias.Right)
 }
 
 /// Returns a column to the right of the current point, not performing any wrapping
 /// if that point is already at the end of line.
 pub fn saturating_right(map: &DisplaySnapshot, mut point: DisplayPoint) -> DisplayPoint {
     *point.column_mut() += 1;
-    map.clip_point(point, Bias::Right)
+    map.clip_point(point, Bias.Right)
 }
 
 /// Returns a display point for the preceding displayed line (which might be a soft-wrapped line).
@@ -123,33 +123,33 @@ pub(crate) fn up_by_rows(
     text_layout_details: &TextLayoutDetails,
 ) -> (DisplayPoint, SelectionGoal) {
     let mut goal_x = match goal {
-        SelectionGoal::HorizontalPosition(x) => x.into(),
-        SelectionGoal::WrappedHorizontalPosition((_, x)) => x.into(),
-        SelectionGoal::HorizontalRange { end, .. } => end.into(),
+        SelectionGoal.HorizontalPosition(x) => x.into(),
+        SelectionGoal.WrappedHorizontalPosition((_, x)) => x.into(),
+        SelectionGoal.HorizontalRange { end, .. } => end.into(),
         _ => map.x_for_display_point(start, text_layout_details),
     };
 
     let prev_row = DisplayRow(start.row().0.saturating_sub(row_count));
     let mut point = map.clip_point(
-        DisplayPoint::new(prev_row, map.line_len(prev_row)),
-        Bias::Left,
+        DisplayPoint.new(prev_row, map.line_len(prev_row)),
+        Bias.Left,
     );
     if point.row() < start.row() {
         *point.column_mut() = map.display_column_for_x(point.row(), goal_x, text_layout_details)
     } else if preserve_column_at_start {
         return (start, goal);
     } else {
-        point = DisplayPoint::new(DisplayRow(0), 0);
+        point = DisplayPoint.new(DisplayRow(0), 0);
         goal_x = px(0.);
     }
 
-    let mut clipped_point = map.clip_point(point, Bias::Left);
+    let mut clipped_point = map.clip_point(point, Bias.Left);
     if clipped_point.row() < point.row() {
-        clipped_point = map.clip_point(point, Bias::Right);
+        clipped_point = map.clip_point(point, Bias.Right);
     }
     (
         clipped_point,
-        SelectionGoal::HorizontalPosition(goal_x.into()),
+        SelectionGoal.HorizontalPosition(goal_x.into()),
     )
 }
 
@@ -162,14 +162,14 @@ pub(crate) fn down_by_rows(
     text_layout_details: &TextLayoutDetails,
 ) -> (DisplayPoint, SelectionGoal) {
     let mut goal_x = match goal {
-        SelectionGoal::HorizontalPosition(x) => x.into(),
-        SelectionGoal::WrappedHorizontalPosition((_, x)) => x.into(),
-        SelectionGoal::HorizontalRange { end, .. } => end.into(),
+        SelectionGoal.HorizontalPosition(x) => x.into(),
+        SelectionGoal.WrappedHorizontalPosition((_, x)) => x.into(),
+        SelectionGoal.HorizontalRange { end, .. } => end.into(),
         _ => map.x_for_display_point(start, text_layout_details),
     };
 
     let new_row = DisplayRow(start.row().0 + row_count);
-    let mut point = map.clip_point(DisplayPoint::new(new_row, 0), Bias::Right);
+    let mut point = map.clip_point(DisplayPoint.new(new_row, 0), Bias.Right);
     if point.row() > start.row() {
         *point.column_mut() = map.display_column_for_x(point.row(), goal_x, text_layout_details)
     } else if preserve_column_at_end {
@@ -179,13 +179,13 @@ pub(crate) fn down_by_rows(
         goal_x = map.x_for_display_point(point, text_layout_details)
     }
 
-    let mut clipped_point = map.clip_point(point, Bias::Right);
+    let mut clipped_point = map.clip_point(point, Bias.Right);
     if clipped_point.row() > point.row() {
-        clipped_point = map.clip_point(point, Bias::Left);
+        clipped_point = map.clip_point(point, Bias.Left);
     }
     (
         clipped_point,
-        SelectionGoal::HorizontalPosition(goal_x.into()),
+        SelectionGoal.HorizontalPosition(goal_x.into()),
     )
 }
 
@@ -199,7 +199,7 @@ pub fn line_beginning(
     stop_at_soft_boundaries: bool,
 ) -> DisplayPoint {
     let point = display_point.to_point(map);
-    let soft_line_start = map.clip_point(DisplayPoint::new(display_point.row(), 0), Bias::Right);
+    let soft_line_start = map.clip_point(DisplayPoint.new(display_point.row(), 0), Bias.Right);
     let line_start = map.prev_line_boundary(point).1;
 
     if stop_at_soft_boundaries && display_point != soft_line_start {
@@ -219,8 +219,8 @@ pub fn indented_line_beginning(
     stop_at_soft_boundaries: bool,
 ) -> DisplayPoint {
     let point = display_point.to_point(map);
-    let soft_line_start = map.clip_point(DisplayPoint::new(display_point.row(), 0), Bias::Right);
-    let indent_start = Point::new(
+    let soft_line_start = map.clip_point(DisplayPoint.new(display_point.row(), 0), Bias.Right);
+    let indent_start = Point.new(
         point.row,
         map.buffer_snapshot
             .indent_size_for_line(MultiBufferRow(point.row))
@@ -250,8 +250,8 @@ pub fn line_end(
     stop_at_soft_boundaries: bool,
 ) -> DisplayPoint {
     let soft_line_end = map.clip_point(
-        DisplayPoint::new(display_point.row(), map.line_len(display_point.row())),
-        Bias::Left,
+        DisplayPoint.new(display_point.row(), map.line_len(display_point.row())),
+        Bias.Left,
     );
     if stop_at_soft_boundaries && display_point != soft_line_end {
         soft_line_end
@@ -266,7 +266,7 @@ pub fn previous_word_start(map: &DisplaySnapshot, point: DisplayPoint) -> Displa
     let raw_point = point.to_point(map);
     let scope = map.buffer_snapshot.language_scope_at(raw_point);
 
-    find_preceding_boundary_display_point(map, point, FindRange::MultiLine, |left, right| {
+    find_preceding_boundary_display_point(map, point, FindRange.MultiLine, |left, right| {
         (char_kind(&scope, left) != char_kind(&scope, right) && !right.is_whitespace())
             || left == '\n'
     })
@@ -279,7 +279,7 @@ pub fn previous_subword_start(map: &DisplaySnapshot, point: DisplayPoint) -> Dis
     let raw_point = point.to_point(map);
     let scope = map.buffer_snapshot.language_scope_at(raw_point);
 
-    find_preceding_boundary_display_point(map, point, FindRange::MultiLine, |left, right| {
+    find_preceding_boundary_display_point(map, point, FindRange.MultiLine, |left, right| {
         let is_word_start =
             char_kind(&scope, left) != char_kind(&scope, right) && !right.is_whitespace();
         let is_subword_start =
@@ -294,7 +294,7 @@ pub fn next_word_end(map: &DisplaySnapshot, point: DisplayPoint) -> DisplayPoint
     let raw_point = point.to_point(map);
     let scope = map.buffer_snapshot.language_scope_at(raw_point);
 
-    find_boundary(map, point, FindRange::MultiLine, |left, right| {
+    find_boundary(map, point, FindRange.MultiLine, |left, right| {
         (char_kind(&scope, left) != char_kind(&scope, right) && !left.is_whitespace())
             || right == '\n'
     })
@@ -307,7 +307,7 @@ pub fn next_subword_end(map: &DisplaySnapshot, point: DisplayPoint) -> DisplayPo
     let raw_point = point.to_point(map);
     let scope = map.buffer_snapshot.language_scope_at(raw_point);
 
-    find_boundary(map, point, FindRange::MultiLine, |left, right| {
+    find_boundary(map, point, FindRange.MultiLine, |left, right| {
         let is_word_end =
             (char_kind(&scope, left) != char_kind(&scope, right)) && !left.is_whitespace();
         let is_subword_end =
@@ -325,7 +325,7 @@ pub fn start_of_paragraph(
 ) -> DisplayPoint {
     let point = display_point.to_point(map);
     if point.row == 0 {
-        return DisplayPoint::zero();
+        return DisplayPoint.zero();
     }
 
     let mut found_non_blank_line = false;
@@ -333,7 +333,7 @@ pub fn start_of_paragraph(
         let blank = map.buffer_snapshot.is_line_blank(MultiBufferRow(row));
         if found_non_blank_line && blank {
             if count <= 1 {
-                return Point::new(row, 0).to_display_point(map);
+                return Point.new(row, 0).to_display_point(map);
             }
             count -= 1;
             found_non_blank_line = false;
@@ -342,7 +342,7 @@ pub fn start_of_paragraph(
         found_non_blank_line |= !blank;
     }
 
-    DisplayPoint::zero()
+    DisplayPoint.zero()
 }
 
 /// Returns a position of the end of the current paragraph, where a paragraph
@@ -362,7 +362,7 @@ pub fn end_of_paragraph(
         let blank = map.buffer_snapshot.is_line_blank(MultiBufferRow(row));
         if found_non_blank_line && blank {
             if count <= 1 {
-                return Point::new(row, 0).to_display_point(map);
+                return Point.new(row, 0).to_display_point(map);
             }
             count -= 1;
             found_non_blank_line = false;
@@ -377,7 +377,7 @@ pub fn end_of_paragraph(
 /// Scans for a boundary preceding the given start point `from` until a boundary is found,
 /// indicated by the given predicate returning true.
 /// The predicate is called with the character to the left and right of the candidate boundary location.
-/// If FindRange::SingleLine is specified and no boundary is found before the start of the current line, the start of the current line will be returned.
+/// If FindRange.SingleLine is specified and no boundary is found before the start of the current line, the start of the current line will be returned.
 pub fn find_preceding_boundary_point(
     buffer_snapshot: &MultiBufferSnapshot,
     from: Point,
@@ -388,7 +388,7 @@ pub fn find_preceding_boundary_point(
     let mut offset = from.to_offset(&buffer_snapshot);
 
     for ch in buffer_snapshot.reversed_chars_at(offset) {
-        if find_range == FindRange::SingleLine && ch == '\n' {
+        if find_range == FindRange.SingleLine && ch == '\n' {
             break;
         }
         if let Some(prev_ch) = prev_ch {
@@ -407,7 +407,7 @@ pub fn find_preceding_boundary_point(
 /// Scans for a boundary preceding the given start point `from` until a boundary is found,
 /// indicated by the given predicate returning true.
 /// The predicate is called with the character to the left and right of the candidate boundary location.
-/// If FindRange::SingleLine is specified and no boundary is found before the start of the current line, the start of the current line will be returned.
+/// If FindRange.SingleLine is specified and no boundary is found before the start of the current line, the start of the current line will be returned.
 pub fn find_preceding_boundary_display_point(
     map: &DisplaySnapshot,
     from: DisplayPoint,
@@ -420,7 +420,7 @@ pub fn find_preceding_boundary_display_point(
         find_range,
         is_boundary,
     );
-    map.clip_point(result.to_display_point(map), Bias::Left)
+    map.clip_point(result.to_display_point(map), Bias.Left)
 }
 
 /// Scans for a boundary following the given start point until a boundary is found, indicated by the
@@ -435,18 +435,18 @@ pub fn find_boundary_point(
     mut is_boundary: impl FnMut(char, char) -> bool,
     return_point_before_boundary: bool,
 ) -> DisplayPoint {
-    let mut offset = from.to_offset(&map, Bias::Right);
+    let mut offset = from.to_offset(&map, Bias.Right);
     let mut prev_offset = offset;
     let mut prev_ch = None;
 
     for ch in map.buffer_snapshot.chars_at(offset) {
-        if find_range == FindRange::SingleLine && ch == '\n' {
+        if find_range == FindRange.SingleLine && ch == '\n' {
             break;
         }
         if let Some(prev_ch) = prev_ch {
             if is_boundary(prev_ch, ch) {
                 if return_point_before_boundary {
-                    return map.clip_point(prev_offset.to_display_point(map), Bias::Right);
+                    return map.clip_point(prev_offset.to_display_point(map), Bias.Right);
                 } else {
                     break;
                 }
@@ -456,7 +456,7 @@ pub fn find_boundary_point(
         offset += ch.len_utf8();
         prev_ch = Some(ch);
     }
-    map.clip_point(offset.to_display_point(map), Bias::Right)
+    map.clip_point(offset.to_display_point(map), Bias.Right)
 }
 
 pub fn find_boundary(
@@ -510,14 +510,14 @@ pub fn chars_before(
 pub(crate) fn is_inside_word(map: &DisplaySnapshot, point: DisplayPoint) -> bool {
     let raw_point = point.to_point(map);
     let scope = map.buffer_snapshot.language_scope_at(raw_point);
-    let ix = map.clip_point(point, Bias::Left).to_offset(map, Bias::Left);
+    let ix = map.clip_point(point, Bias.Left).to_offset(map, Bias.Left);
     let text = &map.buffer_snapshot;
     let next_char_kind = text.chars_at(ix).next().map(|c| char_kind(&scope, c));
     let prev_char_kind = text
         .reversed_chars_at(ix)
         .next()
         .map(|c| char_kind(&scope, c));
-    prev_char_kind.zip(next_char_kind) == Some((CharKind::Word, CharKind::Word))
+    prev_char_kind.zip(next_char_kind) == Some((CharKind.Word, CharKind.Word))
 }
 
 pub(crate) fn surrounding_word(
@@ -525,8 +525,8 @@ pub(crate) fn surrounding_word(
     position: DisplayPoint,
 ) -> Range<DisplayPoint> {
     let position = map
-        .clip_point(position, Bias::Left)
-        .to_offset(map, Bias::Left);
+        .clip_point(position, Bias.Left)
+        .to_offset(map, Bias.Left);
     let (range, _) = map.buffer_snapshot.surrounding_word(position);
     let start = range
         .start
@@ -549,20 +549,20 @@ pub fn split_display_range_by_lines(
     map: &DisplaySnapshot,
     range: Range<DisplayPoint>,
 ) -> Vec<Range<DisplayPoint>> {
-    let mut result = Vec::new();
+    let mut result = Vec.new();
 
     let mut start = range.start;
     // Loop over all the covered rows until the one containing the range end
     for row in range.start.row().0..range.end.row().0 {
         let row_end_column = map.line_len(DisplayRow(row));
         let end = map.clip_point(
-            DisplayPoint::new(DisplayRow(row), row_end_column),
-            Bias::Left,
+            DisplayPoint.new(DisplayRow(row), row_end_column),
+            Bias.Left,
         );
         if start != end {
             result.push(start..end);
         }
-        start = map.clip_point(DisplayPoint::new(DisplayRow(row + 1), 0), Bias::Left);
+        start = map.clip_point(DisplayPoint.new(DisplayRow(row + 1), 0), Bias.Left);
     }
 
     // Add the final range from the start of the last end to the original range end.
@@ -573,23 +573,23 @@ pub fn split_display_range_by_lines(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{
-        display_map::Inlay,
-        test::{editor_test_context::EditorTestContext, marked_display_snapshot},
+    use super.*;
+    use crate.{
+        display_map.Inlay,
+        test.{editor_test_context.EditorTestContext, marked_display_snapshot},
         Buffer, DisplayMap, DisplayRow, ExcerptRange, FoldPlaceholder, InlayId, MultiBuffer,
     };
-    use gpui::{font, Context as _};
-    use language::Capability;
-    use project::Project;
-    use settings::SettingsStore;
-    use util::post_inc;
+    use gpui.{font, Context as _};
+    use language.Capability;
+    use project.Project;
+    use settings.SettingsStore;
+    use util.post_inc;
 
-    #[gpui::test]
-    fn test_previous_word_start(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_previous_word_start(cx: &mut gpui.AppContext) {
         init_test(cx);
 
-        fn assert(marked_text: &str, cx: &mut gpui::AppContext) {
+        fn assert(marked_text: &str, cx: &mut gpui.AppContext) {
             let (snapshot, display_points) = marked_display_snapshot(marked_text, cx);
             assert_eq!(
                 previous_word_start(&snapshot, display_points[1]),
@@ -613,11 +613,11 @@ mod tests {
         assert(" abˇ——ˇcd", cx);
     }
 
-    #[gpui::test]
-    fn test_previous_subword_start(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_previous_subword_start(cx: &mut gpui.AppContext) {
         init_test(cx);
 
-        fn assert(marked_text: &str, cx: &mut gpui::AppContext) {
+        fn assert(marked_text: &str, cx: &mut gpui.AppContext) {
             let (snapshot, display_points) = marked_display_snapshot(marked_text, cx);
             assert_eq!(
                 previous_subword_start(&snapshot, display_points[1]),
@@ -648,13 +648,13 @@ mod tests {
         assert(" abˇ——ˇcd", cx);
     }
 
-    #[gpui::test]
-    fn test_find_preceding_boundary(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_find_preceding_boundary(cx: &mut gpui.AppContext) {
         init_test(cx);
 
         fn assert(
             marked_text: &str,
-            cx: &mut gpui::AppContext,
+            cx: &mut gpui.AppContext,
             is_boundary: impl FnMut(char, char) -> bool,
         ) {
             let (snapshot, display_points) = marked_display_snapshot(marked_text, cx);
@@ -662,7 +662,7 @@ mod tests {
                 find_preceding_boundary_display_point(
                     &snapshot,
                     display_points[1],
-                    FindRange::MultiLine,
+                    FindRange.MultiLine,
                     is_boundary
                 ),
                 display_points[0]
@@ -686,18 +686,18 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_find_preceding_boundary_with_inlays(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_find_preceding_boundary_with_inlays(cx: &mut gpui.AppContext) {
         init_test(cx);
 
         let input_text = "abcdefghijklmnopqrstuvwxys";
         let font = font("Helvetica");
         let font_size = px(14.0);
-        let buffer = MultiBuffer::build_simple(input_text, cx);
+        let buffer = MultiBuffer.build_simple(input_text, cx);
         let buffer_snapshot = buffer.read(cx).snapshot(cx);
 
         let display_map = cx.new_model(|cx| {
-            DisplayMap::new(
+            DisplayMap.new(
                 buffer,
                 font,
                 font_size,
@@ -706,7 +706,7 @@ mod tests {
                 1,
                 1,
                 1,
-                FoldPlaceholder::test(),
+                FoldPlaceholder.test(),
                 cx,
             )
         });
@@ -717,30 +717,30 @@ mod tests {
             .flat_map(|offset| {
                 [
                     Inlay {
-                        id: InlayId::Suggestion(post_inc(&mut id)),
-                        position: buffer_snapshot.anchor_at(offset, Bias::Left),
+                        id: InlayId.Suggestion(post_inc(&mut id)),
+                        position: buffer_snapshot.anchor_at(offset, Bias.Left),
                         text: "test".into(),
                     },
                     Inlay {
-                        id: InlayId::Suggestion(post_inc(&mut id)),
-                        position: buffer_snapshot.anchor_at(offset, Bias::Right),
+                        id: InlayId.Suggestion(post_inc(&mut id)),
+                        position: buffer_snapshot.anchor_at(offset, Bias.Right),
                         text: "test".into(),
                     },
                     Inlay {
-                        id: InlayId::Hint(post_inc(&mut id)),
-                        position: buffer_snapshot.anchor_at(offset, Bias::Left),
+                        id: InlayId.Hint(post_inc(&mut id)),
+                        position: buffer_snapshot.anchor_at(offset, Bias.Left),
                         text: "test".into(),
                     },
                     Inlay {
-                        id: InlayId::Hint(post_inc(&mut id)),
-                        position: buffer_snapshot.anchor_at(offset, Bias::Right),
+                        id: InlayId.Hint(post_inc(&mut id)),
+                        position: buffer_snapshot.anchor_at(offset, Bias.Right),
                         text: "test".into(),
                     },
                 ]
             })
             .collect();
         let snapshot = display_map.update(cx, |map, cx| {
-            map.splice_inlays(Vec::new(), inlays, cx);
+            map.splice_inlays(Vec.new(), inlays, cx);
             map.snapshot(cx)
         });
 
@@ -748,7 +748,7 @@ mod tests {
             find_preceding_boundary_display_point(
                 &snapshot,
                 buffer_snapshot.len().to_display_point(&snapshot),
-                FindRange::MultiLine,
+                FindRange.MultiLine,
                 |left, _| left == 'e',
             ),
             snapshot
@@ -759,11 +759,11 @@ mod tests {
         );
     }
 
-    #[gpui::test]
-    fn test_next_word_end(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_next_word_end(cx: &mut gpui.AppContext) {
         init_test(cx);
 
-        fn assert(marked_text: &str, cx: &mut gpui::AppContext) {
+        fn assert(marked_text: &str, cx: &mut gpui.AppContext) {
             let (snapshot, display_points) = marked_display_snapshot(marked_text, cx);
             assert_eq!(
                 next_word_end(&snapshot, display_points[0]),
@@ -784,11 +784,11 @@ mod tests {
         assert(" abˇ——ˇcd", cx);
     }
 
-    #[gpui::test]
-    fn test_next_subword_end(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_next_subword_end(cx: &mut gpui.AppContext) {
         init_test(cx);
 
-        fn assert(marked_text: &str, cx: &mut gpui::AppContext) {
+        fn assert(marked_text: &str, cx: &mut gpui.AppContext) {
             let (snapshot, display_points) = marked_display_snapshot(marked_text, cx);
             assert_eq!(
                 next_subword_end(&snapshot, display_points[0]),
@@ -818,13 +818,13 @@ mod tests {
         assert(" abˇ——ˇcd", cx);
     }
 
-    #[gpui::test]
-    fn test_find_boundary(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_find_boundary(cx: &mut gpui.AppContext) {
         init_test(cx);
 
         fn assert(
             marked_text: &str,
-            cx: &mut gpui::AppContext,
+            cx: &mut gpui.AppContext,
             is_boundary: impl FnMut(char, char) -> bool,
         ) {
             let (snapshot, display_points) = marked_display_snapshot(marked_text, cx);
@@ -832,7 +832,7 @@ mod tests {
                 find_boundary(
                     &snapshot,
                     display_points[0],
-                    FindRange::MultiLine,
+                    FindRange.MultiLine,
                     is_boundary,
                 ),
                 display_points[1]
@@ -856,11 +856,11 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    fn test_surrounding_word(cx: &mut gpui::AppContext) {
+    #[gpui.test]
+    fn test_surrounding_word(cx: &mut gpui.AppContext) {
         init_test(cx);
 
-        fn assert(marked_text: &str, cx: &mut gpui::AppContext) {
+        fn assert(marked_text: &str, cx: &mut gpui.AppContext) {
             let (snapshot, display_points) = marked_display_snapshot(marked_text, cx);
             assert_eq!(
                 surrounding_word(&snapshot, display_points[1]),
@@ -880,13 +880,13 @@ mod tests {
         assert("ˇloremˇˇ, ipsum", cx);
     }
 
-    #[gpui::test]
-    async fn test_move_up_and_down_with_excerpts(cx: &mut gpui::TestAppContext) {
+    #[gpui.test]
+    async fn test_move_up_and_down_with_excerpts(cx: &mut gpui.TestAppContext) {
         cx.update(|cx| {
             init_test(cx);
         });
 
-        let mut cx = EditorTestContext::new(cx).await;
+        let mut cx = EditorTestContext.new(cx).await;
         let editor = cx.editor.clone();
         let window = cx.window;
         _ = cx.update_window(window, |_, cx| {
@@ -895,18 +895,18 @@ mod tests {
 
             let font = font("Helvetica");
 
-            let buffer = cx.new_model(|cx| Buffer::local("abc\ndefg\nhijkl\nmn", cx));
+            let buffer = cx.new_model(|cx| Buffer.local("abc\ndefg\nhijkl\nmn", cx));
             let multibuffer = cx.new_model(|cx| {
-                let mut multibuffer = MultiBuffer::new(0, Capability::ReadWrite);
+                let mut multibuffer = MultiBuffer.new(0, Capability.ReadWrite);
                 multibuffer.push_excerpts(
                     buffer.clone(),
                     [
                         ExcerptRange {
-                            context: Point::new(0, 0)..Point::new(1, 4),
+                            context: Point.new(0, 0)..Point.new(1, 4),
                             primary: None,
                         },
                         ExcerptRange {
-                            context: Point::new(2, 0)..Point::new(3, 2),
+                            context: Point.new(2, 0)..Point.new(3, 2),
                             primary: None,
                         },
                     ],
@@ -915,7 +915,7 @@ mod tests {
                 multibuffer
             });
             let display_map = cx.new_model(|cx| {
-                DisplayMap::new(
+                DisplayMap.new(
                     multibuffer,
                     font,
                     px(14.0),
@@ -924,7 +924,7 @@ mod tests {
                     2,
                     2,
                     0,
-                    FoldPlaceholder::test(),
+                    FoldPlaceholder.test(),
                     cx,
                 )
             });
@@ -933,137 +933,137 @@ mod tests {
             assert_eq!(snapshot.text(), "\n\nabc\ndefg\n\n\nhijkl\nmn");
 
             let col_2_x = snapshot
-                .x_for_display_point(DisplayPoint::new(DisplayRow(2), 2), &text_layout_details);
+                .x_for_display_point(DisplayPoint.new(DisplayRow(2), 2), &text_layout_details);
 
             // Can't move up into the first excerpt's header
             assert_eq!(
                 up(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(2), 2),
-                    SelectionGoal::HorizontalPosition(col_2_x.0),
+                    DisplayPoint.new(DisplayRow(2), 2),
+                    SelectionGoal.HorizontalPosition(col_2_x.0),
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(2), 0),
-                    SelectionGoal::HorizontalPosition(0.0)
+                    DisplayPoint.new(DisplayRow(2), 0),
+                    SelectionGoal.HorizontalPosition(0.0)
                 ),
             );
             assert_eq!(
                 up(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(2), 0),
-                    SelectionGoal::None,
+                    DisplayPoint.new(DisplayRow(2), 0),
+                    SelectionGoal.None,
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(2), 0),
-                    SelectionGoal::HorizontalPosition(0.0)
+                    DisplayPoint.new(DisplayRow(2), 0),
+                    SelectionGoal.HorizontalPosition(0.0)
                 ),
             );
 
             let col_4_x = snapshot
-                .x_for_display_point(DisplayPoint::new(DisplayRow(3), 4), &text_layout_details);
+                .x_for_display_point(DisplayPoint.new(DisplayRow(3), 4), &text_layout_details);
 
             // Move up and down within first excerpt
             assert_eq!(
                 up(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(3), 4),
-                    SelectionGoal::HorizontalPosition(col_4_x.0),
+                    DisplayPoint.new(DisplayRow(3), 4),
+                    SelectionGoal.HorizontalPosition(col_4_x.0),
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(2), 3),
-                    SelectionGoal::HorizontalPosition(col_4_x.0)
+                    DisplayPoint.new(DisplayRow(2), 3),
+                    SelectionGoal.HorizontalPosition(col_4_x.0)
                 ),
             );
             assert_eq!(
                 down(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(2), 3),
-                    SelectionGoal::HorizontalPosition(col_4_x.0),
+                    DisplayPoint.new(DisplayRow(2), 3),
+                    SelectionGoal.HorizontalPosition(col_4_x.0),
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(3), 4),
-                    SelectionGoal::HorizontalPosition(col_4_x.0)
+                    DisplayPoint.new(DisplayRow(3), 4),
+                    SelectionGoal.HorizontalPosition(col_4_x.0)
                 ),
             );
 
             let col_5_x = snapshot
-                .x_for_display_point(DisplayPoint::new(DisplayRow(6), 5), &text_layout_details);
+                .x_for_display_point(DisplayPoint.new(DisplayRow(6), 5), &text_layout_details);
 
             // Move up and down across second excerpt's header
             assert_eq!(
                 up(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(6), 5),
-                    SelectionGoal::HorizontalPosition(col_5_x.0),
+                    DisplayPoint.new(DisplayRow(6), 5),
+                    SelectionGoal.HorizontalPosition(col_5_x.0),
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(3), 4),
-                    SelectionGoal::HorizontalPosition(col_5_x.0)
+                    DisplayPoint.new(DisplayRow(3), 4),
+                    SelectionGoal.HorizontalPosition(col_5_x.0)
                 ),
             );
             assert_eq!(
                 down(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(3), 4),
-                    SelectionGoal::HorizontalPosition(col_5_x.0),
+                    DisplayPoint.new(DisplayRow(3), 4),
+                    SelectionGoal.HorizontalPosition(col_5_x.0),
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(6), 5),
-                    SelectionGoal::HorizontalPosition(col_5_x.0)
+                    DisplayPoint.new(DisplayRow(6), 5),
+                    SelectionGoal.HorizontalPosition(col_5_x.0)
                 ),
             );
 
             let max_point_x = snapshot
-                .x_for_display_point(DisplayPoint::new(DisplayRow(7), 2), &text_layout_details);
+                .x_for_display_point(DisplayPoint.new(DisplayRow(7), 2), &text_layout_details);
 
             // Can't move down off the end
             assert_eq!(
                 down(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(7), 0),
-                    SelectionGoal::HorizontalPosition(0.0),
+                    DisplayPoint.new(DisplayRow(7), 0),
+                    SelectionGoal.HorizontalPosition(0.0),
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(7), 2),
-                    SelectionGoal::HorizontalPosition(max_point_x.0)
+                    DisplayPoint.new(DisplayRow(7), 2),
+                    SelectionGoal.HorizontalPosition(max_point_x.0)
                 ),
             );
             assert_eq!(
                 down(
                     &snapshot,
-                    DisplayPoint::new(DisplayRow(7), 2),
-                    SelectionGoal::HorizontalPosition(max_point_x.0),
+                    DisplayPoint.new(DisplayRow(7), 2),
+                    SelectionGoal.HorizontalPosition(max_point_x.0),
                     false,
                     &text_layout_details
                 ),
                 (
-                    DisplayPoint::new(DisplayRow(7), 2),
-                    SelectionGoal::HorizontalPosition(max_point_x.0)
+                    DisplayPoint.new(DisplayRow(7), 2),
+                    SelectionGoal.HorizontalPosition(max_point_x.0)
                 ),
             );
         });
     }
 
-    fn init_test(cx: &mut gpui::AppContext) {
-        let settings_store = SettingsStore::test(cx);
+    fn init_test(cx: &mut gpui.AppContext) {
+        let settings_store = SettingsStore.test(cx);
         cx.set_global(settings_store);
-        theme::init(theme::LoadThemes::JustBase, cx);
-        language::init(cx);
-        crate::init(cx);
-        Project::init_settings(cx);
+        theme.init(theme.LoadThemes.JustBase, cx);
+        language.init(cx);
+        crate.init(cx);
+        Project.init_settings(cx);
     }
 }

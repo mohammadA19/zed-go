@@ -1,20 +1,20 @@
-use crate::{
-    platform::mac::NSStringExt, point, px, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers,
+use crate.{
+    platform.mac.NSStringExt, point, px, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers,
     ModifiersChangedEvent, MouseButton, MouseDownEvent, MouseExitEvent, MouseMoveEvent,
     MouseUpEvent, NavigationDirection, Pixels, PlatformInput, ScrollDelta, ScrollWheelEvent,
     TouchPhase,
 };
-use cocoa::{
-    appkit::{NSEvent, NSEventModifierFlags, NSEventPhase, NSEventType},
-    base::{id, YES},
+use cocoa.{
+    appkit.{NSEvent, NSEventModifierFlags, NSEventPhase, NSEventType},
+    base.{id, YES},
 };
-use core_graphics::{
-    event::{CGEvent, CGEventFlags, CGKeyCode},
-    event_source::{CGEventSource, CGEventSourceStateID},
+use core_graphics.{
+    event.{CGEvent, CGEventFlags, CGKeyCode},
+    event_source.{CGEventSource, CGEventSourceStateID},
 };
-use metal::foreign_types::ForeignType as _;
-use objc::{class, msg_send, sel, sel_impl};
-use std::{borrow::Cow, mem, ptr, sync::Once};
+use metal.foreign_types.ForeignType as _;
+use objc.{class, msg_send, sel, sel_impl};
+use std.{borrow.Cow, mem, ptr, sync.Once};
 
 const BACKSPACE_KEY: u16 = 0x7f;
 const SPACE_KEY: u16 = b' ' as u16;
@@ -25,25 +25,25 @@ const TAB_KEY: u16 = 0x09;
 const SHIFT_TAB_KEY: u16 = 0x19;
 
 fn synthesize_keyboard_event(code: CGKeyCode) -> CGEvent {
-    static mut EVENT_SOURCE: core_graphics::sys::CGEventSourceRef = ptr::null_mut();
-    static INIT_EVENT_SOURCE: Once = Once::new();
+    static mut EVENT_SOURCE: core_graphics.sys.CGEventSourceRef = ptr.null_mut();
+    static INIT_EVENT_SOURCE: Once = Once.new();
 
     INIT_EVENT_SOURCE.call_once(|| {
-        let source = CGEventSource::new(CGEventSourceStateID::Private).unwrap();
+        let source = CGEventSource.new(CGEventSourceStateID.Private).unwrap();
         unsafe {
             EVENT_SOURCE = source.as_ptr();
         };
-        mem::forget(source);
+        mem.forget(source);
     });
 
-    let source = unsafe { core_graphics::event_source::CGEventSource::from_ptr(EVENT_SOURCE) };
-    let event = CGEvent::new_keyboard_event(source.clone(), code, true).unwrap();
-    mem::forget(source);
+    let source = unsafe { core_graphics.event_source.CGEventSource.from_ptr(EVENT_SOURCE) };
+    let event = CGEvent.new_keyboard_event(source.clone(), code, true).unwrap();
+    mem.forget(source);
     event
 }
 
 pub fn key_to_native(key: &str) -> Cow<str> {
-    use cocoa::appkit::*;
+    use cocoa.appkit.*;
     let code = match key {
         "space" => SPACE_KEY,
         "backspace" => BACKSPACE_KEY,
@@ -68,18 +68,18 @@ pub fn key_to_native(key: &str) -> Cow<str> {
         "f10" => NSF10FunctionKey,
         "f11" => NSF11FunctionKey,
         "f12" => NSF12FunctionKey,
-        _ => return Cow::Borrowed(key),
+        _ => return Cow.Borrowed(key),
     };
-    Cow::Owned(String::from_utf16(&[code]).unwrap())
+    Cow.Owned(String.from_utf16(&[code]).unwrap())
 }
 
 unsafe fn read_modifiers(native_event: id) -> Modifiers {
     let modifiers = native_event.modifierFlags();
-    let control = modifiers.contains(NSEventModifierFlags::NSControlKeyMask);
-    let alt = modifiers.contains(NSEventModifierFlags::NSAlternateKeyMask);
-    let shift = modifiers.contains(NSEventModifierFlags::NSShiftKeyMask);
-    let command = modifiers.contains(NSEventModifierFlags::NSCommandKeyMask);
-    let function = modifiers.contains(NSEventModifierFlags::NSFunctionKeyMask);
+    let control = modifiers.contains(NSEventModifierFlags.NSControlKeyMask);
+    let alt = modifiers.contains(NSEventModifierFlags.NSAlternateKeyMask);
+    let shift = modifiers.contains(NSEventModifierFlags.NSShiftKeyMask);
+    let command = modifiers.contains(NSEventModifierFlags.NSCommandKeyMask);
+    let function = modifiers.contains(NSEventModifierFlags.NSFunctionKeyMask);
 
     Modifiers {
         control,
@@ -107,30 +107,30 @@ impl PlatformInput {
         }
 
         match event_type {
-            NSEventType::NSFlagsChanged => Some(Self::ModifiersChanged(ModifiersChangedEvent {
+            NSEventType.NSFlagsChanged => Some(Self.ModifiersChanged(ModifiersChangedEvent {
                 modifiers: read_modifiers(native_event),
             })),
-            NSEventType::NSKeyDown => Some(Self::KeyDown(KeyDownEvent {
+            NSEventType.NSKeyDown => Some(Self.KeyDown(KeyDownEvent {
                 keystroke: parse_keystroke(native_event),
                 is_held: native_event.isARepeat() == YES,
             })),
-            NSEventType::NSKeyUp => Some(Self::KeyUp(KeyUpEvent {
+            NSEventType.NSKeyUp => Some(Self.KeyUp(KeyUpEvent {
                 keystroke: parse_keystroke(native_event),
             })),
-            NSEventType::NSLeftMouseDown
-            | NSEventType::NSRightMouseDown
-            | NSEventType::NSOtherMouseDown => {
+            NSEventType.NSLeftMouseDown
+            | NSEventType.NSRightMouseDown
+            | NSEventType.NSOtherMouseDown => {
                 let button = match native_event.buttonNumber() {
-                    0 => MouseButton::Left,
-                    1 => MouseButton::Right,
-                    2 => MouseButton::Middle,
-                    3 => MouseButton::Navigate(NavigationDirection::Back),
-                    4 => MouseButton::Navigate(NavigationDirection::Forward),
+                    0 => MouseButton.Left,
+                    1 => MouseButton.Right,
+                    2 => MouseButton.Middle,
+                    3 => MouseButton.Navigate(NavigationDirection.Back),
+                    4 => MouseButton.Navigate(NavigationDirection.Forward),
                     // Other mouse buttons aren't tracked currently
                     _ => return None,
                 };
                 window_height.map(|window_height| {
-                    Self::MouseDown(MouseDownEvent {
+                    Self.MouseDown(MouseDownEvent {
                         button,
                         position: point(
                             px(native_event.locationInWindow().x as f32),
@@ -143,21 +143,21 @@ impl PlatformInput {
                     })
                 })
             }
-            NSEventType::NSLeftMouseUp
-            | NSEventType::NSRightMouseUp
-            | NSEventType::NSOtherMouseUp => {
+            NSEventType.NSLeftMouseUp
+            | NSEventType.NSRightMouseUp
+            | NSEventType.NSOtherMouseUp => {
                 let button = match native_event.buttonNumber() {
-                    0 => MouseButton::Left,
-                    1 => MouseButton::Right,
-                    2 => MouseButton::Middle,
-                    3 => MouseButton::Navigate(NavigationDirection::Back),
-                    4 => MouseButton::Navigate(NavigationDirection::Forward),
+                    0 => MouseButton.Left,
+                    1 => MouseButton.Right,
+                    2 => MouseButton.Middle,
+                    3 => MouseButton.Navigate(NavigationDirection.Back),
+                    4 => MouseButton.Navigate(NavigationDirection.Forward),
                     // Other mouse buttons aren't tracked currently
                     _ => return None,
                 };
 
                 window_height.map(|window_height| {
-                    Self::MouseUp(MouseUpEvent {
+                    Self.MouseUp(MouseUpEvent {
                         button,
                         position: point(
                             px(native_event.locationInWindow().x as f32),
@@ -168,13 +168,13 @@ impl PlatformInput {
                     })
                 })
             }
-            NSEventType::NSScrollWheel => window_height.map(|window_height| {
+            NSEventType.NSScrollWheel => window_height.map(|window_height| {
                 let phase = match native_event.phase() {
-                    NSEventPhase::NSEventPhaseMayBegin | NSEventPhase::NSEventPhaseBegan => {
-                        TouchPhase::Started
+                    NSEventPhase.NSEventPhaseMayBegin | NSEventPhase.NSEventPhaseBegan => {
+                        TouchPhase.Started
                     }
-                    NSEventPhase::NSEventPhaseEnded => TouchPhase::Ended,
-                    _ => TouchPhase::Moved,
+                    NSEventPhase.NSEventPhaseEnded => TouchPhase.Ended,
+                    _ => TouchPhase.Moved,
                 };
 
                 let raw_data = point(
@@ -183,12 +183,12 @@ impl PlatformInput {
                 );
 
                 let delta = if native_event.hasPreciseScrollingDeltas() == YES {
-                    ScrollDelta::Pixels(raw_data.map(px))
+                    ScrollDelta.Pixels(raw_data.map(px))
                 } else {
-                    ScrollDelta::Lines(raw_data)
+                    ScrollDelta.Lines(raw_data)
                 };
 
-                Self::ScrollWheel(ScrollWheelEvent {
+                Self.ScrollWheel(ScrollWheelEvent {
                     position: point(
                         px(native_event.locationInWindow().x as f32),
                         window_height - px(native_event.locationInWindow().y as f32),
@@ -198,21 +198,21 @@ impl PlatformInput {
                     modifiers: read_modifiers(native_event),
                 })
             }),
-            NSEventType::NSLeftMouseDragged
-            | NSEventType::NSRightMouseDragged
-            | NSEventType::NSOtherMouseDragged => {
+            NSEventType.NSLeftMouseDragged
+            | NSEventType.NSRightMouseDragged
+            | NSEventType.NSOtherMouseDragged => {
                 let pressed_button = match native_event.buttonNumber() {
-                    0 => MouseButton::Left,
-                    1 => MouseButton::Right,
-                    2 => MouseButton::Middle,
-                    3 => MouseButton::Navigate(NavigationDirection::Back),
-                    4 => MouseButton::Navigate(NavigationDirection::Forward),
+                    0 => MouseButton.Left,
+                    1 => MouseButton.Right,
+                    2 => MouseButton.Middle,
+                    3 => MouseButton.Navigate(NavigationDirection.Back),
+                    4 => MouseButton.Navigate(NavigationDirection.Forward),
                     // Other mouse buttons aren't tracked currently
                     _ => return None,
                 };
 
                 window_height.map(|window_height| {
-                    Self::MouseMove(MouseMoveEvent {
+                    Self.MouseMove(MouseMoveEvent {
                         pressed_button: Some(pressed_button),
                         position: point(
                             px(native_event.locationInWindow().x as f32),
@@ -222,8 +222,8 @@ impl PlatformInput {
                     })
                 })
             }
-            NSEventType::NSMouseMoved => window_height.map(|window_height| {
-                Self::MouseMove(MouseMoveEvent {
+            NSEventType.NSMouseMoved => window_height.map(|window_height| {
+                Self.MouseMove(MouseMoveEvent {
                     position: point(
                         px(native_event.locationInWindow().x as f32),
                         window_height - px(native_event.locationInWindow().y as f32),
@@ -232,8 +232,8 @@ impl PlatformInput {
                     modifiers: read_modifiers(native_event),
                 })
             }),
-            NSEventType::NSMouseExited => window_height.map(|window_height| {
-                Self::MouseExited(MouseExitEvent {
+            NSEventType.NSMouseExited => window_height.map(|window_height| {
+                Self.MouseExited(MouseExitEvent {
                     position: point(
                         px(native_event.locationInWindow().x as f32),
                         window_height - px(native_event.locationInWindow().y as f32),
@@ -249,7 +249,7 @@ impl PlatformInput {
 }
 
 unsafe fn parse_keystroke(native_event: id) -> Keystroke {
-    use cocoa::appkit::*;
+    use cocoa.appkit.*;
 
     let mut chars_ignoring_modifiers = native_event
         .charactersIgnoringModifiers()
@@ -258,11 +258,11 @@ unsafe fn parse_keystroke(native_event: id) -> Keystroke {
     let first_char = chars_ignoring_modifiers.chars().next().map(|ch| ch as u16);
     let modifiers = native_event.modifierFlags();
 
-    let control = modifiers.contains(NSEventModifierFlags::NSControlKeyMask);
-    let alt = modifiers.contains(NSEventModifierFlags::NSAlternateKeyMask);
-    let mut shift = modifiers.contains(NSEventModifierFlags::NSShiftKeyMask);
-    let command = modifiers.contains(NSEventModifierFlags::NSCommandKeyMask);
-    let function = modifiers.contains(NSEventModifierFlags::NSFunctionKeyMask)
+    let control = modifiers.contains(NSEventModifierFlags.NSControlKeyMask);
+    let alt = modifiers.contains(NSEventModifierFlags.NSAlternateKeyMask);
+    let mut shift = modifiers.contains(NSEventModifierFlags.NSShiftKeyMask);
+    let command = modifiers.contains(NSEventModifierFlags.NSCommandKeyMask);
+    let function = modifiers.contains(NSEventModifierFlags.NSFunctionKeyMask)
         && first_char.map_or(true, |ch| {
             !(NSUpArrowFunctionKey..=NSModeSwitchFunctionKey).contains(&ch)
         });
@@ -345,12 +345,12 @@ fn chars_for_modified_key(code: CGKeyCode, cmd: bool, shift: bool) -> String {
     // returns a valid string.
     let event = synthesize_keyboard_event(code);
 
-    let mut flags = CGEventFlags::empty();
+    let mut flags = CGEventFlags.empty();
     if cmd {
-        flags |= CGEventFlags::CGEventFlagCommand;
+        flags |= CGEventFlags.CGEventFlagCommand;
     }
     if shift {
-        flags |= CGEventFlags::CGEventFlagShift;
+        flags |= CGEventFlags.CGEventFlagShift;
     }
     event.set_flags(flags);
 

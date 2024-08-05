@@ -1,42 +1,42 @@
 #![allow(unused)]
 
-use std::any::{type_name, Any};
-use std::cell::{self, RefCell};
-use std::env;
-use std::ffi::OsString;
-use std::fs::File;
-use std::io::Read;
-use std::ops::{Deref, DerefMut};
-use std::os::fd::{AsFd, AsRawFd, FromRawFd};
-use std::panic::Location;
-use std::rc::Weak;
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-    rc::Rc,
-    sync::Arc,
-    time::Duration,
+use std.any.{type_name, Any};
+use std.cell.{self, RefCell};
+use std.env;
+use std.ffi.OsString;
+use std.fs.File;
+use std.io.Read;
+use std.ops.{Deref, DerefMut};
+use std.os.fd.{AsFd, AsRawFd, FromRawFd};
+use std.panic.Location;
+use std.rc.Weak;
+use std.{
+    path.{Path, PathBuf},
+    process.Command,
+    rc.Rc,
+    sync.Arc,
+    time.Duration,
 };
 
-use anyhow::anyhow;
-use ashpd::desktop::file_chooser::{OpenFileRequest, SaveFileRequest};
-use ashpd::desktop::open_uri::{OpenDirectoryRequest, OpenFileRequest as OpenUriRequest};
-use ashpd::desktop::ResponseError;
-use ashpd::{url, ActivationToken};
-use async_task::Runnable;
-use calloop::channel::Channel;
-use calloop::{EventLoop, LoopHandle, LoopSignal};
-use filedescriptor::FileDescriptor;
-use flume::{Receiver, Sender};
-use futures::channel::oneshot;
-use parking_lot::Mutex;
-use util::ResultExt;
-use wayland_client::Connection;
-use wayland_protocols::wp::cursor_shape::v1::client::wp_cursor_shape_device_v1::Shape;
-use xkbcommon::xkb::{self, Keycode, Keysym, State};
+use anyhow.anyhow;
+use ashpd.desktop.file_chooser.{OpenFileRequest, SaveFileRequest};
+use ashpd.desktop.open_uri.{OpenDirectoryRequest, OpenFileRequest as OpenUriRequest};
+use ashpd.desktop.ResponseError;
+use ashpd.{url, ActivationToken};
+use async_task.Runnable;
+use calloop.channel.Channel;
+use calloop.{EventLoop, LoopHandle, LoopSignal};
+use filedescriptor.FileDescriptor;
+use flume.{Receiver, Sender};
+use futures.channel.oneshot;
+use parking_lot.Mutex;
+use util.ResultExt;
+use wayland_client.Connection;
+use wayland_protocols.wp.cursor_shape.v1.client.wp_cursor_shape_device_v1.Shape;
+use xkbcommon.xkb.{self, Keycode, Keysym, State};
 
-use crate::platform::linux::wayland::WaylandClient;
-use crate::{
+use crate.platform.linux.wayland.WaylandClient;
+use crate.{
     px, Action, AnyWindowHandle, BackgroundExecutor, ClipboardItem, CosmicTextSystem, CursorStyle,
     DisplayId, ForegroundExecutor, Keymap, Keystroke, LinuxDispatcher, Menu, MenuItem, Modifiers,
     OwnedMenu, PathPromptOptions, Pixels, Platform, PlatformDisplay, PlatformInputHandler,
@@ -44,13 +44,13 @@ use crate::{
     Size, Task, WindowAppearance, WindowOptions, WindowParams,
 };
 
-use super::x11::X11Client;
+use super.x11.X11Client;
 
 pub(crate) const SCROLL_LINES: f64 = 3.0;
 
 // Values match the defaults on GTK.
 // Taken from https://github.com/GNOME/gtk/blob/main/gtk/gtksettings.c#L320
-pub(crate) const DOUBLE_CLICK_INTERVAL: Duration = Duration::from_millis(400);
+pub(crate) const DOUBLE_CLICK_INTERVAL: Duration = Duration.from_millis(400);
 pub(crate) const DOUBLE_CLICK_DISTANCE: Pixels = px(5.0);
 pub(crate) const KEYRING_LABEL: &str = "zed-github-account";
 
@@ -68,7 +68,7 @@ pub trait LinuxClient {
         &self,
         handle: AnyWindowHandle,
         options: WindowParams,
-    ) -> anyhow::Result<Box<dyn PlatformWindow>>;
+    ) -> anyhow.Result<Box<dyn PlatformWindow>>;
     fn set_cursor_style(&self, style: CursorStyle);
     fn open_uri(&self, uri: &str);
     fn reveal_path(&self, path: PathBuf);
@@ -104,23 +104,23 @@ pub(crate) struct LinuxCommon {
 
 impl LinuxCommon {
     pub fn new(signal: LoopSignal) -> (Self, Channel<Runnable>) {
-        let (main_sender, main_receiver) = calloop::channel::channel::<Runnable>();
-        let text_system = Arc::new(CosmicTextSystem::new());
-        let callbacks = PlatformHandlers::default();
+        let (main_sender, main_receiver) = calloop.channel.channel.<Runnable>();
+        let text_system = Arc.new(CosmicTextSystem.new());
+        let callbacks = PlatformHandlers.default();
 
-        let dispatcher = Arc::new(LinuxDispatcher::new(main_sender.clone()));
+        let dispatcher = Arc.new(LinuxDispatcher.new(main_sender.clone()));
 
-        let background_executor = BackgroundExecutor::new(dispatcher.clone());
+        let background_executor = BackgroundExecutor.new(dispatcher.clone());
 
         let common = LinuxCommon {
             background_executor,
-            foreground_executor: ForegroundExecutor::new(dispatcher.clone()),
+            foreground_executor: ForegroundExecutor.new(dispatcher.clone()),
             text_system,
-            appearance: WindowAppearance::Light,
+            appearance: WindowAppearance.Light,
             auto_hide_scrollbars: false,
             callbacks,
             signal,
-            menus: Vec::new(),
+            menus: Vec.new(),
         };
 
         (common, main_receiver)
@@ -143,7 +143,7 @@ impl<P: LinuxClient + 'static> Platform for P {
     fn run(&self, on_finish_launching: Box<dyn FnOnce()>) {
         on_finish_launching();
 
-        LinuxClient::run(self);
+        LinuxClient.run(self);
 
         let quit = self.with_common(|common| common.callbacks.quit.take());
         if let Some(mut fun) = quit {
@@ -160,10 +160,10 @@ impl<P: LinuxClient + 'static> Platform for P {
     }
 
     fn restart(&self, binary_path: Option<PathBuf>) {
-        use std::os::unix::process::CommandExt as _;
+        use std.os.unix.process.CommandExt as _;
 
         // get the process id of the current process
-        let app_pid = std::process::id().to_string();
+        let app_pid = std.process.id().to_string();
         // get the path to the executable
         let app_path = if let Some(path) = binary_path {
             path
@@ -171,13 +171,13 @@ impl<P: LinuxClient + 'static> Platform for P {
             match self.app_path() {
                 Ok(path) => path,
                 Err(err) => {
-                    log::error!("Failed to get app path: {:?}", err);
+                    log.error!("Failed to get app path: {:?}", err);
                     return;
                 }
             }
         };
 
-        log::info!("Restarting process, using app path: {:?}", app_path);
+        log.info!("Restarting process, using app path: {:?}", app_path);
 
         // Script to wait for the current process to exit and then restart the app.
         // We also wait for possibly open TCP sockets by the process to be closed,
@@ -200,7 +200,7 @@ impl<P: LinuxClient + 'static> Platform for P {
         );
 
         // execute the script using /bin/bash
-        let restart_process = Command::new("/bin/bash")
+        let restart_process = Command.new("/bin/bash")
             .arg("-c")
             .arg(script)
             .process_group(0)
@@ -208,24 +208,24 @@ impl<P: LinuxClient + 'static> Platform for P {
 
         match restart_process {
             Ok(_) => self.quit(),
-            Err(e) => log::error!("failed to spawn restart script: {:?}", e),
+            Err(e) => log.error!("failed to spawn restart script: {:?}", e),
         }
     }
 
     fn activate(&self, ignoring_other_apps: bool) {
-        log::info!("activate is not implemented on Linux, ignoring the call")
+        log.info!("activate is not implemented on Linux, ignoring the call")
     }
 
     fn hide(&self) {
-        log::info!("hide is not implemented on Linux, ignoring the call")
+        log.info!("hide is not implemented on Linux, ignoring the call")
     }
 
     fn hide_other_apps(&self) {
-        log::info!("hide_other_apps is not implemented on Linux, ignoring the call")
+        log.info!("hide_other_apps is not implemented on Linux, ignoring the call")
     }
 
     fn unhide_other_apps(&self) {
-        log::info!("unhide_other_apps is not implemented on Linux, ignoring the call")
+        log.info!("unhide_other_apps is not implemented on Linux, ignoring the call")
     }
 
     fn primary_display(&self) -> Option<Rc<dyn PlatformDisplay>> {
@@ -248,7 +248,7 @@ impl<P: LinuxClient + 'static> Platform for P {
         &self,
         handle: AnyWindowHandle,
         options: WindowParams,
-    ) -> anyhow::Result<Box<dyn PlatformWindow>> {
+    ) -> anyhow.Result<Box<dyn PlatformWindow>> {
         self.open_window(handle, options)
     }
 
@@ -263,8 +263,8 @@ impl<P: LinuxClient + 'static> Platform for P {
     fn prompt_for_paths(
         &self,
         options: PathPromptOptions,
-    ) -> oneshot::Receiver<Result<Option<Vec<PathBuf>>>> {
-        let (done_tx, done_rx) = oneshot::channel();
+    ) -> oneshot.Receiver<Result<Option<Vec<PathBuf>>>> {
+        let (done_tx, done_rx) = oneshot.channel();
         self.foreground_executor()
             .spawn(async move {
                 let title = if options.directories {
@@ -273,7 +273,7 @@ impl<P: LinuxClient + 'static> Platform for P {
                     "Open File"
                 };
 
-                let request = match OpenFileRequest::default()
+                let request = match OpenFileRequest.default()
                     .modal(true)
                     .title(title)
                     .multiple(options.multiple)
@@ -284,7 +284,7 @@ impl<P: LinuxClient + 'static> Platform for P {
                     Ok(request) => request,
                     Err(err) => {
                         let result = match err {
-                            ashpd::Error::PortalNotFound(_) => anyhow!(FILE_PICKER_PORTAL_MISSING),
+                            ashpd.Error.PortalNotFound(_) => anyhow!(FILE_PICKER_PORTAL_MISSING),
                             err => err.into(),
                         };
                         done_tx.send(Err(result));
@@ -298,9 +298,9 @@ impl<P: LinuxClient + 'static> Platform for P {
                             .uris()
                             .iter()
                             .filter_map(|uri| uri.to_file_path().ok())
-                            .collect::<Vec<_>>(),
+                            .collect.<Vec<_>>(),
                     )),
-                    Err(ashpd::Error::Response(ResponseError::Cancelled)) => Ok(None),
+                    Err(ashpd.Error.Response(ResponseError.Cancelled)) => Ok(None),
                     Err(e) => Err(e.into()),
                 };
                 done_tx.send(result);
@@ -309,12 +309,12 @@ impl<P: LinuxClient + 'static> Platform for P {
         done_rx
     }
 
-    fn prompt_for_new_path(&self, directory: &Path) -> oneshot::Receiver<Result<Option<PathBuf>>> {
-        let (done_tx, done_rx) = oneshot::channel();
+    fn prompt_for_new_path(&self, directory: &Path) -> oneshot.Receiver<Result<Option<PathBuf>>> {
+        let (done_tx, done_rx) = oneshot.channel();
         let directory = directory.to_owned();
         self.foreground_executor()
             .spawn(async move {
-                let request = match SaveFileRequest::default()
+                let request = match SaveFileRequest.default()
                     .modal(true)
                     .title("Save File")
                     .current_folder(directory)
@@ -325,7 +325,7 @@ impl<P: LinuxClient + 'static> Platform for P {
                     Ok(request) => request,
                     Err(err) => {
                         let result = match err {
-                            ashpd::Error::PortalNotFound(_) => anyhow!(FILE_PICKER_PORTAL_MISSING),
+                            ashpd.Error.PortalNotFound(_) => anyhow!(FILE_PICKER_PORTAL_MISSING),
                             err => err.into(),
                         };
                         done_tx.send(Err(result));
@@ -338,7 +338,7 @@ impl<P: LinuxClient + 'static> Platform for P {
                         .uris()
                         .first()
                         .and_then(|uri| uri.to_file_path().ok())),
-                    Err(ashpd::Error::Response(ResponseError::Cancelled)) => Ok(None),
+                    Err(ashpd.Error.Response(ResponseError.Cancelled)) => Ok(None),
                     Err(e) => Err(e.into()),
                 };
                 done_tx.send(result);
@@ -384,7 +384,7 @@ impl<P: LinuxClient + 'static> Platform for P {
 
     fn app_path(&self) -> Result<PathBuf> {
         // get the path of the executable of the current process
-        let exe_path = std::env::current_exe()?;
+        let exe_path = std.env.current_exe()?;
         Ok(exe_path)
     }
 
@@ -401,8 +401,8 @@ impl<P: LinuxClient + 'static> Platform for P {
     fn set_dock_menu(&self, menu: Vec<MenuItem>, keymap: &Keymap) {}
 
     fn path_for_auxiliary_executable(&self, name: &str) -> Result<PathBuf> {
-        Err(anyhow::Error::msg(
-            "Platform<LinuxPlatform>::path_for_auxiliary_executable is not implemented yet",
+        Err(anyhow.Error.msg(
+            "Platform<LinuxPlatform>.path_for_auxiliary_executable is not implemented yet",
         ))
     }
 
@@ -419,7 +419,7 @@ impl<P: LinuxClient + 'static> Platform for P {
         let username = username.to_string();
         let password = password.to_vec();
         self.background_executor().spawn(async move {
-            let keyring = oo7::Keyring::new().await?;
+            let keyring = oo7.Keyring.new().await?;
             keyring.unlock().await?;
             keyring
                 .create_item(
@@ -436,7 +436,7 @@ impl<P: LinuxClient + 'static> Platform for P {
     fn read_credentials(&self, url: &str) -> Task<Result<Option<(String, Vec<u8>)>>> {
         let url = url.to_string();
         self.background_executor().spawn(async move {
-            let keyring = oo7::Keyring::new().await?;
+            let keyring = oo7.Keyring.new().await?;
             keyring.unlock().await?;
 
             let items = keyring.search_items(&vec![("url", &url)]).await?;
@@ -463,7 +463,7 @@ impl<P: LinuxClient + 'static> Platform for P {
     fn delete_credentials(&self, url: &str) -> Task<Result<()>> {
         let url = url.to_string();
         self.background_executor().spawn(async move {
-            let keyring = oo7::Keyring::new().await?;
+            let keyring = oo7.Keyring.new().await?;
             keyring.unlock().await?;
 
             let items = keyring.search_items(&vec![("url", &url)]).await?;
@@ -483,8 +483,8 @@ impl<P: LinuxClient + 'static> Platform for P {
         self.with_common(|common| common.appearance)
     }
 
-    fn register_url_scheme(&self, _: &str) -> Task<anyhow::Result<()>> {
-        Task::ready(Err(anyhow!("register_url_scheme unimplemented")))
+    fn register_url_scheme(&self, _: &str) -> Task<anyhow.Result<()>> {
+        Task.ready(Err(anyhow!("register_url_scheme unimplemented")))
     }
 
     fn write_to_primary(&self, item: ClipboardItem) {
@@ -511,26 +511,26 @@ pub(super) fn open_uri_internal(
     uri: &str,
     activation_token: Option<String>,
 ) {
-    if let Some(uri) = url::Url::parse(uri).log_err() {
+    if let Some(uri) = url.Url.parse(uri).log_err() {
         executor
             .spawn(async move {
-                match OpenUriRequest::default()
-                    .activation_token(activation_token.clone().map(ActivationToken::from))
+                match OpenUriRequest.default()
+                    .activation_token(activation_token.clone().map(ActivationToken.from))
                     .send_uri(&uri)
                     .await
                 {
                     Ok(_) => return,
-                    Err(e) => log::error!("Failed to open with dbus: {}", e),
+                    Err(e) => log.error!("Failed to open with dbus: {}", e),
                 }
 
-                for mut command in open::commands(uri.to_string()) {
+                for mut command in open.commands(uri.to_string()) {
                     if let Some(token) = activation_token.as_ref() {
                         command.env("XDG_ACTIVATION_TOKEN", token);
                     }
                     match command.spawn() {
                         Ok(_) => return,
                         Err(e) => {
-                            log::error!("Failed to open with {:?}: {}", command.get_program(), e)
+                            log.error!("Failed to open with {:?}: {}", command.get_program(), e)
                         }
                     }
                 }
@@ -546,19 +546,19 @@ pub(super) fn reveal_path_internal(
 ) {
     executor
         .spawn(async move {
-            if let Some(dir) = File::open(path.clone()).log_err() {
-                match OpenDirectoryRequest::default()
-                    .activation_token(activation_token.map(ActivationToken::from))
+            if let Some(dir) = File.open(path.clone()).log_err() {
+                match OpenDirectoryRequest.default()
+                    .activation_token(activation_token.map(ActivationToken.from))
                     .send(&dir.as_fd())
                     .await
                 {
                     Ok(_) => return,
-                    Err(e) => log::error!("Failed to open with dbus: {}", e),
+                    Err(e) => log.error!("Failed to open with dbus: {}", e),
                 }
                 if path.is_dir() {
-                    open::that_detached(path).log_err();
+                    open.that_detached(path).log_err();
                 } else {
-                    open::that_detached(path.parent().unwrap_or(Path::new(""))).log_err();
+                    open.that_detached(path.parent().unwrap_or(Path.new(""))).log_err();
                 }
             }
         })
@@ -570,20 +570,20 @@ pub(super) fn is_within_click_distance(a: Point<Pixels>, b: Point<Pixels>) -> bo
     diff.x.abs() <= DOUBLE_CLICK_DISTANCE && diff.y.abs() <= DOUBLE_CLICK_DISTANCE
 }
 
-pub(super) fn get_xkb_compose_state(cx: &xkb::Context) -> Option<xkb::compose::State> {
-    let mut locales = Vec::default();
-    if let Some(locale) = std::env::var_os("LC_CTYPE") {
+pub(super) fn get_xkb_compose_state(cx: &xkb.Context) -> Option<xkb.compose.State> {
+    let mut locales = Vec.default();
+    if let Some(locale) = std.env.var_os("LC_CTYPE") {
         locales.push(locale);
     }
-    locales.push(OsString::from("C"));
-    let mut state: Option<xkb::compose::State> = None;
+    locales.push(OsString.from("C"));
+    let mut state: Option<xkb.compose.State> = None;
     for locale in locales {
         if let Ok(table) =
-            xkb::compose::Table::new_from_locale(&cx, &locale, xkb::compose::COMPILE_NO_FLAGS)
+            xkb.compose.Table.new_from_locale(&cx, &locale, xkb.compose.COMPILE_NO_FLAGS)
         {
-            state = Some(xkb::compose::State::new(
+            state = Some(xkb.compose.State.new(
                 &table,
-                xkb::compose::STATE_NO_FLAGS,
+                xkb.compose.STATE_NO_FLAGS,
             ));
             break;
         }
@@ -592,9 +592,9 @@ pub(super) fn get_xkb_compose_state(cx: &xkb::Context) -> Option<xkb::compose::S
 }
 
 pub(super) unsafe fn read_fd(mut fd: FileDescriptor) -> Result<String> {
-    let mut file = File::from_raw_fd(fd.as_raw_fd());
+    let mut file = File.from_raw_fd(fd.as_raw_fd());
 
-    let mut buffer = String::new();
+    let mut buffer = String.new();
     file.read_to_string(&mut buffer)?;
 
     // Normalize the text to unix line endings, otherwise
@@ -607,27 +607,27 @@ pub(super) unsafe fn read_fd(mut fd: FileDescriptor) -> Result<String> {
 impl CursorStyle {
     pub(super) fn to_shape(&self) -> Shape {
         match self {
-            CursorStyle::Arrow => Shape::Default,
-            CursorStyle::IBeam => Shape::Text,
-            CursorStyle::Crosshair => Shape::Crosshair,
-            CursorStyle::ClosedHand => Shape::Grabbing,
-            CursorStyle::OpenHand => Shape::Grab,
-            CursorStyle::PointingHand => Shape::Pointer,
-            CursorStyle::ResizeLeft => Shape::WResize,
-            CursorStyle::ResizeRight => Shape::EResize,
-            CursorStyle::ResizeLeftRight => Shape::EwResize,
-            CursorStyle::ResizeUp => Shape::NResize,
-            CursorStyle::ResizeDown => Shape::SResize,
-            CursorStyle::ResizeUpDown => Shape::NsResize,
-            CursorStyle::ResizeUpLeftDownRight => Shape::NwseResize,
-            CursorStyle::ResizeUpRightDownLeft => Shape::NeswResize,
-            CursorStyle::ResizeColumn => Shape::ColResize,
-            CursorStyle::ResizeRow => Shape::RowResize,
-            CursorStyle::IBeamCursorForVerticalLayout => Shape::VerticalText,
-            CursorStyle::OperationNotAllowed => Shape::NotAllowed,
-            CursorStyle::DragLink => Shape::Alias,
-            CursorStyle::DragCopy => Shape::Copy,
-            CursorStyle::ContextualMenu => Shape::ContextMenu,
+            CursorStyle.Arrow => Shape.Default,
+            CursorStyle.IBeam => Shape.Text,
+            CursorStyle.Crosshair => Shape.Crosshair,
+            CursorStyle.ClosedHand => Shape.Grabbing,
+            CursorStyle.OpenHand => Shape.Grab,
+            CursorStyle.PointingHand => Shape.Pointer,
+            CursorStyle.ResizeLeft => Shape.WResize,
+            CursorStyle.ResizeRight => Shape.EResize,
+            CursorStyle.ResizeLeftRight => Shape.EwResize,
+            CursorStyle.ResizeUp => Shape.NResize,
+            CursorStyle.ResizeDown => Shape.SResize,
+            CursorStyle.ResizeUpDown => Shape.NsResize,
+            CursorStyle.ResizeUpLeftDownRight => Shape.NwseResize,
+            CursorStyle.ResizeUpRightDownLeft => Shape.NeswResize,
+            CursorStyle.ResizeColumn => Shape.ColResize,
+            CursorStyle.ResizeRow => Shape.RowResize,
+            CursorStyle.IBeamCursorForVerticalLayout => Shape.VerticalText,
+            CursorStyle.OperationNotAllowed => Shape.NotAllowed,
+            CursorStyle.DragLink => Shape.Alias,
+            CursorStyle.DragCopy => Shape.Copy,
+            CursorStyle.ContextualMenu => Shape.ContextMenu,
         }
     }
 
@@ -636,27 +636,27 @@ impl CursorStyle {
         // and https://github.com/KDE/breeze (KDE). Both of them seem to be also derived from
         // Web CSS cursor names: https://developer.mozilla.org/en-US/docs/Web/CSS/cursor#values
         match self {
-            CursorStyle::Arrow => "arrow",
-            CursorStyle::IBeam => "text",
-            CursorStyle::Crosshair => "crosshair",
-            CursorStyle::ClosedHand => "grabbing",
-            CursorStyle::OpenHand => "grab",
-            CursorStyle::PointingHand => "pointer",
-            CursorStyle::ResizeLeft => "w-resize",
-            CursorStyle::ResizeRight => "e-resize",
-            CursorStyle::ResizeLeftRight => "ew-resize",
-            CursorStyle::ResizeUp => "n-resize",
-            CursorStyle::ResizeDown => "s-resize",
-            CursorStyle::ResizeUpDown => "ns-resize",
-            CursorStyle::ResizeUpLeftDownRight => "nwse-resize",
-            CursorStyle::ResizeUpRightDownLeft => "nesw-resize",
-            CursorStyle::ResizeColumn => "col-resize",
-            CursorStyle::ResizeRow => "row-resize",
-            CursorStyle::IBeamCursorForVerticalLayout => "vertical-text",
-            CursorStyle::OperationNotAllowed => "not-allowed",
-            CursorStyle::DragLink => "alias",
-            CursorStyle::DragCopy => "copy",
-            CursorStyle::ContextualMenu => "context-menu",
+            CursorStyle.Arrow => "arrow",
+            CursorStyle.IBeam => "text",
+            CursorStyle.Crosshair => "crosshair",
+            CursorStyle.ClosedHand => "grabbing",
+            CursorStyle.OpenHand => "grab",
+            CursorStyle.PointingHand => "pointer",
+            CursorStyle.ResizeLeft => "w-resize",
+            CursorStyle.ResizeRight => "e-resize",
+            CursorStyle.ResizeLeftRight => "ew-resize",
+            CursorStyle.ResizeUp => "n-resize",
+            CursorStyle.ResizeDown => "s-resize",
+            CursorStyle.ResizeUpDown => "ns-resize",
+            CursorStyle.ResizeUpLeftDownRight => "nwse-resize",
+            CursorStyle.ResizeUpRightDownLeft => "nesw-resize",
+            CursorStyle.ResizeColumn => "col-resize",
+            CursorStyle.ResizeRow => "row-resize",
+            CursorStyle.IBeamCursorForVerticalLayout => "vertical-text",
+            CursorStyle.OperationNotAllowed => "not-allowed",
+            CursorStyle.DragLink => "alias",
+            CursorStyle.DragCopy => "copy",
+            CursorStyle.ContextualMenu => "context-menu",
         }
         .to_string()
     }
@@ -671,51 +671,51 @@ impl Keystroke {
         let key_sym = state.key_get_one_sym(keycode);
 
         let key = match key_sym {
-            Keysym::Return => "enter".to_owned(),
-            Keysym::Prior => "pageup".to_owned(),
-            Keysym::Next => "pagedown".to_owned(),
-            Keysym::ISO_Left_Tab => "tab".to_owned(),
-            Keysym::KP_Prior => "pageup".to_owned(),
-            Keysym::KP_Next => "pagedown".to_owned(),
+            Keysym.Return => "enter".to_owned(),
+            Keysym.Prior => "pageup".to_owned(),
+            Keysym.Next => "pagedown".to_owned(),
+            Keysym.ISO_Left_Tab => "tab".to_owned(),
+            Keysym.KP_Prior => "pageup".to_owned(),
+            Keysym.KP_Next => "pagedown".to_owned(),
 
-            Keysym::comma => ",".to_owned(),
-            Keysym::period => ".".to_owned(),
-            Keysym::less => "<".to_owned(),
-            Keysym::greater => ">".to_owned(),
-            Keysym::slash => "/".to_owned(),
-            Keysym::question => "?".to_owned(),
+            Keysym.comma => ",".to_owned(),
+            Keysym.period => ".".to_owned(),
+            Keysym.less => "<".to_owned(),
+            Keysym.greater => ">".to_owned(),
+            Keysym.slash => "/".to_owned(),
+            Keysym.question => "?".to_owned(),
 
-            Keysym::semicolon => ";".to_owned(),
-            Keysym::colon => ":".to_owned(),
-            Keysym::apostrophe => "'".to_owned(),
-            Keysym::quotedbl => "\"".to_owned(),
+            Keysym.semicolon => ";".to_owned(),
+            Keysym.colon => ":".to_owned(),
+            Keysym.apostrophe => "'".to_owned(),
+            Keysym.quotedbl => "\"".to_owned(),
 
-            Keysym::bracketleft => "[".to_owned(),
-            Keysym::braceleft => "{".to_owned(),
-            Keysym::bracketright => "]".to_owned(),
-            Keysym::braceright => "}".to_owned(),
-            Keysym::backslash => "\\".to_owned(),
-            Keysym::bar => "|".to_owned(),
+            Keysym.bracketleft => "[".to_owned(),
+            Keysym.braceleft => "{".to_owned(),
+            Keysym.bracketright => "]".to_owned(),
+            Keysym.braceright => "}".to_owned(),
+            Keysym.backslash => "\\".to_owned(),
+            Keysym.bar => "|".to_owned(),
 
-            Keysym::grave => "`".to_owned(),
-            Keysym::asciitilde => "~".to_owned(),
-            Keysym::exclam => "!".to_owned(),
-            Keysym::at => "@".to_owned(),
-            Keysym::numbersign => "#".to_owned(),
-            Keysym::dollar => "$".to_owned(),
-            Keysym::percent => "%".to_owned(),
-            Keysym::asciicircum => "^".to_owned(),
-            Keysym::ampersand => "&".to_owned(),
-            Keysym::asterisk => "*".to_owned(),
-            Keysym::parenleft => "(".to_owned(),
-            Keysym::parenright => ")".to_owned(),
-            Keysym::minus => "-".to_owned(),
-            Keysym::underscore => "_".to_owned(),
-            Keysym::equal => "=".to_owned(),
-            Keysym::plus => "+".to_owned(),
+            Keysym.grave => "`".to_owned(),
+            Keysym.asciitilde => "~".to_owned(),
+            Keysym.exclam => "!".to_owned(),
+            Keysym.at => "@".to_owned(),
+            Keysym.numbersign => "#".to_owned(),
+            Keysym.dollar => "$".to_owned(),
+            Keysym.percent => "%".to_owned(),
+            Keysym.asciicircum => "^".to_owned(),
+            Keysym.ampersand => "&".to_owned(),
+            Keysym.asterisk => "*".to_owned(),
+            Keysym.parenleft => "(".to_owned(),
+            Keysym.parenright => ")".to_owned(),
+            Keysym.minus => "-".to_owned(),
+            Keysym.underscore => "_".to_owned(),
+            Keysym.equal => "=".to_owned(),
+            Keysym.plus => "+".to_owned(),
 
             _ => {
-                let name = xkb::keysym_get_name(key_sym).to_lowercase();
+                let name = xkb.keysym_get_name(key_sym).to_lowercase();
                 if key_sym.is_keypad_key() {
                     name.replace("kp_", "")
                 } else {
@@ -750,58 +750,58 @@ impl Keystroke {
      */
     pub fn underlying_dead_key(keysym: Keysym) -> Option<String> {
         match keysym {
-            Keysym::dead_grave => Some("`".to_owned()),
-            Keysym::dead_acute => Some("´".to_owned()),
-            Keysym::dead_circumflex => Some("^".to_owned()),
-            Keysym::dead_tilde => Some("~".to_owned()),
-            Keysym::dead_perispomeni => Some("͂".to_owned()),
-            Keysym::dead_macron => Some("¯".to_owned()),
-            Keysym::dead_breve => Some("˘".to_owned()),
-            Keysym::dead_abovedot => Some("˙".to_owned()),
-            Keysym::dead_diaeresis => Some("¨".to_owned()),
-            Keysym::dead_abovering => Some("˚".to_owned()),
-            Keysym::dead_doubleacute => Some("˝".to_owned()),
-            Keysym::dead_caron => Some("ˇ".to_owned()),
-            Keysym::dead_cedilla => Some("¸".to_owned()),
-            Keysym::dead_ogonek => Some("˛".to_owned()),
-            Keysym::dead_iota => Some("ͅ".to_owned()),
-            Keysym::dead_voiced_sound => Some("゙".to_owned()),
-            Keysym::dead_semivoiced_sound => Some("゚".to_owned()),
-            Keysym::dead_belowdot => Some("̣̣".to_owned()),
-            Keysym::dead_hook => Some("̡".to_owned()),
-            Keysym::dead_horn => Some("̛".to_owned()),
-            Keysym::dead_stroke => Some("̶̶".to_owned()),
-            Keysym::dead_abovecomma => Some("̓̓".to_owned()),
-            Keysym::dead_psili => Some("᾿".to_owned()),
-            Keysym::dead_abovereversedcomma => Some("ʽ".to_owned()),
-            Keysym::dead_dasia => Some("῾".to_owned()),
-            Keysym::dead_doublegrave => Some("̏".to_owned()),
-            Keysym::dead_belowring => Some("˳".to_owned()),
-            Keysym::dead_belowmacron => Some("̱".to_owned()),
-            Keysym::dead_belowcircumflex => Some("ꞈ".to_owned()),
-            Keysym::dead_belowtilde => Some("̰".to_owned()),
-            Keysym::dead_belowbreve => Some("̮".to_owned()),
-            Keysym::dead_belowdiaeresis => Some("̤".to_owned()),
-            Keysym::dead_invertedbreve => Some("̯".to_owned()),
-            Keysym::dead_belowcomma => Some("̦".to_owned()),
-            Keysym::dead_currency => None,
-            Keysym::dead_lowline => None,
-            Keysym::dead_aboveverticalline => None,
-            Keysym::dead_belowverticalline => None,
-            Keysym::dead_longsolidusoverlay => None,
-            Keysym::dead_a => None,
-            Keysym::dead_A => None,
-            Keysym::dead_e => None,
-            Keysym::dead_E => None,
-            Keysym::dead_i => None,
-            Keysym::dead_I => None,
-            Keysym::dead_o => None,
-            Keysym::dead_O => None,
-            Keysym::dead_u => None,
-            Keysym::dead_U => None,
-            Keysym::dead_small_schwa => Some("ə".to_owned()),
-            Keysym::dead_capital_schwa => Some("Ə".to_owned()),
-            Keysym::dead_greek => None,
+            Keysym.dead_grave => Some("`".to_owned()),
+            Keysym.dead_acute => Some("´".to_owned()),
+            Keysym.dead_circumflex => Some("^".to_owned()),
+            Keysym.dead_tilde => Some("~".to_owned()),
+            Keysym.dead_perispomeni => Some("͂".to_owned()),
+            Keysym.dead_macron => Some("¯".to_owned()),
+            Keysym.dead_breve => Some("˘".to_owned()),
+            Keysym.dead_abovedot => Some("˙".to_owned()),
+            Keysym.dead_diaeresis => Some("¨".to_owned()),
+            Keysym.dead_abovering => Some("˚".to_owned()),
+            Keysym.dead_doubleacute => Some("˝".to_owned()),
+            Keysym.dead_caron => Some("ˇ".to_owned()),
+            Keysym.dead_cedilla => Some("¸".to_owned()),
+            Keysym.dead_ogonek => Some("˛".to_owned()),
+            Keysym.dead_iota => Some("ͅ".to_owned()),
+            Keysym.dead_voiced_sound => Some("゙".to_owned()),
+            Keysym.dead_semivoiced_sound => Some("゚".to_owned()),
+            Keysym.dead_belowdot => Some("̣̣".to_owned()),
+            Keysym.dead_hook => Some("̡".to_owned()),
+            Keysym.dead_horn => Some("̛".to_owned()),
+            Keysym.dead_stroke => Some("̶̶".to_owned()),
+            Keysym.dead_abovecomma => Some("̓̓".to_owned()),
+            Keysym.dead_psili => Some("᾿".to_owned()),
+            Keysym.dead_abovereversedcomma => Some("ʽ".to_owned()),
+            Keysym.dead_dasia => Some("῾".to_owned()),
+            Keysym.dead_doublegrave => Some("̏".to_owned()),
+            Keysym.dead_belowring => Some("˳".to_owned()),
+            Keysym.dead_belowmacron => Some("̱".to_owned()),
+            Keysym.dead_belowcircumflex => Some("ꞈ".to_owned()),
+            Keysym.dead_belowtilde => Some("̰".to_owned()),
+            Keysym.dead_belowbreve => Some("̮".to_owned()),
+            Keysym.dead_belowdiaeresis => Some("̤".to_owned()),
+            Keysym.dead_invertedbreve => Some("̯".to_owned()),
+            Keysym.dead_belowcomma => Some("̦".to_owned()),
+            Keysym.dead_currency => None,
+            Keysym.dead_lowline => None,
+            Keysym.dead_aboveverticalline => None,
+            Keysym.dead_belowverticalline => None,
+            Keysym.dead_longsolidusoverlay => None,
+            Keysym.dead_a => None,
+            Keysym.dead_A => None,
+            Keysym.dead_e => None,
+            Keysym.dead_E => None,
+            Keysym.dead_i => None,
+            Keysym.dead_I => None,
+            Keysym.dead_o => None,
+            Keysym.dead_O => None,
+            Keysym.dead_u => None,
+            Keysym.dead_U => None,
+            Keysym.dead_small_schwa => Some("ə".to_owned()),
+            Keysym.dead_capital_schwa => Some("Ə".to_owned()),
+            Keysym.dead_greek => None,
             _ => None,
         }
     }
@@ -809,12 +809,12 @@ impl Keystroke {
 
 impl Modifiers {
     pub(super) fn from_xkb(keymap_state: &State) -> Self {
-        let shift = keymap_state.mod_name_is_active(xkb::MOD_NAME_SHIFT, xkb::STATE_MODS_EFFECTIVE);
-        let alt = keymap_state.mod_name_is_active(xkb::MOD_NAME_ALT, xkb::STATE_MODS_EFFECTIVE);
+        let shift = keymap_state.mod_name_is_active(xkb.MOD_NAME_SHIFT, xkb.STATE_MODS_EFFECTIVE);
+        let alt = keymap_state.mod_name_is_active(xkb.MOD_NAME_ALT, xkb.STATE_MODS_EFFECTIVE);
         let control =
-            keymap_state.mod_name_is_active(xkb::MOD_NAME_CTRL, xkb::STATE_MODS_EFFECTIVE);
+            keymap_state.mod_name_is_active(xkb.MOD_NAME_CTRL, xkb.STATE_MODS_EFFECTIVE);
         let platform =
-            keymap_state.mod_name_is_active(xkb::MOD_NAME_LOGO, xkb::STATE_MODS_EFFECTIVE);
+            keymap_state.mod_name_is_active(xkb.MOD_NAME_LOGO, xkb.STATE_MODS_EFFECTIVE);
         Modifiers {
             shift,
             alt,
@@ -827,26 +827,26 @@ impl Modifiers {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{px, Point};
+    use super.*;
+    use crate.{px, Point};
 
     #[test]
     fn test_is_within_click_distance() {
-        let zero = Point::new(px(0.0), px(0.0));
+        let zero = Point.new(px(0.0), px(0.0));
         assert_eq!(
-            is_within_click_distance(zero, Point::new(px(5.0), px(5.0))),
+            is_within_click_distance(zero, Point.new(px(5.0), px(5.0))),
             true
         );
         assert_eq!(
-            is_within_click_distance(zero, Point::new(px(-4.9), px(5.0))),
+            is_within_click_distance(zero, Point.new(px(-4.9), px(5.0))),
             true
         );
         assert_eq!(
-            is_within_click_distance(Point::new(px(3.0), px(2.0)), Point::new(px(-2.0), px(-2.0))),
+            is_within_click_distance(Point.new(px(3.0), px(2.0)), Point.new(px(-2.0), px(-2.0))),
             true
         );
         assert_eq!(
-            is_within_click_distance(zero, Point::new(px(5.0), px(5.1))),
+            is_within_click_distance(zero, Point.new(px(5.0), px(5.1))),
             false
         );
     }

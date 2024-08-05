@@ -1,19 +1,19 @@
-use std::{
-    hash::{Hash, Hasher},
+use std.{
+    hash.{Hash, Hasher},
     iter, mem,
-    ops::Range,
+    ops.Range,
 };
 
-use crate::{
+use crate.{
     black, phi, point, quad, rems, AbsoluteLength, Bounds, ContentMask, Corners, CornersRefinement,
     CursorStyle, DefiniteLength, Edges, EdgesRefinement, Font, FontFallbacks, FontFeatures,
     FontStyle, FontWeight, Hsla, Length, Pixels, Point, PointRefinement, Rgba, SharedString, Size,
     SizeRefinement, Styled, TextRun, WindowContext,
 };
-use collections::HashSet;
-use refineable::Refineable;
-use smallvec::SmallVec;
-pub use taffy::style::{
+use collections.HashSet;
+use refineable.Refineable;
+use smallvec.SmallVec;
+pub use taffy.style.{
     AlignContent, AlignItems, AlignSelf, Display, FlexDirection, FlexWrap, JustifyContent,
     Overflow, Position,
 };
@@ -25,7 +25,7 @@ pub use taffy::style::{
 pub struct DebugBelow;
 
 #[cfg(debug_assertions)]
-impl crate::Global for DebugBelow {}
+impl crate.Global for DebugBelow {}
 
 /// The CSS styling that can be applied to an element via the `Styled` trait
 #[derive(Clone, Refineable, Debug)]
@@ -41,7 +41,7 @@ pub struct Style {
     /// How children overflowing their container should affect layout
     #[refineable]
     pub overflow: Point<Overflow>,
-    /// How much space (in points) should be reserved for the scrollbars of `Overflow::Scroll` and `Overflow::Auto` nodes.
+    /// How much space (in points) should be reserved for the scrollbars of `Overflow.Scroll` and `Overflow.Auto` nodes.
     pub scrollbar_width: f32,
 
     // Position properties
@@ -220,16 +220,16 @@ impl Default for TextStyle {
             } else {
                 "Helvetica".into()
             },
-            font_features: FontFeatures::default(),
+            font_features: FontFeatures.default(),
             font_fallbacks: None,
             font_size: rems(1.).into(),
             line_height: phi(),
-            font_weight: FontWeight::default(),
-            font_style: FontStyle::default(),
+            font_weight: FontWeight.default(),
+            font_style: FontStyle.default(),
             background_color: None,
             underline: None,
             strikethrough: None,
-            white_space: WhiteSpace::Normal,
+            white_space: WhiteSpace.Normal,
         }
     }
 }
@@ -290,7 +290,7 @@ impl TextStyle {
             len,
             font: Font {
                 family: self.font_family.clone(),
-                features: Default::default(),
+                features: Default.default(),
                 fallbacks: self.font_fallbacks.clone(),
                 weight: self.font_weight,
                 style: self.font_style,
@@ -339,7 +339,7 @@ impl Hash for HighlightStyle {
         self.background_color.hash(state);
         self.underline.hash(state);
         self.strikethrough.hash(state);
-        state.write_u32(u32::from_be_bytes(
+        state.write_u32(u32.from_be_bytes(
             self.fade_out.map(|f| f.to_be_bytes()).unwrap_or_default(),
         ));
     }
@@ -371,8 +371,8 @@ impl Style {
     ) -> Option<ContentMask<Pixels>> {
         match self.overflow {
             Point {
-                x: Overflow::Visible,
-                y: Overflow::Visible,
+                x: Overflow.Visible,
+                y: Overflow.Visible,
             } => None,
             _ => {
                 let mut min = bounds.origin;
@@ -389,23 +389,23 @@ impl Style {
                 }
 
                 let bounds = match (
-                    self.overflow.x == Overflow::Visible,
-                    self.overflow.y == Overflow::Visible,
+                    self.overflow.x == Overflow.Visible,
+                    self.overflow.y == Overflow.Visible,
                 ) {
                     // x and y both visible
                     (true, true) => return None,
                     // x visible, y hidden
-                    (true, false) => Bounds::from_corners(
+                    (true, false) => Bounds.from_corners(
                         point(min.x, bounds.origin.y),
                         point(max.x, bounds.lower_right().y),
                     ),
                     // x hidden, y visible
-                    (false, true) => Bounds::from_corners(
+                    (false, true) => Bounds.from_corners(
                         point(bounds.origin.x, min.y),
                         point(bounds.lower_right().x, max.y),
                     ),
                     // both hidden
-                    (false, false) => Bounds::from_corners(min, max),
+                    (false, false) => Bounds.from_corners(min, max),
                 };
 
                 Some(ContentMask { bounds })
@@ -426,8 +426,8 @@ impl Style {
         }
 
         #[cfg(debug_assertions)]
-        if self.debug || cx.has_global::<DebugBelow>() {
-            cx.paint_quad(crate::outline(bounds, crate::red()));
+        if self.debug || cx.has_global.<DebugBelow>() {
+            cx.paint_quad(crate.outline(bounds, crate.red()));
         }
 
         let rem_size = cx.rem_size();
@@ -438,7 +438,7 @@ impl Style {
             &self.box_shadow,
         );
 
-        let background_color = self.background.as_ref().and_then(Fill::color);
+        let background_color = self.background.as_ref().and_then(Fill.color);
         if background_color.map_or(false, |color| !color.is_transparent()) {
             let mut border_color = background_color.unwrap_or_default();
             border_color.a = 0.;
@@ -446,7 +446,7 @@ impl Style {
                 bounds,
                 self.corner_radii.to_pixels(bounds.size, rem_size),
                 background_color.unwrap_or_default(),
-                Edges::default(),
+                Edges.default(),
                 border_color,
             ));
         }
@@ -459,20 +459,20 @@ impl Style {
             let max_border_width = border_widths.max();
             let max_corner_radius = corner_radii.max();
 
-            let top_bounds = Bounds::from_corners(
+            let top_bounds = Bounds.from_corners(
                 bounds.origin,
-                bounds.upper_right() + point(Pixels::ZERO, max_border_width.max(max_corner_radius)),
+                bounds.upper_right() + point(Pixels.ZERO, max_border_width.max(max_corner_radius)),
             );
-            let bottom_bounds = Bounds::from_corners(
-                bounds.lower_left() - point(Pixels::ZERO, max_border_width.max(max_corner_radius)),
+            let bottom_bounds = Bounds.from_corners(
+                bounds.lower_left() - point(Pixels.ZERO, max_border_width.max(max_corner_radius)),
                 bounds.lower_right(),
             );
-            let left_bounds = Bounds::from_corners(
+            let left_bounds = Bounds.from_corners(
                 top_bounds.lower_left(),
-                bottom_bounds.origin + point(max_border_width, Pixels::ZERO),
+                bottom_bounds.origin + point(max_border_width, Pixels.ZERO),
             );
-            let right_bounds = Bounds::from_corners(
-                top_bounds.lower_right() - point(max_border_width, Pixels::ZERO),
+            let right_bounds = Bounds.from_corners(
+                top_bounds.lower_right() - point(max_border_width, Pixels.ZERO),
                 bottom_bounds.upper_right(),
             );
 
@@ -517,7 +517,7 @@ impl Style {
 
         #[cfg(debug_assertions)]
         if self.debug_below {
-            cx.remove_global::<DebugBelow>();
+            cx.remove_global.<DebugBelow>();
         }
     }
 
@@ -531,39 +531,39 @@ impl Style {
 impl Default for Style {
     fn default() -> Self {
         Style {
-            display: Display::Block,
-            visibility: Visibility::Visible,
+            display: Display.Block,
+            visibility: Visibility.Visible,
             overflow: Point {
-                x: Overflow::Visible,
-                y: Overflow::Visible,
+                x: Overflow.Visible,
+                y: Overflow.Visible,
             },
             scrollbar_width: 0.0,
-            position: Position::Relative,
-            inset: Edges::auto(),
-            margin: Edges::<Length>::zero(),
-            padding: Edges::<DefiniteLength>::zero(),
-            border_widths: Edges::<AbsoluteLength>::zero(),
-            size: Size::auto(),
-            min_size: Size::auto(),
-            max_size: Size::auto(),
+            position: Position.Relative,
+            inset: Edges.auto(),
+            margin: Edges.<Length>.zero(),
+            padding: Edges.<DefiniteLength>.zero(),
+            border_widths: Edges.<AbsoluteLength>.zero(),
+            size: Size.auto(),
+            min_size: Size.auto(),
+            max_size: Size.auto(),
             aspect_ratio: None,
-            gap: Size::default(),
+            gap: Size.default(),
             // Alignment
             align_items: None,
             align_self: None,
             align_content: None,
             justify_content: None,
             // Flexbox
-            flex_direction: FlexDirection::Row,
-            flex_wrap: FlexWrap::NoWrap,
+            flex_direction: FlexDirection.Row,
+            flex_wrap: FlexWrap.NoWrap,
             flex_grow: 0.0,
             flex_shrink: 1.0,
-            flex_basis: Length::Auto,
+            flex_basis: Length.Auto,
             background: None,
             border_color: None,
-            corner_radii: Corners::default(),
-            box_shadow: Default::default(),
-            text: TextStyleRefinement::default(),
+            corner_radii: Corners.default(),
+            box_shadow: Default.default(),
+            text: TextStyleRefinement.default(),
             mouse_cursor: None,
 
             #[cfg(debug_assertions)]
@@ -610,32 +610,32 @@ impl Fill {
     /// Unwrap this fill into a solid color, if it is one.
     pub fn color(&self) -> Option<Hsla> {
         match self {
-            Fill::Color(color) => Some(*color),
+            Fill.Color(color) => Some(*color),
         }
     }
 }
 
 impl Default for Fill {
     fn default() -> Self {
-        Self::Color(Hsla::default())
+        Self.Color(Hsla.default())
     }
 }
 
 impl From<Hsla> for Fill {
     fn from(color: Hsla) -> Self {
-        Self::Color(color)
+        Self.Color(color)
     }
 }
 
 impl From<Rgba> for Fill {
     fn from(color: Rgba) -> Self {
-        Self::Color(color.into())
+        Self.Color(color.into())
     }
 }
 
 impl From<TextStyle> for HighlightStyle {
     fn from(other: TextStyle) -> Self {
-        Self::from(&other)
+        Self.from(&other)
     }
 }
 
@@ -658,7 +658,7 @@ impl HighlightStyle {
     pub fn color(color: Hsla) -> Self {
         Self {
             color: Some(color),
-            ..Default::default()
+            ..Default.default()
         }
     }
     /// Blend this highlight style with another.
@@ -666,7 +666,7 @@ impl HighlightStyle {
     pub fn highlight(&mut self, other: HighlightStyle) {
         match (self.color, other.color) {
             (Some(self_color), Some(other_color)) => {
-                self.color = Some(Hsla::blend(other_color, self_color));
+                self.color = Some(Hsla.blend(other_color, self_color));
             }
             (None, Some(other_color)) => {
                 self.color = Some(other_color);
@@ -708,7 +708,7 @@ impl From<Hsla> for HighlightStyle {
     fn from(color: Hsla) -> Self {
         Self {
             color: Some(color),
-            ..Default::default()
+            ..Default.default()
         }
     }
 }
@@ -717,7 +717,7 @@ impl From<FontWeight> for HighlightStyle {
     fn from(font_weight: FontWeight) -> Self {
         Self {
             font_weight: Some(font_weight),
-            ..Default::default()
+            ..Default.default()
         }
     }
 }
@@ -726,7 +726,7 @@ impl From<FontStyle> for HighlightStyle {
     fn from(font_style: FontStyle) -> Self {
         Self {
             font_style: Some(font_style),
-            ..Default::default()
+            ..Default.default()
         }
     }
 }
@@ -735,7 +735,7 @@ impl From<Rgba> for HighlightStyle {
     fn from(color: Rgba) -> Self {
         Self {
             color: Some(color.into()),
-            ..Default::default()
+            ..Default.default()
         }
     }
 }
@@ -745,8 +745,8 @@ pub fn combine_highlights(
     a: impl IntoIterator<Item = (Range<usize>, HighlightStyle)>,
     b: impl IntoIterator<Item = (Range<usize>, HighlightStyle)>,
 ) -> impl Iterator<Item = (Range<usize>, HighlightStyle)> {
-    let mut endpoints = Vec::new();
-    let mut highlights = Vec::new();
+    let mut endpoints = Vec.new();
+    let mut highlights = Vec.new();
     for (range, highlight) in a.into_iter().chain(b) {
         if !range.is_empty() {
             let highlight_id = highlights.len();
@@ -758,13 +758,13 @@ pub fn combine_highlights(
     endpoints.sort_unstable_by_key(|(position, _, _)| *position);
     let mut endpoints = endpoints.into_iter().peekable();
 
-    let mut active_styles = HashSet::default();
+    let mut active_styles = HashSet.default();
     let mut ix = 0;
-    iter::from_fn(move || {
+    iter.from_fn(move || {
         while let Some((endpoint_ix, highlight_id, is_start)) = endpoints.peek() {
-            let prev_index = mem::replace(&mut ix, *endpoint_ix);
+            let prev_index = mem.replace(&mut ix, *endpoint_ix);
             if ix > prev_index && !active_styles.is_empty() {
-                let mut current_style = HighlightStyle::default();
+                let mut current_style = HighlightStyle.default();
                 for highlight_id in &active_styles {
                     current_style.highlight(highlights[*highlight_id]);
                 }
@@ -784,9 +784,9 @@ pub fn combine_highlights(
 
 #[cfg(test)]
 mod tests {
-    use crate::{blue, green, red, yellow};
+    use crate.{blue, green, red, yellow};
 
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_combine_highlights() {
@@ -794,83 +794,83 @@ mod tests {
             combine_highlights(
                 [
                     (0..5, green().into()),
-                    (4..10, FontWeight::BOLD.into()),
+                    (4..10, FontWeight.BOLD.into()),
                     (15..20, yellow().into()),
                 ],
                 [
-                    (2..6, FontStyle::Italic.into()),
+                    (2..6, FontStyle.Italic.into()),
                     (1..3, blue().into()),
                     (21..23, red().into()),
                 ]
             )
-            .collect::<Vec<_>>(),
+            .collect.<Vec<_>>(),
             [
                 (
                     0..1,
                     HighlightStyle {
                         color: Some(green()),
-                        ..Default::default()
+                        ..Default.default()
                     }
                 ),
                 (
                     1..2,
                     HighlightStyle {
                         color: Some(green()),
-                        ..Default::default()
+                        ..Default.default()
                     }
                 ),
                 (
                     2..3,
                     HighlightStyle {
                         color: Some(green()),
-                        font_style: Some(FontStyle::Italic),
-                        ..Default::default()
+                        font_style: Some(FontStyle.Italic),
+                        ..Default.default()
                     }
                 ),
                 (
                     3..4,
                     HighlightStyle {
                         color: Some(green()),
-                        font_style: Some(FontStyle::Italic),
-                        ..Default::default()
+                        font_style: Some(FontStyle.Italic),
+                        ..Default.default()
                     }
                 ),
                 (
                     4..5,
                     HighlightStyle {
                         color: Some(green()),
-                        font_weight: Some(FontWeight::BOLD),
-                        font_style: Some(FontStyle::Italic),
-                        ..Default::default()
+                        font_weight: Some(FontWeight.BOLD),
+                        font_style: Some(FontStyle.Italic),
+                        ..Default.default()
                     }
                 ),
                 (
                     5..6,
                     HighlightStyle {
-                        font_weight: Some(FontWeight::BOLD),
-                        font_style: Some(FontStyle::Italic),
-                        ..Default::default()
+                        font_weight: Some(FontWeight.BOLD),
+                        font_style: Some(FontStyle.Italic),
+                        ..Default.default()
                     }
                 ),
                 (
                     6..10,
                     HighlightStyle {
-                        font_weight: Some(FontWeight::BOLD),
-                        ..Default::default()
+                        font_weight: Some(FontWeight.BOLD),
+                        ..Default.default()
                     }
                 ),
                 (
                     15..20,
                     HighlightStyle {
                         color: Some(yellow()),
-                        ..Default::default()
+                        ..Default.default()
                     }
                 ),
                 (
                     21..23,
                     HighlightStyle {
                         color: Some(red()),
-                        ..Default::default()
+                        ..Default.default()
                     }
                 )
             ]
