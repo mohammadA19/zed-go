@@ -5,23 +5,23 @@ pub mod serde;
 #[cfg(any(test, feature = "test-support"))]
 pub mod test;
 
-use futures::Future;
-use rand::{seq::SliceRandom, Rng};
-use regex::Regex;
-use std::sync::OnceLock;
-use std::{
-    borrow::Cow,
-    cmp::{self, Ordering},
+use futures.Future;
+use rand.{seq.SliceRandom, Rng};
+use regex.Regex;
+use std.sync.OnceLock;
+use std.{
+    borrow.Cow,
+    cmp.{self, Ordering},
     env,
-    ops::{AddAssign, Range, RangeInclusive},
-    panic::Location,
-    pin::Pin,
-    task::{Context, Poll},
-    time::Instant,
+    ops.{AddAssign, Range, RangeInclusive},
+    panic.Location,
+    pin.Pin,
+    task.{Context, Poll},
+    time.Instant,
 };
-use unicase::UniCase;
+use unicase.UniCase;
 
-pub use take_until::*;
+pub use take_until.*;
 
 #[macro_export]
 macro_rules! debug_panic {
@@ -29,8 +29,8 @@ macro_rules! debug_panic {
         if cfg!(debug_assertions) {
             panic!( $($fmt_arg)* );
         } else {
-            let backtrace = std::backtrace::Backtrace::capture();
-            log::error!("{}\n{:?}", format_args!($($fmt_arg)*), backtrace);
+            let backtrace = std.backtrace.Backtrace.capture();
+            log.error!("{}\n{:?}", format_args!($($fmt_arg)*), backtrace);
         }
     };
 }
@@ -70,7 +70,7 @@ mod test_with_clone {
     #[test]
     fn test() {
         let x = "String".to_string();
-        let y = std::sync::Arc::new(5);
+        let y = std.sync.Arc.new(5);
 
         fn no_arg(f: impl FnOnce()) {
             f()
@@ -206,7 +206,7 @@ pub fn truncate_and_remove_front(s: &str, max_chars: usize) -> String {
 /// a newline and "..." to the string, so that `max_lines` are returned.
 /// Returns string unchanged if its length is smaller than max_lines.
 pub fn truncate_lines_and_trailoff(s: &str, max_lines: usize) -> String {
-    let mut lines = s.lines().take(max_lines).collect::<Vec<_>>();
+    let mut lines = s.lines().take(max_lines).collect.<Vec<_>>();
     if lines.len() > max_lines - 1 {
         lines.pop();
         lines.join("\n") + "\n…"
@@ -217,7 +217,7 @@ pub fn truncate_lines_and_trailoff(s: &str, max_lines: usize) -> String {
 
 pub fn post_inc<T: From<u8> + AddAssign<T> + Copy>(value: &mut T) -> T {
     let prev = *value;
-    *value += T::from(1);
+    *value += T.from(1);
     prev
 }
 
@@ -252,7 +252,7 @@ pub fn parse_env_output(env: &str, mut f: impl FnMut(String, String)) {
     for line in env.split_terminator('\n') {
         if let Some(separator_index) = line.find('=') {
             if &line[..separator_index] != "" {
-                if let Some((key, value)) = Option::zip(current_key.take(), current_value.take()) {
+                if let Some((key, value)) = Option.zip(current_key.take(), current_value.take()) {
                     f(key, value)
                 }
                 current_key = Some(line[..separator_index].to_string());
@@ -265,16 +265,16 @@ pub fn parse_env_output(env: &str, mut f: impl FnMut(String, String)) {
             value.push_str(line);
         }
     }
-    if let Some((key, value)) = Option::zip(current_key.take(), current_value.take()) {
+    if let Some((key, value)) = Option.zip(current_key.take(), current_value.take()) {
         f(key, value)
     }
 }
 
-pub fn merge_json_value_into(source: serde_json::Value, target: &mut serde_json::Value) {
-    use serde_json::Value;
+pub fn merge_json_value_into(source: serde_json.Value, target: &mut serde_json.Value) {
+    use serde_json.Value;
 
     match (source, target) {
-        (Value::Object(source), Value::Object(target)) => {
+        (Value.Object(source), Value.Object(target)) => {
             for (key, value) in source {
                 if let Some(target) = target.get_mut(&key) {
                     merge_json_value_into(value, target);
@@ -288,13 +288,13 @@ pub fn merge_json_value_into(source: serde_json::Value, target: &mut serde_json:
     }
 }
 
-pub fn merge_non_null_json_value_into(source: serde_json::Value, target: &mut serde_json::Value) {
-    use serde_json::Value;
-    if let Value::Object(source_object) = source {
-        let target_object = if let Value::Object(target) = target {
+pub fn merge_non_null_json_value_into(source: serde_json.Value, target: &mut serde_json.Value) {
+    use serde_json.Value;
+    if let Value.Object(source_object) = source {
+        let target_object = if let Value.Object(target) = target {
             target
         } else {
-            *target = Value::Object(Default::default());
+            *target = Value.Object(Default.default());
             target.as_object_mut().unwrap()
         };
         for (key, value) in source_object {
@@ -310,15 +310,15 @@ pub fn merge_non_null_json_value_into(source: serde_json::Value, target: &mut se
 }
 
 pub fn measure<R>(label: &str, f: impl FnOnce() -> R) -> R {
-    static ZED_MEASUREMENTS: OnceLock<bool> = OnceLock::new();
+    static ZED_MEASUREMENTS: OnceLock<bool> = OnceLock.new();
     let zed_measurements = ZED_MEASUREMENTS.get_or_init(|| {
-        env::var("ZED_MEASUREMENTS")
+        env.var("ZED_MEASUREMENTS")
             .map(|measurements| measurements == "1" || measurements == "true")
             .unwrap_or(false)
     });
 
     if *zed_measurements {
-        let start = Instant::now();
+        let start = Instant.now();
         let result = f();
         let elapsed = start.elapsed();
         eprintln!("{}: {:?}", label, elapsed);
@@ -331,15 +331,15 @@ pub fn measure<R>(label: &str, f: impl FnOnce() -> R) -> R {
 pub trait ResultExt<E> {
     type Ok;
 
-    fn log_err(self) -> Option<Self::Ok>;
+    fn log_err(self) -> Option<Self.Ok>;
     /// Assert that this result should never be an error in development or tests.
     fn debug_assert_ok(self, reason: &str) -> Self;
-    fn warn_on_err(self) -> Option<Self::Ok>;
+    fn warn_on_err(self) -> Option<Self.Ok>;
 }
 
 impl<T, E> ResultExt<E> for Result<T, E>
 where
-    E: std::fmt::Debug,
+    E: std.fmt.Debug,
 {
     type Ok = T;
 
@@ -348,7 +348,7 @@ where
         match self {
             Ok(value) => Some(value),
             Err(error) => {
-                log_error_with_caller(*Location::caller(), error, log::Level::Error);
+                log_error_with_caller(*Location.caller(), error, log.Level.Error);
                 None
             }
         }
@@ -367,23 +367,23 @@ where
         match self {
             Ok(value) => Some(value),
             Err(error) => {
-                log_error_with_caller(*Location::caller(), error, log::Level::Warn);
+                log_error_with_caller(*Location.caller(), error, log.Level.Warn);
                 None
             }
         }
     }
 }
 
-fn log_error_with_caller<E>(caller: core::panic::Location<'_>, error: E, level: log::Level)
+fn log_error_with_caller<E>(caller: core.panic.Location<'_>, error: E, level: log.Level)
 where
-    E: std::fmt::Debug,
+    E: std.fmt.Debug,
 {
     // In this codebase, the first segment of the file path is
     // the 'crates' folder, followed by the crate name.
     let target = caller.file().split('/').nth(1);
 
-    log::logger().log(
-        &log::Record::builder()
+    log.logger().log(
+        &log.Record.builder()
             .target(target.unwrap_or(""))
             .module_path(target)
             .args(format_args!("{:?}", error))
@@ -399,7 +399,7 @@ pub trait TryFutureExt {
     where
         Self: Sized;
 
-    fn log_tracked_err(self, location: core::panic::Location<'static>) -> LogErrorFuture<Self>
+    fn log_tracked_err(self, location: core.panic.Location<'static>) -> LogErrorFuture<Self>
     where
         Self: Sized;
 
@@ -414,22 +414,22 @@ pub trait TryFutureExt {
 impl<F, T, E> TryFutureExt for F
 where
     F: Future<Output = Result<T, E>>,
-    E: std::fmt::Debug,
+    E: std.fmt.Debug,
 {
     #[track_caller]
     fn log_err(self) -> LogErrorFuture<Self>
     where
         Self: Sized,
     {
-        let location = Location::caller();
-        LogErrorFuture(self, log::Level::Error, *location)
+        let location = Location.caller();
+        LogErrorFuture(self, log.Level.Error, *location)
     }
 
-    fn log_tracked_err(self, location: core::panic::Location<'static>) -> LogErrorFuture<Self>
+    fn log_tracked_err(self, location: core.panic.Location<'static>) -> LogErrorFuture<Self>
     where
         Self: Sized,
     {
-        LogErrorFuture(self, log::Level::Error, location)
+        LogErrorFuture(self, log.Level.Error, location)
     }
 
     #[track_caller]
@@ -437,8 +437,8 @@ where
     where
         Self: Sized,
     {
-        let location = Location::caller();
-        LogErrorFuture(self, log::Level::Warn, *location)
+        let location = Location.caller();
+        LogErrorFuture(self, log.Level.Warn, *location)
     }
 
     fn unwrap(self) -> UnwrapFuture<Self>
@@ -450,28 +450,28 @@ where
 }
 
 #[must_use]
-pub struct LogErrorFuture<F>(F, log::Level, core::panic::Location<'static>);
+pub struct LogErrorFuture<F>(F, log.Level, core.panic.Location<'static>);
 
 impl<F, T, E> Future for LogErrorFuture<F>
 where
     F: Future<Output = Result<T, E>>,
-    E: std::fmt::Debug,
+    E: std.fmt.Debug,
 {
     type Output = Option<T>;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self.Output> {
         let level = self.1;
         let location = self.2;
-        let inner = unsafe { Pin::new_unchecked(&mut self.get_unchecked_mut().0) };
+        let inner = unsafe { Pin.new_unchecked(&mut self.get_unchecked_mut().0) };
         match inner.poll(cx) {
-            Poll::Ready(output) => Poll::Ready(match output {
+            Poll.Ready(output) => Poll.Ready(match output {
                 Ok(output) => Some(output),
                 Err(error) => {
                     log_error_with_caller(location, error, level);
                     None
                 }
             }),
-            Poll::Pending => Poll::Pending,
+            Poll.Pending => Poll.Pending,
         }
     }
 }
@@ -481,15 +481,15 @@ pub struct UnwrapFuture<F>(F);
 impl<F, T, E> Future for UnwrapFuture<F>
 where
     F: Future<Output = Result<T, E>>,
-    E: std::fmt::Debug,
+    E: std.fmt.Debug,
 {
     type Output = T;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
-        let inner = unsafe { Pin::new_unchecked(&mut self.get_unchecked_mut().0) };
+    fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self.Output> {
+        let inner = unsafe { Pin.new_unchecked(&mut self.get_unchecked_mut().0) };
         match inner.poll(cx) {
-            Poll::Ready(result) => Poll::Ready(result.unwrap()),
-            Poll::Pending => Poll::Pending,
+            Poll.Ready(result) => Poll.Ready(result.unwrap()),
+            Poll.Pending => Poll.Pending,
         }
     }
 }
@@ -526,7 +526,7 @@ impl<T: Rng> RandomCharIter<T> {
     pub fn new(rng: T) -> Self {
         Self {
             rng,
-            simple_text: std::env::var("SIMPLE_TEXT").map_or(false, |v| !v.is_empty()),
+            simple_text: std.env.var("SIMPLE_TEXT").map_or(false, |v| !v.is_empty()),
         }
     }
 
@@ -539,7 +539,7 @@ impl<T: Rng> RandomCharIter<T> {
 impl<T: Rng> Iterator for RandomCharIter<T> {
     type Item = char;
 
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Self.Item> {
         if self.simple_text {
             return if self.rng.gen_range(0..100) < 5 {
                 Some('\n')
@@ -552,7 +552,7 @@ impl<T: Rng> Iterator for RandomCharIter<T> {
             // whitespace
             0..=19 => [' ', '\n', '\r', '\t'].choose(&mut self.rng).copied(),
             // two-byte greek letters
-            20..=32 => char::from_u32(self.rng.gen_range(('α' as u32)..('ω' as u32 + 1))),
+            20..=32 => char.from_u32(self.rng.gen_range(('α' as u32)..('ω' as u32 + 1))),
             // // three-byte characters
             33..=45 => ['✋', '✅', '❌', '❎', '⭐']
                 .choose(&mut self.rng)
@@ -566,10 +566,10 @@ impl<T: Rng> Iterator for RandomCharIter<T> {
 }
 
 /// Get an embedded file as a string.
-pub fn asset_str<A: rust_embed::RustEmbed>(path: &str) -> Cow<'static, str> {
-    match A::get(path).unwrap().data {
-        Cow::Borrowed(bytes) => Cow::Borrowed(std::str::from_utf8(bytes).unwrap()),
-        Cow::Owned(bytes) => Cow::Owned(String::from_utf8(bytes).unwrap()),
+pub fn asset_str<A: rust_embed.RustEmbed>(path: &str) -> Cow<'static, str> {
+    match A.get(path).unwrap().data {
+        Cow.Borrowed(bytes) => Cow.Borrowed(std.str.from_utf8(bytes).unwrap()),
+        Cow.Owned(bytes) => Cow.Owned(String.from_utf8(bytes).unwrap()),
     }
 }
 
@@ -599,7 +599,7 @@ pub trait RangeExt<T> {
 
 impl<T: Ord + Clone> RangeExt<T> for Range<T> {
     fn sorted(&self) -> Self {
-        cmp::min(&self.start, &self.end).clone()..cmp::max(&self.start, &self.end).clone()
+        cmp.min(&self.start, &self.end).clone()..cmp.max(&self.start, &self.end).clone()
     }
 
     fn to_inclusive(&self) -> RangeInclusive<T> {
@@ -617,7 +617,7 @@ impl<T: Ord + Clone> RangeExt<T> for Range<T> {
 
 impl<T: Ord + Clone> RangeExt<T> for RangeInclusive<T> {
     fn sorted(&self) -> Self {
-        cmp::min(self.start(), self.end()).clone()..=cmp::max(self.start(), self.end()).clone()
+        cmp.min(self.start(), self.end()).clone()..=cmp.max(self.start(), self.end()).clone()
     }
 
     fn to_inclusive(&self) -> RangeInclusive<T> {
@@ -646,7 +646,7 @@ impl<'a> NumericPrefixWithSuffix<'a> {
         let i = str.chars().take_while(|c| c.is_ascii_digit()).count();
         let (prefix, remainder) = str.split_at(i);
 
-        match prefix.parse::<i32>() {
+        match prefix.parse.<i32>() {
             Ok(prefix) => Some(NumericPrefixWithSuffix(prefix, remainder)),
             Err(_) => None,
         }
@@ -659,7 +659,7 @@ impl Ord for NumericPrefixWithSuffix<'_> {
         let NumericPrefixWithSuffix(num_b, remainder_b) = other;
         num_a
             .cmp(num_b)
-            .then_with(|| UniCase::new(remainder_a).cmp(&UniCase::new(remainder_b)))
+            .then_with(|| UniCase.new(remainder_a).cmp(&UniCase.new(remainder_b)))
     }
 }
 
@@ -670,8 +670,8 @@ impl<'a> PartialOrd for NumericPrefixWithSuffix<'a> {
 }
 
 fn emoji_regex() -> &'static Regex {
-    static EMOJI_REGEX: OnceLock<Regex> = OnceLock::new();
-    EMOJI_REGEX.get_or_init(|| Regex::new("(\\p{Emoji}|\u{200D})").unwrap())
+    static EMOJI_REGEX: OnceLock<Regex> = OnceLock.new();
+    EMOJI_REGEX.get_or_init(|| Regex.new("(\\p{Emoji}|\u{200D})").unwrap())
 }
 
 /// Returns true if the given string consists of emojis only.
@@ -689,7 +689,7 @@ pub fn word_consists_of_emojis(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_extend_sorted() {
@@ -731,49 +731,49 @@ mod tests {
     fn test_numeric_prefix_str_method() {
         let target = "1a";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(1, "a"))
         );
 
         let target = "12ab";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(12, "ab"))
         );
 
         let target = "12_ab";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(12, "_ab"))
         );
 
         let target = "1_2ab";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(1, "_2ab"))
         );
 
         let target = "1.2";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(1, ".2"))
         );
 
         let target = "1.2_a";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(1, ".2_a"))
         );
 
         let target = "12.2_a";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(12, ".2_a"))
         );
 
         let target = "12a.2_a";
         assert_eq!(
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(target),
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(target),
             Some(NumericPrefixWithSuffix(12, "a.2_a"))
         );
     }
@@ -782,7 +782,7 @@ mod tests {
     fn test_numeric_prefix_with_suffix() {
         let mut sorted = vec!["1-abc", "10", "11def", "2", "21-abc"];
         sorted.sort_by_key(|s| {
-            NumericPrefixWithSuffix::from_numeric_prefixed_str(s).unwrap_or_else(|| {
+            NumericPrefixWithSuffix.from_numeric_prefixed_str(s).unwrap_or_else(|| {
                 panic!("Cannot convert string `{s}` into NumericPrefixWithSuffix")
             })
         });
@@ -790,7 +790,7 @@ mod tests {
 
         for numeric_prefix_less in ["numeric_prefix_less", "aaa", "~™£"] {
             assert_eq!(
-                NumericPrefixWithSuffix::from_numeric_prefixed_str(numeric_prefix_less),
+                NumericPrefixWithSuffix.from_numeric_prefixed_str(numeric_prefix_less),
                 None,
                 "String without numeric prefix `{numeric_prefix_less}` should not be converted into NumericPrefixWithSuffix"
             )

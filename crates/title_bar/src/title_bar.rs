@@ -6,33 +6,33 @@ mod window_controls;
 #[cfg(feature = "stories")]
 mod stories;
 
-use crate::application_menu::ApplicationMenu;
-use crate::platforms::{platform_linux, platform_mac, platform_windows};
-use auto_update::AutoUpdateStatus;
-use call::ActiveCall;
-use client::{Client, UserStore};
-use feature_flags::{FeatureFlagAppExt, ZedPro};
-use gpui::{
+use crate.application_menu.ApplicationMenu;
+use crate.platforms.{platform_linux, platform_mac, platform_windows};
+use auto_update.AutoUpdateStatus;
+use call.ActiveCall;
+use client.{Client, UserStore};
+use feature_flags.{FeatureFlagAppExt, ZedPro};
+use gpui.{
     actions, div, px, Action, AnyElement, AppContext, Decorations, Element, InteractiveElement,
     Interactivity, IntoElement, Model, MouseButton, ParentElement, Render, Stateful,
     StatefulInteractiveElement, Styled, Subscription, ViewContext, VisualContext, WeakView,
 };
-use project::{Project, RepositoryEntry};
-use recent_projects::RecentProjects;
-use rpc::proto::{self, DevServerStatus};
-use smallvec::SmallVec;
-use std::sync::Arc;
-use theme::ActiveTheme;
-use ui::{
-    h_flex, prelude::*, Avatar, Button, ButtonLike, ButtonStyle, ContextMenu, Icon, IconName,
+use project.{Project, RepositoryEntry};
+use recent_projects.RecentProjects;
+use rpc.proto.{self, DevServerStatus};
+use smallvec.SmallVec;
+use std.sync.Arc;
+use theme.ActiveTheme;
+use ui.{
+    h_flex, prelude.*, Avatar, Button, ButtonLike, ButtonStyle, ContextMenu, Icon, IconName,
     Indicator, PopoverMenu, Tooltip,
 };
-use util::ResultExt;
-use vcs_menu::{BranchList, OpenRecent as ToggleVcsMenu};
-use workspace::{notifications::NotifyResultExt, Workspace};
+use util.ResultExt;
+use vcs_menu.{BranchList, OpenRecent as ToggleVcsMenu};
+use workspace.{notifications.NotifyResultExt, Workspace};
 
 #[cfg(feature = "stories")]
-pub use stories::*;
+pub use stories.*;
 
 const MAX_PROJECT_NAME_LENGTH: usize = 40;
 const MAX_BRANCH_NAME_LENGTH: usize = 40;
@@ -50,7 +50,7 @@ actions!(
 
 pub fn init(cx: &mut AppContext) {
     cx.observe_new_views(|workspace: &mut Workspace, cx| {
-        let item = cx.new_view(|cx| TitleBar::new("title-bar", workspace, cx));
+        let item = cx.new_view(|cx| TitleBar.new("title-bar", workspace, cx));
         workspace.set_titlebar_item(item.into(), cx)
     })
     .detach();
@@ -70,8 +70,8 @@ pub struct TitleBar {
 
 impl Render for TitleBar {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let close_action = Box::new(workspace::CloseWindow);
-        let height = Self::height(cx);
+        let close_action = Box.new(workspace.CloseWindow);
+        let height = Self.height(cx);
         let supported_controls = cx.window_controls();
         let decorations = cx.window_decorations();
         let titlebar_color = if cfg!(target_os = "linux") {
@@ -91,20 +91,20 @@ impl Render for TitleBar {
             .map(|this| {
                 if cx.is_fullscreen() {
                     this.pl_2()
-                } else if self.platform_style == PlatformStyle::Mac {
-                    this.pl(px(platform_mac::TRAFFIC_LIGHT_PADDING))
+                } else if self.platform_style == PlatformStyle.Mac {
+                    this.pl(px(platform_mac.TRAFFIC_LIGHT_PADDING))
                 } else {
                     this.pl_2()
                 }
             })
             .map(|el| match decorations {
-                Decorations::Server => el,
-                Decorations::Client { tiling, .. } => el
+                Decorations.Server => el,
+                Decorations.Client { tiling, .. } => el
                     .when(!(tiling.top || tiling.right), |el| {
-                        el.rounded_tr(theme::CLIENT_SIDE_DECORATION_ROUNDING)
+                        el.rounded_tr(theme.CLIENT_SIDE_DECORATION_ROUNDING)
                     })
                     .when(!(tiling.top || tiling.left), |el| {
-                        el.rounded_tl(theme::CLIENT_SIDE_DECORATION_ROUNDING)
+                        el.rounded_tl(theme.CLIENT_SIDE_DECORATION_ROUNDING)
                     })
                     // this border is to avoid a transparent gap in the rounded corners
                     .mt(px(-1.))
@@ -121,7 +121,7 @@ impl Render for TitleBar {
                     .justify_between()
                     .w_full()
                     // Note: On Windows the title bar behavior is handled by the platform implementation.
-                    .when(self.platform_style != PlatformStyle::Windows, |this| {
+                    .when(self.platform_style != PlatformStyle.Windows, |this| {
                         this.on_click(|event, cx| {
                             if event.up.click_count == 2 {
                                 cx.zoom_window();
@@ -132,27 +132,27 @@ impl Render for TitleBar {
                         h_flex()
                             .gap_1()
                             .children(match self.platform_style {
-                                PlatformStyle::Mac => None,
-                                PlatformStyle::Linux | PlatformStyle::Windows => {
-                                    Some(ApplicationMenu::new())
+                                PlatformStyle.Mac => None,
+                                PlatformStyle.Linux | PlatformStyle.Windows => {
+                                    Some(ApplicationMenu.new())
                                 }
                             })
                             .children(self.render_project_host(cx))
                             .child(self.render_project_name(cx))
                             .children(self.render_project_branch(cx))
-                            .on_mouse_down(MouseButton::Left, |_, cx| cx.stop_propagation()),
+                            .on_mouse_down(MouseButton.Left, |_, cx| cx.stop_propagation()),
                     )
                     .child(self.render_collaborator_list(cx))
                     .child(
                         h_flex()
                             .gap_1()
                             .pr_1()
-                            .on_mouse_down(MouseButton::Left, |_, cx| cx.stop_propagation())
+                            .on_mouse_down(MouseButton.Left, |_, cx| cx.stop_propagation())
                             .children(self.render_call_controls(cx))
                             .map(|el| {
                                 let status = self.client.status();
                                 let status = &*status.borrow();
-                                if matches!(status, client::Status::Connected { .. }) {
+                                if matches!(status, client.Status.Connected { .. }) {
                                     el.child(self.render_user_menu_button(cx))
                                 } else {
                                     el.children(self.render_connection_status(status, cx))
@@ -163,13 +163,13 @@ impl Render for TitleBar {
                     ),
             )
             .when(!cx.is_fullscreen(), |title_bar| match self.platform_style {
-                PlatformStyle::Mac => title_bar,
-                PlatformStyle::Linux => {
-                    if matches!(decorations, Decorations::Client { .. }) {
+                PlatformStyle.Mac => title_bar,
+                PlatformStyle.Linux => {
+                    if matches!(decorations, Decorations.Client { .. }) {
                         title_bar
-                            .child(platform_linux::LinuxWindowControls::new(close_action))
+                            .child(platform_linux.LinuxWindowControls.new(close_action))
                             .when(supported_controls.window_menu, |titlebar| {
-                                titlebar.on_mouse_down(gpui::MouseButton::Right, move |ev, cx| {
+                                titlebar.on_mouse_down(gpui.MouseButton.Right, move |ev, cx| {
                                     cx.show_window_menu(ev.position)
                                 })
                             })
@@ -183,7 +183,7 @@ impl Render for TitleBar {
                                 this.should_move = false;
                             }))
                             .on_mouse_down(
-                                gpui::MouseButton::Left,
+                                gpui.MouseButton.Left,
                                 cx.listener(move |this, _ev, _cx| {
                                     this.should_move = true;
                                 }),
@@ -192,8 +192,8 @@ impl Render for TitleBar {
                         title_bar
                     }
                 }
-                PlatformStyle::Windows => {
-                    title_bar.child(platform_windows::WindowsWindowControls::new(height))
+                PlatformStyle.Windows => {
+                    title_bar.child(platform_windows.WindowsWindowControls.new(height))
                 }
             })
     }
@@ -208,8 +208,8 @@ impl TitleBar {
         let project = workspace.project().clone();
         let user_store = workspace.app_state().user_store.clone();
         let client = workspace.app_state().client.clone();
-        let active_call = ActiveCall::global(cx);
-        let mut subscriptions = Vec::new();
+        let active_call = ActiveCall.global(cx);
+        let mut subscriptions = Vec.new();
         subscriptions.push(
             cx.observe(&workspace.weak_handle().upgrade().unwrap(), |_, _, cx| {
                 cx.notify()
@@ -217,13 +217,13 @@ impl TitleBar {
         );
         subscriptions.push(cx.observe(&project, |_, _, cx| cx.notify()));
         subscriptions.push(cx.observe(&active_call, |this, _, cx| this.active_call_changed(cx)));
-        subscriptions.push(cx.observe_window_activation(Self::window_activation_changed));
+        subscriptions.push(cx.observe_window_activation(Self.window_activation_changed));
         subscriptions.push(cx.observe(&user_store, |_, _, cx| cx.notify()));
 
         Self {
-            platform_style: PlatformStyle::platform(),
+            platform_style: PlatformStyle.platform(),
             content: div().id(id.into()),
-            children: SmallVec::new(),
+            children: SmallVec.new(),
             workspace: workspace.weak_handle(),
             should_move: false,
             project,
@@ -256,29 +256,29 @@ impl TitleBar {
                 .read(cx)
                 .dev_server_project_id()
                 .and_then(|dev_server_project_id| {
-                    dev_server_projects::Store::global(cx)
+                    dev_server_projects.Store.global(cx)
                         .read(cx)
                         .dev_server_for_project(dev_server_project_id)
                 })
         {
             return Some(
-                ButtonLike::new("dev_server_trigger")
-                    .child(Indicator::dot().color(
-                        if dev_server.status == DevServerStatus::Online {
-                            Color::Created
+                ButtonLike.new("dev_server_trigger")
+                    .child(Indicator.dot().color(
+                        if dev_server.status == DevServerStatus.Online {
+                            Color.Created
                         } else {
-                            Color::Disabled
+                            Color.Disabled
                         },
                     ))
                     .child(
-                        Label::new(dev_server.name.clone())
-                            .size(LabelSize::Small)
-                            .line_height_style(LineHeightStyle::UiLabel),
+                        Label.new(dev_server.name.clone())
+                            .size(LabelSize.Small)
+                            .line_height_style(LineHeightStyle.UiLabel),
                     )
-                    .tooltip(move |cx| Tooltip::text("Project is hosted on a dev server", cx))
+                    .tooltip(move |cx| Tooltip.text("Project is hosted on a dev server", cx))
                     .on_click(cx.listener(|this, _, cx| {
                         if let Some(workspace) = this.workspace.upgrade() {
-                            recent_projects::DevServerProjects::open(workspace, cx)
+                            recent_projects.DevServerProjects.open(workspace, cx)
                         }
                     }))
                     .into_any_element(),
@@ -287,11 +287,11 @@ impl TitleBar {
 
         if self.project.read(cx).is_disconnected() {
             return Some(
-                Button::new("disconnected", "Disconnected")
+                Button.new("disconnected", "Disconnected")
                     .disabled(true)
-                    .color(Color::Disabled)
-                    .style(ButtonStyle::Subtle)
-                    .label_size(LabelSize::Small)
+                    .color(Color.Disabled)
+                    .style(ButtonStyle.Subtle)
+                    .label_size(LabelSize.Small)
                     .into_any_element(),
             );
         }
@@ -304,12 +304,12 @@ impl TitleBar {
             .participant_indices()
             .get(&host_user.id)?;
         Some(
-            Button::new("project_owner_trigger", host_user.github_login.clone())
-                .color(Color::Player(participant_index.0))
-                .style(ButtonStyle::Subtle)
-                .label_size(LabelSize::Small)
+            Button.new("project_owner_trigger", host_user.github_login.clone())
+                .color(Color.Player(participant_index.0))
+                .style(ButtonStyle.Subtle)
+                .label_size(LabelSize.Small)
                 .tooltip(move |cx| {
-                    Tooltip::text(
+                    Tooltip.text(
                         format!(
                             "{} is sharing this project. Click to follow.",
                             host_user.github_login.clone()
@@ -342,20 +342,20 @@ impl TitleBar {
         };
         let is_project_selected = name.is_some();
         let name = if let Some(name) = name {
-            util::truncate_and_trailoff(name, MAX_PROJECT_NAME_LENGTH)
+            util.truncate_and_trailoff(name, MAX_PROJECT_NAME_LENGTH)
         } else {
             "Open recent project".to_string()
         };
 
         let workspace = self.workspace.clone();
-        Button::new("project_name_trigger", name)
-            .when(!is_project_selected, |b| b.color(Color::Muted))
-            .style(ButtonStyle::Subtle)
-            .label_size(LabelSize::Small)
+        Button.new("project_name_trigger", name)
+            .when(!is_project_selected, |b| b.color(Color.Muted))
+            .style(ButtonStyle.Subtle)
+            .label_size(LabelSize.Small)
             .tooltip(move |cx| {
-                Tooltip::for_action(
+                Tooltip.for_action(
                     "Recent Projects",
-                    &recent_projects::OpenRecent {
+                    &recent_projects.OpenRecent {
                         create_new_window: false,
                     },
                     cx,
@@ -364,7 +364,7 @@ impl TitleBar {
             .on_click(cx.listener(move |_, _, cx| {
                 if let Some(workspace) = workspace.upgrade() {
                     workspace.update(cx, |workspace, cx| {
-                        RecentProjects::open(workspace, false, cx);
+                        RecentProjects.open(workspace, false, cx);
                     })
                 }
             }))
@@ -383,15 +383,15 @@ impl TitleBar {
         let workspace = self.workspace.upgrade()?;
         let branch_name = entry
             .as_ref()
-            .and_then(RepositoryEntry::branch)
-            .map(|branch| util::truncate_and_trailoff(&branch, MAX_BRANCH_NAME_LENGTH))?;
+            .and_then(RepositoryEntry.branch)
+            .map(|branch| util.truncate_and_trailoff(&branch, MAX_BRANCH_NAME_LENGTH))?;
         Some(
-            Button::new("project_branch_trigger", branch_name)
-                .color(Color::Muted)
-                .style(ButtonStyle::Subtle)
-                .label_size(LabelSize::Small)
+            Button.new("project_branch_trigger", branch_name)
+                .color(Color.Muted)
+                .style(ButtonStyle.Subtle)
+                .label_size(LabelSize.Small)
                 .tooltip(move |cx| {
-                    Tooltip::with_meta(
+                    Tooltip.with_meta(
                         "Recent Branches",
                         Some(&ToggleVcsMenu),
                         "Local branches only",
@@ -400,7 +400,7 @@ impl TitleBar {
                 })
                 .on_click(move |_, cx| {
                     let _ = workspace.update(cx, |this, cx| {
-                        BranchList::open(this, &Default::default(), cx)
+                        BranchList.open(this, &Default.default(), cx)
                     });
                 }),
         )
@@ -408,11 +408,11 @@ impl TitleBar {
 
     fn window_activation_changed(&mut self, cx: &mut ViewContext<Self>) {
         if cx.is_window_active() {
-            ActiveCall::global(cx)
+            ActiveCall.global(cx)
                 .update(cx, |call, cx| call.set_location(Some(&self.project), cx))
                 .detach_and_log_err(cx);
         } else if cx.active_window().is_none() {
-            ActiveCall::global(cx)
+            ActiveCall.global(cx)
                 .update(cx, |call, cx| call.set_location(None, cx))
                 .detach_and_log_err(cx);
         }
@@ -428,7 +428,7 @@ impl TitleBar {
     }
 
     fn share_project(&mut self, _: &ShareProject, cx: &mut ViewContext<Self>) {
-        let active_call = ActiveCall::global(cx);
+        let active_call = ActiveCall.global(cx);
         let project = self.project.clone();
         active_call
             .update(cx, |call, cx| call.share_project(project, cx))
@@ -436,7 +436,7 @@ impl TitleBar {
     }
 
     fn unshare_project(&mut self, _: &UnshareProject, cx: &mut ViewContext<Self>) {
-        let active_call = ActiveCall::global(cx);
+        let active_call = ActiveCall.global(cx);
         let project = self.project.clone();
         active_call
             .update(cx, |call, cx| call.unshare_project(project, cx))
@@ -445,44 +445,44 @@ impl TitleBar {
 
     fn render_connection_status(
         &self,
-        status: &client::Status,
+        status: &client.Status,
         cx: &mut ViewContext<Self>,
     ) -> Option<AnyElement> {
         match status {
-            client::Status::ConnectionError
-            | client::Status::ConnectionLost
-            | client::Status::Reauthenticating { .. }
-            | client::Status::Reconnecting { .. }
-            | client::Status::ReconnectionError { .. } => Some(
+            client.Status.ConnectionError
+            | client.Status.ConnectionLost
+            | client.Status.Reauthenticating { .. }
+            | client.Status.Reconnecting { .. }
+            | client.Status.ReconnectionError { .. } => Some(
                 div()
                     .id("disconnected")
-                    .child(Icon::new(IconName::Disconnected).size(IconSize::Small))
-                    .tooltip(|cx| Tooltip::text("Disconnected", cx))
+                    .child(Icon.new(IconName.Disconnected).size(IconSize.Small))
+                    .tooltip(|cx| Tooltip.text("Disconnected", cx))
                     .into_any_element(),
             ),
-            client::Status::UpgradeRequired => {
-                let auto_updater = auto_update::AutoUpdater::get(cx);
+            client.Status.UpgradeRequired => {
+                let auto_updater = auto_update.AutoUpdater.get(cx);
                 let label = match auto_updater.map(|auto_update| auto_update.read(cx).status()) {
-                    Some(AutoUpdateStatus::Updated { .. }) => "Please restart Zed to Collaborate",
-                    Some(AutoUpdateStatus::Installing)
-                    | Some(AutoUpdateStatus::Downloading)
-                    | Some(AutoUpdateStatus::Checking) => "Updating...",
-                    Some(AutoUpdateStatus::Idle) | Some(AutoUpdateStatus::Errored) | None => {
+                    Some(AutoUpdateStatus.Updated { .. }) => "Please restart Zed to Collaborate",
+                    Some(AutoUpdateStatus.Installing)
+                    | Some(AutoUpdateStatus.Downloading)
+                    | Some(AutoUpdateStatus.Checking) => "Updating...",
+                    Some(AutoUpdateStatus.Idle) | Some(AutoUpdateStatus.Errored) | None => {
                         "Please update Zed to Collaborate"
                     }
                 };
 
                 Some(
-                    Button::new("connection-status", label)
-                        .label_size(LabelSize::Small)
+                    Button.new("connection-status", label)
+                        .label_size(LabelSize.Small)
                         .on_click(|_, cx| {
-                            if let Some(auto_updater) = auto_update::AutoUpdater::get(cx) {
+                            if let Some(auto_updater) = auto_update.AutoUpdater.get(cx) {
                                 if auto_updater.read(cx).status().is_updated() {
-                                    workspace::reload(&Default::default(), cx);
+                                    workspace.reload(&Default.default(), cx);
                                     return;
                                 }
                             }
-                            auto_update::check(&Default::default(), cx);
+                            auto_update.check(&Default.default(), cx);
                         })
                         .into_any_element(),
                 )
@@ -493,8 +493,8 @@ impl TitleBar {
 
     pub fn render_sign_in_button(&mut self, _: &mut ViewContext<Self>) -> Button {
         let client = self.client.clone();
-        Button::new("sign_in", "Sign in")
-            .label_size(LabelSize::Small)
+        Button.new("sign_in", "Sign in")
+            .label_size(LabelSize.Small)
             .on_click(move |_, cx| {
                 let client = client.clone();
                 cx.spawn(move |mut cx| async move {
@@ -511,70 +511,70 @@ impl TitleBar {
         let user_store = self.user_store.read(cx);
         if let Some(user) = user_store.current_user() {
             let plan = user_store.current_plan();
-            PopoverMenu::new("user-menu")
+            PopoverMenu.new("user-menu")
                 .menu(move |cx| {
-                    ContextMenu::build(cx, |menu, cx| {
-                        menu.when(cx.has_flag::<ZedPro>(), |menu| {
+                    ContextMenu.build(cx, |menu, cx| {
+                        menu.when(cx.has_flag.<ZedPro>(), |menu| {
                             menu.action(
                                 format!(
                                     "Current Plan: {}",
                                     match plan {
                                         None => "",
-                                        Some(proto::Plan::Free) => "Free",
-                                        Some(proto::Plan::ZedPro) => "Pro",
+                                        Some(proto.Plan.Free) => "Free",
+                                        Some(proto.Plan.ZedPro) => "Pro",
                                     }
                                 ),
-                                zed_actions::OpenAccountSettings.boxed_clone(),
+                                zed_actions.OpenAccountSettings.boxed_clone(),
                             )
                             .separator()
                         })
-                        .action("Settings", zed_actions::OpenSettings.boxed_clone())
-                        .action("Key Bindings", Box::new(zed_actions::OpenKeymap))
-                        .action("Themes…", theme_selector::Toggle::default().boxed_clone())
-                        .action("Extensions", extensions_ui::Extensions.boxed_clone())
+                        .action("Settings", zed_actions.OpenSettings.boxed_clone())
+                        .action("Key Bindings", Box.new(zed_actions.OpenKeymap))
+                        .action("Themes…", theme_selector.Toggle.default().boxed_clone())
+                        .action("Extensions", extensions_ui.Extensions.boxed_clone())
                         .separator()
-                        .action("Sign Out", client::SignOut.boxed_clone())
+                        .action("Sign Out", client.SignOut.boxed_clone())
                     })
                     .into()
                 })
                 .trigger(
-                    ButtonLike::new("user-menu")
+                    ButtonLike.new("user-menu")
                         .child(
                             h_flex()
                                 .gap_0p5()
-                                .child(Avatar::new(user.avatar_uri.clone()))
+                                .child(Avatar.new(user.avatar_uri.clone()))
                                 .child(
-                                    Icon::new(IconName::ChevronDown)
-                                        .size(IconSize::Small)
-                                        .color(Color::Muted),
+                                    Icon.new(IconName.ChevronDown)
+                                        .size(IconSize.Small)
+                                        .color(Color.Muted),
                                 ),
                         )
-                        .style(ButtonStyle::Subtle)
-                        .tooltip(move |cx| Tooltip::text("Toggle User Menu", cx)),
+                        .style(ButtonStyle.Subtle)
+                        .tooltip(move |cx| Tooltip.text("Toggle User Menu", cx)),
                 )
-                .anchor(gpui::AnchorCorner::TopRight)
+                .anchor(gpui.AnchorCorner.TopRight)
         } else {
-            PopoverMenu::new("user-menu")
+            PopoverMenu.new("user-menu")
                 .menu(|cx| {
-                    ContextMenu::build(cx, |menu, _| {
-                        menu.action("Settings", zed_actions::OpenSettings.boxed_clone())
-                            .action("Key Bindings", Box::new(zed_actions::OpenKeymap))
-                            .action("Themes…", theme_selector::Toggle::default().boxed_clone())
-                            .action("Extensions", extensions_ui::Extensions.boxed_clone())
+                    ContextMenu.build(cx, |menu, _| {
+                        menu.action("Settings", zed_actions.OpenSettings.boxed_clone())
+                            .action("Key Bindings", Box.new(zed_actions.OpenKeymap))
+                            .action("Themes…", theme_selector.Toggle.default().boxed_clone())
+                            .action("Extensions", extensions_ui.Extensions.boxed_clone())
                     })
                     .into()
                 })
                 .trigger(
-                    ButtonLike::new("user-menu")
+                    ButtonLike.new("user-menu")
                         .child(
                             h_flex().gap_0p5().child(
-                                Icon::new(IconName::ChevronDown)
-                                    .size(IconSize::Small)
-                                    .color(Color::Muted),
+                                Icon.new(IconName.ChevronDown)
+                                    .size(IconSize.Small)
+                                    .color(Color.Muted),
                             ),
                         )
-                        .style(ButtonStyle::Subtle)
-                        .tooltip(move |cx| Tooltip::text("Toggle User Menu", cx)),
+                        .style(ButtonStyle.Subtle)
+                        .tooltip(move |cx| Tooltip.text("Toggle User Menu", cx)),
                 )
         }
     }

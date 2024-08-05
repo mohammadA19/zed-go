@@ -1,24 +1,24 @@
-use super::{network::Network, *};
-use clock::ReplicaId;
-use rand::prelude::*;
-use std::{
-    cmp::Ordering,
+use super.{network.Network, *};
+use clock.ReplicaId;
+use rand.prelude.*;
+use std.{
+    cmp.Ordering,
     env,
-    iter::Iterator,
-    time::{Duration, Instant},
+    iter.Iterator,
+    time.{Duration, Instant},
 };
 
 #[cfg(test)]
-#[ctor::ctor]
+#[ctor.ctor]
 fn init_logger() {
-    if std::env::var("RUST_LOG").is_ok() {
-        env_logger::init();
+    if std.env.var("RUST_LOG").is_ok() {
+        env_logger.init();
     }
 }
 
 #[test]
 fn test_edit() {
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "abc".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "abc".into());
     assert_eq!(buffer.text(), "abc");
     buffer.edit([(3..3, "def")]);
     assert_eq!(buffer.text(), "abcdef");
@@ -32,22 +32,22 @@ fn test_edit() {
     assert_eq!(buffer.text(), "ghiamnoef");
 }
 
-#[gpui::test(iterations = 100)]
+#[gpui.test(iterations = 100)]
 fn test_random_edits(mut rng: StdRng) {
-    let operations = env::var("OPERATIONS")
+    let operations = env.var("OPERATIONS")
         .map(|i| i.parse().expect("invalid `OPERATIONS` variable"))
         .unwrap_or(10);
 
     let reference_string_len = rng.gen_range(0..3);
-    let mut reference_string = RandomCharIter::new(&mut rng)
+    let mut reference_string = RandomCharIter.new(&mut rng)
         .take(reference_string_len)
-        .collect::<String>();
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), reference_string.clone());
-    LineEnding::normalize(&mut reference_string);
+        .collect.<String>();
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), reference_string.clone());
+    LineEnding.normalize(&mut reference_string);
 
-    buffer.set_group_interval(Duration::from_millis(rng.gen_range(0..=200)));
-    let mut buffer_versions = Vec::new();
-    log::info!(
+    buffer.set_group_interval(Duration.from_millis(rng.gen_range(0..=200)));
+    let mut buffer_versions = Vec.new();
+    log.info!(
         "buffer text {:?}, version: {:?}",
         buffer.text(),
         buffer.version()
@@ -60,7 +60,7 @@ fn test_random_edits(mut rng: StdRng) {
         }
 
         assert_eq!(buffer.text(), reference_string);
-        log::info!(
+        log.info!(
             "buffer text {:?}, version: {:?}",
             buffer.text(),
             buffer.version()
@@ -69,7 +69,7 @@ fn test_random_edits(mut rng: StdRng) {
         if rng.gen_bool(0.25) {
             buffer.randomly_undo_redo(&mut rng);
             reference_string = buffer.text();
-            log::info!(
+            log.info!(
                 "buffer text {:?}, version: {:?}",
                 buffer.text(),
                 buffer.version()
@@ -78,8 +78,8 @@ fn test_random_edits(mut rng: StdRng) {
 
         let range = buffer.random_byte_range(0, &mut rng);
         assert_eq!(
-            buffer.text_summary_for_range::<TextSummary, _>(range.clone()),
-            TextSummary::from(&reference_string[range])
+            buffer.text_summary_for_range.<TextSummary, _>(range.clone()),
+            TextSummary.from(&reference_string[range])
         );
 
         buffer.check_invariants();
@@ -91,10 +91,10 @@ fn test_random_edits(mut rng: StdRng) {
 
     for (old_buffer, subscription) in buffer_versions {
         let edits = buffer
-            .edits_since::<usize>(&old_buffer.version)
-            .collect::<Vec<_>>();
+            .edits_since.<usize>(&old_buffer.version)
+            .collect.<Vec<_>>();
 
-        log::info!(
+        log.info!(
             "applying edits since version {:?} to old text: {:?}: {:?}",
             old_buffer.version(),
             old_buffer.text(),
@@ -114,14 +114,14 @@ fn test_random_edits(mut rng: StdRng) {
         );
 
         for _ in 0..5 {
-            let end_ix = old_buffer.clip_offset(rng.gen_range(0..=old_buffer.len()), Bias::Right);
-            let start_ix = old_buffer.clip_offset(rng.gen_range(0..=end_ix), Bias::Left);
+            let end_ix = old_buffer.clip_offset(rng.gen_range(0..=old_buffer.len()), Bias.Right);
+            let start_ix = old_buffer.clip_offset(rng.gen_range(0..=end_ix), Bias.Left);
             let range = old_buffer.anchor_before(start_ix)..old_buffer.anchor_after(end_ix);
-            let mut old_text = old_buffer.text_for_range(range.clone()).collect::<String>();
+            let mut old_text = old_buffer.text_for_range(range.clone()).collect.<String>();
             let edits = buffer
-                .edits_since_in_range::<usize>(&old_buffer.version, range.clone())
-                .collect::<Vec<_>>();
-            log::info!(
+                .edits_since_in_range.<usize>(&old_buffer.version, range.clone())
+                .collect.<Vec<_>>();
+            log.info!(
                 "applying edits since version {:?} to old text in range {:?}: {:?}: {:?}",
                 old_buffer.version(),
                 start_ix..end_ix,
@@ -129,7 +129,7 @@ fn test_random_edits(mut rng: StdRng) {
                 edits,
             );
 
-            let new_text = buffer.text_for_range(range).collect::<String>();
+            let new_text = buffer.text_for_range(range).collect.<String>();
             for edit in edits {
                 old_text.replace_range(
                     edit.new.start..edit.new.start + edit.old_len(),
@@ -142,13 +142,13 @@ fn test_random_edits(mut rng: StdRng) {
         assert_eq!(
             buffer.has_edits_since(&old_buffer.version),
             buffer
-                .edits_since::<usize>(&old_buffer.version)
+                .edits_since.<usize>(&old_buffer.version)
                 .next()
                 .is_some(),
         );
 
         let subscription_edits = subscription.consume();
-        log::info!(
+        log.info!(
             "applying subscription edits since version {:?} to old text: {:?}: {:?}",
             old_buffer.version(),
             old_buffer.text(),
@@ -166,32 +166,32 @@ fn test_random_edits(mut rng: StdRng) {
 
 #[test]
 fn test_line_endings() {
-    assert_eq!(LineEnding::detect(&"🍐✅\n".repeat(1000)), LineEnding::Unix);
-    assert_eq!(LineEnding::detect(&"abcd\n".repeat(1000)), LineEnding::Unix);
+    assert_eq!(LineEnding.detect(&"🍐✅\n".repeat(1000)), LineEnding.Unix);
+    assert_eq!(LineEnding.detect(&"abcd\n".repeat(1000)), LineEnding.Unix);
     assert_eq!(
-        LineEnding::detect(&"🍐✅\r\n".repeat(1000)),
-        LineEnding::Windows
+        LineEnding.detect(&"🍐✅\r\n".repeat(1000)),
+        LineEnding.Windows
     );
     assert_eq!(
-        LineEnding::detect(&"abcd\r\n".repeat(1000)),
-        LineEnding::Windows
+        LineEnding.detect(&"abcd\r\n".repeat(1000)),
+        LineEnding.Windows
     );
 
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "one\r\ntwo\rthree".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "one\r\ntwo\rthree".into());
     assert_eq!(buffer.text(), "one\ntwo\nthree");
-    assert_eq!(buffer.line_ending(), LineEnding::Windows);
+    assert_eq!(buffer.line_ending(), LineEnding.Windows);
     buffer.check_invariants();
 
     buffer.edit([(buffer.len()..buffer.len(), "\r\nfour")]);
     buffer.edit([(0..0, "zero\r\n")]);
     assert_eq!(buffer.text(), "zero\none\ntwo\nthree\nfour");
-    assert_eq!(buffer.line_ending(), LineEnding::Windows);
+    assert_eq!(buffer.line_ending(), LineEnding.Windows);
     buffer.check_invariants();
 }
 
 #[test]
 fn test_line_len() {
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "".into());
     buffer.edit([(0..0, "abcd\nefg\nhij")]);
     buffer.edit([(12..12, "kl\nmno")]);
     buffer.edit([(18..18, "\npqrs\n")]);
@@ -208,7 +208,7 @@ fn test_line_len() {
 #[test]
 fn test_common_prefix_at_position() {
     let text = "a = str; b = δα";
-    let buffer = Buffer::new(0, BufferId::new(1).unwrap(), text.into());
+    let buffer = Buffer.new(0, BufferId.new(1).unwrap(), text.into());
 
     let offset1 = offset_after(text, "str");
     let offset2 = offset_after(text, "δα");
@@ -256,17 +256,17 @@ fn test_common_prefix_at_position() {
 
 #[test]
 fn test_text_summary_for_range() {
-    let buffer = Buffer::new(
+    let buffer = Buffer.new(
         0,
-        BufferId::new(1).unwrap(),
+        BufferId.new(1).unwrap(),
         "ab\nefg\nhklm\nnopqrs\ntuvwxyz".into(),
     );
     assert_eq!(
-        buffer.text_summary_for_range::<TextSummary, _>(1..3),
+        buffer.text_summary_for_range.<TextSummary, _>(1..3),
         TextSummary {
             len: 2,
             len_utf16: OffsetUtf16(2),
-            lines: Point::new(1, 0),
+            lines: Point.new(1, 0),
             first_line_chars: 1,
             last_line_chars: 0,
             last_line_len_utf16: 0,
@@ -275,11 +275,11 @@ fn test_text_summary_for_range() {
         }
     );
     assert_eq!(
-        buffer.text_summary_for_range::<TextSummary, _>(1..12),
+        buffer.text_summary_for_range.<TextSummary, _>(1..12),
         TextSummary {
             len: 11,
             len_utf16: OffsetUtf16(11),
-            lines: Point::new(3, 0),
+            lines: Point.new(3, 0),
             first_line_chars: 1,
             last_line_chars: 0,
             last_line_len_utf16: 0,
@@ -288,11 +288,11 @@ fn test_text_summary_for_range() {
         }
     );
     assert_eq!(
-        buffer.text_summary_for_range::<TextSummary, _>(0..20),
+        buffer.text_summary_for_range.<TextSummary, _>(0..20),
         TextSummary {
             len: 20,
             len_utf16: OffsetUtf16(20),
-            lines: Point::new(4, 1),
+            lines: Point.new(4, 1),
             first_line_chars: 2,
             last_line_chars: 1,
             last_line_len_utf16: 1,
@@ -301,11 +301,11 @@ fn test_text_summary_for_range() {
         }
     );
     assert_eq!(
-        buffer.text_summary_for_range::<TextSummary, _>(0..22),
+        buffer.text_summary_for_range.<TextSummary, _>(0..22),
         TextSummary {
             len: 22,
             len_utf16: OffsetUtf16(22),
-            lines: Point::new(4, 3),
+            lines: Point.new(4, 3),
             first_line_chars: 2,
             last_line_chars: 3,
             last_line_len_utf16: 3,
@@ -314,11 +314,11 @@ fn test_text_summary_for_range() {
         }
     );
     assert_eq!(
-        buffer.text_summary_for_range::<TextSummary, _>(7..22),
+        buffer.text_summary_for_range.<TextSummary, _>(7..22),
         TextSummary {
             len: 15,
             len_utf16: OffsetUtf16(15),
-            lines: Point::new(2, 3),
+            lines: Point.new(2, 3),
             first_line_chars: 4,
             last_line_chars: 3,
             last_line_len_utf16: 3,
@@ -330,39 +330,39 @@ fn test_text_summary_for_range() {
 
 #[test]
 fn test_chars_at() {
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "".into());
     buffer.edit([(0..0, "abcd\nefgh\nij")]);
     buffer.edit([(12..12, "kl\nmno")]);
     buffer.edit([(18..18, "\npqrs")]);
     buffer.edit([(18..21, "\nPQ")]);
 
-    let chars = buffer.chars_at(Point::new(0, 0));
-    assert_eq!(chars.collect::<String>(), "abcd\nefgh\nijkl\nmno\nPQrs");
+    let chars = buffer.chars_at(Point.new(0, 0));
+    assert_eq!(chars.collect.<String>(), "abcd\nefgh\nijkl\nmno\nPQrs");
 
-    let chars = buffer.chars_at(Point::new(1, 0));
-    assert_eq!(chars.collect::<String>(), "efgh\nijkl\nmno\nPQrs");
+    let chars = buffer.chars_at(Point.new(1, 0));
+    assert_eq!(chars.collect.<String>(), "efgh\nijkl\nmno\nPQrs");
 
-    let chars = buffer.chars_at(Point::new(2, 0));
-    assert_eq!(chars.collect::<String>(), "ijkl\nmno\nPQrs");
+    let chars = buffer.chars_at(Point.new(2, 0));
+    assert_eq!(chars.collect.<String>(), "ijkl\nmno\nPQrs");
 
-    let chars = buffer.chars_at(Point::new(3, 0));
-    assert_eq!(chars.collect::<String>(), "mno\nPQrs");
+    let chars = buffer.chars_at(Point.new(3, 0));
+    assert_eq!(chars.collect.<String>(), "mno\nPQrs");
 
-    let chars = buffer.chars_at(Point::new(4, 0));
-    assert_eq!(chars.collect::<String>(), "PQrs");
+    let chars = buffer.chars_at(Point.new(4, 0));
+    assert_eq!(chars.collect.<String>(), "PQrs");
 
     // Regression test:
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "".into());
     buffer.edit([(0..0, "[workspace]\nmembers = [\n    \"xray_core\",\n    \"xray_server\",\n    \"xray_cli\",\n    \"xray_wasm\",\n]\n")]);
     buffer.edit([(60..60, "\n")]);
 
-    let chars = buffer.chars_at(Point::new(6, 0));
-    assert_eq!(chars.collect::<String>(), "    \"xray_wasm\",\n]\n");
+    let chars = buffer.chars_at(Point.new(6, 0));
+    assert_eq!(chars.collect.<String>(), "    \"xray_wasm\",\n]\n");
 }
 
 #[test]
 fn test_anchors() {
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "".into());
     buffer.edit([(0..0, "abc")]);
     let left_anchor = buffer.anchor_before(2);
     let right_anchor = buffer.anchor_after(2);
@@ -440,47 +440,47 @@ fn test_anchors() {
 
     assert_eq!(
         anchor_at_offset_0.cmp(&anchor_at_offset_0, &buffer),
-        Ordering::Equal
+        Ordering.Equal
     );
     assert_eq!(
         anchor_at_offset_1.cmp(&anchor_at_offset_1, &buffer),
-        Ordering::Equal
+        Ordering.Equal
     );
     assert_eq!(
         anchor_at_offset_2.cmp(&anchor_at_offset_2, &buffer),
-        Ordering::Equal
+        Ordering.Equal
     );
 
     assert_eq!(
         anchor_at_offset_0.cmp(&anchor_at_offset_1, &buffer),
-        Ordering::Less
+        Ordering.Less
     );
     assert_eq!(
         anchor_at_offset_1.cmp(&anchor_at_offset_2, &buffer),
-        Ordering::Less
+        Ordering.Less
     );
     assert_eq!(
         anchor_at_offset_0.cmp(&anchor_at_offset_2, &buffer),
-        Ordering::Less
+        Ordering.Less
     );
 
     assert_eq!(
         anchor_at_offset_1.cmp(&anchor_at_offset_0, &buffer),
-        Ordering::Greater
+        Ordering.Greater
     );
     assert_eq!(
         anchor_at_offset_2.cmp(&anchor_at_offset_1, &buffer),
-        Ordering::Greater
+        Ordering.Greater
     );
     assert_eq!(
         anchor_at_offset_2.cmp(&anchor_at_offset_0, &buffer),
-        Ordering::Greater
+        Ordering.Greater
     );
 }
 
 #[test]
 fn test_anchors_at_start_and_end() {
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "".into());
     let before_start_anchor = buffer.anchor_before(0);
     let after_end_anchor = buffer.anchor_after(0);
 
@@ -503,9 +503,9 @@ fn test_anchors_at_start_and_end() {
 
 #[test]
 fn test_undo_redo() {
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "1234".into());
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "1234".into());
     // Set group interval to zero so as to not group edits in the undo stack.
-    buffer.set_group_interval(Duration::from_secs(0));
+    buffer.set_group_interval(Duration.from_secs(0));
 
     buffer.edit([(1..1, "abx")]);
     buffer.edit([(3..4, "yzef")]);
@@ -539,9 +539,9 @@ fn test_undo_redo() {
 
 #[test]
 fn test_history() {
-    let mut now = Instant::now();
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "123456".into());
-    buffer.set_group_interval(Duration::from_millis(300));
+    let mut now = Instant.now();
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "123456".into());
+    buffer.set_group_interval(Duration.from_millis(300));
 
     let transaction_1 = buffer.start_transaction_at(now).unwrap();
     buffer.edit([(2..4, "cd")]);
@@ -553,7 +553,7 @@ fn test_history() {
     buffer.end_transaction_at(now).unwrap();
     assert_eq!(buffer.text(), "12cde6");
 
-    now += buffer.transaction_group_interval() + Duration::from_millis(1);
+    now += buffer.transaction_group_interval() + Duration.from_millis(1);
     buffer.start_transaction_at(now);
     buffer.edit([(0..1, "a")]);
     buffer.edit([(1..1, "b")]);
@@ -606,8 +606,8 @@ fn test_history() {
 
 #[test]
 fn test_finalize_last_transaction() {
-    let now = Instant::now();
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "123456".into());
+    let now = Instant.now();
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "123456".into());
 
     buffer.start_transaction_at(now);
     buffer.edit([(2..4, "cd")]);
@@ -641,8 +641,8 @@ fn test_finalize_last_transaction() {
 
 #[test]
 fn test_edited_ranges_for_transaction() {
-    let now = Instant::now();
-    let mut buffer = Buffer::new(0, BufferId::new(1).unwrap(), "1234567".into());
+    let now = Instant.now();
+    let mut buffer = Buffer.new(0, BufferId.new(1).unwrap(), "1234567".into());
 
     buffer.start_transaction_at(now);
     buffer.edit([(2..4, "cd")]);
@@ -653,8 +653,8 @@ fn test_edited_ranges_for_transaction() {
     let tx = buffer.finalize_last_transaction().unwrap().clone();
     assert_eq!(
         buffer
-            .edited_ranges_for_transaction::<usize>(&tx)
-            .collect::<Vec<_>>(),
+            .edited_ranges_for_transaction.<usize>(&tx)
+            .collect.<Vec<_>>(),
         [2..4, 6..9]
     );
 
@@ -662,8 +662,8 @@ fn test_edited_ranges_for_transaction() {
     assert_eq!(buffer.text(), "12cd5hijk6efg7");
     assert_eq!(
         buffer
-            .edited_ranges_for_transaction::<usize>(&tx)
-            .collect::<Vec<_>>(),
+            .edited_ranges_for_transaction.<usize>(&tx)
+            .collect.<Vec<_>>(),
         [2..4, 10..13]
     );
 
@@ -671,8 +671,8 @@ fn test_edited_ranges_for_transaction() {
     assert_eq!(buffer.text(), "12cdl5hijk6efg7");
     assert_eq!(
         buffer
-            .edited_ranges_for_transaction::<usize>(&tx)
-            .collect::<Vec<_>>(),
+            .edited_ranges_for_transaction.<usize>(&tx)
+            .collect.<Vec<_>>(),
         [2..4, 11..14]
     );
 }
@@ -681,9 +681,9 @@ fn test_edited_ranges_for_transaction() {
 fn test_concurrent_edits() {
     let text = "abcdef";
 
-    let mut buffer1 = Buffer::new(1, BufferId::new(1).unwrap(), text.into());
-    let mut buffer2 = Buffer::new(2, BufferId::new(1).unwrap(), text.into());
-    let mut buffer3 = Buffer::new(3, BufferId::new(1).unwrap(), text.into());
+    let mut buffer1 = Buffer.new(1, BufferId.new(1).unwrap(), text.into());
+    let mut buffer2 = Buffer.new(2, BufferId.new(1).unwrap(), text.into());
+    let mut buffer3 = Buffer.new(3, BufferId.new(1).unwrap(), text.into());
 
     let buf1_op = buffer1.edit([(1..2, "12")]);
     assert_eq!(buffer1.text(), "a12cdef");
@@ -704,32 +704,32 @@ fn test_concurrent_edits() {
     assert_eq!(buffer3.text(), "a12c34e56");
 }
 
-#[gpui::test(iterations = 100)]
+#[gpui.test(iterations = 100)]
 fn test_random_concurrent_edits(mut rng: StdRng) {
-    let peers = env::var("PEERS")
+    let peers = env.var("PEERS")
         .map(|i| i.parse().expect("invalid `PEERS` variable"))
         .unwrap_or(5);
-    let operations = env::var("OPERATIONS")
+    let operations = env.var("OPERATIONS")
         .map(|i| i.parse().expect("invalid `OPERATIONS` variable"))
         .unwrap_or(10);
 
     let base_text_len = rng.gen_range(0..10);
-    let base_text = RandomCharIter::new(&mut rng)
+    let base_text = RandomCharIter.new(&mut rng)
         .take(base_text_len)
-        .collect::<String>();
-    let mut replica_ids = Vec::new();
-    let mut buffers = Vec::new();
-    let mut network = Network::new(rng.clone());
+        .collect.<String>();
+    let mut replica_ids = Vec.new();
+    let mut buffers = Vec.new();
+    let mut network = Network.new(rng.clone());
 
     for i in 0..peers {
-        let mut buffer = Buffer::new(i as ReplicaId, BufferId::new(1).unwrap(), base_text.clone());
-        buffer.history.group_interval = Duration::from_millis(rng.gen_range(0..=200));
+        let mut buffer = Buffer.new(i as ReplicaId, BufferId.new(1).unwrap(), base_text.clone());
+        buffer.history.group_interval = Duration.from_millis(rng.gen_range(0..=200));
         buffers.push(buffer);
         replica_ids.push(i as u16);
         network.add_peer(i as u16);
     }
 
-    log::info!("initial text: {:?}", base_text);
+    log.info!("initial text: {:?}", base_text);
 
     let mut mutation_count = operations;
     loop {
@@ -740,7 +740,7 @@ fn test_random_concurrent_edits(mut rng: StdRng) {
             0..=50 if mutation_count != 0 => {
                 let op = buffer.randomly_edit(&mut rng, 5).1;
                 network.broadcast(buffer.replica_id, vec![op]);
-                log::info!("buffer {} text: {:?}", buffer.replica_id, buffer.text());
+                log.info!("buffer {} text: {:?}", buffer.replica_id, buffer.text());
                 mutation_count -= 1;
             }
             51..=70 if mutation_count != 0 => {
@@ -751,7 +751,7 @@ fn test_random_concurrent_edits(mut rng: StdRng) {
             71..=100 if network.has_unreceived(replica_id) => {
                 let ops = network.receive(replica_id);
                 if !ops.is_empty() {
-                    log::info!(
+                    log.info!(
                         "peer {} applying {} ops from the network.",
                         replica_id,
                         ops.len()

@@ -1,5 +1,5 @@
-use editor::{CursorLayout, HighlightedRange, HighlightedRangeLine};
-use gpui::{
+use editor.{CursorLayout, HighlightedRange, HighlightedRangeLine};
+use gpui.{
     div, fill, point, px, relative, size, AnyElement, AvailableSpace, Bounds, ContentMask,
     DispatchPhase, Element, ElementId, FocusHandle, Font, FontStyle, FontWeight, GlobalElementId,
     HighlightStyle, Hitbox, Hsla, InputHandler, InteractiveElement, Interactivity, IntoElement,
@@ -7,30 +7,30 @@ use gpui::{
     Point, ShapedLine, StatefulInteractiveElement, StrikethroughStyle, Styled, TextRun, TextStyle,
     UnderlineStyle, View, WeakView, WhiteSpace, WindowContext, WindowTextSystem,
 };
-use itertools::Itertools;
-use language::CursorShape;
-use settings::Settings;
-use terminal::{
-    alacritty_terminal::{
-        grid::Dimensions,
-        index::Point as AlacPoint,
-        term::{cell::Flags, TermMode},
-        vte::ansi::{
-            Color::{self as AnsiColor, Named},
+use itertools.Itertools;
+use language.CursorShape;
+use settings.Settings;
+use terminal.{
+    alacritty_terminal.{
+        grid.Dimensions,
+        index.Point as AlacPoint,
+        term.{cell.Flags, TermMode},
+        vte.ansi.{
+            Color.{self as AnsiColor, Named},
             CursorShape as AlacCursorShape, NamedColor,
         },
     },
-    terminal_settings::TerminalSettings,
+    terminal_settings.TerminalSettings,
     HoveredWord, IndexedCell, Terminal, TerminalContent, TerminalSize,
 };
-use theme::{ActiveTheme, Theme, ThemeSettings};
-use ui::{ParentElement, Tooltip};
-use workspace::Workspace;
+use theme.{ActiveTheme, Theme, ThemeSettings};
+use ui.{ParentElement, Tooltip};
+use workspace.Workspace;
 
-use std::mem;
-use std::{fmt::Debug, ops::RangeInclusive, rc::Rc};
+use std.mem;
+use std.{fmt.Debug, ops.RangeInclusive, rc.Rc};
 
-use crate::{BlockContext, BlockProperties, TerminalView};
+use crate.{BlockContext, BlockProperties, TerminalView};
 
 /// The information generated during layout that is necessary for painting.
 pub struct LayoutState {
@@ -75,11 +75,11 @@ impl DisplayCursor {
 #[derive(Debug, Default)]
 pub struct LayoutCell {
     pub point: AlacPoint<i32, i32>,
-    text: gpui::ShapedLine,
+    text: gpui.ShapedLine,
 }
 
 impl LayoutCell {
-    fn new(point: AlacPoint<i32, i32>, text: gpui::ShapedLine) -> LayoutCell {
+    fn new(point: AlacPoint<i32, i32>, text: gpui.ShapedLine) -> LayoutCell {
         LayoutCell { point, text }
     }
 
@@ -93,7 +93,7 @@ impl LayoutCell {
         let pos = {
             let point = self.point;
 
-            Point::new(
+            Point.new(
                 (origin.x + point.column as f32 * dimensions.cell_width).floor(),
                 origin.y + point.line as f32 * dimensions.line_height,
             )
@@ -141,7 +141,7 @@ impl LayoutRect {
         )
         .into();
 
-        cx.paint_quad(fill(Bounds::new(position, size), self.color));
+        cx.paint_quad(fill(Bounds.new(position, size), self.color));
     }
 }
 
@@ -168,7 +168,7 @@ impl InteractiveElement for TerminalElement {
 impl StatefulInteractiveElement for TerminalElement {}
 
 impl TerminalElement {
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy.too_many_arguments)]
     pub fn new(
         terminal: Model<Terminal>,
         terminal_view: View<TerminalView>,
@@ -188,7 +188,7 @@ impl TerminalElement {
             cursor_visible,
             can_navigate_to_selected_word,
             block_below_cursor,
-            interactivity: Default::default(),
+            interactivity: Default.default(),
         }
         .track_focus(&focus)
         .element
@@ -216,13 +216,13 @@ impl TerminalElement {
             for cell in line {
                 let mut fg = cell.fg;
                 let mut bg = cell.bg;
-                if cell.flags.contains(Flags::INVERSE) {
-                    mem::swap(&mut fg, &mut bg);
+                if cell.flags.contains(Flags.INVERSE) {
+                    mem.swap(&mut fg, &mut bg);
                 }
 
                 //Expand background rect range
                 {
-                    if matches!(bg, Named(NamedColor::Background)) {
+                    if matches!(bg, Named(NamedColor.Background)) {
                         //Continue to next cell, resetting variables if necessary
                         cur_alac_color = None;
                         if let Some(rect) = cur_rect {
@@ -238,8 +238,8 @@ impl TerminalElement {
                                     // rect, so we create one if necessary.
                                     cur_rect = cur_rect.map_or_else(
                                         || {
-                                            Some(LayoutRect::new(
-                                                AlacPoint::new(
+                                            Some(LayoutRect.new(
+                                                AlacPoint.new(
                                                     line_index as i32,
                                                     cell.point.column.0 as i32,
                                                 ),
@@ -254,8 +254,8 @@ impl TerminalElement {
                                     if cur_rect.is_some() {
                                         rects.push(cur_rect.take().unwrap());
                                     }
-                                    cur_rect = Some(LayoutRect::new(
-                                        AlacPoint::new(
+                                    cur_rect = Some(LayoutRect.new(
+                                        AlacPoint.new(
                                             line_index as i32,
                                             cell.point.column.0 as i32,
                                         ),
@@ -266,8 +266,8 @@ impl TerminalElement {
                             }
                             None => {
                                 cur_alac_color = Some(bg);
-                                cur_rect = Some(LayoutRect::new(
-                                    AlacPoint::new(line_index as i32, cell.point.column.0 as i32),
+                                cur_rect = Some(LayoutRect.new(
+                                    AlacPoint.new(line_index as i32, cell.point.column.0 as i32),
                                     1,
                                     convert_color(&bg, &theme),
                                 ));
@@ -281,7 +281,7 @@ impl TerminalElement {
                     if !is_blank(&cell) {
                         let cell_text = cell.c.to_string();
                         let cell_style =
-                            TerminalElement::cell_style(&cell, fg, theme, text_style, hyperlink);
+                            TerminalElement.cell_style(&cell, fg, theme, text_style, hyperlink);
 
                         let layout_cell = text_system
                             .shape_line(
@@ -291,8 +291,8 @@ impl TerminalElement {
                             )
                             .unwrap();
 
-                        cells.push(LayoutCell::new(
-                            AlacPoint::new(line_index as i32, cell.point.column.0 as i32),
+                        cells.push(LayoutCell.new(
+                            AlacPoint.new(line_index as i32, cell.point.column.0 as i32),
                             layout_cell,
                         ))
                     };
@@ -314,7 +314,7 @@ impl TerminalElement {
         text_fragment: &ShapedLine,
     ) -> Option<(Point<Pixels>, Pixels)> {
         if cursor_point.line() < size.total_lines() as i32 {
-            let cursor_width = if text_fragment.width == Pixels::ZERO {
+            let cursor_width = if text_fragment.width == Pixels.ZERO {
                 size.cell_width()
             } else {
                 text_fragment.width
@@ -337,8 +337,8 @@ impl TerminalElement {
     /// Converts the Alacritty cell styles to GPUI text styles and background color.
     fn cell_style(
         indexed: &IndexedCell,
-        fg: terminal::alacritty_terminal::vte::ansi::Color,
-        // bg: terminal::alacritty_terminal::ansi::Color,
+        fg: terminal.alacritty_terminal.vte.ansi.Color,
+        // bg: terminal.alacritty_terminal.ansi.Color,
         colors: &Theme,
         text_style: &TextStyle,
         hyperlink: Option<(HighlightStyle, &RangeInclusive<AlacPoint>)>,
@@ -348,35 +348,35 @@ impl TerminalElement {
 
         // Ghostty uses (175/255) as the multiplier (~0.69), Alacritty uses 0.66, Kitty
         // uses 0.75. We're using 0.7 because it's pretty well in the middle of that.
-        if flags.intersects(Flags::DIM) {
+        if flags.intersects(Flags.DIM) {
             fg.a *= 0.7;
         }
 
-        let underline = (flags.intersects(Flags::ALL_UNDERLINES)
+        let underline = (flags.intersects(Flags.ALL_UNDERLINES)
             || indexed.cell.hyperlink().is_some())
         .then(|| UnderlineStyle {
             color: Some(fg),
-            thickness: Pixels::from(1.0),
-            wavy: flags.contains(Flags::UNDERCURL),
+            thickness: Pixels.from(1.0),
+            wavy: flags.contains(Flags.UNDERCURL),
         });
 
         let strikethrough = flags
-            .intersects(Flags::STRIKEOUT)
+            .intersects(Flags.STRIKEOUT)
             .then(|| StrikethroughStyle {
                 color: Some(fg),
-                thickness: Pixels::from(1.0),
+                thickness: Pixels.from(1.0),
             });
 
-        let weight = if flags.intersects(Flags::BOLD) {
-            FontWeight::BOLD
+        let weight = if flags.intersects(Flags.BOLD) {
+            FontWeight.BOLD
         } else {
             text_style.font_weight
         };
 
-        let style = if flags.intersects(Flags::ITALIC) {
-            FontStyle::Italic
+        let style = if flags.intersects(Flags.ITALIC) {
+            FontStyle.Italic
         } else {
-            FontStyle::Normal
+            FontStyle.Normal
         };
 
         let mut result = TextRun {
@@ -433,7 +433,7 @@ impl TerminalElement {
         let focus = self.focus.clone();
         let terminal = self.terminal.clone();
 
-        self.interactivity.on_mouse_down(MouseButton::Left, {
+        self.interactivity.on_mouse_down(MouseButton.Left, {
             let terminal = terminal.clone();
             let focus = focus.clone();
             move |e, cx| {
@@ -450,7 +450,7 @@ impl TerminalElement {
             let terminal = self.terminal.clone();
             let hitbox = hitbox.clone();
             move |e: &MouseMoveEvent, phase, cx| {
-                if phase != DispatchPhase::Bubble || !focus.is_focused(cx) {
+                if phase != DispatchPhase.Bubble || !focus.is_focused(cx) {
                     return;
                 }
 
@@ -479,8 +479,8 @@ impl TerminalElement {
         });
 
         self.interactivity.on_mouse_up(
-            MouseButton::Left,
-            TerminalElement::generic_button_handler(
+            MouseButton.Left,
+            TerminalElement.generic_button_handler(
                 terminal.clone(),
                 origin,
                 focus.clone(),
@@ -490,8 +490,8 @@ impl TerminalElement {
             ),
         );
         self.interactivity.on_mouse_down(
-            MouseButton::Middle,
-            TerminalElement::generic_button_handler(
+            MouseButton.Middle,
+            TerminalElement.generic_button_handler(
                 terminal.clone(),
                 origin,
                 focus.clone(),
@@ -514,10 +514,10 @@ impl TerminalElement {
 
         // Mouse mode handlers:
         // All mouse modes need the extra click handlers
-        if mode.intersects(TermMode::MOUSE_MODE) {
+        if mode.intersects(TermMode.MOUSE_MODE) {
             self.interactivity.on_mouse_down(
-                MouseButton::Right,
-                TerminalElement::generic_button_handler(
+                MouseButton.Right,
+                TerminalElement.generic_button_handler(
                     terminal.clone(),
                     origin,
                     focus.clone(),
@@ -527,8 +527,8 @@ impl TerminalElement {
                 ),
             );
             self.interactivity.on_mouse_up(
-                MouseButton::Right,
-                TerminalElement::generic_button_handler(
+                MouseButton.Right,
+                TerminalElement.generic_button_handler(
                     terminal.clone(),
                     origin,
                     focus.clone(),
@@ -538,8 +538,8 @@ impl TerminalElement {
                 ),
             );
             self.interactivity.on_mouse_up(
-                MouseButton::Middle,
-                TerminalElement::generic_button_handler(
+                MouseButton.Middle,
+                TerminalElement.generic_button_handler(
                     terminal,
                     origin,
                     focus,
@@ -552,12 +552,12 @@ impl TerminalElement {
     }
 
     fn rem_size(&self, cx: &WindowContext) -> Option<Pixels> {
-        let settings = ThemeSettings::get_global(cx).clone();
+        let settings = ThemeSettings.get_global(cx).clone();
         let buffer_font_size = settings.buffer_font_size(cx);
         let rem_size_scale = {
             // Our default UI font size is 14px on a 16px base scale.
             // This means the default UI font size is 0.875rems.
-            let default_font_size_scale = 14. / ui::BASE_REM_SIZE_IN_PX;
+            let default_font_size_scale = 14. / ui.BASE_REM_SIZE_IN_PX;
 
             // We then determine the delta between a single rem and the default font
             // size scale.
@@ -584,13 +584,13 @@ impl Element for TerminalElement {
         &mut self,
         global_id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         let layout_id = self
             .interactivity
             .request_layout(global_id, cx, |mut style, cx| {
                 style.size.width = relative(1.).into();
                 style.size.height = relative(1.).into();
-                // style.overflow = point(Overflow::Hidden, Overflow::Hidden);
+                // style.overflow = point(Overflow.Hidden, Overflow.Hidden);
                 let layout_id = cx.request_layout(style, None);
 
                 layout_id
@@ -602,18 +602,18 @@ impl Element for TerminalElement {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
+        _: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
-    ) -> Self::PrepaintState {
+    ) -> Self.PrepaintState {
         let rem_size = self.rem_size(cx);
         self.interactivity
             .prepaint(global_id, bounds, bounds.size, cx, |_, _, hitbox, cx| {
                 let hitbox = hitbox.unwrap();
-                let settings = ThemeSettings::get_global(cx).clone();
+                let settings = ThemeSettings.get_global(cx).clone();
 
                 let buffer_font_size = settings.buffer_font_size(cx);
 
-                let terminal_settings = TerminalSettings::get_global(cx);
+                let terminal_settings = TerminalSettings.get_global(cx);
 
                 let font_family = terminal_settings
                     .font_family
@@ -639,7 +639,7 @@ impl Element for TerminalElement {
                 let font_size = terminal_settings.font_size;
 
                 let font_size =
-                    font_size.map_or(buffer_font_size, |size| theme::adjusted_font_size(size, cx));
+                    font_size.map_or(buffer_font_size, |size| theme.adjusted_font_size(size, cx));
 
                 let theme = cx.theme().clone();
 
@@ -663,10 +663,10 @@ impl Element for TerminalElement {
                     font_weight,
                     font_fallbacks,
                     font_size: font_size.into(),
-                    font_style: FontStyle::Normal,
+                    font_style: FontStyle.Normal,
                     line_height: line_height.into(),
                     background_color: Some(theme.colors().terminal_background),
-                    white_space: WhiteSpace::Normal,
+                    white_space: WhiteSpace.Normal,
                     // These are going to be overridden per-cell
                     underline: None,
                     strikethrough: None,
@@ -699,7 +699,7 @@ impl Element for TerminalElement {
                         size.width = cell_width * 2.0;
                     }
 
-                    TerminalSize::new(line_height, cell_width, size)
+                    TerminalSize.new(line_height, cell_width, size)
                 };
 
                 let search_matches = self.terminal.read(cx).matches.clone();
@@ -724,7 +724,7 @@ impl Element for TerminalElement {
                     let mut element = div()
                         .size_full()
                         .id("terminal-element")
-                        .tooltip(move |cx| Tooltip::text(hovered_word.word.clone(), cx))
+                        .tooltip(move |cx| Tooltip.text(hovered_word.word.clone(), cx))
                         .into_any_element();
                     element.prepaint_as_root(offset, bounds.size.into(), cx);
                     element
@@ -743,7 +743,7 @@ impl Element for TerminalElement {
                 let display_offset = *display_offset;
 
                 // searches, highlights to a single range representations
-                let mut relative_highlighted_ranges = Vec::new();
+                let mut relative_highlighted_ranges = Vec.new();
                 for search_match in search_matches {
                     relative_highlighted_ranges.push((search_match, match_color))
                 }
@@ -754,7 +754,7 @@ impl Element for TerminalElement {
 
                 // then have that representation be converted to the appropriate highlight data structure
 
-                let (cells, rects) = TerminalElement::layout_grid(
+                let (cells, rects) = TerminalElement.layout_grid(
                     cells.iter().cloned(),
                     &text_style,
                     &cx.text_system(),
@@ -766,10 +766,10 @@ impl Element for TerminalElement {
 
                 // Layout cursor. Rectangle is used for IME, so we should lay it out even
                 // if we don't end up showing it.
-                let cursor = if let AlacCursorShape::Hidden = cursor.shape {
+                let cursor = if let AlacCursorShape.Hidden = cursor.shape {
                     None
                 } else {
-                    let cursor_point = DisplayCursor::from(cursor.point, display_offset);
+                    let cursor_point = DisplayCursor.from(cursor.point, display_offset);
                     let cursor_text = {
                         let str_trxt = cursor_char.to_string();
                         let len = str_trxt.len();
@@ -782,7 +782,7 @@ impl Element for TerminalElement {
                                     font: text_style.font(),
                                     color: theme.colors().terminal_background,
                                     background_color: None,
-                                    underline: Default::default(),
+                                    underline: Default.default(),
                                     strikethrough: None,
                                 }],
                             )
@@ -790,19 +790,19 @@ impl Element for TerminalElement {
                     };
 
                     let focused = self.focused;
-                    TerminalElement::shape_cursor(cursor_point, dimensions, &cursor_text).map(
+                    TerminalElement.shape_cursor(cursor_point, dimensions, &cursor_text).map(
                         move |(cursor_position, block_width)| {
                             let (shape, text) = match cursor.shape {
-                                AlacCursorShape::Block if !focused => (CursorShape::Hollow, None),
-                                AlacCursorShape::Block => (CursorShape::Block, Some(cursor_text)),
-                                AlacCursorShape::Underline => (CursorShape::Underscore, None),
-                                AlacCursorShape::Beam => (CursorShape::Bar, None),
-                                AlacCursorShape::HollowBlock => (CursorShape::Hollow, None),
+                                AlacCursorShape.Block if !focused => (CursorShape.Hollow, None),
+                                AlacCursorShape.Block => (CursorShape.Block, Some(cursor_text)),
+                                AlacCursorShape.Underline => (CursorShape.Underscore, None),
+                                AlacCursorShape.Beam => (CursorShape.Bar, None),
+                                AlacCursorShape.HollowBlock => (CursorShape.Hollow, None),
                                 //This case is handled in the if wrapping the whole cursor layout
-                                AlacCursorShape::Hidden => unreachable!(),
+                                AlacCursorShape.Hidden => unreachable!(),
                             };
 
-                            CursorLayout::new(
+                            CursorLayout.new(
                                 cursor_position,
                                 block_width,
                                 dimensions.line_height,
@@ -826,8 +826,8 @@ impl Element for TerminalElement {
                         let element = render(&mut block_cx);
                         let mut element = div().occlude().child(element).into_any_element();
                         let available_space = size(
-                            AvailableSpace::Definite(dimensions.width() + gutter),
-                            AvailableSpace::Definite(
+                            AvailableSpace.Definite(dimensions.width() + gutter),
+                            AvailableSpace.Definite(
                                 block.height as f32 * dimensions.line_height(),
                             ),
                         );
@@ -867,8 +867,8 @@ impl Element for TerminalElement {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
-        layout: &mut Self::PrepaintState,
+        _: &mut Self.RequestLayoutState,
+        layout: &mut Self.PrepaintState,
         cx: &mut WindowContext<'_>,
     ) {
         cx.with_content_mask(Some(ContentMask { bounds }), |cx| {
@@ -876,7 +876,7 @@ impl Element for TerminalElement {
 
             cx.paint_quad(fill(bounds, layout.background_color));
             let origin =
-                bounds.origin + Point::new(layout.gutter, px(0.)) - Point::new(px(0.), scroll_top);
+                bounds.origin + Point.new(layout.gutter, px(0.)) - Point.new(px(0.), scroll_top);
 
             let terminal_input_handler = TerminalInputHandler {
                 terminal: self.terminal.clone(),
@@ -889,9 +889,9 @@ impl Element for TerminalElement {
 
             self.register_mouse_listeners(origin, layout.mode, &layout.hitbox, cx);
             if self.can_navigate_to_selected_word && layout.last_hovered_word.is_some() {
-                cx.set_cursor_style(gpui::CursorStyle::PointingHand, &layout.hitbox);
+                cx.set_cursor_style(gpui.CursorStyle.PointingHand, &layout.hitbox);
             } else {
-                cx.set_cursor_style(gpui::CursorStyle::IBeam, &layout.hitbox);
+                cx.set_cursor_style(gpui.CursorStyle.IBeam, &layout.hitbox);
             }
 
             let cursor = layout.cursor.take();
@@ -904,7 +904,7 @@ impl Element for TerminalElement {
                     cx.on_key_event({
                         let this = self.terminal.clone();
                         move |event: &ModifiersChangedEvent, phase, cx| {
-                            if phase != DispatchPhase::Bubble {
+                            if phase != DispatchPhase.Bubble {
                                 return;
                             }
 
@@ -963,7 +963,7 @@ impl Element for TerminalElement {
 impl IntoElement for TerminalElement {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -975,13 +975,13 @@ struct TerminalInputHandler {
 }
 
 impl InputHandler for TerminalInputHandler {
-    fn selected_text_range(&mut self, cx: &mut WindowContext) -> Option<std::ops::Range<usize>> {
+    fn selected_text_range(&mut self, cx: &mut WindowContext) -> Option<std.ops.Range<usize>> {
         if self
             .terminal
             .read(cx)
             .last_content
             .mode
-            .contains(TermMode::ALT_SCREEN)
+            .contains(TermMode.ALT_SCREEN)
         {
             None
         } else {
@@ -989,13 +989,13 @@ impl InputHandler for TerminalInputHandler {
         }
     }
 
-    fn marked_text_range(&mut self, _: &mut WindowContext) -> Option<std::ops::Range<usize>> {
+    fn marked_text_range(&mut self, _: &mut WindowContext) -> Option<std.ops.Range<usize>> {
         None
     }
 
     fn text_for_range(
         &mut self,
-        _: std::ops::Range<usize>,
+        _: std.ops.Range<usize>,
         _: &mut WindowContext,
     ) -> Option<String> {
         None
@@ -1003,7 +1003,7 @@ impl InputHandler for TerminalInputHandler {
 
     fn replace_text_in_range(
         &mut self,
-        _replacement_range: Option<std::ops::Range<usize>>,
+        _replacement_range: Option<std.ops.Range<usize>>,
         text: &str,
         cx: &mut WindowContext,
     ) {
@@ -1021,9 +1021,9 @@ impl InputHandler for TerminalInputHandler {
 
     fn replace_and_mark_text_in_range(
         &mut self,
-        _range_utf16: Option<std::ops::Range<usize>>,
+        _range_utf16: Option<std.ops.Range<usize>>,
         _new_text: &str,
-        _new_selected_range: Option<std::ops::Range<usize>>,
+        _new_selected_range: Option<std.ops.Range<usize>>,
         _: &mut WindowContext,
     ) {
     }
@@ -1032,7 +1032,7 @@ impl InputHandler for TerminalInputHandler {
 
     fn bounds_for_range(
         &mut self,
-        _range_utf16: std::ops::Range<usize>,
+        _range_utf16: std.ops.Range<usize>,
         _: &mut WindowContext,
     ) -> Option<Bounds<Pixels>> {
         self.cursor_bounds
@@ -1044,7 +1044,7 @@ pub fn is_blank(cell: &IndexedCell) -> bool {
         return false;
     }
 
-    if cell.bg != AnsiColor::Named(NamedColor::Background) {
+    if cell.bg != AnsiColor.Named(NamedColor.Background) {
         return false;
     }
 
@@ -1054,7 +1054,7 @@ pub fn is_blank(cell: &IndexedCell) -> bool {
 
     if cell
         .flags
-        .intersects(Flags::ALL_UNDERLINES | Flags::INVERSE | Flags::STRIKEOUT)
+        .intersects(Flags.ALL_UNDERLINES | Flags.INVERSE | Flags.STRIKEOUT)
     {
         return false;
     }
@@ -1085,12 +1085,12 @@ fn to_highlighted_range_lines(
     // of the grid data we should be looking at. But for the rendering step, we don't
     // want negatives. We want things relative to the 'viewport' (the area of the grid
     // which is currently shown according to the display offset)
-    let unclamped_start = AlacPoint::new(
+    let unclamped_start = AlacPoint.new(
         range.start().line + layout.display_offset,
         range.start().column,
     );
     let unclamped_end =
-        AlacPoint::new(range.end().line + layout.display_offset, range.end().column);
+        AlacPoint.new(range.end().line + layout.display_offset, range.end().column);
 
     // Step 2. Clamp range to viewport, and return None if it doesn't overlap
     if unclamped_end.line.0 < 0 || unclamped_start.line.0 > layout.dimensions.num_lines() as i32 {
@@ -1107,7 +1107,7 @@ fn to_highlighted_range_lines(
 
     // Step 3. Expand ranges that cross lines into a collection of single-line ranges.
     //  (also convert to pixels)
-    let mut highlighted_range_lines = Vec::new();
+    let mut highlighted_range_lines = Vec.new();
     for line in clamped_start_line..=clamped_end_line {
         let mut line_start = 0;
         let mut line_end = layout.dimensions.columns();
@@ -1129,48 +1129,48 @@ fn to_highlighted_range_lines(
 }
 
 /// Converts a 2, 8, or 24 bit color ANSI color to the GPUI equivalent.
-pub fn convert_color(fg: &terminal::alacritty_terminal::vte::ansi::Color, theme: &Theme) -> Hsla {
+pub fn convert_color(fg: &terminal.alacritty_terminal.vte.ansi.Color, theme: &Theme) -> Hsla {
     let colors = theme.colors();
     match fg {
         // Named and theme defined colors
-        terminal::alacritty_terminal::vte::ansi::Color::Named(n) => match n {
-            NamedColor::Black => colors.terminal_ansi_black,
-            NamedColor::Red => colors.terminal_ansi_red,
-            NamedColor::Green => colors.terminal_ansi_green,
-            NamedColor::Yellow => colors.terminal_ansi_yellow,
-            NamedColor::Blue => colors.terminal_ansi_blue,
-            NamedColor::Magenta => colors.terminal_ansi_magenta,
-            NamedColor::Cyan => colors.terminal_ansi_cyan,
-            NamedColor::White => colors.terminal_ansi_white,
-            NamedColor::BrightBlack => colors.terminal_ansi_bright_black,
-            NamedColor::BrightRed => colors.terminal_ansi_bright_red,
-            NamedColor::BrightGreen => colors.terminal_ansi_bright_green,
-            NamedColor::BrightYellow => colors.terminal_ansi_bright_yellow,
-            NamedColor::BrightBlue => colors.terminal_ansi_bright_blue,
-            NamedColor::BrightMagenta => colors.terminal_ansi_bright_magenta,
-            NamedColor::BrightCyan => colors.terminal_ansi_bright_cyan,
-            NamedColor::BrightWhite => colors.terminal_ansi_bright_white,
-            NamedColor::Foreground => colors.terminal_foreground,
-            NamedColor::Background => colors.terminal_background,
-            NamedColor::Cursor => theme.players().local().cursor,
-            NamedColor::DimBlack => colors.terminal_ansi_dim_black,
-            NamedColor::DimRed => colors.terminal_ansi_dim_red,
-            NamedColor::DimGreen => colors.terminal_ansi_dim_green,
-            NamedColor::DimYellow => colors.terminal_ansi_dim_yellow,
-            NamedColor::DimBlue => colors.terminal_ansi_dim_blue,
-            NamedColor::DimMagenta => colors.terminal_ansi_dim_magenta,
-            NamedColor::DimCyan => colors.terminal_ansi_dim_cyan,
-            NamedColor::DimWhite => colors.terminal_ansi_dim_white,
-            NamedColor::BrightForeground => colors.terminal_bright_foreground,
-            NamedColor::DimForeground => colors.terminal_dim_foreground,
+        terminal.alacritty_terminal.vte.ansi.Color.Named(n) => match n {
+            NamedColor.Black => colors.terminal_ansi_black,
+            NamedColor.Red => colors.terminal_ansi_red,
+            NamedColor.Green => colors.terminal_ansi_green,
+            NamedColor.Yellow => colors.terminal_ansi_yellow,
+            NamedColor.Blue => colors.terminal_ansi_blue,
+            NamedColor.Magenta => colors.terminal_ansi_magenta,
+            NamedColor.Cyan => colors.terminal_ansi_cyan,
+            NamedColor.White => colors.terminal_ansi_white,
+            NamedColor.BrightBlack => colors.terminal_ansi_bright_black,
+            NamedColor.BrightRed => colors.terminal_ansi_bright_red,
+            NamedColor.BrightGreen => colors.terminal_ansi_bright_green,
+            NamedColor.BrightYellow => colors.terminal_ansi_bright_yellow,
+            NamedColor.BrightBlue => colors.terminal_ansi_bright_blue,
+            NamedColor.BrightMagenta => colors.terminal_ansi_bright_magenta,
+            NamedColor.BrightCyan => colors.terminal_ansi_bright_cyan,
+            NamedColor.BrightWhite => colors.terminal_ansi_bright_white,
+            NamedColor.Foreground => colors.terminal_foreground,
+            NamedColor.Background => colors.terminal_background,
+            NamedColor.Cursor => theme.players().local().cursor,
+            NamedColor.DimBlack => colors.terminal_ansi_dim_black,
+            NamedColor.DimRed => colors.terminal_ansi_dim_red,
+            NamedColor.DimGreen => colors.terminal_ansi_dim_green,
+            NamedColor.DimYellow => colors.terminal_ansi_dim_yellow,
+            NamedColor.DimBlue => colors.terminal_ansi_dim_blue,
+            NamedColor.DimMagenta => colors.terminal_ansi_dim_magenta,
+            NamedColor.DimCyan => colors.terminal_ansi_dim_cyan,
+            NamedColor.DimWhite => colors.terminal_ansi_dim_white,
+            NamedColor.BrightForeground => colors.terminal_bright_foreground,
+            NamedColor.DimForeground => colors.terminal_dim_foreground,
         },
         // 'True' colors
-        terminal::alacritty_terminal::vte::ansi::Color::Spec(rgb) => {
-            terminal::rgba_color(rgb.r, rgb.g, rgb.b)
+        terminal.alacritty_terminal.vte.ansi.Color.Spec(rgb) => {
+            terminal.rgba_color(rgb.r, rgb.g, rgb.b)
         }
         // 8 bit, indexed colors
-        terminal::alacritty_terminal::vte::ansi::Color::Indexed(i) => {
-            terminal::get_color_at_index(*i as usize, theme)
+        terminal.alacritty_terminal.vte.ansi.Color.Indexed(i) => {
+            terminal.get_color_at_index(*i as usize, theme)
         }
     }
 }

@@ -12,36 +12,36 @@ pub mod substitute;
 mod toggle_comments;
 pub(crate) mod yank;
 
-use std::collections::HashMap;
-use std::sync::Arc;
+use std.collections.HashMap;
+use std.sync.Arc;
 
-use crate::{
-    motion::{self, first_non_whitespace, next_line_end, right, Motion},
-    object::Object,
-    state::{Mode, Operator},
-    surrounds::{check_and_move_to_valid_bracket_pair, SurroundsType},
+use crate.{
+    motion.{self, first_non_whitespace, next_line_end, right, Motion},
+    object.Object,
+    state.{Mode, Operator},
+    surrounds.{check_and_move_to_valid_bracket_pair, SurroundsType},
     Vim,
 };
-use case::{change_case_motion, change_case_object, CaseTarget};
-use collections::BTreeSet;
-use editor::scroll::Autoscroll;
-use editor::Anchor;
-use editor::Bias;
-use editor::Editor;
-use editor::{display_map::ToDisplayPoint, movement};
-use gpui::{actions, ViewContext, WindowContext};
-use language::{Point, SelectionGoal};
-use log::error;
-use multi_buffer::MultiBufferRow;
-use workspace::Workspace;
+use case.{change_case_motion, change_case_object, CaseTarget};
+use collections.BTreeSet;
+use editor.scroll.Autoscroll;
+use editor.Anchor;
+use editor.Bias;
+use editor.Editor;
+use editor.{display_map.ToDisplayPoint, movement};
+use gpui.{actions, ViewContext, WindowContext};
+use language.{Point, SelectionGoal};
+use log.error;
+use multi_buffer.MultiBufferRow;
+use workspace.Workspace;
 
-use self::{
-    case::{change_case, convert_to_lower_case, convert_to_upper_case},
-    change::{change_motion, change_object},
-    delete::{delete_motion, delete_object},
-    indent::{indent_motion, indent_object, IndentDirection},
-    toggle_comments::{toggle_comments_motion, toggle_comments_object},
-    yank::{yank_motion, yank_object},
+use self.{
+    case.{change_case, convert_to_lower_case, convert_to_upper_case},
+    change.{change_motion, change_object},
+    delete.{delete_motion, delete_object},
+    indent.{indent_motion, indent_object, IndentDirection},
+    toggle_comments.{toggle_comments_motion, toggle_comments_object},
+    yank.{yank_motion, yank_object},
 };
 
 actions!(
@@ -89,26 +89,26 @@ pub(crate) fn register(workspace: &mut Workspace, cx: &mut ViewContext<Workspace
     workspace.register_action(toggle_comments);
 
     workspace.register_action(|_: &mut Workspace, _: &DeleteLeft, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             let times = vim.take_count(cx);
-            delete_motion(vim, Motion::Left, times, cx);
+            delete_motion(vim, Motion.Left, times, cx);
         })
     });
     workspace.register_action(|_: &mut Workspace, _: &DeleteRight, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             let times = vim.take_count(cx);
-            delete_motion(vim, Motion::Right, times, cx);
+            delete_motion(vim, Motion.Right, times, cx);
         })
     });
     workspace.register_action(|_: &mut Workspace, _: &ChangeToEndOfLine, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.start_recording(cx);
             let times = vim.take_count(cx);
             change_motion(
                 vim,
-                Motion::EndOfLine {
+                Motion.EndOfLine {
                     display_lines: false,
                 },
                 times,
@@ -117,12 +117,12 @@ pub(crate) fn register(workspace: &mut Workspace, cx: &mut ViewContext<Workspace
         })
     });
     workspace.register_action(|_: &mut Workspace, _: &DeleteToEndOfLine, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             let times = vim.take_count(cx);
             delete_motion(
                 vim,
-                Motion::EndOfLine {
+                Motion.EndOfLine {
                     display_lines: false,
                 },
                 times,
@@ -131,7 +131,7 @@ pub(crate) fn register(workspace: &mut Workspace, cx: &mut ViewContext<Workspace
         })
     });
     workspace.register_action(|_: &mut Workspace, _: &JoinLines, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             let mut times = vim.take_count(cx).unwrap_or(1);
             if vim.state().mode.is_visual() {
@@ -144,81 +144,81 @@ pub(crate) fn register(workspace: &mut Workspace, cx: &mut ViewContext<Workspace
             vim.update_active_editor(cx, |_, editor, cx| {
                 editor.transact(cx, |editor, cx| {
                     for _ in 0..times {
-                        editor.join_lines(&Default::default(), cx)
+                        editor.join_lines(&Default.default(), cx)
                     }
                 })
             });
             if vim.state().mode.is_visual() {
-                vim.switch_mode(Mode::Normal, false, cx)
+                vim.switch_mode(Mode.Normal, false, cx)
             }
         });
     });
 
     workspace.register_action(|_: &mut Workspace, _: &Indent, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             let count = vim.take_count(cx).unwrap_or(1);
             vim.update_active_editor(cx, |_, editor, cx| {
                 editor.transact(cx, |editor, cx| {
                     let mut original_positions = save_selection_starts(editor, cx);
                     for _ in 0..count {
-                        editor.indent(&Default::default(), cx);
+                        editor.indent(&Default.default(), cx);
                     }
                     restore_selection_cursors(editor, cx, &mut original_positions);
                 });
             });
             if vim.state().mode.is_visual() {
-                vim.switch_mode(Mode::Normal, false, cx)
+                vim.switch_mode(Mode.Normal, false, cx)
             }
         });
     });
 
     workspace.register_action(|_: &mut Workspace, _: &Outdent, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             let count = vim.take_count(cx).unwrap_or(1);
             vim.update_active_editor(cx, |_, editor, cx| {
                 editor.transact(cx, |editor, cx| {
                     let mut original_positions = save_selection_starts(editor, cx);
                     for _ in 0..count {
-                        editor.outdent(&Default::default(), cx);
+                        editor.outdent(&Default.default(), cx);
                     }
                     restore_selection_cursors(editor, cx, &mut original_positions);
                 });
             });
             if vim.state().mode.is_visual() {
-                vim.switch_mode(Mode::Normal, false, cx)
+                vim.switch_mode(Mode.Normal, false, cx)
             }
         });
     });
 
     workspace.register_action(|_: &mut Workspace, _: &Undo, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             let times = vim.take_count(cx);
             vim.update_active_editor(cx, |_, editor, cx| {
                 for _ in 0..times.unwrap_or(1) {
-                    editor.undo(&editor::actions::Undo, cx);
+                    editor.undo(&editor.actions.Undo, cx);
                 }
             });
         })
     });
     workspace.register_action(|_: &mut Workspace, _: &Redo, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             let times = vim.take_count(cx);
             vim.update_active_editor(cx, |_, editor, cx| {
                 for _ in 0..times.unwrap_or(1) {
-                    editor.redo(&editor::actions::Redo, cx);
+                    editor.redo(&editor.actions.Redo, cx);
                 }
             });
         })
     });
 
-    paste::register(workspace, cx);
-    repeat::register(workspace, cx);
-    scroll::register(workspace, cx);
-    search::register(workspace, cx);
-    substitute::register(workspace, cx);
-    increment::register(workspace, cx);
+    paste.register(workspace, cx);
+    repeat.register(workspace, cx);
+    scroll.register(workspace, cx);
+    search.register(workspace, cx);
+    substitute.register(workspace, cx);
+    increment.register(workspace, cx);
 }
 
 pub fn normal_motion(
@@ -227,25 +227,25 @@ pub fn normal_motion(
     times: Option<usize>,
     cx: &mut WindowContext,
 ) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         match operator {
             None => move_cursor(vim, motion, times, cx),
-            Some(Operator::Change) => change_motion(vim, motion, times, cx),
-            Some(Operator::Delete) => delete_motion(vim, motion, times, cx),
-            Some(Operator::Yank) => yank_motion(vim, motion, times, cx),
-            Some(Operator::AddSurrounds { target: None }) => {}
-            Some(Operator::Indent) => indent_motion(vim, motion, times, IndentDirection::In, cx),
-            Some(Operator::Outdent) => indent_motion(vim, motion, times, IndentDirection::Out, cx),
-            Some(Operator::Lowercase) => {
-                change_case_motion(vim, motion, times, CaseTarget::Lowercase, cx)
+            Some(Operator.Change) => change_motion(vim, motion, times, cx),
+            Some(Operator.Delete) => delete_motion(vim, motion, times, cx),
+            Some(Operator.Yank) => yank_motion(vim, motion, times, cx),
+            Some(Operator.AddSurrounds { target: None }) => {}
+            Some(Operator.Indent) => indent_motion(vim, motion, times, IndentDirection.In, cx),
+            Some(Operator.Outdent) => indent_motion(vim, motion, times, IndentDirection.Out, cx),
+            Some(Operator.Lowercase) => {
+                change_case_motion(vim, motion, times, CaseTarget.Lowercase, cx)
             }
-            Some(Operator::Uppercase) => {
-                change_case_motion(vim, motion, times, CaseTarget::Uppercase, cx)
+            Some(Operator.Uppercase) => {
+                change_case_motion(vim, motion, times, CaseTarget.Uppercase, cx)
             }
-            Some(Operator::OppositeCase) => {
-                change_case_motion(vim, motion, times, CaseTarget::OppositeCase, cx)
+            Some(Operator.OppositeCase) => {
+                change_case_motion(vim, motion, times, CaseTarget.OppositeCase, cx)
             }
-            Some(Operator::ToggleComments) => toggle_comments_motion(vim, motion, times, cx),
+            Some(Operator.ToggleComments) => toggle_comments_motion(vim, motion, times, cx),
             Some(operator) => {
                 // Can't do anything for text objects, Ignoring
                 error!("Unexpected normal mode motion operator: {:?}", operator)
@@ -255,44 +255,44 @@ pub fn normal_motion(
 }
 
 pub fn normal_object(object: Object, cx: &mut WindowContext) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let mut waiting_operator: Option<Operator> = None;
         match vim.maybe_pop_operator() {
-            Some(Operator::Object { around }) => match vim.maybe_pop_operator() {
-                Some(Operator::Change) => change_object(vim, object, around, cx),
-                Some(Operator::Delete) => delete_object(vim, object, around, cx),
-                Some(Operator::Yank) => yank_object(vim, object, around, cx),
-                Some(Operator::Indent) => {
-                    indent_object(vim, object, around, IndentDirection::In, cx)
+            Some(Operator.Object { around }) => match vim.maybe_pop_operator() {
+                Some(Operator.Change) => change_object(vim, object, around, cx),
+                Some(Operator.Delete) => delete_object(vim, object, around, cx),
+                Some(Operator.Yank) => yank_object(vim, object, around, cx),
+                Some(Operator.Indent) => {
+                    indent_object(vim, object, around, IndentDirection.In, cx)
                 }
-                Some(Operator::Outdent) => {
-                    indent_object(vim, object, around, IndentDirection::Out, cx)
+                Some(Operator.Outdent) => {
+                    indent_object(vim, object, around, IndentDirection.Out, cx)
                 }
-                Some(Operator::Lowercase) => {
-                    change_case_object(vim, object, around, CaseTarget::Lowercase, cx)
+                Some(Operator.Lowercase) => {
+                    change_case_object(vim, object, around, CaseTarget.Lowercase, cx)
                 }
-                Some(Operator::Uppercase) => {
-                    change_case_object(vim, object, around, CaseTarget::Uppercase, cx)
+                Some(Operator.Uppercase) => {
+                    change_case_object(vim, object, around, CaseTarget.Uppercase, cx)
                 }
-                Some(Operator::OppositeCase) => {
-                    change_case_object(vim, object, around, CaseTarget::OppositeCase, cx)
+                Some(Operator.OppositeCase) => {
+                    change_case_object(vim, object, around, CaseTarget.OppositeCase, cx)
                 }
-                Some(Operator::AddSurrounds { target: None }) => {
-                    waiting_operator = Some(Operator::AddSurrounds {
-                        target: Some(SurroundsType::Object(object)),
+                Some(Operator.AddSurrounds { target: None }) => {
+                    waiting_operator = Some(Operator.AddSurrounds {
+                        target: Some(SurroundsType.Object(object)),
                     });
                 }
-                Some(Operator::ToggleComments) => toggle_comments_object(vim, object, around, cx),
+                Some(Operator.ToggleComments) => toggle_comments_object(vim, object, around, cx),
                 _ => {
                     // Can't do anything for namespace operators. Ignoring
                 }
             },
-            Some(Operator::DeleteSurrounds) => {
-                waiting_operator = Some(Operator::DeleteSurrounds);
+            Some(Operator.DeleteSurrounds) => {
+                waiting_operator = Some(Operator.DeleteSurrounds);
             }
-            Some(Operator::ChangeSurrounds { target: None }) => {
+            Some(Operator.ChangeSurrounds { target: None }) => {
                 if check_and_move_to_valid_bracket_pair(vim, object, cx) {
-                    waiting_operator = Some(Operator::ChangeSurrounds {
+                    waiting_operator = Some(Operator.ChangeSurrounds {
                         target: Some(object),
                     });
                 }
@@ -316,7 +316,7 @@ pub(crate) fn move_cursor(
 ) {
     vim.update_active_editor(cx, |_, editor, cx| {
         let text_layout_details = editor.text_layout_details(cx);
-        editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+        editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
             s.move_cursors_with(|map, cursor, goal| {
                 motion
                     .move_point(map, cursor, goal, times, &text_layout_details)
@@ -327,21 +327,21 @@ pub(crate) fn move_cursor(
 }
 
 fn insert_after(_: &mut Workspace, _: &InsertAfter, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.start_recording(cx);
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
         vim.update_active_editor(cx, |_, editor, cx| {
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
-                s.move_cursors_with(|map, cursor, _| (right(map, cursor, 1), SelectionGoal::None));
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
+                s.move_cursors_with(|map, cursor, _| (right(map, cursor, 1), SelectionGoal.None));
             });
         });
     });
 }
 
 fn insert_before(_: &mut Workspace, _: &InsertBefore, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.start_recording(cx);
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
     });
 }
 
@@ -350,15 +350,15 @@ fn insert_first_non_whitespace(
     _: &InsertFirstNonWhitespace,
     cx: &mut ViewContext<Workspace>,
 ) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.start_recording(cx);
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
         vim.update_active_editor(cx, |_, editor, cx| {
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_cursors_with(|map, cursor, _| {
                     (
                         first_non_whitespace(map, false, cursor),
-                        SelectionGoal::None,
+                        SelectionGoal.None,
                     )
                 });
             });
@@ -367,13 +367,13 @@ fn insert_first_non_whitespace(
 }
 
 fn insert_end_of_line(_: &mut Workspace, _: &InsertEndOfLine, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.start_recording(cx);
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
         vim.update_active_editor(cx, |_, editor, cx| {
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_cursors_with(|map, cursor, _| {
-                    (next_line_end(map, cursor, 1), SelectionGoal::None)
+                    (next_line_end(map, cursor, 1), SelectionGoal.None)
                 });
             });
         });
@@ -381,12 +381,12 @@ fn insert_end_of_line(_: &mut Workspace, _: &InsertEndOfLine, cx: &mut ViewConte
 }
 
 fn insert_at_previous(_: &mut Workspace, _: &InsertAtPrevious, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.start_recording(cx);
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
         vim.update_active_editor(cx, |vim, editor, cx| {
             if let Some(marks) = vim.state().marks.get("^") {
-                editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+                editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                     s.select_anchor_ranges(marks.iter().map(|mark| *mark..*mark))
                 });
             }
@@ -395,12 +395,12 @@ fn insert_at_previous(_: &mut Workspace, _: &InsertAtPrevious, cx: &mut ViewCont
 }
 
 fn insert_line_above(_: &mut Workspace, _: &InsertLineAbove, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.start_recording(cx);
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
         vim.update_active_editor(cx, |_, editor, cx| {
             editor.transact(cx, |editor, cx| {
-                let selections = editor.selections.all::<Point>(cx);
+                let selections = editor.selections.all.<Point>(cx);
                 let snapshot = editor.buffer().read(cx).snapshot(cx);
 
                 let selection_start_rows: BTreeSet<u32> = selections
@@ -411,16 +411,16 @@ fn insert_line_above(_: &mut Workspace, _: &InsertLineAbove, cx: &mut ViewContex
                     let indent = snapshot
                         .indent_size_for_line(MultiBufferRow(row))
                         .chars()
-                        .collect::<String>();
-                    let start_of_line = Point::new(row, 0);
+                        .collect.<String>();
+                    let start_of_line = Point.new(row, 0);
                     (start_of_line..start_of_line, indent + "\n")
                 });
                 editor.edit_with_autoindent(edits, cx);
-                editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+                editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                     s.move_cursors_with(|map, cursor, _| {
-                        let previous_line = motion::start_of_relative_buffer_row(map, cursor, -1);
-                        let insert_point = motion::end_of_line(map, false, previous_line, 1);
-                        (insert_point, SelectionGoal::None)
+                        let previous_line = motion.start_of_relative_buffer_row(map, cursor, -1);
+                        let insert_point = motion.end_of_line(map, false, previous_line, 1);
+                        (insert_point, SelectionGoal.None)
                     });
                 });
             });
@@ -429,13 +429,13 @@ fn insert_line_above(_: &mut Workspace, _: &InsertLineAbove, cx: &mut ViewContex
 }
 
 fn insert_line_below(_: &mut Workspace, _: &InsertLineBelow, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.start_recording(cx);
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
         vim.update_active_editor(cx, |_, editor, cx| {
             let text_layout_details = editor.text_layout_details(cx);
             editor.transact(cx, |editor, cx| {
-                let selections = editor.selections.all::<Point>(cx);
+                let selections = editor.selections.all.<Point>(cx);
                 let snapshot = editor.buffer().read(cx).snapshot(cx);
 
                 let selection_end_rows: BTreeSet<u32> = selections
@@ -446,13 +446,13 @@ fn insert_line_below(_: &mut Workspace, _: &InsertLineBelow, cx: &mut ViewContex
                     let indent = snapshot
                         .indent_size_for_line(MultiBufferRow(row))
                         .chars()
-                        .collect::<String>();
-                    let end_of_line = Point::new(row, snapshot.line_len(MultiBufferRow(row)));
+                        .collect.<String>();
+                    let end_of_line = Point.new(row, snapshot.line_len(MultiBufferRow(row)));
                     (end_of_line..end_of_line, "\n".to_string() + &indent)
                 });
-                editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+                editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                     s.maybe_move_cursors_with(|map, cursor, goal| {
-                        Motion::CurrentLine.move_point(
+                        Motion.CurrentLine.move_point(
                             map,
                             cursor,
                             goal,
@@ -468,19 +468,19 @@ fn insert_line_below(_: &mut Workspace, _: &InsertLineBelow, cx: &mut ViewContex
 }
 
 fn yank_line(_: &mut Workspace, _: &YankLine, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let count = vim.take_count(cx);
-        yank_motion(vim, motion::Motion::CurrentLine, count, cx)
+        yank_motion(vim, motion.Motion.CurrentLine, count, cx)
     })
 }
 
 fn yank_to_end_of_line(_: &mut Workspace, _: &YankToEndOfLine, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.record_current_action(cx);
         let count = vim.take_count(cx);
         yank_motion(
             vim,
-            motion::Motion::EndOfLine {
+            motion.Motion.EndOfLine {
                 display_lines: false,
             },
             count,
@@ -490,17 +490,17 @@ fn yank_to_end_of_line(_: &mut Workspace, _: &YankToEndOfLine, cx: &mut ViewCont
 }
 
 fn toggle_comments(_: &mut Workspace, _: &ToggleComments, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.record_current_action(cx);
         vim.update_active_editor(cx, |_, editor, cx| {
             editor.transact(cx, |editor, cx| {
                 let mut original_positions = save_selection_starts(editor, cx);
-                editor.toggle_comments(&Default::default(), cx);
+                editor.toggle_comments(&Default.default(), cx);
                 restore_selection_cursors(editor, cx, &mut original_positions);
             });
         });
         if vim.state().mode.is_visual() {
-            vim.switch_mode(Mode::Normal, false, cx)
+            vim.switch_mode(Mode.Normal, false, cx)
         }
     });
 }
@@ -512,10 +512,10 @@ fn save_selection_starts(editor: &Editor, cx: &mut ViewContext<Editor>) -> HashM
         .map(|selection| {
             (
                 selection.id,
-                map.display_point_to_anchor(selection.start, Bias::Right),
+                map.display_point_to_anchor(selection.start, Bias.Right),
             )
         })
-        .collect::<HashMap<_, _>>()
+        .collect.<HashMap<_, _>>()
 }
 
 fn restore_selection_cursors(
@@ -523,17 +523,17 @@ fn restore_selection_cursors(
     cx: &mut ViewContext<Editor>,
     positions: &mut HashMap<usize, Anchor>,
 ) {
-    editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+    editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
         s.move_with(|map, selection| {
             if let Some(anchor) = positions.remove(&selection.id) {
-                selection.collapse_to(anchor.to_display_point(map), SelectionGoal::None);
+                selection.collapse_to(anchor.to_display_point(map), SelectionGoal.None);
             }
         });
     });
 }
 
 pub(crate) fn normal_replace(text: Arc<str>, cx: &mut WindowContext) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let count = vim.take_count(cx).unwrap_or(1);
         vim.stop_recording();
         vim.update_active_editor(cx, |_, editor, cx| {
@@ -541,11 +541,11 @@ pub(crate) fn normal_replace(text: Arc<str>, cx: &mut WindowContext) {
                 editor.set_clip_at_line_ends(false, cx);
                 let (map, display_selections) = editor.selections.all_display(cx);
 
-                let mut edits = Vec::new();
+                let mut edits = Vec.new();
                 for selection in display_selections {
                     let mut range = selection.range();
                     for _ in 0..count {
-                        let new_point = movement::saturating_right(&map, range.end);
+                        let new_point = movement.saturating_right(&map, range.end);
                         if range.end == new_point {
                             return;
                         }
@@ -553,8 +553,8 @@ pub(crate) fn normal_replace(text: Arc<str>, cx: &mut WindowContext) {
                     }
 
                     edits.push((
-                        range.start.to_offset(&map, Bias::Left)
-                            ..range.end.to_offset(&map, Bias::Left),
+                        range.start.to_offset(&map, Bias.Left)
+                            ..range.end.to_offset(&map, Bias.Left),
                         text.repeat(count),
                     ))
                 }
@@ -565,8 +565,8 @@ pub(crate) fn normal_replace(text: Arc<str>, cx: &mut WindowContext) {
                 editor.set_clip_at_line_ends(true, cx);
                 editor.change_selections(None, cx, |s| {
                     s.move_with(|map, selection| {
-                        let point = movement::saturating_left(map, selection.head());
-                        selection.collapse_to(point, SelectionGoal::None)
+                        let point = movement.saturating_left(map, selection.head());
+                        selection.collapse_to(point, SelectionGoal.None)
                     });
                 });
             });
@@ -577,20 +577,20 @@ pub(crate) fn normal_replace(text: Arc<str>, cx: &mut WindowContext) {
 
 #[cfg(test)]
 mod test {
-    use gpui::{KeyBinding, TestAppContext};
-    use indoc::indoc;
-    use settings::SettingsStore;
+    use gpui.{KeyBinding, TestAppContext};
+    use indoc.indoc;
+    use settings.SettingsStore;
 
-    use crate::{
+    use crate.{
         motion,
-        state::Mode::{self},
-        test::{NeovimBackedTestContext, VimTestContext},
+        state.Mode.{self},
+        test.{NeovimBackedTestContext, VimTestContext},
         VimSettings,
     };
 
-    #[gpui::test]
-    async fn test_h(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_h(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "h",
             indoc! {"
@@ -602,9 +602,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_backspace(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_backspace(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "backspace",
             indoc! {"
@@ -616,9 +616,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_j(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_j(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {"
             aaˇaa
@@ -642,9 +642,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_enter(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_enter(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "enter",
             indoc! {"
@@ -656,9 +656,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_k(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_k(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "k",
             indoc! {"
@@ -670,9 +670,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_l(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_l(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "l",
             indoc! {"
@@ -683,9 +683,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_jump_to_line_boundaries(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_jump_to_line_boundaries(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "$",
             indoc! {"
@@ -704,9 +704,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_jump_to_end(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_jump_to_end(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.simulate_at_each_offset(
             "shift-g",
@@ -738,9 +738,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_w(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_w(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "w",
             indoc! {"
@@ -765,9 +765,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_end_of_word(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_end_of_word(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "e",
             indoc! {"
@@ -792,9 +792,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_b(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_b(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "b",
             indoc! {"
@@ -819,9 +819,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_gg(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_gg(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "g g",
             indoc! {"
@@ -854,9 +854,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_end_of_document(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_end_of_document(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "shift-g",
             indoc! {"
@@ -889,17 +889,17 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_a(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_a(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset("a", "The qˇuicˇk")
             .await
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_insert_end_of_line(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_insert_end_of_line(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset(
             "shift-a",
             indoc! {"
@@ -911,9 +911,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_jump_to_first_non_whitespace(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_jump_to_first_non_whitespace(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("^", "The qˇuick").await.assert_matches();
         cx.simulate("^", " The qˇuick").await.assert_matches();
         cx.simulate("^", "ˇ").await.assert_matches();
@@ -937,9 +937,9 @@ mod test {
         cx.simulate("^", "   ˇ \nThe quick").await.assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_insert_first_non_whitespace(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_insert_first_non_whitespace(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("shift-i", "The qˇuick").await.assert_matches();
         cx.simulate("shift-i", " The qˇuick").await.assert_matches();
         cx.simulate("shift-i", "ˇ").await.assert_matches();
@@ -961,9 +961,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_to_end_of_line(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_to_end_of_line(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "shift-d",
             indoc! {"
@@ -983,9 +983,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_x(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_x(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset("x", "ˇTeˇsˇt")
             .await
             .assert_matches();
@@ -999,9 +999,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_left(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_left(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset("shift-x", "ˇTˇeˇsˇt")
             .await
             .assert_matches();
@@ -1015,9 +1015,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_o(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_o(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("o", "ˇ").await.assert_matches();
         cx.simulate("o", "The ˇquick").await.assert_matches();
         cx.simulate_at_each_offset(
@@ -1045,13 +1045,13 @@ mod test {
                 fn test() {
                     println!(ˇ);
                 }"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
                 fn test() {
                     println!();
                     ˇ
                 }"},
-            Mode::Insert,
+            Mode.Insert,
         );
 
         cx.assert_binding(
@@ -1060,19 +1060,19 @@ mod test {
                 fn test(ˇ) {
                     println!();
                 }"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
                 fn test() {
                     ˇ
                     println!();
                 }"},
-            Mode::Insert,
+            Mode.Insert,
         );
     }
 
-    #[gpui::test]
-    async fn test_insert_line_above(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_insert_line_above(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("shift-o", "ˇ").await.assert_matches();
         cx.simulate("shift-o", "The ˇquick").await.assert_matches();
         cx.simulate_at_each_offset(
@@ -1101,13 +1101,13 @@ mod test {
                 fn test() {
                     println!(ˇ);
                 }"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
                 fn test() {
                     ˇ
                     println!();
                 }"},
-            Mode::Insert,
+            Mode.Insert,
         );
         cx.assert_binding(
             "shift-o",
@@ -1115,19 +1115,19 @@ mod test {
                 fn test(ˇ) {
                     println!();
                 }"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
                 ˇ
                 fn test() {
                     println!();
                 }"},
-            Mode::Insert,
+            Mode.Insert,
         );
     }
 
-    #[gpui::test]
-    async fn test_dd(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_dd(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("d d", "ˇ").await.assert_matches();
         cx.simulate("d d", "The ˇquick").await.assert_matches();
         cx.simulate_at_each_offset(
@@ -1150,9 +1150,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_cc(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_cc(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("c c", "ˇ").await.assert_matches();
         cx.simulate("c c", "The ˇquick").await.assert_matches();
         cx.simulate_at_each_offset(
@@ -1175,9 +1175,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_repeated_word(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_repeated_word(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for count in 1..=5 {
             cx.simulate_at_each_offset(
@@ -1194,17 +1194,17 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_h_through_unicode(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_h_through_unicode(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset("h", "Testˇ├ˇ──ˇ┐ˇTest")
             .await
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_f_and_t(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_f_and_t(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for count in 1..=3 {
             let test_case = indoc! {"
@@ -1224,9 +1224,9 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_capital_f_and_capital_t(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_capital_f_and_capital_t(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         let test_case = indoc! {"
             ˇaaaˇbˇ ˇbˇ   ˇbˇbˇ aˇaaˇbaaa
             ˇ    ˇbˇaaˇa ˇbˇbˇb
@@ -1246,11 +1246,11 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_f_and_t_multiline(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_f_and_t_multiline(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.update_global(|store: &mut SettingsStore, cx| {
-            store.update_user_settings::<VimSettings>(cx, |s| {
+            store.update_user_settings.<VimSettings>(cx, |s| {
                 s.use_multiline_find = Some(true);
             });
         });
@@ -1262,13 +1262,13 @@ mod test {
                 console.log('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
             function print() {
                 consoˇle.log('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
         );
 
         cx.assert_binding(
@@ -1278,21 +1278,21 @@ mod test {
                 console.log('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
             function print() {
                 consˇole.log('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
         );
     }
 
-    #[gpui::test]
-    async fn test_capital_f_and_capital_t_multiline(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_capital_f_and_capital_t_multiline(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.update_global(|store: &mut SettingsStore, cx| {
-            store.update_user_settings::<VimSettings>(cx, |s| {
+            store.update_user_settings.<VimSettings>(cx, |s| {
                 s.use_multiline_find = Some(true);
             });
         });
@@ -1304,13 +1304,13 @@ mod test {
                 console.ˇlog('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
             function ˇprint() {
                 console.log('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
         );
 
         cx.assert_binding(
@@ -1320,21 +1320,21 @@ mod test {
                 console.ˇlog('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"
             function pˇrint() {
                 console.log('ok')
             }
             "},
-            Mode::Normal,
+            Mode.Normal,
         );
     }
 
-    #[gpui::test]
-    async fn test_f_and_t_smartcase(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_f_and_t_smartcase(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.update_global(|store: &mut SettingsStore, cx| {
-            store.update_user_settings::<VimSettings>(cx, |s| {
+            store.update_user_settings.<VimSettings>(cx, |s| {
                 s.use_smartcase_find = Some(true);
             });
         });
@@ -1342,39 +1342,39 @@ mod test {
         cx.assert_binding(
             "f p",
             indoc! {"ˇfmt.Println(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"fmt.ˇPrintln(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
         );
 
         cx.assert_binding(
             "shift-f p",
             indoc! {"fmt.Printlnˇ(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"fmt.ˇPrintln(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
         );
 
         cx.assert_binding(
             "t p",
             indoc! {"ˇfmt.Println(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"fmtˇ.Println(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
         );
 
         cx.assert_binding(
             "shift-t p",
             indoc! {"fmt.Printlnˇ(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"fmt.Pˇrintln(\"Hello, World!\")"},
-            Mode::Normal,
+            Mode.Normal,
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_percent(cx: &mut TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate_at_each_offset("%", "ˇconsole.logˇ(ˇvaˇrˇ)ˇ;")
             .await
             .assert_matches();
@@ -1386,9 +1386,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_end_of_line_with_neovim(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_end_of_line_with_neovim(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         // goes to current line end
         cx.set_shared_state(indoc! {"ˇaa\nbb\ncc"}).await;
@@ -1404,35 +1404,35 @@ mod test {
         cx.shared_state().await.assert_eq("aa\nbb\ncˇc");
     }
 
-    #[gpui::test]
-    async fn test_subword_motions(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_subword_motions(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.update(|cx| {
             cx.bind_keys(vec![
-                KeyBinding::new(
+                KeyBinding.new(
                     "w",
-                    motion::NextSubwordStart {
+                    motion.NextSubwordStart {
                         ignore_punctuation: false,
                     },
                     Some("Editor && VimControl && !VimWaiting && !menu"),
                 ),
-                KeyBinding::new(
+                KeyBinding.new(
                     "b",
-                    motion::PreviousSubwordStart {
+                    motion.PreviousSubwordStart {
                         ignore_punctuation: false,
                     },
                     Some("Editor && VimControl && !VimWaiting && !menu"),
                 ),
-                KeyBinding::new(
+                KeyBinding.new(
                     "e",
-                    motion::NextSubwordEnd {
+                    motion.NextSubwordEnd {
                         ignore_punctuation: false,
                     },
                     Some("Editor && VimControl && !VimWaiting && !menu"),
                 ),
-                KeyBinding::new(
+                KeyBinding.new(
                     "g e",
-                    motion::PreviousSubwordEnd {
+                    motion.PreviousSubwordEnd {
                         ignore_punctuation: false,
                     },
                     Some("Editor && VimControl && !VimWaiting && !menu"),
@@ -1445,9 +1445,9 @@ mod test {
         cx.assert_binding(
             "c w",
             indoc! {"ˇassert_binding"},
-            Mode::Normal,
+            Mode.Normal,
             indoc! {"ˇ_binding"},
-            Mode::Insert,
+            Mode.Insert,
         );
 
         cx.assert_binding_normal("e", indoc! {"ˇassert_binding"}, indoc! {"asserˇt_binding"});
@@ -1461,18 +1461,18 @@ mod test {
         );
     }
 
-    #[gpui::test]
-    async fn test_shift_y(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_shift_y(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("helˇlo\n").await;
         cx.simulate_shared_keystrokes("shift-y").await;
         cx.shared_clipboard().await.assert_eq("lo");
     }
 
-    #[gpui::test]
-    async fn test_r(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_r(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("ˇhello\n").await;
         cx.simulate_shared_keystrokes("r -").await;

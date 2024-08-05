@@ -2,33 +2,33 @@ mod neovim_backed_test_context;
 mod neovim_connection;
 mod vim_test_context;
 
-use std::time::Duration;
+use std.time.Duration;
 
-use collections::HashMap;
-use command_palette::CommandPalette;
-use editor::{actions::DeleteLine, display_map::DisplayRow, DisplayPoint};
-use futures::StreamExt;
-use gpui::{KeyBinding, Modifiers, MouseButton, TestAppContext};
-pub use neovim_backed_test_context::*;
-use settings::SettingsStore;
-pub use vim_test_context::*;
+use collections.HashMap;
+use command_palette.CommandPalette;
+use editor.{actions.DeleteLine, display_map.DisplayRow, DisplayPoint};
+use futures.StreamExt;
+use gpui.{KeyBinding, Modifiers, MouseButton, TestAppContext};
+pub use neovim_backed_test_context.*;
+use settings.SettingsStore;
+pub use vim_test_context.*;
 
-use indoc::indoc;
-use search::BufferSearchBar;
-use workspace::WorkspaceSettings;
+use indoc.indoc;
+use search.BufferSearchBar;
+use workspace.WorkspaceSettings;
 
-use crate::{insert::NormalBefore, motion, state::Mode, ModeIndicator};
+use crate.{insert.NormalBefore, motion, state.Mode, ModeIndicator};
 
-#[gpui::test]
-async fn test_initially_disabled(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, false).await;
+#[gpui.test]
+async fn test_initially_disabled(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, false).await;
     cx.simulate_keystrokes("h j k l");
     cx.assert_editor_state("hjklˇ");
 }
 
-#[gpui::test]
-async fn test_neovim(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_neovim(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.simulate_shared_keystrokes("i").await;
     cx.shared_state().await.assert_matches();
@@ -38,12 +38,12 @@ async fn test_neovim(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("ˇtest");
 }
 
-#[gpui::test]
-async fn test_toggle_through_settings(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_toggle_through_settings(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     cx.simulate_keystrokes("i");
-    assert_eq!(cx.mode(), Mode::Insert);
+    assert_eq!(cx.mode(), Mode.Insert);
 
     // Editor acts as though vim is disabled
     cx.disable_vim();
@@ -51,7 +51,7 @@ async fn test_toggle_through_settings(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("hjklˇ");
 
     // Selections aren't changed if editor is blurred but vim-mode is still disabled.
-    cx.set_state("«hjklˇ»", Mode::Normal);
+    cx.set_state("«hjklˇ»", Mode.Normal);
     cx.assert_editor_state("«hjklˇ»");
     cx.update_editor(|_, cx| cx.blur());
     cx.assert_editor_state("«hjklˇ»");
@@ -60,7 +60,7 @@ async fn test_toggle_through_settings(cx: &mut gpui::TestAppContext) {
 
     // Enabling dynamically sets vim mode again and restores normal mode
     cx.enable_vim();
-    assert_eq!(cx.mode(), Mode::Normal);
+    assert_eq!(cx.mode(), Mode.Normal);
     cx.simulate_keystrokes("h h h l");
     assert_eq!(cx.buffer_text(), "hjkl".to_owned());
     cx.assert_editor_state("hˇjkl");
@@ -68,19 +68,19 @@ async fn test_toggle_through_settings(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("hTestˇjkl");
 
     // Disabling and enabling resets to normal mode
-    assert_eq!(cx.mode(), Mode::Insert);
+    assert_eq!(cx.mode(), Mode.Insert);
     cx.disable_vim();
     cx.enable_vim();
-    assert_eq!(cx.mode(), Mode::Normal);
+    assert_eq!(cx.mode(), Mode.Normal);
 }
 
-#[gpui::test]
-async fn test_cancel_selection(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_cancel_selection(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     cx.set_state(
         indoc! {"The quick brown fox juˇmps over the lazy dog"},
-        Mode::Normal,
+        Mode.Normal,
     );
     // jumps
     cx.simulate_keystrokes("v l l");
@@ -98,16 +98,16 @@ async fn test_cancel_selection(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("The quick brown fox juˇmps over the lazy dog");
 }
 
-#[gpui::test]
-async fn test_buffer_search(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_buffer_search(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     cx.set_state(
         indoc! {"
             The quick brown
             fox juˇmps over
             the lazy dog"},
-        Mode::Normal,
+        Mode.Normal,
     );
     cx.simulate_keystrokes("/");
 
@@ -117,7 +117,7 @@ async fn test_buffer_search(cx: &mut gpui::TestAppContext) {
             .read(cx)
             .toolbar()
             .read(cx)
-            .item_of_type::<BufferSearchBar>()
+            .item_of_type.<BufferSearchBar>()
             .expect("Buffer search bar should be deployed")
     });
 
@@ -126,23 +126,23 @@ async fn test_buffer_search(cx: &mut gpui::TestAppContext) {
     })
 }
 
-#[gpui::test]
-async fn test_count_down(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_count_down(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
-    cx.set_state(indoc! {"aˇa\nbb\ncc\ndd\nee"}, Mode::Normal);
+    cx.set_state(indoc! {"aˇa\nbb\ncc\ndd\nee"}, Mode.Normal);
     cx.simulate_keystrokes("2 down");
     cx.assert_editor_state("aa\nbb\ncˇc\ndd\nee");
     cx.simulate_keystrokes("9 down");
     cx.assert_editor_state("aa\nbb\ncc\ndd\neˇe");
 }
 
-#[gpui::test]
-async fn test_end_of_document_710(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_end_of_document_710(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     // goes to end by default
-    cx.set_state(indoc! {"aˇa\nbb\ncc"}, Mode::Normal);
+    cx.set_state(indoc! {"aˇa\nbb\ncc"}, Mode.Normal);
     cx.simulate_keystrokes("shift-g");
     cx.assert_editor_state("aa\nbb\ncˇc");
 
@@ -151,12 +151,12 @@ async fn test_end_of_document_710(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("aˇa\nbb\ncc");
 }
 
-#[gpui::test]
-async fn test_end_of_line_with_times(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_end_of_line_with_times(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     // goes to current line end
-    cx.set_state(indoc! {"ˇaa\nbb\ncc"}, Mode::Normal);
+    cx.set_state(indoc! {"ˇaa\nbb\ncc"}, Mode.Normal);
     cx.simulate_keystrokes("$");
     cx.assert_editor_state("aˇa\nbb\ncc");
 
@@ -169,12 +169,12 @@ async fn test_end_of_line_with_times(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("aa\nbb\ncˇc");
 }
 
-#[gpui::test]
-async fn test_indent_outdent(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_indent_outdent(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     // works in normal mode
-    cx.set_state(indoc! {"aa\nbˇb\ncc"}, Mode::Normal);
+    cx.set_state(indoc! {"aa\nbˇb\ncc"}, Mode.Normal);
     cx.simulate_keystrokes("> >");
     cx.assert_editor_state("aa\n    bˇb\ncc");
     cx.simulate_keystrokes("< <");
@@ -185,7 +185,7 @@ async fn test_indent_outdent(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("aa\n    bˇb\n    cc");
 
     // works as operator
-    cx.set_state("aa\nbˇb\ncc\n", Mode::Normal);
+    cx.set_state("aa\nbˇb\ncc\n", Mode.Normal);
     cx.simulate_keystrokes("> j");
     cx.assert_editor_state("aa\n    bˇb\n    cc\n");
     cx.simulate_keystrokes("< k");
@@ -197,16 +197,16 @@ async fn test_indent_outdent(cx: &mut gpui::TestAppContext) {
     cx.simulate_keystrokes("< i p");
     cx.assert_editor_state("aa\nbˇb\ncc\n");
 
-    cx.set_state("ˇaa\nbb\ncc\n", Mode::Normal);
+    cx.set_state("ˇaa\nbb\ncc\n", Mode.Normal);
     cx.simulate_keystrokes("> 2 j");
     cx.assert_editor_state("    ˇaa\n    bb\n    cc\n");
 
-    cx.set_state("aa\nbb\nˇcc\n", Mode::Normal);
+    cx.set_state("aa\nbb\nˇcc\n", Mode.Normal);
     cx.simulate_keystrokes("> 2 k");
     cx.assert_editor_state("    aa\n    bb\n    ˇcc\n");
 
     // works with repeat
-    cx.set_state("a\nb\nccˇc\n", Mode::Normal);
+    cx.set_state("a\nb\nccˇc\n", Mode.Normal);
     cx.simulate_keystrokes("> 2 k");
     cx.assert_editor_state("    a\n    b\n    ccˇc\n");
     cx.simulate_keystrokes(".");
@@ -217,35 +217,35 @@ async fn test_indent_outdent(cx: &mut gpui::TestAppContext) {
     cx.assert_editor_state("        a\nbˇ\nccc\n");
 }
 
-#[gpui::test]
-async fn test_escape_command_palette(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_escape_command_palette(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
-    cx.set_state("aˇbc\n", Mode::Normal);
+    cx.set_state("aˇbc\n", Mode.Normal);
     cx.simulate_keystrokes("i cmd-shift-p");
 
-    assert!(cx.workspace(|workspace, cx| workspace.active_modal::<CommandPalette>(cx).is_some()));
+    assert!(cx.workspace(|workspace, cx| workspace.active_modal.<CommandPalette>(cx).is_some()));
     cx.simulate_keystrokes("escape");
     cx.run_until_parked();
-    assert!(!cx.workspace(|workspace, cx| workspace.active_modal::<CommandPalette>(cx).is_some()));
-    cx.assert_state("aˇbc\n", Mode::Insert);
+    assert!(!cx.workspace(|workspace, cx| workspace.active_modal.<CommandPalette>(cx).is_some()));
+    cx.assert_state("aˇbc\n", Mode.Insert);
 }
 
-#[gpui::test]
-async fn test_escape_cancels(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_escape_cancels(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
-    cx.set_state("aˇbˇc", Mode::Normal);
+    cx.set_state("aˇbˇc", Mode.Normal);
     cx.simulate_keystrokes("escape");
 
-    cx.assert_state("aˇbc", Mode::Normal);
+    cx.assert_state("aˇbc", Mode.Normal);
 }
 
-#[gpui::test]
-async fn test_selection_on_search(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_selection_on_search(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
-    cx.set_state(indoc! {"aa\nbˇb\ncc\ncc\ncc\n"}, Mode::Normal);
+    cx.set_state(indoc! {"aa\nbˇb\ncc\ncc\ncc\n"}, Mode.Normal);
     cx.simulate_keystrokes("/ c c");
 
     let search_bar = cx.workspace(|workspace, cx| {
@@ -254,7 +254,7 @@ async fn test_selection_on_search(cx: &mut gpui::TestAppContext) {
             .read(cx)
             .toolbar()
             .read(cx)
-            .item_of_type::<BufferSearchBar>()
+            .item_of_type.<BufferSearchBar>()
             .expect("Buffer search bar should be deployed")
     });
 
@@ -266,52 +266,52 @@ async fn test_selection_on_search(cx: &mut gpui::TestAppContext) {
         let highlights = editor.all_text_background_highlights(cx);
         assert_eq!(3, highlights.len());
         assert_eq!(
-            DisplayPoint::new(DisplayRow(2), 0)..DisplayPoint::new(DisplayRow(2), 2),
+            DisplayPoint.new(DisplayRow(2), 0)..DisplayPoint.new(DisplayRow(2), 2),
             highlights[0].0
         )
     });
     cx.simulate_keystrokes("enter");
 
-    cx.assert_state(indoc! {"aa\nbb\nˇcc\ncc\ncc\n"}, Mode::Normal);
+    cx.assert_state(indoc! {"aa\nbb\nˇcc\ncc\ncc\n"}, Mode.Normal);
     cx.simulate_keystrokes("n");
-    cx.assert_state(indoc! {"aa\nbb\ncc\nˇcc\ncc\n"}, Mode::Normal);
+    cx.assert_state(indoc! {"aa\nbb\ncc\nˇcc\ncc\n"}, Mode.Normal);
     cx.simulate_keystrokes("shift-n");
-    cx.assert_state(indoc! {"aa\nbb\nˇcc\ncc\ncc\n"}, Mode::Normal);
+    cx.assert_state(indoc! {"aa\nbb\nˇcc\ncc\ncc\n"}, Mode.Normal);
 }
 
-#[gpui::test]
-async fn test_status_indicator(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_status_indicator(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     let mode_indicator = cx.workspace(|workspace, cx| {
         let status_bar = workspace.status_bar().read(cx);
-        let mode_indicator = status_bar.item_of_type::<ModeIndicator>();
+        let mode_indicator = status_bar.item_of_type.<ModeIndicator>();
         assert!(mode_indicator.is_some());
         mode_indicator.unwrap()
     });
 
     assert_eq!(
         cx.workspace(|_, cx| mode_indicator.read(cx).mode),
-        Some(Mode::Normal)
+        Some(Mode.Normal)
     );
 
     // shows the correct mode
     cx.simulate_keystrokes("i");
     assert_eq!(
         cx.workspace(|_, cx| mode_indicator.read(cx).mode),
-        Some(Mode::Insert)
+        Some(Mode.Insert)
     );
     cx.simulate_keystrokes("escape shift-r");
     assert_eq!(
         cx.workspace(|_, cx| mode_indicator.read(cx).mode),
-        Some(Mode::Replace)
+        Some(Mode.Replace)
     );
 
     // shows even in search
     cx.simulate_keystrokes("escape v /");
     assert_eq!(
         cx.workspace(|_, cx| mode_indicator.read(cx).mode),
-        Some(Mode::Visual)
+        Some(Mode.Visual)
     );
 
     // hides if vim mode is disabled
@@ -319,7 +319,7 @@ async fn test_status_indicator(cx: &mut gpui::TestAppContext) {
     cx.run_until_parked();
     cx.workspace(|workspace, cx| {
         let status_bar = workspace.status_bar().read(cx);
-        let mode_indicator = status_bar.item_of_type::<ModeIndicator>().unwrap();
+        let mode_indicator = status_bar.item_of_type.<ModeIndicator>().unwrap();
         assert!(mode_indicator.read(cx).mode.is_none());
     });
 
@@ -327,14 +327,14 @@ async fn test_status_indicator(cx: &mut gpui::TestAppContext) {
     cx.run_until_parked();
     cx.workspace(|workspace, cx| {
         let status_bar = workspace.status_bar().read(cx);
-        let mode_indicator = status_bar.item_of_type::<ModeIndicator>().unwrap();
+        let mode_indicator = status_bar.item_of_type.<ModeIndicator>().unwrap();
         assert!(mode_indicator.read(cx).mode.is_some());
     });
 }
 
-#[gpui::test]
-async fn test_word_characters(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new_typescript(cx).await;
+#[gpui.test]
+async fn test_word_characters(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new_typescript(cx).await;
     cx.set_state(
         indoc! { "
         class A {
@@ -343,7 +343,7 @@ async fn test_word_characters(cx: &mut gpui::TestAppContext) {
         };
         console.log(new A().$gooˇp())
     "},
-        Mode::Normal,
+        Mode.Normal,
     );
     cx.simulate_keystrokes("v i w");
     cx.assert_state(
@@ -354,13 +354,13 @@ async fn test_word_characters(cx: &mut gpui::TestAppContext) {
         };
         console.log(new A().«$goopˇ»())
     "},
-        Mode::Visual,
+        Mode.Visual,
     )
 }
 
-#[gpui::test]
-async fn test_join_lines(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_join_lines(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc! {"
       ˇone
@@ -404,9 +404,9 @@ async fn test_join_lines(cx: &mut gpui::TestAppContext) {
 }
 
 #[cfg(target_os = "macos")]
-#[gpui::test]
-async fn test_wrapped_lines(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_wrapped_lines(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_wrap(12).await;
     // tests line wrap as follows:
@@ -555,9 +555,9 @@ async fn test_wrapped_lines(cx: &mut gpui::TestAppContext) {
     "});
 }
 
-#[gpui::test]
-async fn test_folds(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_folds(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
     cx.set_neovim_option("foldmethod=manual").await;
 
     cx.set_shared_state(indoc! { "
@@ -620,9 +620,9 @@ async fn test_folds(cx: &mut gpui::TestAppContext) {
     "});
 }
 
-#[gpui::test]
-async fn test_folds_panic(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_folds_panic(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
     cx.set_neovim_option("foldmethod=manual").await;
 
     cx.set_shared_state(indoc! { "
@@ -655,9 +655,9 @@ async fn test_folds_panic(cx: &mut gpui::TestAppContext) {
         ˇ"});
 }
 
-#[gpui::test]
-async fn test_clear_counts(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_clear_counts(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc! {"
         The quick brown
@@ -672,9 +672,9 @@ async fn test_clear_counts(cx: &mut gpui::TestAppContext) {
         the lazy dog"});
 }
 
-#[gpui::test]
-async fn test_zero(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_zero(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc! {"
         The quˇick brown
@@ -695,9 +695,9 @@ async fn test_zero(cx: &mut gpui::TestAppContext) {
         the lazy dog"});
 }
 
-#[gpui::test]
-async fn test_selection_goal(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_selection_goal(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc! {"
         ;;ˇ;
@@ -711,9 +711,9 @@ async fn test_selection_goal(cx: &mut gpui::TestAppContext) {
 }
 
 #[cfg(target_os = "macos")]
-#[gpui::test]
-async fn test_wrapped_motions(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_wrapped_motions(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_wrap(12).await;
 
@@ -764,9 +764,9 @@ async fn test_wrapped_motions(cx: &mut gpui::TestAppContext) {
     });
 }
 
-#[gpui::test]
-async fn test_paragraphs_dont_wrap(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_paragraphs_dont_wrap(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc! {"
         one
@@ -787,9 +787,9 @@ async fn test_paragraphs_dont_wrap(cx: &mut gpui::TestAppContext) {
         two"});
 }
 
-#[gpui::test]
-async fn test_select_all_issue_2170(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_select_all_issue_2170(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     cx.set_state(
         indoc! {"
@@ -797,7 +797,7 @@ async fn test_select_all_issue_2170(cx: &mut gpui::TestAppContext) {
             def test(a, ˇ[_, _] = b), do: IO.puts('hi')
         end
     "},
-        Mode::Normal,
+        Mode.Normal,
     );
     cx.simulate_keystrokes("g a");
     cx.assert_state(
@@ -806,16 +806,16 @@ async fn test_select_all_issue_2170(cx: &mut gpui::TestAppContext) {
             def test(a, «[ˇ»_, _] = b), do: IO.puts('hi')
         end
     "},
-        Mode::Visual,
+        Mode.Visual,
     );
 }
 
-#[gpui::test]
-async fn test_jk(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_jk(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "j k",
             NormalBefore,
             Some("vim_mode == insert"),
@@ -828,38 +828,38 @@ async fn test_jk(cx: &mut gpui::TestAppContext) {
     cx.shared_state().await.assert_eq("jˇohello");
 }
 
-#[gpui::test]
-async fn test_jk_delay(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_jk_delay(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "j k",
             NormalBefore,
             Some("vim_mode == insert"),
         )])
     });
 
-    cx.set_state("ˇhello", Mode::Normal);
+    cx.set_state("ˇhello", Mode.Normal);
     cx.simulate_keystrokes("i j");
-    cx.executor().advance_clock(Duration::from_millis(500));
+    cx.executor().advance_clock(Duration.from_millis(500));
     cx.run_until_parked();
-    cx.assert_state("ˇhello", Mode::Insert);
-    cx.executor().advance_clock(Duration::from_millis(500));
+    cx.assert_state("ˇhello", Mode.Insert);
+    cx.executor().advance_clock(Duration.from_millis(500));
     cx.run_until_parked();
-    cx.assert_state("jˇhello", Mode::Insert);
+    cx.assert_state("jˇhello", Mode.Insert);
     cx.simulate_keystrokes("k j k");
-    cx.assert_state("jˇkhello", Mode::Normal);
+    cx.assert_state("jˇkhello", Mode.Normal);
 }
 
-#[gpui::test]
-async fn test_comma_w(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_comma_w(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             ", w",
-            motion::Down {
+            motion.Down {
                 display_lines: false,
             },
             Some("vim_mode == normal"),
@@ -880,31 +880,31 @@ async fn test_comma_w(cx: &mut gpui::TestAppContext) {
         .assert_eq("hellˇo hello\nhello hello");
 }
 
-#[gpui::test]
-async fn test_rename(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new_typescript(cx).await;
+#[gpui.test]
+async fn test_rename(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new_typescript(cx).await;
 
-    cx.set_state("const beˇfore = 2; console.log(before)", Mode::Normal);
+    cx.set_state("const beˇfore = 2; console.log(before)", Mode.Normal);
     let def_range = cx.lsp_range("const «beforeˇ» = 2; console.log(before)");
     let tgt_range = cx.lsp_range("const before = 2; console.log(«beforeˇ»)");
     let mut prepare_request =
-        cx.handle_request::<lsp::request::PrepareRenameRequest, _, _>(move |_, _, _| async move {
-            Ok(Some(lsp::PrepareRenameResponse::Range(def_range)))
+        cx.handle_request.<lsp.request.PrepareRenameRequest, _, _>(move |_, _, _| async move {
+            Ok(Some(lsp.PrepareRenameResponse.Range(def_range)))
         });
     let mut rename_request =
-        cx.handle_request::<lsp::request::Rename, _, _>(move |url, params, _| async move {
-            Ok(Some(lsp::WorkspaceEdit {
+        cx.handle_request.<lsp.request.Rename, _, _>(move |url, params, _| async move {
+            Ok(Some(lsp.WorkspaceEdit {
                 changes: Some(
                     [(
                         url.clone(),
                         vec![
-                            lsp::TextEdit::new(def_range, params.new_name.clone()),
-                            lsp::TextEdit::new(tgt_range, params.new_name),
+                            lsp.TextEdit.new(def_range, params.new_name.clone()),
+                            lsp.TextEdit.new(tgt_range, params.new_name),
                         ],
                     )]
                     .into(),
                 ),
-                ..Default::default()
+                ..Default.default()
             }))
         });
 
@@ -913,93 +913,93 @@ async fn test_rename(cx: &mut gpui::TestAppContext) {
     cx.simulate_input("after");
     cx.simulate_keystrokes("enter");
     rename_request.next().await.unwrap();
-    cx.assert_state("const afterˇ = 2; console.log(after)", Mode::Normal)
+    cx.assert_state("const afterˇ = 2; console.log(after)", Mode.Normal)
 }
 
 // TODO: this test is flaky on our linux CI machines
 #[cfg(target_os = "macos")]
-#[gpui::test]
-async fn test_remap(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_remap(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
     // test moving the cursor
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "g z",
-            workspace::SendKeystrokes("l l l l".to_string()),
+            workspace.SendKeystrokes("l l l l".to_string()),
             None,
         )])
     });
-    cx.set_state("ˇ123456789", Mode::Normal);
+    cx.set_state("ˇ123456789", Mode.Normal);
     cx.simulate_keystrokes("g z");
-    cx.assert_state("1234ˇ56789", Mode::Normal);
+    cx.assert_state("1234ˇ56789", Mode.Normal);
 
     // test switching modes
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "g y",
-            workspace::SendKeystrokes("i f o o escape l".to_string()),
+            workspace.SendKeystrokes("i f o o escape l".to_string()),
             None,
         )])
     });
-    cx.set_state("ˇ123456789", Mode::Normal);
+    cx.set_state("ˇ123456789", Mode.Normal);
     cx.simulate_keystrokes("g y");
-    cx.assert_state("fooˇ123456789", Mode::Normal);
+    cx.assert_state("fooˇ123456789", Mode.Normal);
 
     // test recursion
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "g x",
-            workspace::SendKeystrokes("g z g y".to_string()),
+            workspace.SendKeystrokes("g z g y".to_string()),
             None,
         )])
     });
-    cx.set_state("ˇ123456789", Mode::Normal);
+    cx.set_state("ˇ123456789", Mode.Normal);
     cx.simulate_keystrokes("g x");
-    cx.assert_state("1234fooˇ56789", Mode::Normal);
+    cx.assert_state("1234fooˇ56789", Mode.Normal);
 
     cx.executor().allow_parking();
 
     // test command
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "g w",
-            workspace::SendKeystrokes(": j enter".to_string()),
+            workspace.SendKeystrokes(": j enter".to_string()),
             None,
         )])
     });
-    cx.set_state("ˇ1234\n56789", Mode::Normal);
+    cx.set_state("ˇ1234\n56789", Mode.Normal);
     cx.simulate_keystrokes("g w");
-    cx.assert_state("1234ˇ 56789", Mode::Normal);
+    cx.assert_state("1234ˇ 56789", Mode.Normal);
 
     // test leaving command
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "g u",
-            workspace::SendKeystrokes("g w g z".to_string()),
+            workspace.SendKeystrokes("g w g z".to_string()),
             None,
         )])
     });
-    cx.set_state("ˇ1234\n56789", Mode::Normal);
+    cx.set_state("ˇ1234\n56789", Mode.Normal);
     cx.simulate_keystrokes("g u");
-    cx.assert_state("1234 567ˇ89", Mode::Normal);
+    cx.assert_state("1234 567ˇ89", Mode.Normal);
 
     // test leaving command
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new(
+        cx.bind_keys([KeyBinding.new(
             "g t",
-            workspace::SendKeystrokes("i space escape".to_string()),
+            workspace.SendKeystrokes("i space escape".to_string()),
             None,
         )])
     });
-    cx.set_state("12ˇ34", Mode::Normal);
+    cx.set_state("12ˇ34", Mode.Normal);
     cx.simulate_keystrokes("g t");
-    cx.assert_state("12ˇ 34", Mode::Normal);
+    cx.assert_state("12ˇ 34", Mode.Normal);
 }
 
-#[gpui::test]
-async fn test_undo(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_undo(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state("hello quˇoel world").await;
     cx.simulate_shared_keystrokes("v i w s c o escape u").await;
@@ -1042,25 +1042,25 @@ async fn test_undo(cx: &mut gpui::TestAppContext) {
         3"});
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_mouse_selection(cx: &mut TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+    let mut cx = VimTestContext.new(cx, true).await;
 
-    cx.set_state("ˇone two three", Mode::Normal);
+    cx.set_state("ˇone two three", Mode.Normal);
 
     let start_point = cx.pixel_position("one twˇo three");
     let end_point = cx.pixel_position("one ˇtwo three");
 
-    cx.simulate_mouse_down(start_point, MouseButton::Left, Modifiers::none());
-    cx.simulate_mouse_move(end_point, MouseButton::Left, Modifiers::none());
-    cx.simulate_mouse_up(end_point, MouseButton::Left, Modifiers::none());
+    cx.simulate_mouse_down(start_point, MouseButton.Left, Modifiers.none());
+    cx.simulate_mouse_move(end_point, MouseButton.Left, Modifiers.none());
+    cx.simulate_mouse_up(end_point, MouseButton.Left, Modifiers.none());
 
-    cx.assert_state("one «ˇtwo» three", Mode::Visual)
+    cx.assert_state("one «ˇtwo» three", Mode.Visual)
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_lowercase_marks(cx: &mut TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state("line one\nline ˇtwo\nline three").await;
     cx.simulate_shared_keystrokes("m a l ' a").await;
@@ -1078,9 +1078,9 @@ async fn test_lowercase_marks(cx: &mut TestAppContext) {
         .assert_eq("line one\nˇtwo\nline three");
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_lt_gt_marks(cx: &mut TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc!(
         "
@@ -1154,9 +1154,9 @@ async fn test_lt_gt_marks(cx: &mut TestAppContext) {
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_caret_mark(cx: &mut TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc!(
         "
@@ -1204,9 +1204,9 @@ async fn test_caret_mark(cx: &mut TestAppContext) {
 }
 
 #[cfg(target_os = "macos")]
-#[gpui::test]
-async fn test_dw_eol(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_dw_eol(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_wrap(12).await;
     cx.set_shared_state("twelve ˇchar twelve char\ntwelve char")
@@ -1217,16 +1217,16 @@ async fn test_dw_eol(cx: &mut gpui::TestAppContext) {
         .assert_eq("twelve ˇtwelve char\ntwelve char");
 }
 
-#[gpui::test]
-async fn test_toggle_comments(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_toggle_comments(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
 
-    let language = std::sync::Arc::new(language::Language::new(
-        language::LanguageConfig {
+    let language = std.sync.Arc.new(language.Language.new(
+        language.LanguageConfig {
             line_comments: vec!["// ".into(), "//! ".into(), "/// ".into()],
-            ..Default::default()
+            ..Default.default()
         },
-        Some(language::tree_sitter_rust::language()),
+        Some(language.tree_sitter_rust.language()),
     ));
     cx.update_buffer(|buffer, cx| buffer.set_language(Some(language), cx));
 
@@ -1237,7 +1237,7 @@ async fn test_toggle_comments(cx: &mut gpui::TestAppContext) {
       two
       three
       "},
-        Mode::Normal,
+        Mode.Normal,
     );
     cx.simulate_keystrokes("g c c");
     cx.assert_state(
@@ -1246,7 +1246,7 @@ async fn test_toggle_comments(cx: &mut gpui::TestAppContext) {
           two
           three
           "},
-        Mode::Normal,
+        Mode.Normal,
     );
 
     // works in visual mode
@@ -1257,7 +1257,7 @@ async fn test_toggle_comments(cx: &mut gpui::TestAppContext) {
           // two
           three
           "},
-        Mode::Normal,
+        Mode.Normal,
     );
 
     // works in visual line mode
@@ -1268,7 +1268,7 @@ async fn test_toggle_comments(cx: &mut gpui::TestAppContext) {
           two
           three
           "},
-        Mode::Normal,
+        Mode.Normal,
     );
 
     // works with count
@@ -1279,7 +1279,7 @@ async fn test_toggle_comments(cx: &mut gpui::TestAppContext) {
             // two
             // three
             "},
-        Mode::Normal,
+        Mode.Normal,
     );
 
     // works with motion object
@@ -1291,13 +1291,13 @@ async fn test_toggle_comments(cx: &mut gpui::TestAppContext) {
             two
             three
             ˇ"},
-        Mode::Normal,
+        Mode.Normal,
     );
 }
 
-#[gpui::test]
-async fn test_find_multibyte(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_find_multibyte(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(r#"<label for="guests">ˇPočet hostů</label>"#)
         .await;
@@ -1308,9 +1308,9 @@ async fn test_find_multibyte(cx: &mut gpui::TestAppContext) {
         .assert_eq(r#"<label for="guests">ˇo</label>"#);
 }
 
-#[gpui::test]
-async fn test_plus_minus(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_plus_minus(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state(indoc! {
         "one
@@ -1327,35 +1327,35 @@ async fn test_plus_minus(cx: &mut gpui::TestAppContext) {
     cx.shared_state().await.assert_matches();
 }
 
-#[gpui::test]
-async fn test_command_alias(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
+#[gpui.test]
+async fn test_command_alias(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
     cx.update_global(|store: &mut SettingsStore, cx| {
-        store.update_user_settings::<WorkspaceSettings>(cx, |s| {
-            let mut aliases = HashMap::default();
+        store.update_user_settings.<WorkspaceSettings>(cx, |s| {
+            let mut aliases = HashMap.default();
             aliases.insert("Q".to_string(), "upper".to_string());
             s.command_aliases = Some(aliases)
         });
     });
 
-    cx.set_state("ˇhello world", Mode::Normal);
+    cx.set_state("ˇhello world", Mode.Normal);
     cx.simulate_keystrokes(": Q");
-    cx.set_state("ˇHello world", Mode::Normal);
+    cx.set_state("ˇHello world", Mode.Normal);
 }
 
-#[gpui::test]
-async fn test_remap_adjacent_dog_cat(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_remap_adjacent_dog_cat(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
     cx.update(|cx| {
         cx.bind_keys([
-            KeyBinding::new(
+            KeyBinding.new(
                 "d o g",
-                workspace::SendKeystrokes("🐶".to_string()),
+                workspace.SendKeystrokes("🐶".to_string()),
                 Some("vim_mode == insert"),
             ),
-            KeyBinding::new(
+            KeyBinding.new(
                 "c a t",
-                workspace::SendKeystrokes("🐱".to_string()),
+                workspace.SendKeystrokes("🐱".to_string()),
                 Some("vim_mode == insert"),
             ),
         ])
@@ -1376,24 +1376,24 @@ async fn test_remap_adjacent_dog_cat(cx: &mut gpui::TestAppContext) {
     cx.shared_state().await.assert_eq("do🐱ˇ");
 }
 
-#[gpui::test]
-async fn test_remap_nested_pineapple(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_remap_nested_pineapple(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
     cx.update(|cx| {
         cx.bind_keys([
-            KeyBinding::new(
+            KeyBinding.new(
                 "p i n",
-                workspace::SendKeystrokes("📌".to_string()),
+                workspace.SendKeystrokes("📌".to_string()),
                 Some("vim_mode == insert"),
             ),
-            KeyBinding::new(
+            KeyBinding.new(
                 "p i n e",
-                workspace::SendKeystrokes("🌲".to_string()),
+                workspace.SendKeystrokes("🌲".to_string()),
                 Some("vim_mode == insert"),
             ),
-            KeyBinding::new(
+            KeyBinding.new(
                 "p i n e a p p l e",
-                workspace::SendKeystrokes("🍍".to_string()),
+                workspace.SendKeystrokes("🍍".to_string()),
                 Some("vim_mode == insert"),
             ),
         ])
@@ -1404,13 +1404,13 @@ async fn test_remap_nested_pineapple(cx: &mut gpui::TestAppContext) {
 
     cx.set_shared_state("ˇ").await;
     cx.simulate_shared_keystrokes("i p i n").await;
-    cx.executor().advance_clock(Duration::from_millis(1000));
+    cx.executor().advance_clock(Duration.from_millis(1000));
     cx.run_until_parked();
     cx.shared_state().await.assert_eq("📌ˇ");
 
     cx.set_shared_state("ˇ").await;
     cx.simulate_shared_keystrokes("i p i n e").await;
-    cx.executor().advance_clock(Duration::from_millis(1000));
+    cx.executor().advance_clock(Duration.from_millis(1000));
     cx.run_until_parked();
     cx.shared_state().await.assert_eq("🌲ˇ");
 
@@ -1419,19 +1419,19 @@ async fn test_remap_nested_pineapple(cx: &mut gpui::TestAppContext) {
     cx.shared_state().await.assert_eq("🍍ˇ");
 }
 
-#[gpui::test]
-async fn test_escape_while_waiting(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_escape_while_waiting(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
     cx.set_shared_state("ˇhi").await;
     cx.simulate_shared_keystrokes("\" + escape x").await;
     cx.shared_state().await.assert_eq("ˇi");
 }
 
-#[gpui::test]
-async fn test_ctrl_w_override(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_ctrl_w_override(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
     cx.update(|cx| {
-        cx.bind_keys([KeyBinding::new("ctrl-w", DeleteLine, None)]);
+        cx.bind_keys([KeyBinding.new("ctrl-w", DeleteLine, None)]);
     });
     cx.neovim.exec("map <c-w> D").await;
     cx.set_shared_state("ˇhi").await;
@@ -1439,19 +1439,19 @@ async fn test_ctrl_w_override(cx: &mut gpui::TestAppContext) {
     cx.shared_state().await.assert_eq("ˇ");
 }
 
-#[gpui::test]
-async fn test_visual_indent_count(cx: &mut gpui::TestAppContext) {
-    let mut cx = VimTestContext::new(cx, true).await;
-    cx.set_state("ˇhi", Mode::Normal);
+#[gpui.test]
+async fn test_visual_indent_count(cx: &mut gpui.TestAppContext) {
+    let mut cx = VimTestContext.new(cx, true).await;
+    cx.set_state("ˇhi", Mode.Normal);
     cx.simulate_keystrokes("shift-v 3 >");
-    cx.assert_state("            ˇhi", Mode::Normal);
+    cx.assert_state("            ˇhi", Mode.Normal);
     cx.simulate_keystrokes("shift-v 2 <");
-    cx.assert_state("    ˇhi", Mode::Normal);
+    cx.assert_state("    ˇhi", Mode.Normal);
 }
 
-#[gpui::test]
-async fn test_record_replay_recursion(cx: &mut gpui::TestAppContext) {
-    let mut cx = NeovimBackedTestContext::new(cx).await;
+#[gpui.test]
+async fn test_record_replay_recursion(cx: &mut gpui.TestAppContext) {
+    let mut cx = NeovimBackedTestContext.new(cx).await;
 
     cx.set_shared_state("ˇhello world").await;
     cx.simulate_shared_keystrokes(">").await;

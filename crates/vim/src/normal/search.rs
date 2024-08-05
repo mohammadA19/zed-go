@@ -1,17 +1,17 @@
-use std::{ops::Range, sync::OnceLock, time::Duration};
+use std.{ops.Range, sync.OnceLock, time.Duration};
 
-use gpui::{actions, impl_actions, ViewContext};
-use language::Point;
-use multi_buffer::MultiBufferRow;
-use regex::Regex;
-use search::{buffer_search, BufferSearchBar, SearchOptions};
-use serde_derive::Deserialize;
-use workspace::{searchable::Direction, Workspace};
+use gpui.{actions, impl_actions, ViewContext};
+use language.Point;
+use multi_buffer.MultiBufferRow;
+use regex.Regex;
+use search.{buffer_search, BufferSearchBar, SearchOptions};
+use serde_derive.Deserialize;
+use workspace.{searchable.Direction, Workspace};
 
-use crate::{
-    motion::{search_motion, Motion},
-    normal::move_cursor,
-    state::{Mode, SearchState},
+use crate.{
+    motion.{search_motion, Motion},
+    normal.move_cursor,
+    state.{Mode, SearchState},
     Vim,
 };
 
@@ -61,9 +61,9 @@ impl_actions!(
     [FindCommand, ReplaceCommand, Search, MoveToPrev, MoveToNext]
 );
 
-static RANGE_REGEX: OnceLock<Regex> = OnceLock::new();
+static RANGE_REGEX: OnceLock<Regex> = OnceLock.new();
 pub(crate) fn range_regex() -> &'static Regex {
-    RANGE_REGEX.get_or_init(|| Regex::new(r"^(\d+),(\d+)s(.*)").unwrap())
+    RANGE_REGEX.get_or_init(|| Regex.new(r"^(\d+),(\d+)s(.*)").unwrap())
 }
 
 pub(crate) fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
@@ -80,11 +80,11 @@ pub(crate) fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>
 }
 
 fn move_to_next(workspace: &mut Workspace, action: &MoveToNext, cx: &mut ViewContext<Workspace>) {
-    move_to_internal(workspace, Direction::Next, !action.partial_word, cx)
+    move_to_internal(workspace, Direction.Next, !action.partial_word, cx)
 }
 
 fn move_to_prev(workspace: &mut Workspace, action: &MoveToPrev, cx: &mut ViewContext<Workspace>) {
-    move_to_internal(workspace, Direction::Prev, !action.partial_word, cx)
+    move_to_internal(workspace, Direction.Prev, !action.partial_word, cx)
 }
 
 fn move_to_next_match(
@@ -92,7 +92,7 @@ fn move_to_next_match(
     _: &MoveToNextMatch,
     cx: &mut ViewContext<Workspace>,
 ) {
-    move_to_match_internal(workspace, Direction::Next, cx)
+    move_to_match_internal(workspace, Direction.Next, cx)
 }
 
 fn move_to_prev_match(
@@ -100,21 +100,21 @@ fn move_to_prev_match(
     _: &MoveToPrevMatch,
     cx: &mut ViewContext<Workspace>,
 ) {
-    move_to_match_internal(workspace, Direction::Prev, cx)
+    move_to_match_internal(workspace, Direction.Prev, cx)
 }
 
 fn search(workspace: &mut Workspace, action: &Search, cx: &mut ViewContext<Workspace>) {
     let pane = workspace.active_pane().clone();
     let direction = if action.backwards {
-        Direction::Prev
+        Direction.Prev
     } else {
-        Direction::Next
+        Direction.Next
     };
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let count = vim.take_count(cx).unwrap_or(1);
         let prior_selections = vim.editor_selections(cx);
         pane.update(cx, |pane, cx| {
-            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() {
+            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() {
                 search_bar.update(cx, |search_bar, cx| {
                     if !search_bar.show(cx) {
                         return;
@@ -126,7 +126,7 @@ fn search(workspace: &mut Workspace, action: &Search, cx: &mut ViewContext<Works
 
                     if query.is_empty() {
                         search_bar.set_replacement(None, cx);
-                        search_bar.set_search_options(SearchOptions::REGEX, cx);
+                        search_bar.set_search_options(SearchOptions.REGEX, cx);
                     }
                     vim.update_state(|state| {
                         state.search = SearchState {
@@ -145,20 +145,20 @@ fn search(workspace: &mut Workspace, action: &Search, cx: &mut ViewContext<Works
 }
 
 // hook into the existing to clear out any vim search state on cmd+f or edit -> find.
-fn search_deploy(_: &mut Workspace, _: &buffer_search::Deploy, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, _| {
-        vim.update_state(|state| state.search = Default::default())
+fn search_deploy(_: &mut Workspace, _: &buffer_search.Deploy, cx: &mut ViewContext<Workspace>) {
+    Vim.update(cx, |vim, _| {
+        vim.update_state(|state| state.search = Default.default())
     });
     cx.propagate();
 }
 
 fn search_submit(workspace: &mut Workspace, _: &SearchSubmit, cx: &mut ViewContext<Workspace>) {
     let mut motion = None;
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.store_visual_marks(cx);
         let pane = workspace.active_pane().clone();
         pane.update(cx, |pane, cx| {
-            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() {
+            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() {
                 search_bar.update(cx, |search_bar, cx| {
                     let (mut prior_selections, prior_mode, prior_operator) =
                         vim.update_state(|state| {
@@ -167,13 +167,13 @@ fn search_submit(workspace: &mut Workspace, _: &SearchSubmit, cx: &mut ViewConte
                             // in the case that the query has changed, the search bar
                             // will have selected the next match already.
                             if (search_bar.query(cx) != state.search.initial_query)
-                                && state.search.direction == Direction::Next
+                                && state.search.direction == Direction.Next
                             {
                                 count = count.saturating_sub(1)
                             }
                             state.search.count = 1;
                             search_bar.select_match(direction, count, cx);
-                            search_bar.focus_editor(&Default::default(), cx);
+                            search_bar.focus_editor(&Default.default(), cx);
 
                             let prior_selections: Vec<_> =
                                 state.search.prior_selections.drain(..).collect();
@@ -204,7 +204,7 @@ fn search_submit(workspace: &mut Workspace, _: &SearchSubmit, cx: &mut ViewConte
                     if let Some(operator) = prior_operator {
                         vim.push_operator(operator, cx);
                     };
-                    motion = Some(Motion::ZedSearchResult {
+                    motion = Some(Motion.ZedSearchResult {
                         prior_selections,
                         new_selections,
                     });
@@ -224,13 +224,13 @@ pub fn move_to_match_internal(
     cx: &mut ViewContext<Workspace>,
 ) {
     let mut motion = None;
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let pane = workspace.active_pane().clone();
         let count = vim.take_count(cx).unwrap_or(1);
         let prior_selections = vim.editor_selections(cx);
 
         pane.update(cx, |pane, cx| {
-            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() {
+            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() {
                 search_bar.update(cx, |search_bar, cx| {
                     if !search_bar.has_active_match() || !search_bar.show(cx) {
                         return;
@@ -238,7 +238,7 @@ pub fn move_to_match_internal(
                     search_bar.select_match(direction, count, cx);
 
                     let new_selections = vim.editor_selections(cx);
-                    motion = Some(Motion::ZedSearchResult {
+                    motion = Some(Motion.ZedSearchResult {
                         prior_selections,
                         new_selections,
                     });
@@ -257,15 +257,15 @@ pub fn move_to_internal(
     whole_word: bool,
     cx: &mut ViewContext<Workspace>,
 ) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let pane = workspace.active_pane().clone();
         let count = vim.take_count(cx).unwrap_or(1);
         let prior_selections = vim.editor_selections(cx);
 
         pane.update(cx, |pane, cx| {
-            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() {
+            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() {
                 let search = search_bar.update(cx, |search_bar, cx| {
-                    let options = SearchOptions::CASE_SENSITIVE | SearchOptions::REGEX;
+                    let options = SearchOptions.CASE_SENSITIVE | SearchOptions.REGEX;
                     if !search_bar.show(cx) {
                         return None;
                     }
@@ -274,7 +274,7 @@ pub fn move_to_internal(
                         drop(search_bar.search("", None, cx));
                         return None;
                     };
-                    let mut query = regex::escape(&query);
+                    let mut query = regex.escape(&query);
                     if whole_word {
                         query = format!(r"\<{}\>", query);
                     }
@@ -289,16 +289,16 @@ pub fn move_to_internal(
                             search_bar.select_match(direction, count, cx);
 
                             let new_selections =
-                                Vim::update(cx, |vim, cx| vim.editor_selections(cx));
+                                Vim.update(cx, |vim, cx| vim.editor_selections(cx));
                             search_motion(
-                                Motion::ZedSearchResult {
+                                Motion.ZedSearchResult {
                                     prior_selections,
                                     new_selections,
                                 },
                                 cx,
                             )
                         })?;
-                        anyhow::Ok(())
+                        anyhow.Ok(())
                     })
                     .detach_and_log_err(cx);
                 }
@@ -306,7 +306,7 @@ pub fn move_to_internal(
         });
 
         if vim.state().mode.is_visual() {
-            vim.switch_mode(Mode::Normal, false, cx)
+            vim.switch_mode(Mode.Normal, false, cx)
         }
     });
 }
@@ -314,7 +314,7 @@ pub fn move_to_internal(
 fn find_command(workspace: &mut Workspace, action: &FindCommand, cx: &mut ViewContext<Workspace>) {
     let pane = workspace.active_pane().clone();
     pane.update(cx, |pane, cx| {
-        if let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() {
+        if let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() {
             let search = search_bar.update(cx, |search_bar, cx| {
                 if !search_bar.show(cx) {
                     return None;
@@ -326,23 +326,23 @@ fn find_command(workspace: &mut Workspace, action: &FindCommand, cx: &mut ViewCo
 
                 Some(search_bar.search(
                     &query,
-                    Some(SearchOptions::CASE_SENSITIVE | SearchOptions::REGEX),
+                    Some(SearchOptions.CASE_SENSITIVE | SearchOptions.REGEX),
                     cx,
                 ))
             });
             let Some(search) = search else { return };
             let search_bar = search_bar.downgrade();
             let direction = if action.backwards {
-                Direction::Prev
+                Direction.Prev
             } else {
-                Direction::Next
+                Direction.Next
             };
             cx.spawn(|_, mut cx| async move {
                 search.await?;
                 search_bar.update(&mut cx, |search_bar, cx| {
                     search_bar.select_match(direction, 1, cx)
                 })?;
-                anyhow::Ok(())
+                anyhow.Ok(())
             })
             .detach_and_log_err(cx);
         }
@@ -356,7 +356,7 @@ fn replace_command(
 ) {
     let replacement = parse_replace_all(&action.query);
     let pane = workspace.active_pane().clone();
-    let mut editor = Vim::read(cx)
+    let mut editor = Vim.read(cx)
         .active_editor
         .as_ref()
         .and_then(|editor| editor.upgrade());
@@ -365,16 +365,16 @@ fn replace_command(
             editor.update(cx, |editor, cx| {
                 let snapshot = &editor.snapshot(cx).buffer_snapshot;
                 let end_row = MultiBufferRow(range.end.saturating_sub(1) as u32);
-                let end_point = Point::new(end_row.0, snapshot.line_len(end_row));
+                let end_point = Point.new(end_row.0, snapshot.line_len(end_row));
                 let range = snapshot
-                    .anchor_before(Point::new(range.start.saturating_sub(1) as u32, 0))
+                    .anchor_before(Point.new(range.start.saturating_sub(1) as u32, 0))
                     ..snapshot.anchor_after(end_point);
                 editor.set_search_within_ranges(&[range], cx)
             })
         }
     }
     pane.update(cx, |pane, cx| {
-        let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() else {
+        let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() else {
             return;
         };
         let search = search_bar.update(cx, |search_bar, cx| {
@@ -382,9 +382,9 @@ fn replace_command(
                 return None;
             }
 
-            let mut options = SearchOptions::REGEX;
+            let mut options = SearchOptions.REGEX;
             if replacement.is_case_sensitive {
-                options.set(SearchOptions::CASE_SENSITIVE, true)
+                options.set(SearchOptions.CASE_SENSITIVE, true)
             }
             let search = if replacement.search == "" {
                 search_bar.query(cx)
@@ -402,11 +402,11 @@ fn replace_command(
             search_bar.update(&mut cx, |search_bar, cx| {
                 if replacement.should_replace_all {
                     search_bar.select_last_match(cx);
-                    search_bar.replace_all(&Default::default(), cx);
+                    search_bar.replace_all(&Default.default(), cx);
                     if let Some(editor) = editor {
                         cx.spawn(|_, mut cx| async move {
                             cx.background_executor()
-                                .timer(Duration::from_millis(200))
+                                .timer(Duration.from_millis(200))
                                 .await;
                             editor
                                 .update(&mut cx, |editor, cx| editor.clear_search_within_ranges(cx))
@@ -414,10 +414,10 @@ fn replace_command(
                         })
                         .detach();
                     }
-                    Vim::update(cx, |vim, cx| {
+                    Vim.update(cx, |vim, cx| {
                         move_cursor(
                             vim,
-                            Motion::StartOfLine {
+                            Motion.StartOfLine {
                                 display_lines: false,
                             },
                             None,
@@ -426,7 +426,7 @@ fn replace_command(
                     })
                 }
             })?;
-            anyhow::Ok(())
+            anyhow.Ok(())
         })
         .detach_and_log_err(cx);
     })
@@ -452,16 +452,16 @@ fn parse_replace_all(query: &str) -> Replacement {
         range = Some(line_range);
         chars = rest.chars();
     } else if Some('%') != chars.next() || Some('s') != chars.next() {
-        return Replacement::default();
+        return Replacement.default();
     }
 
     let Some(delimiter) = chars.next() else {
-        return Replacement::default();
+        return Replacement.default();
     };
 
-    let mut search = String::new();
-    let mut replacement = String::new();
-    let mut flags = String::new();
+    let mut search = String.new();
+    let mut replacement = String.new();
+    let mut flags = String.new();
 
     let mut buffer = &mut search;
 
@@ -525,98 +525,98 @@ fn parse_replace_all(query: &str) -> Replacement {
 
 #[cfg(test)]
 mod test {
-    use std::time::Duration;
+    use std.time.Duration;
 
-    use crate::{
-        state::Mode,
-        test::{NeovimBackedTestContext, VimTestContext},
+    use crate.{
+        state.Mode,
+        test.{NeovimBackedTestContext, VimTestContext},
     };
-    use editor::EditorSettings;
-    use editor::{display_map::DisplayRow, DisplayPoint};
-    use indoc::indoc;
-    use search::BufferSearchBar;
-    use settings::SettingsStore;
+    use editor.EditorSettings;
+    use editor.{display_map.DisplayRow, DisplayPoint};
+    use indoc.indoc;
+    use search.BufferSearchBar;
+    use settings.SettingsStore;
 
-    #[gpui::test]
-    async fn test_move_to_next(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
-        cx.set_state("ˇhi\nhigh\nhi\n", Mode::Normal);
-
-        cx.simulate_keystrokes("*");
-        cx.run_until_parked();
-        cx.assert_state("hi\nhigh\nˇhi\n", Mode::Normal);
+    #[gpui.test]
+    async fn test_move_to_next(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
+        cx.set_state("ˇhi\nhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("*");
         cx.run_until_parked();
-        cx.assert_state("ˇhi\nhigh\nhi\n", Mode::Normal);
+        cx.assert_state("hi\nhigh\nˇhi\n", Mode.Normal);
+
+        cx.simulate_keystrokes("*");
+        cx.run_until_parked();
+        cx.assert_state("ˇhi\nhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("#");
         cx.run_until_parked();
-        cx.assert_state("hi\nhigh\nˇhi\n", Mode::Normal);
+        cx.assert_state("hi\nhigh\nˇhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("#");
         cx.run_until_parked();
-        cx.assert_state("ˇhi\nhigh\nhi\n", Mode::Normal);
+        cx.assert_state("ˇhi\nhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("2 *");
         cx.run_until_parked();
-        cx.assert_state("ˇhi\nhigh\nhi\n", Mode::Normal);
+        cx.assert_state("ˇhi\nhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("g *");
         cx.run_until_parked();
-        cx.assert_state("hi\nˇhigh\nhi\n", Mode::Normal);
+        cx.assert_state("hi\nˇhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("n");
-        cx.assert_state("hi\nhigh\nˇhi\n", Mode::Normal);
+        cx.assert_state("hi\nhigh\nˇhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("g #");
         cx.run_until_parked();
-        cx.assert_state("hi\nˇhigh\nhi\n", Mode::Normal);
+        cx.assert_state("hi\nˇhigh\nhi\n", Mode.Normal);
     }
 
-    #[gpui::test]
-    async fn test_move_to_next_with_no_search_wrap(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_move_to_next_with_no_search_wrap(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
 
         cx.update_global(|store: &mut SettingsStore, cx| {
-            store.update_user_settings::<EditorSettings>(cx, |s| s.search_wrap = Some(false));
+            store.update_user_settings.<EditorSettings>(cx, |s| s.search_wrap = Some(false));
         });
 
-        cx.set_state("ˇhi\nhigh\nhi\n", Mode::Normal);
+        cx.set_state("ˇhi\nhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("*");
         cx.run_until_parked();
-        cx.assert_state("hi\nhigh\nˇhi\n", Mode::Normal);
+        cx.assert_state("hi\nhigh\nˇhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("*");
         cx.run_until_parked();
-        cx.assert_state("hi\nhigh\nˇhi\n", Mode::Normal);
+        cx.assert_state("hi\nhigh\nˇhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("#");
         cx.run_until_parked();
-        cx.assert_state("ˇhi\nhigh\nhi\n", Mode::Normal);
+        cx.assert_state("ˇhi\nhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("3 *");
         cx.run_until_parked();
-        cx.assert_state("ˇhi\nhigh\nhi\n", Mode::Normal);
+        cx.assert_state("ˇhi\nhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("g *");
         cx.run_until_parked();
-        cx.assert_state("hi\nˇhigh\nhi\n", Mode::Normal);
+        cx.assert_state("hi\nˇhigh\nhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("n");
-        cx.assert_state("hi\nhigh\nˇhi\n", Mode::Normal);
+        cx.assert_state("hi\nhigh\nˇhi\n", Mode.Normal);
 
         cx.simulate_keystrokes("g #");
         cx.run_until_parked();
-        cx.assert_state("hi\nˇhigh\nhi\n", Mode::Normal);
+        cx.assert_state("hi\nˇhigh\nhi\n", Mode.Normal);
     }
 
-    #[gpui::test]
-    async fn test_search(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_search(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
 
-        cx.set_state("aa\nbˇb\ncc\ncc\ncc\n", Mode::Normal);
+        cx.set_state("aa\nbˇb\ncc\ncc\ncc\n", Mode.Normal);
         cx.simulate_keystrokes("/ c c");
 
         let search_bar = cx.workspace(|workspace, cx| {
@@ -625,7 +625,7 @@ mod test {
                 .read(cx)
                 .toolbar()
                 .read(cx)
-                .item_of_type::<BufferSearchBar>()
+                .item_of_type.<BufferSearchBar>()
                 .expect("Buffer search bar should be deployed")
         });
 
@@ -639,83 +639,83 @@ mod test {
             let highlights = editor.all_text_background_highlights(cx);
             assert_eq!(3, highlights.len());
             assert_eq!(
-                DisplayPoint::new(DisplayRow(2), 0)..DisplayPoint::new(DisplayRow(2), 2),
+                DisplayPoint.new(DisplayRow(2), 0)..DisplayPoint.new(DisplayRow(2), 2),
                 highlights[0].0
             )
         });
 
         cx.simulate_keystrokes("enter");
-        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode.Normal);
 
         // n to go to next/N to go to previous
         cx.simulate_keystrokes("n");
-        cx.assert_state("aa\nbb\ncc\nˇcc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\ncc\nˇcc\ncc\n", Mode.Normal);
         cx.simulate_keystrokes("shift-n");
-        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode.Normal);
 
         // ?<enter> to go to previous
         cx.simulate_keystrokes("? enter");
-        cx.assert_state("aa\nbb\ncc\ncc\nˇcc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\ncc\ncc\nˇcc\n", Mode.Normal);
         cx.simulate_keystrokes("? enter");
-        cx.assert_state("aa\nbb\ncc\nˇcc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\ncc\nˇcc\ncc\n", Mode.Normal);
 
         // /<enter> to go to next
         cx.simulate_keystrokes("/ enter");
-        cx.assert_state("aa\nbb\ncc\ncc\nˇcc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\ncc\ncc\nˇcc\n", Mode.Normal);
 
         // ?{search}<enter> to search backwards
         cx.simulate_keystrokes("? b enter");
-        cx.assert_state("aa\nbˇb\ncc\ncc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbˇb\ncc\ncc\ncc\n", Mode.Normal);
 
         // works with counts
         cx.simulate_keystrokes("4 / c");
         cx.simulate_keystrokes("enter");
-        cx.assert_state("aa\nbb\ncc\ncˇc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\ncc\ncˇc\ncc\n", Mode.Normal);
 
         // check that searching resumes from cursor, not previous match
-        cx.set_state("ˇaa\nbb\ndd\ncc\nbb\n", Mode::Normal);
+        cx.set_state("ˇaa\nbb\ndd\ncc\nbb\n", Mode.Normal);
         cx.simulate_keystrokes("/ d");
         cx.simulate_keystrokes("enter");
-        cx.assert_state("aa\nbb\nˇdd\ncc\nbb\n", Mode::Normal);
-        cx.update_editor(|editor, cx| editor.move_to_beginning(&Default::default(), cx));
-        cx.assert_state("ˇaa\nbb\ndd\ncc\nbb\n", Mode::Normal);
+        cx.assert_state("aa\nbb\nˇdd\ncc\nbb\n", Mode.Normal);
+        cx.update_editor(|editor, cx| editor.move_to_beginning(&Default.default(), cx));
+        cx.assert_state("ˇaa\nbb\ndd\ncc\nbb\n", Mode.Normal);
         cx.simulate_keystrokes("/ b");
         cx.simulate_keystrokes("enter");
-        cx.assert_state("aa\nˇbb\ndd\ncc\nbb\n", Mode::Normal);
+        cx.assert_state("aa\nˇbb\ndd\ncc\nbb\n", Mode.Normal);
 
         // check that searching switches to normal mode if in visual mode
-        cx.set_state("ˇone two one", Mode::Normal);
+        cx.set_state("ˇone two one", Mode.Normal);
         cx.simulate_keystrokes("v l l");
         cx.assert_editor_state("«oneˇ» two one");
         cx.simulate_keystrokes("*");
-        cx.assert_state("one two ˇone", Mode::Normal);
+        cx.assert_state("one two ˇone", Mode.Normal);
 
         // check that searching with unable search wrap
         cx.update_global(|store: &mut SettingsStore, cx| {
-            store.update_user_settings::<EditorSettings>(cx, |s| s.search_wrap = Some(false));
+            store.update_user_settings.<EditorSettings>(cx, |s| s.search_wrap = Some(false));
         });
-        cx.set_state("aa\nbˇb\ncc\ncc\ncc\n", Mode::Normal);
+        cx.set_state("aa\nbˇb\ncc\ncc\ncc\n", Mode.Normal);
         cx.simulate_keystrokes("/ c c enter");
 
-        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode.Normal);
 
         // n to go to next/N to go to previous
         cx.simulate_keystrokes("n");
-        cx.assert_state("aa\nbb\ncc\nˇcc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\ncc\nˇcc\ncc\n", Mode.Normal);
         cx.simulate_keystrokes("shift-n");
-        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode.Normal);
 
         // ?<enter> to go to previous
         cx.simulate_keystrokes("? enter");
-        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode.Normal);
         cx.simulate_keystrokes("? enter");
-        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode::Normal);
+        cx.assert_state("aa\nbb\nˇcc\ncc\ncc\n", Mode.Normal);
     }
 
-    #[gpui::test]
-    async fn test_non_vim_search(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, false).await;
-        cx.set_state("ˇone one one one", Mode::Normal);
+    #[gpui.test]
+    async fn test_non_vim_search(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, false).await;
+        cx.set_state("ˇone one one one", Mode.Normal);
         cx.simulate_keystrokes("cmd-f");
         cx.run_until_parked();
 
@@ -726,18 +726,18 @@ mod test {
         cx.assert_editor_state("«oneˇ» one one one");
     }
 
-    #[gpui::test]
-    async fn test_visual_star_hash(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_star_hash(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("ˇa.c. abcd a.c. abcd").await;
         cx.simulate_shared_keystrokes("v 3 l *").await;
         cx.shared_state().await.assert_eq("a.c. abcd ˇa.c. abcd");
     }
 
-    #[gpui::test]
-    async fn test_d_search(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_d_search(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("ˇa.c. abcd a.c. abcd").await;
         cx.simulate_shared_keystrokes("d / c d").await;
@@ -745,9 +745,9 @@ mod test {
         cx.shared_state().await.assert_eq("ˇcd a.c. abcd");
     }
 
-    #[gpui::test]
-    async fn test_v_search(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_v_search(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("ˇa.c. abcd a.c. abcd").await;
         cx.simulate_shared_keystrokes("v / c d").await;
@@ -770,9 +770,9 @@ mod test {
         cx.shared_state().await.assert_eq("a a a« a aˇ» a");
     }
 
-    #[gpui::test]
-    async fn test_visual_block_search(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_block_search(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "ˇone two
@@ -792,9 +792,9 @@ mod test {
     }
 
     // cargo test -p vim --features neovim test_replace_with_range_at_start
-    #[gpui::test]
-    async fn test_replace_with_range_at_start(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_replace_with_range_at_start(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "ˇa
@@ -819,7 +819,7 @@ mod test {
             a
              "
         });
-        cx.executor().advance_clock(Duration::from_millis(250));
+        cx.executor().advance_clock(Duration.from_millis(250));
         cx.run_until_parked();
 
         cx.simulate_shared_keystrokes("/ a enter").await;
@@ -836,9 +836,9 @@ mod test {
     }
 
     // cargo test -p vim --features neovim test_replace_with_range
-    #[gpui::test]
-    async fn test_replace_with_range(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_replace_with_range(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "ˇa
@@ -863,7 +863,7 @@ mod test {
             a
              "
         });
-        cx.executor().advance_clock(Duration::from_millis(250));
+        cx.executor().advance_clock(Duration.from_millis(250));
         cx.run_until_parked();
 
         cx.simulate_shared_keystrokes("/ a enter").await;

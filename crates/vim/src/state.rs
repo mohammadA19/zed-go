@@ -1,15 +1,15 @@
-use std::{fmt::Display, ops::Range, sync::Arc};
+use std.{fmt.Display, ops.Range, sync.Arc};
 
-use crate::normal::repeat::Replayer;
-use crate::surrounds::SurroundsType;
-use crate::{motion::Motion, object::Object};
-use collections::HashMap;
-use editor::{Anchor, ClipboardSelection};
-use gpui::{Action, ClipboardItem, KeyContext};
-use language::{CursorShape, Selection, TransactionId};
-use serde::{Deserialize, Serialize};
-use ui::SharedString;
-use workspace::searchable::Direction;
+use crate.normal.repeat.Replayer;
+use crate.surrounds.SurroundsType;
+use crate.{motion.Motion, object.Object};
+use collections.HashMap;
+use editor.{Anchor, ClipboardSelection};
+use gpui.{Action, ClipboardItem, KeyContext};
+use language.{CursorShape, Selection, TransactionId};
+use serde.{Deserialize, Serialize};
+use ui.SharedString;
+use workspace.searchable.Direction;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Mode {
@@ -22,14 +22,14 @@ pub enum Mode {
 }
 
 impl Display for Mode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         match self {
-            Mode::Normal => write!(f, "NORMAL"),
-            Mode::Insert => write!(f, "INSERT"),
-            Mode::Replace => write!(f, "REPLACE"),
-            Mode::Visual => write!(f, "VISUAL"),
-            Mode::VisualLine => write!(f, "VISUAL LINE"),
-            Mode::VisualBlock => write!(f, "VISUAL BLOCK"),
+            Mode.Normal => write!(f, "NORMAL"),
+            Mode.Insert => write!(f, "INSERT"),
+            Mode.Replace => write!(f, "REPLACE"),
+            Mode.Visual => write!(f, "VISUAL"),
+            Mode.VisualLine => write!(f, "VISUAL LINE"),
+            Mode.VisualBlock => write!(f, "VISUAL BLOCK"),
         }
     }
 }
@@ -37,15 +37,15 @@ impl Display for Mode {
 impl Mode {
     pub fn is_visual(&self) -> bool {
         match self {
-            Mode::Normal | Mode::Insert | Mode::Replace => false,
-            Mode::Visual | Mode::VisualLine | Mode::VisualBlock => true,
+            Mode.Normal | Mode.Insert | Mode.Replace => false,
+            Mode.Visual | Mode.VisualLine | Mode.VisualBlock => true,
         }
     }
 }
 
 impl Default for Mode {
     fn default() -> Self {
-        Self::Normal
+        Self.Normal
     }
 }
 
@@ -86,7 +86,7 @@ pub struct EditorState {
     pub post_count: Option<usize>,
 
     pub operator_stack: Vec<Operator>,
-    pub replacements: Vec<(Range<editor::Anchor>, String)>,
+    pub replacements: Vec<(Range<editor.Anchor>, String)>,
 
     pub marks: HashMap<String, Vec<Anchor>>,
     pub stored_visual_mode: Option<(Mode, Vec<bool>)>,
@@ -129,7 +129,7 @@ pub struct Register {
 
 impl From<Register> for ClipboardItem {
     fn from(register: Register) -> Self {
-        let item = ClipboardItem::new(register.text.into());
+        let item = ClipboardItem.new(register.text.into());
         if let Some(clipboard_selections) = register.clipboard_selections {
             item.with_metadata(clipboard_selections)
         } else {
@@ -142,7 +142,7 @@ impl From<ClipboardItem> for Register {
     fn from(value: ClipboardItem) -> Self {
         Register {
             text: value.text().to_owned().into(),
-            clipboard_selections: value.metadata::<Vec<ClipboardSelection>>(),
+            clipboard_selections: value.metadata.<Vec<ClipboardSelection>>(),
         }
     }
 }
@@ -191,11 +191,11 @@ pub enum ReplayableAction {
 impl Clone for ReplayableAction {
     fn clone(&self) -> Self {
         match self {
-            Self::Action(action) => Self::Action(action.boxed_clone()),
-            Self::Insertion {
+            Self.Action(action) => Self.Action(action.boxed_clone()),
+            Self.Insertion {
                 text,
                 utf16_range_to_replace,
-            } => Self::Insertion {
+            } => Self.Insertion {
                 text: text.clone(),
                 utf16_range_to_replace: utf16_range_to_replace.clone(),
             },
@@ -217,44 +217,44 @@ pub struct SearchState {
 impl EditorState {
     pub fn cursor_shape(&self) -> CursorShape {
         match self.mode {
-            Mode::Normal => {
+            Mode.Normal => {
                 if self.operator_stack.is_empty() {
-                    CursorShape::Block
+                    CursorShape.Block
                 } else {
-                    CursorShape::Underscore
+                    CursorShape.Underscore
                 }
             }
-            Mode::Replace => CursorShape::Underscore,
-            Mode::Visual | Mode::VisualLine | Mode::VisualBlock => CursorShape::Block,
-            Mode::Insert => CursorShape::Bar,
+            Mode.Replace => CursorShape.Underscore,
+            Mode.Visual | Mode.VisualLine | Mode.VisualBlock => CursorShape.Block,
+            Mode.Insert => CursorShape.Bar,
         }
     }
 
     pub fn editor_input_enabled(&self) -> bool {
         match self.mode {
-            Mode::Insert => {
+            Mode.Insert => {
                 if let Some(operator) = self.operator_stack.last() {
                     !operator.is_waiting(self.mode)
                 } else {
                     true
                 }
             }
-            Mode::Normal | Mode::Replace | Mode::Visual | Mode::VisualLine | Mode::VisualBlock => {
+            Mode.Normal | Mode.Replace | Mode.Visual | Mode.VisualLine | Mode.VisualBlock => {
                 false
             }
         }
     }
 
     pub fn should_autoindent(&self) -> bool {
-        !(self.mode == Mode::Insert && self.last_mode == Mode::VisualBlock)
+        !(self.mode == Mode.Insert && self.last_mode == Mode.VisualBlock)
     }
 
     pub fn clip_at_line_ends(&self) -> bool {
         match self.mode {
-            Mode::Insert | Mode::Visual | Mode::VisualLine | Mode::VisualBlock | Mode::Replace => {
+            Mode.Insert | Mode.Visual | Mode.VisualLine | Mode.VisualBlock | Mode.Replace => {
                 false
             }
-            Mode::Normal => true,
+            Mode.Normal => true,
         }
     }
 
@@ -263,13 +263,13 @@ impl EditorState {
     }
 
     pub fn keymap_context_layer(&self) -> KeyContext {
-        let mut context = KeyContext::new_with_defaults();
+        let mut context = KeyContext.new_with_defaults();
 
         let mut mode = match self.mode {
-            Mode::Normal => "normal",
-            Mode::Visual | Mode::VisualLine | Mode::VisualBlock => "visual",
-            Mode::Insert => "insert",
-            Mode::Replace => "replace",
+            Mode.Normal => "normal",
+            Mode.Visual | Mode.VisualLine | Mode.VisualBlock => "visual",
+            Mode.Insert => "insert",
+            Mode.Replace => "replace",
         }
         .to_string();
 
@@ -304,60 +304,60 @@ impl EditorState {
 impl Operator {
     pub fn id(&self) -> &'static str {
         match self {
-            Operator::Object { around: false } => "i",
-            Operator::Object { around: true } => "a",
-            Operator::Change => "c",
-            Operator::Delete => "d",
-            Operator::Yank => "y",
-            Operator::Replace => "r",
-            Operator::Digraph { .. } => "^K",
-            Operator::FindForward { before: false } => "f",
-            Operator::FindForward { before: true } => "t",
-            Operator::FindBackward { after: false } => "F",
-            Operator::FindBackward { after: true } => "T",
-            Operator::AddSurrounds { .. } => "ys",
-            Operator::ChangeSurrounds { .. } => "cs",
-            Operator::DeleteSurrounds => "ds",
-            Operator::Mark => "m",
-            Operator::Jump { line: true } => "'",
-            Operator::Jump { line: false } => "`",
-            Operator::Indent => ">",
-            Operator::Outdent => "<",
-            Operator::Uppercase => "gU",
-            Operator::Lowercase => "gu",
-            Operator::OppositeCase => "g~",
-            Operator::Register => "\"",
-            Operator::RecordRegister => "q",
-            Operator::ReplayRegister => "@",
-            Operator::ToggleComments => "gc",
+            Operator.Object { around: false } => "i",
+            Operator.Object { around: true } => "a",
+            Operator.Change => "c",
+            Operator.Delete => "d",
+            Operator.Yank => "y",
+            Operator.Replace => "r",
+            Operator.Digraph { .. } => "^K",
+            Operator.FindForward { before: false } => "f",
+            Operator.FindForward { before: true } => "t",
+            Operator.FindBackward { after: false } => "F",
+            Operator.FindBackward { after: true } => "T",
+            Operator.AddSurrounds { .. } => "ys",
+            Operator.ChangeSurrounds { .. } => "cs",
+            Operator.DeleteSurrounds => "ds",
+            Operator.Mark => "m",
+            Operator.Jump { line: true } => "'",
+            Operator.Jump { line: false } => "`",
+            Operator.Indent => ">",
+            Operator.Outdent => "<",
+            Operator.Uppercase => "gU",
+            Operator.Lowercase => "gu",
+            Operator.OppositeCase => "g~",
+            Operator.Register => "\"",
+            Operator.RecordRegister => "q",
+            Operator.ReplayRegister => "@",
+            Operator.ToggleComments => "gc",
         }
     }
 
     pub fn is_waiting(&self, mode: Mode) -> bool {
         match self {
-            Operator::AddSurrounds { target } => target.is_some() || mode.is_visual(),
-            Operator::FindForward { .. }
-            | Operator::Mark
-            | Operator::Jump { .. }
-            | Operator::FindBackward { .. }
-            | Operator::Register
-            | Operator::RecordRegister
-            | Operator::ReplayRegister
-            | Operator::Replace
-            | Operator::Digraph { .. }
-            | Operator::ChangeSurrounds { target: Some(_) }
-            | Operator::DeleteSurrounds => true,
-            Operator::Change
-            | Operator::Delete
-            | Operator::Yank
-            | Operator::Indent
-            | Operator::Outdent
-            | Operator::Lowercase
-            | Operator::Uppercase
-            | Operator::Object { .. }
-            | Operator::ChangeSurrounds { target: None }
-            | Operator::OppositeCase
-            | Operator::ToggleComments => false,
+            Operator.AddSurrounds { target } => target.is_some() || mode.is_visual(),
+            Operator.FindForward { .. }
+            | Operator.Mark
+            | Operator.Jump { .. }
+            | Operator.FindBackward { .. }
+            | Operator.Register
+            | Operator.RecordRegister
+            | Operator.ReplayRegister
+            | Operator.Replace
+            | Operator.Digraph { .. }
+            | Operator.ChangeSurrounds { target: Some(_) }
+            | Operator.DeleteSurrounds => true,
+            Operator.Change
+            | Operator.Delete
+            | Operator.Yank
+            | Operator.Indent
+            | Operator.Outdent
+            | Operator.Lowercase
+            | Operator.Uppercase
+            | Operator.Object { .. }
+            | Operator.ChangeSurrounds { target: None }
+            | Operator.OppositeCase
+            | Operator.ToggleComments => false,
         }
     }
 }

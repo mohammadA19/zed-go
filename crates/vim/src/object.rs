@@ -1,25 +1,25 @@
-use std::ops::Range;
+use std.ops.Range;
 
-use crate::{
-    motion::{coerce_punctuation, right},
-    normal::normal_object,
-    state::Mode,
-    visual::visual_object,
+use crate.{
+    motion.{coerce_punctuation, right},
+    normal.normal_object,
+    state.Mode,
+    visual.visual_object,
     Vim,
 };
-use editor::{
-    display_map::{DisplaySnapshot, ToDisplayPoint},
-    movement::{self, FindRange},
+use editor.{
+    display_map.{DisplaySnapshot, ToDisplayPoint},
+    movement.{self, FindRange},
     Bias, DisplayPoint,
 };
 
-use itertools::Itertools;
+use itertools.Itertools;
 
-use gpui::{actions, impl_actions, ViewContext, WindowContext};
-use language::{char_kind, BufferSnapshot, CharKind, Point, Selection};
-use multi_buffer::MultiBufferRow;
-use serde::Deserialize;
-use workspace::Workspace;
+use gpui.{actions, impl_actions, ViewContext, WindowContext};
+use language.{char_kind, BufferSnapshot, CharKind, Point, Selection};
+use multi_buffer.MultiBufferRow;
+use serde.Deserialize;
+use workspace.Workspace;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize)]
 pub enum Object {
@@ -68,44 +68,44 @@ actions!(
 pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
     workspace.register_action(
         |_: &mut Workspace, &Word { ignore_punctuation }: &Word, cx: _| {
-            object(Object::Word { ignore_punctuation }, cx)
+            object(Object.Word { ignore_punctuation }, cx)
         },
     );
-    workspace.register_action(|_: &mut Workspace, _: &Tag, cx: _| object(Object::Tag, cx));
+    workspace.register_action(|_: &mut Workspace, _: &Tag, cx: _| object(Object.Tag, cx));
     workspace
-        .register_action(|_: &mut Workspace, _: &Sentence, cx: _| object(Object::Sentence, cx));
+        .register_action(|_: &mut Workspace, _: &Sentence, cx: _| object(Object.Sentence, cx));
     workspace
-        .register_action(|_: &mut Workspace, _: &Paragraph, cx: _| object(Object::Paragraph, cx));
-    workspace.register_action(|_: &mut Workspace, _: &Quotes, cx: _| object(Object::Quotes, cx));
+        .register_action(|_: &mut Workspace, _: &Paragraph, cx: _| object(Object.Paragraph, cx));
+    workspace.register_action(|_: &mut Workspace, _: &Quotes, cx: _| object(Object.Quotes, cx));
     workspace
-        .register_action(|_: &mut Workspace, _: &BackQuotes, cx: _| object(Object::BackQuotes, cx));
+        .register_action(|_: &mut Workspace, _: &BackQuotes, cx: _| object(Object.BackQuotes, cx));
     workspace.register_action(|_: &mut Workspace, _: &DoubleQuotes, cx: _| {
-        object(Object::DoubleQuotes, cx)
+        object(Object.DoubleQuotes, cx)
     });
     workspace.register_action(|_: &mut Workspace, _: &Parentheses, cx: _| {
-        object(Object::Parentheses, cx)
+        object(Object.Parentheses, cx)
     });
     workspace.register_action(|_: &mut Workspace, _: &SquareBrackets, cx: _| {
-        object(Object::SquareBrackets, cx)
+        object(Object.SquareBrackets, cx)
     });
     workspace.register_action(|_: &mut Workspace, _: &CurlyBrackets, cx: _| {
-        object(Object::CurlyBrackets, cx)
+        object(Object.CurlyBrackets, cx)
     });
     workspace.register_action(|_: &mut Workspace, _: &AngleBrackets, cx: _| {
-        object(Object::AngleBrackets, cx)
+        object(Object.AngleBrackets, cx)
     });
     workspace.register_action(|_: &mut Workspace, _: &VerticalBars, cx: _| {
-        object(Object::VerticalBars, cx)
+        object(Object.VerticalBars, cx)
     });
     workspace
-        .register_action(|_: &mut Workspace, _: &Argument, cx: _| object(Object::Argument, cx));
+        .register_action(|_: &mut Workspace, _: &Argument, cx: _| object(Object.Argument, cx));
 }
 
 fn object(object: Object, cx: &mut WindowContext) {
-    match Vim::read(cx).state().mode {
-        Mode::Normal => normal_object(object, cx),
-        Mode::Visual | Mode::VisualLine | Mode::VisualBlock => visual_object(object, cx),
-        Mode::Insert | Mode::Replace => {
+    match Vim.read(cx).state().mode {
+        Mode.Normal => normal_object(object, cx),
+        Mode.Visual | Mode.VisualLine | Mode.VisualBlock => visual_object(object, cx),
+        Mode.Insert | Mode.Replace => {
             // Shouldn't execute a text object in insert mode. Ignoring
         }
     }
@@ -114,58 +114,58 @@ fn object(object: Object, cx: &mut WindowContext) {
 impl Object {
     pub fn is_multiline(self) -> bool {
         match self {
-            Object::Word { .. }
-            | Object::Quotes
-            | Object::BackQuotes
-            | Object::VerticalBars
-            | Object::DoubleQuotes => false,
-            Object::Sentence
-            | Object::Paragraph
-            | Object::Parentheses
-            | Object::Tag
-            | Object::AngleBrackets
-            | Object::CurlyBrackets
-            | Object::SquareBrackets
-            | Object::Argument => true,
+            Object.Word { .. }
+            | Object.Quotes
+            | Object.BackQuotes
+            | Object.VerticalBars
+            | Object.DoubleQuotes => false,
+            Object.Sentence
+            | Object.Paragraph
+            | Object.Parentheses
+            | Object.Tag
+            | Object.AngleBrackets
+            | Object.CurlyBrackets
+            | Object.SquareBrackets
+            | Object.Argument => true,
         }
     }
 
     pub fn always_expands_both_ways(self) -> bool {
         match self {
-            Object::Word { .. } | Object::Sentence | Object::Paragraph | Object::Argument => false,
-            Object::Quotes
-            | Object::BackQuotes
-            | Object::DoubleQuotes
-            | Object::VerticalBars
-            | Object::Parentheses
-            | Object::SquareBrackets
-            | Object::Tag
-            | Object::CurlyBrackets
-            | Object::AngleBrackets => true,
+            Object.Word { .. } | Object.Sentence | Object.Paragraph | Object.Argument => false,
+            Object.Quotes
+            | Object.BackQuotes
+            | Object.DoubleQuotes
+            | Object.VerticalBars
+            | Object.Parentheses
+            | Object.SquareBrackets
+            | Object.Tag
+            | Object.CurlyBrackets
+            | Object.AngleBrackets => true,
         }
     }
 
     pub fn target_visual_mode(self, current_mode: Mode) -> Mode {
         match self {
-            Object::Word { .. }
-            | Object::Sentence
-            | Object::Quotes
-            | Object::BackQuotes
-            | Object::DoubleQuotes => {
-                if current_mode == Mode::VisualBlock {
-                    Mode::VisualBlock
+            Object.Word { .. }
+            | Object.Sentence
+            | Object.Quotes
+            | Object.BackQuotes
+            | Object.DoubleQuotes => {
+                if current_mode == Mode.VisualBlock {
+                    Mode.VisualBlock
                 } else {
-                    Mode::Visual
+                    Mode.Visual
                 }
             }
-            Object::Parentheses
-            | Object::SquareBrackets
-            | Object::CurlyBrackets
-            | Object::AngleBrackets
-            | Object::VerticalBars
-            | Object::Tag
-            | Object::Argument => Mode::Visual,
-            Object::Paragraph => Mode::VisualLine,
+            Object.Parentheses
+            | Object.SquareBrackets
+            | Object.CurlyBrackets
+            | Object.AngleBrackets
+            | Object.VerticalBars
+            | Object.Tag
+            | Object.Argument => Mode.Visual,
+            Object.Paragraph => Mode.VisualLine,
         }
     }
 
@@ -177,41 +177,41 @@ impl Object {
     ) -> Option<Range<DisplayPoint>> {
         let relative_to = selection.head();
         match self {
-            Object::Word { ignore_punctuation } => {
+            Object.Word { ignore_punctuation } => {
                 if around {
                     around_word(map, relative_to, ignore_punctuation)
                 } else {
                     in_word(map, relative_to, ignore_punctuation)
                 }
             }
-            Object::Sentence => sentence(map, relative_to, around),
-            Object::Paragraph => paragraph(map, relative_to, around),
-            Object::Quotes => {
+            Object.Sentence => sentence(map, relative_to, around),
+            Object.Paragraph => paragraph(map, relative_to, around),
+            Object.Quotes => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '\'', '\'')
             }
-            Object::BackQuotes => {
+            Object.BackQuotes => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '`', '`')
             }
-            Object::DoubleQuotes => {
+            Object.DoubleQuotes => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '"', '"')
             }
-            Object::VerticalBars => {
+            Object.VerticalBars => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '|', '|')
             }
-            Object::Parentheses => {
+            Object.Parentheses => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '(', ')')
             }
-            Object::Tag => surrounding_html_tag(map, selection, around),
-            Object::SquareBrackets => {
+            Object.Tag => surrounding_html_tag(map, selection, around),
+            Object.SquareBrackets => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '[', ']')
             }
-            Object::CurlyBrackets => {
+            Object.CurlyBrackets => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '{', '}')
             }
-            Object::AngleBrackets => {
+            Object.AngleBrackets => {
                 surrounding_markers(map, relative_to, around, self.is_multiline(), '<', '>')
             }
-            Object::Argument => argument(map, relative_to, around),
+            Object.Argument => argument(map, relative_to, around),
         }
     }
 
@@ -240,21 +240,21 @@ fn in_word(
     relative_to: DisplayPoint,
     ignore_punctuation: bool,
 ) -> Option<Range<DisplayPoint>> {
-    // Use motion::right so that we consider the character under the cursor when looking for the start
+    // Use motion.right so that we consider the character under the cursor when looking for the start
     let scope = map
         .buffer_snapshot
         .language_scope_at(relative_to.to_point(map));
-    let start = movement::find_preceding_boundary_display_point(
+    let start = movement.find_preceding_boundary_display_point(
         map,
         right(map, relative_to, 1),
-        movement::FindRange::SingleLine,
+        movement.FindRange.SingleLine,
         |left, right| {
             coerce_punctuation(char_kind(&scope, left), ignore_punctuation)
                 != coerce_punctuation(char_kind(&scope, right), ignore_punctuation)
         },
     );
 
-    let end = movement::find_boundary(map, relative_to, FindRange::SingleLine, |left, right| {
+    let end = movement.find_boundary(map, relative_to, FindRange.SingleLine, |left, right| {
         coerce_punctuation(char_kind(&scope, left), ignore_punctuation)
             != coerce_punctuation(char_kind(&scope, right), ignore_punctuation)
     });
@@ -286,7 +286,7 @@ fn surrounding_html_tag(
     }
 
     let snapshot = &map.buffer_snapshot;
-    let offset = selection.head().to_offset(map, Bias::Left);
+    let offset = selection.head().to_offset(map, Bias.Left);
     let excerpt = snapshot.excerpt_containing(offset..offset)?;
     let buffer = excerpt.buffer();
     let offset = excerpt.map_offset_to_buffer(offset);
@@ -307,14 +307,14 @@ fn surrounding_html_tag(
                 let open_tag = open_tag(buffer.chars_for_range(first_child.byte_range()));
                 let close_tag = close_tag(buffer.chars_for_range(last_child.byte_range()));
                 // It needs to be handled differently according to the selection length
-                let is_valid = if selection.end.to_offset(map, Bias::Left)
-                    - selection.start.to_offset(map, Bias::Left)
+                let is_valid = if selection.end.to_offset(map, Bias.Left)
+                    - selection.start.to_offset(map, Bias.Left)
                     <= 1
                 {
                     offset <= last_child.end_byte()
                 } else {
-                    selection.start.to_offset(map, Bias::Left) >= first_child.start_byte()
-                        && selection.end.to_offset(map, Bias::Left) <= last_child.start_byte() + 1
+                    selection.start.to_offset(map, Bias.Left) >= first_child.start_byte()
+                        && selection.end.to_offset(map, Bias.Left) <= last_child.start_byte() + 1
                 };
                 if open_tag.is_some() && open_tag == close_tag && is_valid {
                     let range = if around {
@@ -354,12 +354,12 @@ fn around_word(
     relative_to: DisplayPoint,
     ignore_punctuation: bool,
 ) -> Option<Range<DisplayPoint>> {
-    let offset = relative_to.to_offset(map, Bias::Left);
+    let offset = relative_to.to_offset(map, Bias.Left);
     let scope = map.buffer_snapshot.language_scope_at(offset);
     let in_word = map
         .buffer_chars_at(offset)
         .next()
-        .map(|(c, _)| char_kind(&scope, c) != CharKind::Whitespace)
+        .map(|(c, _)| char_kind(&scope, c) != CharKind.Whitespace)
         .unwrap_or(false);
 
     if in_word {
@@ -387,10 +387,10 @@ fn around_next_word(
         .buffer_snapshot
         .language_scope_at(relative_to.to_point(map));
     // Get the start of the word
-    let start = movement::find_preceding_boundary_display_point(
+    let start = movement.find_preceding_boundary_display_point(
         map,
         right(map, relative_to, 1),
-        FindRange::SingleLine,
+        FindRange.SingleLine,
         |left, right| {
             coerce_punctuation(char_kind(&scope, left), ignore_punctuation)
                 != coerce_punctuation(char_kind(&scope, right), ignore_punctuation)
@@ -398,13 +398,13 @@ fn around_next_word(
     );
 
     let mut word_found = false;
-    let end = movement::find_boundary(map, relative_to, FindRange::MultiLine, |left, right| {
+    let end = movement.find_boundary(map, relative_to, FindRange.MultiLine, |left, right| {
         let left_kind = coerce_punctuation(char_kind(&scope, left), ignore_punctuation);
         let right_kind = coerce_punctuation(char_kind(&scope, right), ignore_punctuation);
 
         let found = (word_found && left_kind != right_kind) || right == '\n' && left == '\n';
 
-        if right_kind != CharKind::Whitespace {
+        if right_kind != CharKind.Whitespace {
             word_found = true;
         }
 
@@ -420,7 +420,7 @@ fn argument(
     around: bool,
 ) -> Option<Range<DisplayPoint>> {
     let snapshot = &map.buffer_snapshot;
-    let offset = relative_to.to_offset(map, Bias::Left);
+    let offset = relative_to.to_offset(map, Bias.Left);
 
     // The `argument` vim text object uses the syntax tree, so we operate at the buffer level and map back to the display level
     let excerpt = snapshot.excerpt_containing(offset..offset)?;
@@ -435,8 +435,8 @@ fn argument(
         offset += buffer
             .chars_at(offset)
             .take_while(|c| c.is_whitespace())
-            .map(char::len_utf8)
-            .sum::<usize>();
+            .map(char.len_utf8)
+            .sum.<usize>();
 
         let bracket_filter = |open: Range<usize>, close: Range<usize>| {
             // Filter out empty ranges
@@ -571,7 +571,7 @@ fn sentence(
     around: bool,
 ) -> Option<Range<DisplayPoint>> {
     let mut start = None;
-    let relative_offset = relative_to.to_offset(map, Bias::Left);
+    let relative_offset = relative_to.to_offset(map, Bias.Left);
     let mut previous_end = relative_offset;
 
     let mut chars = map.buffer_chars_at(previous_end).peekable();
@@ -665,7 +665,7 @@ fn expand_to_include_whitespace(
     range: Range<DisplayPoint>,
     stop_at_newline: bool,
 ) -> Range<DisplayPoint> {
-    let mut range = range.start.to_offset(map, Bias::Left)..range.end.to_offset(map, Bias::Right);
+    let mut range = range.start.to_offset(map, Bias.Left)..range.end.to_offset(map, Bias.Right);
     let mut whitespace_included = false;
 
     let mut chars = map.buffer_chars_at(range.end).peekable();
@@ -739,11 +739,11 @@ fn paragraph(
             let paragraph_start_row = paragraph_start.row();
             if paragraph_start_row.0 != 0 {
                 let previous_paragraph_last_line_start =
-                    Point::new(paragraph_start_row.0 - 1, 0).to_display_point(map);
+                    Point.new(paragraph_start_row.0 - 1, 0).to_display_point(map);
                 paragraph_start = start_of_paragraph(map, previous_paragraph_last_line_start);
             }
         } else {
-            let next_paragraph_start = Point::new(paragraph_end_row.0 + 1, 0).to_display_point(map);
+            let next_paragraph_start = Point.new(paragraph_end_row.0 + 1, 0).to_display_point(map);
             paragraph_end = end_of_paragraph(map, next_paragraph_start);
         }
     }
@@ -757,7 +757,7 @@ fn paragraph(
 pub fn start_of_paragraph(map: &DisplaySnapshot, display_point: DisplayPoint) -> DisplayPoint {
     let point = display_point.to_point(map);
     if point.row == 0 {
-        return DisplayPoint::zero();
+        return DisplayPoint.zero();
     }
 
     let is_current_line_blank = map.buffer_snapshot.is_line_blank(MultiBufferRow(point.row));
@@ -765,11 +765,11 @@ pub fn start_of_paragraph(map: &DisplaySnapshot, display_point: DisplayPoint) ->
     for row in (0..point.row).rev() {
         let blank = map.buffer_snapshot.is_line_blank(MultiBufferRow(row));
         if blank != is_current_line_blank {
-            return Point::new(row + 1, 0).to_display_point(map);
+            return Point.new(row + 1, 0).to_display_point(map);
         }
     }
 
-    DisplayPoint::zero()
+    DisplayPoint.zero()
 }
 
 /// Returns a position of the end of the current paragraph, where a paragraph
@@ -787,7 +787,7 @@ pub fn end_of_paragraph(map: &DisplaySnapshot, display_point: DisplayPoint) -> D
         let blank = map.buffer_snapshot.is_line_blank(MultiBufferRow(row));
         if blank != is_current_line_blank {
             let previous_row = row - 1;
-            return Point::new(
+            return Point.new(
                 previous_row,
                 map.buffer_snapshot.line_len(MultiBufferRow(previous_row)),
             )
@@ -806,20 +806,20 @@ fn surrounding_markers(
     open_marker: char,
     close_marker: char,
 ) -> Option<Range<DisplayPoint>> {
-    let point = relative_to.to_offset(map, Bias::Left);
+    let point = relative_to.to_offset(map, Bias.Left);
 
     let mut matched_closes = 0;
     let mut opening = None;
 
-    let mut before_ch = match movement::chars_before(map, point).next() {
+    let mut before_ch = match movement.chars_before(map, point).next() {
         Some((ch, _)) => ch,
         _ => '\0',
     };
-    if let Some((ch, range)) = movement::chars_after(map, point).next() {
+    if let Some((ch, range)) = movement.chars_after(map, point).next() {
         if ch == open_marker && before_ch != '\\' {
             if open_marker == close_marker {
                 let mut total = 0;
-                for ((ch, _), (before_ch, _)) in movement::chars_before(map, point).tuple_windows()
+                for ((ch, _), (before_ch, _)) in movement.chars_before(map, point).tuple_windows()
                 {
                     if ch == '\n' {
                         break;
@@ -838,7 +838,7 @@ fn surrounding_markers(
     }
 
     if opening.is_none() {
-        let mut chars_before = movement::chars_before(map, point).peekable();
+        let mut chars_before = movement.chars_before(map, point).peekable();
         while let Some((ch, range)) = chars_before.next() {
             if ch == '\n' && !search_across_lines {
                 break;
@@ -862,7 +862,7 @@ fn surrounding_markers(
         }
     }
     if opening.is_none() {
-        for (ch, range) in movement::chars_after(map, point) {
+        for (ch, range) in movement.chars_after(map, point) {
             if before_ch != '\\' {
                 if ch == open_marker {
                     opening = Some(range);
@@ -882,11 +882,11 @@ fn surrounding_markers(
 
     let mut matched_opens = 0;
     let mut closing = None;
-    before_ch = match movement::chars_before(map, opening.end).next() {
+    before_ch = match movement.chars_before(map, opening.end).next() {
         Some((ch, _)) => ch,
         _ => '\0',
     };
-    for (ch, range) in movement::chars_after(map, opening.end) {
+    for (ch, range) in movement.chars_after(map, opening.end) {
         if ch == '\n' && !search_across_lines {
             break;
         }
@@ -913,7 +913,7 @@ fn surrounding_markers(
     if around && !search_across_lines {
         let mut found = false;
 
-        for (ch, range) in movement::chars_after(map, closing.end) {
+        for (ch, range) in movement.chars_after(map, closing.end) {
             if ch.is_whitespace() && ch != '\n' {
                 found = true;
                 closing.end = range.end;
@@ -923,7 +923,7 @@ fn surrounding_markers(
         }
 
         if !found {
-            for (ch, range) in movement::chars_before(map, opening.start) {
+            for (ch, range) in movement.chars_before(map, opening.start) {
                 if ch.is_whitespace() && ch != '\n' {
                     opening.start = range.start
                 } else {
@@ -934,13 +934,13 @@ fn surrounding_markers(
     }
 
     if !around && search_across_lines {
-        if let Some((ch, range)) = movement::chars_after(map, opening.end).next() {
+        if let Some((ch, range)) = movement.chars_after(map, opening.end).next() {
             if ch == '\n' {
                 opening.end = range.end
             }
         }
 
-        for (ch, range) in movement::chars_before(map, closing.start) {
+        for (ch, range) in movement.chars_before(map, closing.start) {
             if !ch.is_whitespace() {
                 break;
             }
@@ -957,18 +957,18 @@ fn surrounding_markers(
     };
 
     Some(
-        map.clip_point(result.start.to_display_point(map), Bias::Left)
-            ..map.clip_point(result.end.to_display_point(map), Bias::Right),
+        map.clip_point(result.start.to_display_point(map), Bias.Left)
+            ..map.clip_point(result.end.to_display_point(map), Bias.Right),
     )
 }
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
+    use indoc.indoc;
 
-    use crate::{
-        state::Mode,
-        test::{NeovimBackedTestContext, VimTestContext},
+    use crate.{
+        state.Mode,
+        test.{NeovimBackedTestContext, VimTestContext},
     };
 
     const WORD_LOCATIONS: &str = indoc! {"
@@ -987,9 +987,9 @@ mod test {
         "
     };
 
-    #[gpui::test]
-    async fn test_change_word_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_word_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.simulate_at_each_offset("c i w", WORD_LOCATIONS)
             .await
@@ -1005,9 +1005,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_word_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_word_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.simulate_at_each_offset("d i w", WORD_LOCATIONS)
             .await
@@ -1023,9 +1023,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_visual_word_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_word_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         /*
                 cx.set_shared_state("The quick ˇbrown\nfox").await;
@@ -1107,9 +1107,9 @@ mod test {
         "},
     ];
 
-    #[gpui::test]
-    async fn test_change_paragraph_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_paragraph_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for paragraph_example in PARAGRAPH_EXAMPLES {
             cx.simulate_at_each_offset("c i p", paragraph_example)
@@ -1121,9 +1121,9 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_delete_paragraph_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_paragraph_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for paragraph_example in PARAGRAPH_EXAMPLES {
             cx.simulate_at_each_offset("d i p", paragraph_example)
@@ -1135,9 +1135,9 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_visual_paragraph_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_paragraph_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         const EXAMPLES: &[&'static str] = &[
             indoc! {"
@@ -1184,9 +1184,9 @@ mod test {
         ('(', ')'), // Parentheses
     ];
 
-    #[gpui::test]
-    async fn test_change_surrounding_character_objects(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_surrounding_character_objects(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for (start, end) in SURROUNDING_OBJECTS {
             let marked_string = SURROUNDING_MARKER_STRING
@@ -1207,9 +1207,9 @@ mod test {
                 .assert_matches();
         }
     }
-    #[gpui::test]
-    async fn test_singleline_surrounding_character_objects(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_singleline_surrounding_character_objects(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.set_shared_wrap(12).await;
 
         cx.set_shared_state(indoc! {
@@ -1278,9 +1278,9 @@ mod test {
         });
     }
 
-    #[gpui::test]
-    async fn test_multiline_surrounding_character_objects(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_multiline_surrounding_character_objects(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "func empty(a string) bool {
@@ -1336,11 +1336,11 @@ mod test {
             }"});
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_singleline_surrounding_character_objects_with_escape(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut gpui.TestAppContext,
     ) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.set_shared_state(indoc! {
             "h\"e\\\"lˇlo \\\"world\"!"
         })
@@ -1360,16 +1360,16 @@ mod test {
         });
     }
 
-    #[gpui::test]
-    async fn test_vertical_bars(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_vertical_bars(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.set_state(
             indoc! {"
             fn boop() {
                 baz(ˇ|a, b| { bar(|j, k| { })})
             }"
             },
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("c i |");
         cx.assert_state(
@@ -1378,7 +1378,7 @@ mod test {
                 baz(|ˇ| { bar(|j, k| { })})
             }"
             },
-            Mode::Insert,
+            Mode.Insert,
         );
         cx.simulate_keystrokes("escape 1 8 |");
         cx.assert_state(
@@ -1387,7 +1387,7 @@ mod test {
                 baz(|| { bar(ˇ|j, k| { })})
             }"
             },
-            Mode::Normal,
+            Mode.Normal,
         );
 
         cx.simulate_keystrokes("v a |");
@@ -1397,70 +1397,70 @@ mod test {
                 baz(|| { bar(«|j, k| ˇ»{ })})
             }"
             },
-            Mode::Visual,
+            Mode.Visual,
         );
     }
 
-    #[gpui::test]
-    async fn test_argument_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_argument_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
 
         // Generic arguments
-        cx.set_state("fn boop<A: ˇDebug, B>() {}", Mode::Normal);
+        cx.set_state("fn boop<A: ˇDebug, B>() {}", Mode.Normal);
         cx.simulate_keystrokes("v i a");
-        cx.assert_state("fn boop<«A: Debugˇ», B>() {}", Mode::Visual);
+        cx.assert_state("fn boop<«A: Debugˇ», B>() {}", Mode.Visual);
 
         // Function arguments
         cx.set_state(
             "fn boop(ˇarg_a: (Tuple, Of, Types), arg_b: String) {}",
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("d a a");
-        cx.assert_state("fn boop(ˇarg_b: String) {}", Mode::Normal);
+        cx.assert_state("fn boop(ˇarg_b: String) {}", Mode.Normal);
 
-        cx.set_state("std::namespace::test(\"strinˇg\", a.b.c())", Mode::Normal);
+        cx.set_state("std.namespace.test(\"strinˇg\", a.b.c())", Mode.Normal);
         cx.simulate_keystrokes("v a a");
-        cx.assert_state("std::namespace::test(«\"string\", ˇ»a.b.c())", Mode::Visual);
+        cx.assert_state("std.namespace.test(«\"string\", ˇ»a.b.c())", Mode.Visual);
 
         // Tuple, vec, and array arguments
         cx.set_state(
             "fn boop(arg_a: (Tuple, Ofˇ, Types), arg_b: String) {}",
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("c i a");
         cx.assert_state(
             "fn boop(arg_a: (Tuple, ˇ, Types), arg_b: String) {}",
-            Mode::Insert,
+            Mode.Insert,
         );
 
-        cx.set_state("let a = (test::call(), 'p', my_macro!{ˇ});", Mode::Normal);
+        cx.set_state("let a = (test.call(), 'p', my_macro!{ˇ});", Mode.Normal);
         cx.simulate_keystrokes("c a a");
-        cx.assert_state("let a = (test::call(), 'p'ˇ);", Mode::Insert);
+        cx.assert_state("let a = (test.call(), 'p'ˇ);", Mode.Insert);
 
-        cx.set_state("let a = [test::call(ˇ), 300];", Mode::Normal);
+        cx.set_state("let a = [test.call(ˇ), 300];", Mode.Normal);
         cx.simulate_keystrokes("c i a");
-        cx.assert_state("let a = [ˇ, 300];", Mode::Insert);
+        cx.assert_state("let a = [ˇ, 300];", Mode.Insert);
 
         cx.set_state(
-            "let a = vec![Vec::new(), vecˇ![test::call(), 300]];",
-            Mode::Normal,
+            "let a = vec![Vec.new(), vecˇ![test.call(), 300]];",
+            Mode.Normal,
         );
         cx.simulate_keystrokes("c a a");
-        cx.assert_state("let a = vec![Vec::new()ˇ];", Mode::Insert);
+        cx.assert_state("let a = vec![Vec.new()ˇ];", Mode.Insert);
 
         // Cursor immediately before / after brackets
-        cx.set_state("let a = [test::call(first_arg)ˇ]", Mode::Normal);
+        cx.set_state("let a = [test.call(first_arg)ˇ]", Mode.Normal);
         cx.simulate_keystrokes("v i a");
-        cx.assert_state("let a = [«test::call(first_arg)ˇ»]", Mode::Visual);
+        cx.assert_state("let a = [«test.call(first_arg)ˇ»]", Mode.Visual);
 
-        cx.set_state("let a = [test::callˇ(first_arg)]", Mode::Normal);
+        cx.set_state("let a = [test.callˇ(first_arg)]", Mode.Normal);
         cx.simulate_keystrokes("v i a");
-        cx.assert_state("let a = [«test::call(first_arg)ˇ»]", Mode::Visual);
+        cx.assert_state("let a = [«test.call(first_arg)ˇ»]", Mode.Visual);
     }
 
-    #[gpui::test]
-    async fn test_delete_surrounding_character_objects(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_surrounding_character_objects(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for (start, end) in SURROUNDING_OBJECTS {
             let marked_string = SURROUNDING_MARKER_STRING
@@ -1482,83 +1482,83 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_tags(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new_html(cx).await;
+    #[gpui.test]
+    async fn test_tags(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new_html(cx).await;
 
-        cx.set_state("<html><head></head><body><b>hˇi!</b></body>", Mode::Normal);
+        cx.set_state("<html><head></head><body><b>hˇi!</b></body>", Mode.Normal);
         cx.simulate_keystrokes("v i t");
         cx.assert_state(
             "<html><head></head><body><b>«hi!ˇ»</b></body>",
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("a t");
         cx.assert_state(
             "<html><head></head><body>«<b>hi!</b>ˇ»</body>",
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("a t");
         cx.assert_state(
             "<html><head></head>«<body><b>hi!</b></body>ˇ»",
-            Mode::Visual,
+            Mode.Visual,
         );
 
         // The cursor is before the tag
         cx.set_state(
             "<html><head></head><body> ˇ  <b>hi!</b></body>",
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("v i t");
         cx.assert_state(
             "<html><head></head><body>   <b>«hi!ˇ»</b></body>",
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("a t");
         cx.assert_state(
             "<html><head></head><body>   «<b>hi!</b>ˇ»</body>",
-            Mode::Visual,
+            Mode.Visual,
         );
 
         // The cursor is in the open tag
         cx.set_state(
             "<html><head></head><body><bˇ>hi!</b><b>hello!</b></body>",
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("v a t");
         cx.assert_state(
             "<html><head></head><body>«<b>hi!</b>ˇ»<b>hello!</b></body>",
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("i t");
         cx.assert_state(
             "<html><head></head><body>«<b>hi!</b><b>hello!</b>ˇ»</body>",
-            Mode::Visual,
+            Mode.Visual,
         );
 
         // current selection length greater than 1
         cx.set_state(
             "<html><head></head><body><«b>hi!ˇ»</b></body>",
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("i t");
         cx.assert_state(
             "<html><head></head><body><b>«hi!ˇ»</b></body>",
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("a t");
         cx.assert_state(
             "<html><head></head><body>«<b>hi!</b>ˇ»</body>",
-            Mode::Visual,
+            Mode.Visual,
         );
 
         cx.set_state(
             "<html><head></head><body><«b>hi!</ˇ»b></body>",
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("a t");
         cx.assert_state(
             "<html><head></head>«<body><b>hi!</b></body>ˇ»",
-            Mode::Visual,
+            Mode.Visual,
         );
     }
 }

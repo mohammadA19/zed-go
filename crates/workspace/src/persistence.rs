@@ -1,60 +1,60 @@
 pub mod model;
 
-use std::path::Path;
+use std.path.Path;
 
-use anyhow::{anyhow, bail, Context, Result};
-use client::DevServerProjectId;
-use db::{define_connection, query, sqlez::connection::Connection, sqlez_macros::sql};
-use gpui::{point, size, Axis, Bounds, WindowBounds, WindowId};
+use anyhow.{anyhow, bail, Context, Result};
+use client.DevServerProjectId;
+use db.{define_connection, query, sqlez.connection.Connection, sqlez_macros.sql};
+use gpui.{point, size, Axis, Bounds, WindowBounds, WindowId};
 
-use sqlez::{
-    bindable::{Bind, Column, StaticColumnCount},
-    statement::Statement,
+use sqlez.{
+    bindable.{Bind, Column, StaticColumnCount},
+    statement.Statement,
 };
 
-use ui::px;
-use util::ResultExt;
-use uuid::Uuid;
+use ui.px;
+use util.ResultExt;
+use uuid.Uuid;
 
-use crate::WorkspaceId;
+use crate.WorkspaceId;
 
-use model::{
+use model.{
     GroupId, LocalPaths, PaneId, SerializedItem, SerializedPane, SerializedPaneGroup,
     SerializedWorkspace,
 };
 
-use self::model::{
+use self.model.{
     DockStructure, LocalPathsOrder, SerializedDevServerProject, SerializedWorkspaceLocation,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) struct SerializedAxis(pub(crate) gpui::Axis);
-impl sqlez::bindable::StaticColumnCount for SerializedAxis {}
-impl sqlez::bindable::Bind for SerializedAxis {
+pub(crate) struct SerializedAxis(pub(crate) gpui.Axis);
+impl sqlez.bindable.StaticColumnCount for SerializedAxis {}
+impl sqlez.bindable.Bind for SerializedAxis {
     fn bind(
         &self,
-        statement: &sqlez::statement::Statement,
+        statement: &sqlez.statement.Statement,
         start_index: i32,
-    ) -> anyhow::Result<i32> {
+    ) -> anyhow.Result<i32> {
         match self.0 {
-            gpui::Axis::Horizontal => "Horizontal",
-            gpui::Axis::Vertical => "Vertical",
+            gpui.Axis.Horizontal => "Horizontal",
+            gpui.Axis.Vertical => "Vertical",
         }
         .bind(statement, start_index)
     }
 }
 
-impl sqlez::bindable::Column for SerializedAxis {
+impl sqlez.bindable.Column for SerializedAxis {
     fn column(
-        statement: &mut sqlez::statement::Statement,
+        statement: &mut sqlez.statement.Statement,
         start_index: i32,
-    ) -> anyhow::Result<(Self, i32)> {
-        String::column(statement, start_index).and_then(|(axis_text, next_index)| {
+    ) -> anyhow.Result<(Self, i32)> {
+        String.column(statement, start_index).and_then(|(axis_text, next_index)| {
             Ok((
                 match axis_text.as_str() {
-                    "Horizontal" => Self(Axis::Horizontal),
-                    "Vertical" => Self(Axis::Vertical),
-                    _ => anyhow::bail!("Stored serialized item kind is incorrect"),
+                    "Horizontal" => Self(Axis.Horizontal),
+                    "Vertical" => Self(Axis.Vertical),
+                    _ => anyhow.bail!("Stored serialized item kind is incorrect"),
                 },
                 next_index,
             ))
@@ -74,7 +74,7 @@ impl StaticColumnCount for SerializedWindowBounds {
 impl Bind for SerializedWindowBounds {
     fn bind(&self, statement: &Statement, start_index: i32) -> Result<i32> {
         match self.0 {
-            WindowBounds::Windowed(bounds) => {
+            WindowBounds.Windowed(bounds) => {
                 let next_index = statement.bind(&"Windowed", start_index)?;
                 statement.bind(
                     &(
@@ -86,7 +86,7 @@ impl Bind for SerializedWindowBounds {
                     next_index,
                 )
             }
-            WindowBounds::Maximized(bounds) => {
+            WindowBounds.Maximized(bounds) => {
                 let next_index = statement.bind(&"Maximized", start_index)?;
                 statement.bind(
                     &(
@@ -98,7 +98,7 @@ impl Bind for SerializedWindowBounds {
                     next_index,
                 )
             }
-            WindowBounds::Fullscreen(bounds) => {
+            WindowBounds.Fullscreen(bounds) => {
                 let next_index = statement.bind(&"FullScreen", start_index)?;
                 statement.bind(
                     &(
@@ -116,18 +116,18 @@ impl Bind for SerializedWindowBounds {
 
 impl Column for SerializedWindowBounds {
     fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
-        let (window_state, next_index) = String::column(statement, start_index)?;
+        let (window_state, next_index) = String.column(statement, start_index)?;
         let ((x, y, width, height), _): ((i32, i32, i32, i32), _) =
-            Column::column(statement, next_index)?;
+            Column.column(statement, next_index)?;
         let bounds = Bounds {
             origin: point(px(x as f32), px(y as f32)),
             size: size(px(width as f32), px(height as f32)),
         };
 
         let status = match window_state.as_str() {
-            "Windowed" | "Fixed" => SerializedWindowBounds(WindowBounds::Windowed(bounds)),
-            "Maximized" => SerializedWindowBounds(WindowBounds::Maximized(bounds)),
-            "FullScreen" => SerializedWindowBounds(WindowBounds::Fullscreen(bounds)),
+            "Windowed" | "Fixed" => SerializedWindowBounds(WindowBounds.Windowed(bounds)),
+            "Maximized" => SerializedWindowBounds(WindowBounds.Maximized(bounds)),
+            "FullScreen" => SerializedWindowBounds(WindowBounds.Fullscreen(bounds)),
             _ => bail!("Window State did not have a valid string"),
         };
 
@@ -136,15 +136,15 @@ impl Column for SerializedWindowBounds {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct SerializedPixels(gpui::Pixels);
-impl sqlez::bindable::StaticColumnCount for SerializedPixels {}
+struct SerializedPixels(gpui.Pixels);
+impl sqlez.bindable.StaticColumnCount for SerializedPixels {}
 
-impl sqlez::bindable::Bind for SerializedPixels {
+impl sqlez.bindable.Bind for SerializedPixels {
     fn bind(
         &self,
-        statement: &sqlez::statement::Statement,
+        statement: &sqlez.statement.Statement,
         start_index: i32,
-    ) -> anyhow::Result<i32> {
+    ) -> anyhow.Result<i32> {
         let this: i32 = self.0 .0 as i32;
         this.bind(statement, start_index)
     }
@@ -163,10 +163,10 @@ define_connection! {
     //   left_sidebar_open: boolean,
     //   timestamp: String, // UTC YYYY-MM-DD HH:MM:SS
     //   window_state: String, // WindowBounds Discriminant
-    //   window_x: Option<f32>, // WindowBounds::Fixed RectF x
-    //   window_y: Option<f32>, // WindowBounds::Fixed RectF y
-    //   window_width: Option<f32>, // WindowBounds::Fixed RectF width
-    //   window_height: Option<f32>, // WindowBounds::Fixed RectF height
+    //   window_x: Option<f32>, // WindowBounds.Fixed RectF x
+    //   window_y: Option<f32>, // WindowBounds.Fixed RectF y
+    //   window_width: Option<f32>, // WindowBounds.Fixed RectF width
+    //   window_height: Option<f32>, // WindowBounds.Fixed RectF height
     //   display: Option<Uuid>, // Display id
     //   fullscreen: Option<bool>, // Is the window fullscreen?
     //   centered_layout: Option<bool>, // Is the Centered Layout mode activated?
@@ -363,7 +363,7 @@ impl WorkspaceDb {
         &self,
         worktree_roots: &[P],
     ) -> Option<SerializedWorkspace> {
-        let local_paths = LocalPaths::new(worktree_roots);
+        let local_paths = LocalPaths.new(worktree_roots);
 
         // Note that we re-assign the workspace_id here in case it's empty
         // and we've grabbed the most recent workspace
@@ -430,13 +430,13 @@ impl WorkspaceDb {
                 .context("No remote project found")
                 .warn_on_err()
                 .flatten()?;
-            SerializedWorkspaceLocation::DevServer(dev_server_project)
+            SerializedWorkspaceLocation.DevServer(dev_server_project)
         } else if let Some(local_paths) = local_paths {
             match local_paths_order {
-                Some(order) => SerializedWorkspaceLocation::Local(local_paths, order),
+                Some(order) => SerializedWorkspaceLocation.Local(local_paths, order),
                 None => {
-                    let order = LocalPathsOrder::default_for_paths(&local_paths);
-                    SerializedWorkspaceLocation::Local(local_paths, order)
+                    let order = LocalPathsOrder.default_for_paths(&local_paths);
+                    SerializedWorkspaceLocation.Local(local_paths, order)
                 }
             }
         } else {
@@ -528,13 +528,13 @@ impl WorkspaceDb {
                 .context("No remote project found")
                 .warn_on_err()
                 .flatten()?;
-            SerializedWorkspaceLocation::DevServer(dev_server_project)
+            SerializedWorkspaceLocation.DevServer(dev_server_project)
         } else if let Some(local_paths) = local_paths {
             match local_paths_order {
-                Some(order) => SerializedWorkspaceLocation::Local(local_paths, order),
+                Some(order) => SerializedWorkspaceLocation.Local(local_paths, order),
                 None => {
-                    let order = LocalPathsOrder::default_for_paths(&local_paths);
-                    SerializedWorkspaceLocation::Local(local_paths, order)
+                    let order = LocalPathsOrder.default_for_paths(&local_paths);
+                    SerializedWorkspaceLocation.Local(local_paths, order)
                 }
             }
         } else {
@@ -569,7 +569,7 @@ impl WorkspaceDb {
                 .context("Clearing old panes")?;
 
                 match workspace.location {
-                    SerializedWorkspaceLocation::Local(local_paths, local_paths_order) => {
+                    SerializedWorkspaceLocation.Local(local_paths, local_paths_order) => {
                         conn.exec_bound(sql!(
                             DELETE FROM workspaces WHERE local_paths = ? AND workspace_id != ?
                         ))?((&local_paths, workspace.id))
@@ -617,7 +617,7 @@ impl WorkspaceDb {
 
                         prepared_query(args).context("Updating workspace")?;
                     }
-                    SerializedWorkspaceLocation::DevServer(dev_server_project) => {
+                    SerializedWorkspaceLocation.DevServer(dev_server_project) => {
                         conn.exec_bound(sql!(
                             DELETE FROM workspaces WHERE dev_server_project_id = ? AND workspace_id != ?
                         ))?((dev_server_project.id.0, workspace.id))
@@ -675,7 +675,7 @@ impl WorkspaceDb {
                 }
 
                 // Save center pane group
-                Self::save_pane_group(conn, workspace.id, &workspace.center_group, None)
+                Self.save_pane_group(conn, workspace.id, &workspace.center_group, None)
                     .context("save pane group in save workspace")?;
 
                 Ok(())
@@ -718,9 +718,9 @@ impl WorkspaceDb {
 
     pub(crate) fn last_window(
         &self,
-    ) -> anyhow::Result<(Option<Uuid>, Option<SerializedWindowBounds>)> {
+    ) -> anyhow.Result<(Option<Uuid>, Option<SerializedWindowBounds>)> {
         let mut prepared_query =
-            self.select::<(Option<Uuid>, Option<SerializedWindowBounds>)>(sql!(
+            self.select.<(Option<Uuid>, Option<SerializedWindowBounds>)>(sql!(
                 SELECT
                 display,
                 window_state, window_x, window_y, window_width, window_height
@@ -762,8 +762,8 @@ impl WorkspaceDb {
     pub async fn recent_workspaces_on_disk(
         &self,
     ) -> Result<Vec<(WorkspaceId, SerializedWorkspaceLocation)>> {
-        let mut result = Vec::new();
-        let mut delete_tasks = Vec::new();
+        let mut result = Vec.new();
+        let mut delete_tasks = Vec.new();
         let dev_server_projects = self.dev_server_projects()?;
 
         for (id, location, order, dev_server_project_id) in self.recent_workspaces()? {
@@ -782,13 +782,13 @@ impl WorkspaceDb {
             if location.paths().iter().all(|path| path.exists())
                 && location.paths().iter().any(|path| path.is_dir())
             {
-                result.push((id, SerializedWorkspaceLocation::Local(location, order)));
+                result.push((id, SerializedWorkspaceLocation.Local(location, order)));
             } else {
                 delete_tasks.push(self.delete_workspace_by_id(id));
             }
         }
 
-        futures::future::join_all(delete_tasks).await;
+        futures.future.join_all(delete_tasks).await;
         Ok(result)
     }
 
@@ -798,8 +798,8 @@ impl WorkspaceDb {
             .await?
             .into_iter()
             .filter_map(|(_, location)| match location {
-                SerializedWorkspaceLocation::Local(local_paths, _) => Some(local_paths),
-                SerializedWorkspaceLocation::DevServer(_) => None,
+                SerializedWorkspaceLocation.Local(local_paths, _) => Some(local_paths),
+                SerializedWorkspaceLocation.DevServer(_) => None,
             })
             .next())
     }
@@ -813,13 +813,13 @@ impl WorkspaceDb {
         last_session_id: &str,
         last_session_window_stack: Option<Vec<WindowId>>,
     ) -> Result<Vec<LocalPaths>> {
-        let mut workspaces = Vec::new();
+        let mut workspaces = Vec.new();
 
         for (location, window_id) in self.session_workspaces(last_session_id.to_owned())? {
             if location.paths().iter().all(|path| path.exists())
                 && location.paths().iter().any(|path| path.is_dir())
             {
-                workspaces.push((location, window_id.map(|id| WindowId::from(id))));
+                workspaces.push((location, window_id.map(|id| WindowId.from(id))));
             }
         }
 
@@ -827,14 +827,14 @@ impl WorkspaceDb {
             workspaces.sort_by_key(|(_, window_id)| {
                 window_id
                     .and_then(|id| stack.iter().position(|&order_id| order_id == id))
-                    .unwrap_or(usize::MAX)
+                    .unwrap_or(usize.MAX)
             });
         }
 
         Ok(workspaces
             .into_iter()
             .map(|(paths, _)| paths)
-            .collect::<Vec<_>>())
+            .collect.<Vec<_>>())
     }
 
     fn get_center_pane_group(&self, workspace_id: WorkspaceId) -> Result<SerializedPaneGroup> {
@@ -843,7 +843,7 @@ impl WorkspaceDb {
             .into_iter()
             .next()
             .unwrap_or_else(|| {
-                SerializedPaneGroup::Pane(SerializedPane {
+                SerializedPaneGroup.Pane(SerializedPane {
                     active: true,
                     children: vec![],
                 })
@@ -863,7 +863,7 @@ impl WorkspaceDb {
             Option<bool>,
             Option<String>,
         );
-        self.select_bound::<GroupKey, GroupOrPane>(sql!(
+        self.select_bound.<GroupKey, GroupOrPane>(sql!(
             SELECT group_id, axis, pane_id, active, flexes
                 FROM (SELECT
                         group_id,
@@ -894,16 +894,16 @@ impl WorkspaceDb {
         .map(|(group_id, axis, pane_id, active, flexes)| {
             if let Some((group_id, axis)) = group_id.zip(axis) {
                 let flexes = flexes
-                    .map(|flexes: String| serde_json::from_str::<Vec<f32>>(&flexes))
+                    .map(|flexes: String| serde_json.from_str.<Vec<f32>>(&flexes))
                     .transpose()?;
 
-                Ok(SerializedPaneGroup::Group {
+                Ok(SerializedPaneGroup.Group {
                     axis,
                     children: self.get_pane_group(workspace_id, Some(group_id))?,
                     flexes,
                 })
             } else if let Some((pane_id, active)) = pane_id.zip(active) {
-                Ok(SerializedPaneGroup::Pane(SerializedPane::new(
+                Ok(SerializedPaneGroup.Pane(SerializedPane.new(
                     self.get_items(pane_id)?,
                     active,
                 )))
@@ -913,11 +913,11 @@ impl WorkspaceDb {
         })
         // Filter out panes and pane groups which don't have any children or items
         .filter(|pane_group| match pane_group {
-            Ok(SerializedPaneGroup::Group { children, .. }) => !children.is_empty(),
-            Ok(SerializedPaneGroup::Pane(pane)) => !pane.children.is_empty(),
+            Ok(SerializedPaneGroup.Group { children, .. }) => !children.is_empty(),
+            Ok(SerializedPaneGroup.Pane(pane)) => !pane.children.is_empty(),
             _ => true,
         })
-        .collect::<Result<_>>()
+        .collect.<Result<_>>()
     }
 
     fn save_pane_group(
@@ -927,7 +927,7 @@ impl WorkspaceDb {
         parent: Option<(GroupId, usize)>,
     ) -> Result<()> {
         match pane_group {
-            SerializedPaneGroup::Group {
+            SerializedPaneGroup.Group {
                 axis,
                 children,
                 flexes,
@@ -936,9 +936,9 @@ impl WorkspaceDb {
 
                 let flex_string = flexes
                     .as_ref()
-                    .map(|flexes| serde_json::json!(flexes).to_string());
+                    .map(|flexes| serde_json.json!(flexes).to_string());
 
-                let group_id = conn.select_row_bound::<_, i64>(sql!(
+                let group_id = conn.select_row_bound.<_, i64>(sql!(
                     INSERT INTO pane_groups(
                         workspace_id,
                         parent_group_id,
@@ -958,13 +958,13 @@ impl WorkspaceDb {
                 .ok_or_else(|| anyhow!("Couldn't retrieve group_id from inserted pane_group"))?;
 
                 for (position, group) in children.iter().enumerate() {
-                    Self::save_pane_group(conn, workspace_id, group, Some((group_id, position)))?
+                    Self.save_pane_group(conn, workspace_id, group, Some((group_id, position)))?
                 }
 
                 Ok(())
             }
-            SerializedPaneGroup::Pane(pane) => {
-                Self::save_pane(conn, workspace_id, pane, parent)?;
+            SerializedPaneGroup.Pane(pane) => {
+                Self.save_pane(conn, workspace_id, pane, parent)?;
                 Ok(())
             }
         }
@@ -976,7 +976,7 @@ impl WorkspaceDb {
         pane: &SerializedPane,
         parent: Option<(GroupId, usize)>,
     ) -> Result<PaneId> {
-        let pane_id = conn.select_row_bound::<_, i64>(sql!(
+        let pane_id = conn.select_row_bound.<_, i64>(sql!(
             INSERT INTO panes(workspace_id, active)
             VALUES (?, ?)
             RETURNING pane_id
@@ -989,7 +989,7 @@ impl WorkspaceDb {
             VALUES (?, ?, ?)
         ))?((pane_id, parent_id, order))?;
 
-        Self::save_items(conn, workspace_id, pane_id, &pane.children).context("Saving items")?;
+        Self.save_items(conn, workspace_id, pane_id, &pane.children).context("Saving items")?;
 
         Ok(pane_id)
     }
@@ -1050,15 +1050,15 @@ impl WorkspaceDb {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::persistence::model::SerializedWorkspace;
-    use crate::persistence::model::{SerializedItem, SerializedPane, SerializedPaneGroup};
-    use db::open_test_db;
-    use gpui::{self};
+    use super.*;
+    use crate.persistence.model.SerializedWorkspace;
+    use crate.persistence.model.{SerializedItem, SerializedPane, SerializedPaneGroup};
+    use db.open_test_db;
+    use gpui.{self};
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_next_id_stability() {
-        env_logger::try_init().ok();
+        env_logger.try_init().ok();
 
         let db = WorkspaceDb(open_test_db("test_next_id_stability").await);
 
@@ -1082,7 +1082,7 @@ mod tests {
         // Assert the empty row got inserted
         assert_eq!(
             Some(id),
-            db.select_row_bound::<WorkspaceId, WorkspaceId>(sql!(
+            db.select_row_bound.<WorkspaceId, WorkspaceId>(sql!(
                 SELECT workspace_id FROM workspaces WHERE workspace_id = ?
             ))
             .unwrap()(id)
@@ -1097,16 +1097,16 @@ mod tests {
         .await;
 
         let test_text_1 = db
-            .select_row_bound::<_, String>(sql!(SELECT text FROM test_table WHERE workspace_id = ?))
+            .select_row_bound.<_, String>(sql!(SELECT text FROM test_table WHERE workspace_id = ?))
             .unwrap()(1)
         .unwrap()
         .unwrap();
         assert_eq!(test_text_1, "test-text-1");
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_workspace_id_stability() {
-        env_logger::try_init().ok();
+        env_logger.try_init().ok();
 
         let db = WorkspaceDb(open_test_db("test_workspace_id_stability").await);
 
@@ -1128,11 +1128,11 @@ mod tests {
 
         let mut workspace_1 = SerializedWorkspace {
             id: WorkspaceId(1),
-            location: SerializedWorkspaceLocation::from_local_paths(["/tmp", "/tmp2"]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths(["/tmp", "/tmp2"]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: None,
@@ -1140,11 +1140,11 @@ mod tests {
 
         let workspace_2 = SerializedWorkspace {
             id: WorkspaceId(2),
-            location: SerializedWorkspaceLocation::from_local_paths(["/tmp"]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths(["/tmp"]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: None,
@@ -1168,20 +1168,20 @@ mod tests {
         })
         .await;
 
-        workspace_1.location = SerializedWorkspaceLocation::from_local_paths(["/tmp", "/tmp3"]);
+        workspace_1.location = SerializedWorkspaceLocation.from_local_paths(["/tmp", "/tmp3"]);
         db.save_workspace(workspace_1.clone()).await;
         db.save_workspace(workspace_1).await;
         db.save_workspace(workspace_2).await;
 
         let test_text_2 = db
-            .select_row_bound::<_, String>(sql!(SELECT text FROM test_table WHERE workspace_id = ?))
+            .select_row_bound.<_, String>(sql!(SELECT text FROM test_table WHERE workspace_id = ?))
             .unwrap()(2)
         .unwrap()
         .unwrap();
         assert_eq!(test_text_2, "test-text-2");
 
         let test_text_1 = db
-            .select_row_bound::<_, String>(sql!(SELECT text FROM test_table WHERE workspace_id = ?))
+            .select_row_bound.<_, String>(sql!(SELECT text FROM test_table WHERE workspace_id = ?))
             .unwrap()(1)
         .unwrap()
         .unwrap();
@@ -1189,16 +1189,16 @@ mod tests {
     }
 
     fn group(axis: Axis, children: Vec<SerializedPaneGroup>) -> SerializedPaneGroup {
-        SerializedPaneGroup::Group {
+        SerializedPaneGroup.Group {
             axis: SerializedAxis(axis),
             flexes: None,
             children,
         }
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_full_workspace_serialization() {
-        env_logger::try_init().ok();
+        env_logger.try_init().ok();
 
         let db = WorkspaceDb(open_test_db("test_full_workspace_serialization").await);
 
@@ -1208,31 +1208,31 @@ mod tests {
         //  | 3,4   |       |
         //  -----------------
         let center_group = group(
-            Axis::Horizontal,
+            Axis.Horizontal,
             vec![
                 group(
-                    Axis::Vertical,
+                    Axis.Vertical,
                     vec![
-                        SerializedPaneGroup::Pane(SerializedPane::new(
+                        SerializedPaneGroup.Pane(SerializedPane.new(
                             vec![
-                                SerializedItem::new("Terminal", 5, false, false),
-                                SerializedItem::new("Terminal", 6, true, false),
+                                SerializedItem.new("Terminal", 5, false, false),
+                                SerializedItem.new("Terminal", 6, true, false),
                             ],
                             false,
                         )),
-                        SerializedPaneGroup::Pane(SerializedPane::new(
+                        SerializedPaneGroup.Pane(SerializedPane.new(
                             vec![
-                                SerializedItem::new("Terminal", 7, true, false),
-                                SerializedItem::new("Terminal", 8, false, false),
+                                SerializedItem.new("Terminal", 7, true, false),
+                                SerializedItem.new("Terminal", 8, false, false),
                             ],
                             false,
                         )),
                     ],
                 ),
-                SerializedPaneGroup::Pane(SerializedPane::new(
+                SerializedPaneGroup.Pane(SerializedPane.new(
                     vec![
-                        SerializedItem::new("Terminal", 9, false, false),
-                        SerializedItem::new("Terminal", 10, true, false),
+                        SerializedItem.new("Terminal", 9, false, false),
+                        SerializedItem.new("Terminal", 10, true, false),
                     ],
                     false,
                 )),
@@ -1241,14 +1241,14 @@ mod tests {
 
         let workspace = SerializedWorkspace {
             id: WorkspaceId(5),
-            location: SerializedWorkspaceLocation::Local(
-                LocalPaths::new(["/tmp", "/tmp2"]),
-                LocalPathsOrder::new([1, 0]),
+            location: SerializedWorkspaceLocation.Local(
+                LocalPaths.new(["/tmp", "/tmp2"]),
+                LocalPathsOrder.new([1, 0]),
             ),
             center_group,
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: Some(999),
@@ -1267,22 +1267,22 @@ mod tests {
         assert_eq!(workspace, round_trip_workspace.unwrap());
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_workspace_assignment() {
-        env_logger::try_init().ok();
+        env_logger.try_init().ok();
 
         let db = WorkspaceDb(open_test_db("test_basic_functionality").await);
 
         let workspace_1 = SerializedWorkspace {
             id: WorkspaceId(1),
-            location: SerializedWorkspaceLocation::Local(
-                LocalPaths::new(["/tmp", "/tmp2"]),
-                LocalPathsOrder::new([0, 1]),
+            location: SerializedWorkspaceLocation.Local(
+                LocalPaths.new(["/tmp", "/tmp2"]),
+                LocalPathsOrder.new([0, 1]),
             ),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: Some(1),
@@ -1290,11 +1290,11 @@ mod tests {
 
         let mut workspace_2 = SerializedWorkspace {
             id: WorkspaceId(2),
-            location: SerializedWorkspaceLocation::from_local_paths(["/tmp"]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths(["/tmp"]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: Some(2),
@@ -1318,7 +1318,7 @@ mod tests {
         assert_eq!(db.workspace_for_roots(&["/tmp3", "/tmp2", "/tmp4"]), None);
 
         // Test 'mutate' case of updating a pre-existing id
-        workspace_2.location = SerializedWorkspaceLocation::from_local_paths(["/tmp", "/tmp2"]);
+        workspace_2.location = SerializedWorkspaceLocation.from_local_paths(["/tmp", "/tmp2"]);
 
         db.save_workspace(workspace_2.clone()).await;
         assert_eq!(
@@ -1329,14 +1329,14 @@ mod tests {
         // Test other mechanism for mutating
         let mut workspace_3 = SerializedWorkspace {
             id: WorkspaceId(3),
-            location: SerializedWorkspaceLocation::Local(
-                LocalPaths::new(&["/tmp", "/tmp2"]),
-                LocalPathsOrder::new([1, 0]),
+            location: SerializedWorkspaceLocation.Local(
+                LocalPaths.new(&["/tmp", "/tmp2"]),
+                LocalPathsOrder.new([1, 0]),
             ),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: Some(3),
@@ -1350,7 +1350,7 @@ mod tests {
 
         // Make sure that updating paths differently also works
         workspace_3.location =
-            SerializedWorkspaceLocation::from_local_paths(["/tmp3", "/tmp4", "/tmp2"]);
+            SerializedWorkspaceLocation.from_local_paths(["/tmp3", "/tmp4", "/tmp2"]);
         db.save_workspace(workspace_3.clone()).await;
         assert_eq!(db.workspace_for_roots(&["/tmp2", "tmp"]), None);
         assert_eq!(
@@ -1360,19 +1360,19 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_session_workspaces() {
-        env_logger::try_init().ok();
+        env_logger.try_init().ok();
 
         let db = WorkspaceDb(open_test_db("test_serializing_workspaces_session_id").await);
 
         let workspace_1 = SerializedWorkspace {
             id: WorkspaceId(1),
-            location: SerializedWorkspaceLocation::from_local_paths(["/tmp1"]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths(["/tmp1"]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: Some("session-id-1".to_owned()),
             window_id: Some(10),
@@ -1380,11 +1380,11 @@ mod tests {
 
         let workspace_2 = SerializedWorkspace {
             id: WorkspaceId(2),
-            location: SerializedWorkspaceLocation::from_local_paths(["/tmp2"]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths(["/tmp2"]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: Some("session-id-1".to_owned()),
             window_id: Some(20),
@@ -1392,11 +1392,11 @@ mod tests {
 
         let workspace_3 = SerializedWorkspace {
             id: WorkspaceId(3),
-            location: SerializedWorkspaceLocation::from_local_paths(["/tmp3"]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths(["/tmp3"]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: Some("session-id-2".to_owned()),
             window_id: Some(30),
@@ -1404,11 +1404,11 @@ mod tests {
 
         let workspace_4 = SerializedWorkspace {
             id: WorkspaceId(4),
-            location: SerializedWorkspaceLocation::from_local_paths(["/tmp4"]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths(["/tmp4"]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: None,
@@ -1421,14 +1421,14 @@ mod tests {
 
         let locations = db.session_workspaces("session-id-1".to_owned()).unwrap();
         assert_eq!(locations.len(), 2);
-        assert_eq!(locations[0].0, LocalPaths::new(["/tmp1"]));
+        assert_eq!(locations[0].0, LocalPaths.new(["/tmp1"]));
         assert_eq!(locations[0].1, Some(10));
-        assert_eq!(locations[1].0, LocalPaths::new(["/tmp2"]));
+        assert_eq!(locations[1].0, LocalPaths.new(["/tmp2"]));
         assert_eq!(locations[1].1, Some(20));
 
         let locations = db.session_workspaces("session-id-2".to_owned()).unwrap();
         assert_eq!(locations.len(), 1);
-        assert_eq!(locations[0].0, LocalPaths::new(["/tmp3"]));
+        assert_eq!(locations[0].0, LocalPaths.new(["/tmp3"]));
         assert_eq!(locations[0].1, Some(30));
     }
 
@@ -1438,23 +1438,23 @@ mod tests {
     ) -> SerializedWorkspace {
         SerializedWorkspace {
             id: WorkspaceId(4),
-            location: SerializedWorkspaceLocation::from_local_paths(workspace_id),
+            location: SerializedWorkspaceLocation.from_local_paths(workspace_id),
             center_group: center_group.clone(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: None,
             window_id: None,
         }
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_last_session_workspace_locations() {
-        let dir1 = tempfile::TempDir::with_prefix("dir1").unwrap();
-        let dir2 = tempfile::TempDir::with_prefix("dir2").unwrap();
-        let dir3 = tempfile::TempDir::with_prefix("dir3").unwrap();
-        let dir4 = tempfile::TempDir::with_prefix("dir4").unwrap();
+        let dir1 = tempfile.TempDir.with_prefix("dir1").unwrap();
+        let dir2 = tempfile.TempDir.with_prefix("dir2").unwrap();
+        let dir3 = tempfile.TempDir.with_prefix("dir3").unwrap();
+        let dir4 = tempfile.TempDir.with_prefix("dir4").unwrap();
 
         let db =
             WorkspaceDb(open_test_db("test_serializing_workspaces_last_session_workspaces").await);
@@ -1468,41 +1468,41 @@ mod tests {
         .into_iter()
         .map(|(id, location, window_id)| SerializedWorkspace {
             id: WorkspaceId(id),
-            location: SerializedWorkspaceLocation::from_local_paths([location]),
-            center_group: Default::default(),
-            window_bounds: Default::default(),
-            display: Default::default(),
-            docks: Default::default(),
+            location: SerializedWorkspaceLocation.from_local_paths([location]),
+            center_group: Default.default(),
+            window_bounds: Default.default(),
+            display: Default.default(),
+            docks: Default.default(),
             centered_layout: false,
             session_id: Some("one-session".to_owned()),
             window_id: Some(window_id),
         })
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
 
         for workspace in workspaces.iter() {
             db.save_workspace(workspace.clone()).await;
         }
 
-        let stack = Some(Vec::from([
-            WindowId::from(2), // Top
-            WindowId::from(8),
-            WindowId::from(5),
-            WindowId::from(9), // Bottom
+        let stack = Some(Vec.from([
+            WindowId.from(2), // Top
+            WindowId.from(8),
+            WindowId.from(5),
+            WindowId.from(9), // Bottom
         ]));
 
         let have = db
             .last_session_workspace_locations("one-session", stack)
             .unwrap();
         assert_eq!(have.len(), 4);
-        assert_eq!(have[0], LocalPaths::new([dir4.path().to_str().unwrap()]));
-        assert_eq!(have[1], LocalPaths::new([dir3.path().to_str().unwrap()]));
-        assert_eq!(have[2], LocalPaths::new([dir2.path().to_str().unwrap()]));
-        assert_eq!(have[3], LocalPaths::new([dir1.path().to_str().unwrap()]));
+        assert_eq!(have[0], LocalPaths.new([dir4.path().to_str().unwrap()]));
+        assert_eq!(have[1], LocalPaths.new([dir3.path().to_str().unwrap()]));
+        assert_eq!(have[2], LocalPaths.new([dir2.path().to_str().unwrap()]));
+        assert_eq!(have[3], LocalPaths.new([dir1.path().to_str().unwrap()]));
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_simple_split() {
-        env_logger::try_init().ok();
+        env_logger.try_init().ok();
 
         let db = WorkspaceDb(open_test_db("simple_split").await);
 
@@ -1512,31 +1512,31 @@ mod tests {
         //  | 3,4   |       |
         //  -----------------
         let center_pane = group(
-            Axis::Horizontal,
+            Axis.Horizontal,
             vec![
                 group(
-                    Axis::Vertical,
+                    Axis.Vertical,
                     vec![
-                        SerializedPaneGroup::Pane(SerializedPane::new(
+                        SerializedPaneGroup.Pane(SerializedPane.new(
                             vec![
-                                SerializedItem::new("Terminal", 1, false, false),
-                                SerializedItem::new("Terminal", 2, true, false),
+                                SerializedItem.new("Terminal", 1, false, false),
+                                SerializedItem.new("Terminal", 2, true, false),
                             ],
                             false,
                         )),
-                        SerializedPaneGroup::Pane(SerializedPane::new(
+                        SerializedPaneGroup.Pane(SerializedPane.new(
                             vec![
-                                SerializedItem::new("Terminal", 4, false, false),
-                                SerializedItem::new("Terminal", 3, true, false),
+                                SerializedItem.new("Terminal", 4, false, false),
+                                SerializedItem.new("Terminal", 3, true, false),
                             ],
                             true,
                         )),
                     ],
                 ),
-                SerializedPaneGroup::Pane(SerializedPane::new(
+                SerializedPaneGroup.Pane(SerializedPane.new(
                     vec![
-                        SerializedItem::new("Terminal", 5, true, false),
-                        SerializedItem::new("Terminal", 6, false, false),
+                        SerializedItem.new("Terminal", 5, true, false),
+                        SerializedItem.new("Terminal", 6, false, false),
                     ],
                     false,
                 )),
@@ -1552,38 +1552,38 @@ mod tests {
         assert_eq!(workspace.center_group, new_workspace.center_group);
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_cleanup_panes() {
-        env_logger::try_init().ok();
+        env_logger.try_init().ok();
 
         let db = WorkspaceDb(open_test_db("test_cleanup_panes").await);
 
         let center_pane = group(
-            Axis::Horizontal,
+            Axis.Horizontal,
             vec![
                 group(
-                    Axis::Vertical,
+                    Axis.Vertical,
                     vec![
-                        SerializedPaneGroup::Pane(SerializedPane::new(
+                        SerializedPaneGroup.Pane(SerializedPane.new(
                             vec![
-                                SerializedItem::new("Terminal", 1, false, false),
-                                SerializedItem::new("Terminal", 2, true, false),
+                                SerializedItem.new("Terminal", 1, false, false),
+                                SerializedItem.new("Terminal", 2, true, false),
                             ],
                             false,
                         )),
-                        SerializedPaneGroup::Pane(SerializedPane::new(
+                        SerializedPaneGroup.Pane(SerializedPane.new(
                             vec![
-                                SerializedItem::new("Terminal", 4, false, false),
-                                SerializedItem::new("Terminal", 3, true, false),
+                                SerializedItem.new("Terminal", 4, false, false),
+                                SerializedItem.new("Terminal", 3, true, false),
                             ],
                             true,
                         )),
                     ],
                 ),
-                SerializedPaneGroup::Pane(SerializedPane::new(
+                SerializedPaneGroup.Pane(SerializedPane.new(
                     vec![
-                        SerializedItem::new("Terminal", 5, false, false),
-                        SerializedItem::new("Terminal", 6, true, false),
+                        SerializedItem.new("Terminal", 5, false, false),
+                        SerializedItem.new("Terminal", 6, true, false),
                     ],
                     false,
                 )),
@@ -1597,19 +1597,19 @@ mod tests {
         db.save_workspace(workspace.clone()).await;
 
         workspace.center_group = group(
-            Axis::Vertical,
+            Axis.Vertical,
             vec![
-                SerializedPaneGroup::Pane(SerializedPane::new(
+                SerializedPaneGroup.Pane(SerializedPane.new(
                     vec![
-                        SerializedItem::new("Terminal", 1, false, false),
-                        SerializedItem::new("Terminal", 2, true, false),
+                        SerializedItem.new("Terminal", 1, false, false),
+                        SerializedItem.new("Terminal", 2, true, false),
                     ],
                     false,
                 )),
-                SerializedPaneGroup::Pane(SerializedPane::new(
+                SerializedPaneGroup.Pane(SerializedPane.new(
                     vec![
-                        SerializedItem::new("Terminal", 4, true, false),
-                        SerializedItem::new("Terminal", 3, false, false),
+                        SerializedItem.new("Terminal", 4, true, false),
+                        SerializedItem.new("Terminal", 3, false, false),
                     ],
                     true,
                 )),

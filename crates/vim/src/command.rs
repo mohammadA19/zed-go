@@ -1,20 +1,20 @@
-use std::sync::OnceLock;
+use std.sync.OnceLock;
 
-use command_palette_hooks::CommandInterceptResult;
-use editor::actions::{SortLinesCaseInsensitive, SortLinesCaseSensitive};
-use gpui::{impl_actions, Action, AppContext, Global, ViewContext};
-use serde_derive::Deserialize;
-use util::ResultExt;
-use workspace::{SaveIntent, Workspace};
+use command_palette_hooks.CommandInterceptResult;
+use editor.actions.{SortLinesCaseInsensitive, SortLinesCaseSensitive};
+use gpui.{impl_actions, Action, AppContext, Global, ViewContext};
+use serde_derive.Deserialize;
+use util.ResultExt;
+use workspace.{SaveIntent, Workspace};
 
-use crate::{
-    motion::{EndOfDocument, Motion, StartOfDocument},
-    normal::{
+use crate.{
+    motion.{EndOfDocument, Motion, StartOfDocument},
+    normal.{
         move_cursor,
-        search::{range_regex, FindCommand, ReplaceCommand},
+        search.{range_regex, FindCommand, ReplaceCommand},
         JoinLines,
     },
-    state::Mode,
+    state.Mode,
     Vim,
 };
 
@@ -27,9 +27,9 @@ impl_actions!(vim, [GoToLine]);
 
 pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
     workspace.register_action(|_: &mut Workspace, action: &GoToLine, cx| {
-        Vim::update(cx, |vim, cx| {
-            vim.switch_mode(Mode::Normal, false, cx);
-            move_cursor(vim, Motion::StartOfDocument, Some(action.line as usize), cx);
+        Vim.update(cx, |vim, cx| {
+            vim.switch_mode(Mode.Normal, false, cx);
+            move_cursor(vim, Motion.StartOfDocument, Some(action.line as usize), cx);
         });
     });
 }
@@ -96,183 +96,183 @@ impl VimCommand {
 
 fn generate_commands(_: &AppContext) -> Vec<VimCommand> {
     vec![
-        VimCommand::new(
+        VimCommand.new(
             ("w", "rite"),
-            workspace::Save {
-                save_intent: Some(SaveIntent::Save),
+            workspace.Save {
+                save_intent: Some(SaveIntent.Save),
             },
         )
-        .bang(workspace::Save {
-            save_intent: Some(SaveIntent::Overwrite),
+        .bang(workspace.Save {
+            save_intent: Some(SaveIntent.Overwrite),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("q", "uit"),
-            workspace::CloseActiveItem {
-                save_intent: Some(SaveIntent::Close),
+            workspace.CloseActiveItem {
+                save_intent: Some(SaveIntent.Close),
             },
         )
-        .bang(workspace::CloseActiveItem {
-            save_intent: Some(SaveIntent::Skip),
+        .bang(workspace.CloseActiveItem {
+            save_intent: Some(SaveIntent.Skip),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("wq", ""),
-            workspace::CloseActiveItem {
-                save_intent: Some(SaveIntent::Save),
+            workspace.CloseActiveItem {
+                save_intent: Some(SaveIntent.Save),
             },
         )
-        .bang(workspace::CloseActiveItem {
-            save_intent: Some(SaveIntent::Overwrite),
+        .bang(workspace.CloseActiveItem {
+            save_intent: Some(SaveIntent.Overwrite),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("x", "it"),
-            workspace::CloseActiveItem {
-                save_intent: Some(SaveIntent::SaveAll),
+            workspace.CloseActiveItem {
+                save_intent: Some(SaveIntent.SaveAll),
             },
         )
-        .bang(workspace::CloseActiveItem {
-            save_intent: Some(SaveIntent::Overwrite),
+        .bang(workspace.CloseActiveItem {
+            save_intent: Some(SaveIntent.Overwrite),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("ex", "it"),
-            workspace::CloseActiveItem {
-                save_intent: Some(SaveIntent::SaveAll),
+            workspace.CloseActiveItem {
+                save_intent: Some(SaveIntent.SaveAll),
             },
         )
-        .bang(workspace::CloseActiveItem {
-            save_intent: Some(SaveIntent::Overwrite),
+        .bang(workspace.CloseActiveItem {
+            save_intent: Some(SaveIntent.Overwrite),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("up", "date"),
-            workspace::Save {
-                save_intent: Some(SaveIntent::SaveAll),
+            workspace.Save {
+                save_intent: Some(SaveIntent.SaveAll),
             },
         ),
-        VimCommand::new(
+        VimCommand.new(
             ("wa", "ll"),
-            workspace::SaveAll {
-                save_intent: Some(SaveIntent::SaveAll),
+            workspace.SaveAll {
+                save_intent: Some(SaveIntent.SaveAll),
             },
         )
-        .bang(workspace::SaveAll {
-            save_intent: Some(SaveIntent::Overwrite),
+        .bang(workspace.SaveAll {
+            save_intent: Some(SaveIntent.Overwrite),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("qa", "ll"),
-            workspace::CloseAllItemsAndPanes {
-                save_intent: Some(SaveIntent::Close),
+            workspace.CloseAllItemsAndPanes {
+                save_intent: Some(SaveIntent.Close),
             },
         )
-        .bang(workspace::CloseAllItemsAndPanes {
-            save_intent: Some(SaveIntent::Skip),
+        .bang(workspace.CloseAllItemsAndPanes {
+            save_intent: Some(SaveIntent.Skip),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("quita", "ll"),
-            workspace::CloseAllItemsAndPanes {
-                save_intent: Some(SaveIntent::Close),
+            workspace.CloseAllItemsAndPanes {
+                save_intent: Some(SaveIntent.Close),
             },
         )
-        .bang(workspace::CloseAllItemsAndPanes {
-            save_intent: Some(SaveIntent::Skip),
+        .bang(workspace.CloseAllItemsAndPanes {
+            save_intent: Some(SaveIntent.Skip),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("xa", "ll"),
-            workspace::CloseAllItemsAndPanes {
-                save_intent: Some(SaveIntent::SaveAll),
+            workspace.CloseAllItemsAndPanes {
+                save_intent: Some(SaveIntent.SaveAll),
             },
         )
-        .bang(workspace::CloseAllItemsAndPanes {
-            save_intent: Some(SaveIntent::Overwrite),
+        .bang(workspace.CloseAllItemsAndPanes {
+            save_intent: Some(SaveIntent.Overwrite),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("wqa", "ll"),
-            workspace::CloseAllItemsAndPanes {
-                save_intent: Some(SaveIntent::SaveAll),
+            workspace.CloseAllItemsAndPanes {
+                save_intent: Some(SaveIntent.SaveAll),
             },
         )
-        .bang(workspace::CloseAllItemsAndPanes {
-            save_intent: Some(SaveIntent::Overwrite),
+        .bang(workspace.CloseAllItemsAndPanes {
+            save_intent: Some(SaveIntent.Overwrite),
         }),
-        VimCommand::new(("cq", "uit"), zed_actions::Quit),
-        VimCommand::new(("sp", "lit"), workspace::SplitUp),
-        VimCommand::new(("vs", "plit"), workspace::SplitLeft),
-        VimCommand::new(
+        VimCommand.new(("cq", "uit"), zed_actions.Quit),
+        VimCommand.new(("sp", "lit"), workspace.SplitUp),
+        VimCommand.new(("vs", "plit"), workspace.SplitLeft),
+        VimCommand.new(
             ("bd", "elete"),
-            workspace::CloseActiveItem {
-                save_intent: Some(SaveIntent::Close),
+            workspace.CloseActiveItem {
+                save_intent: Some(SaveIntent.Close),
             },
         )
-        .bang(workspace::CloseActiveItem {
-            save_intent: Some(SaveIntent::Skip),
+        .bang(workspace.CloseActiveItem {
+            save_intent: Some(SaveIntent.Skip),
         }),
-        VimCommand::new(("bn", "ext"), workspace::ActivateNextItem),
-        VimCommand::new(("bN", "ext"), workspace::ActivatePrevItem),
-        VimCommand::new(("bp", "revious"), workspace::ActivatePrevItem),
-        VimCommand::new(("bf", "irst"), workspace::ActivateItem(0)),
-        VimCommand::new(("br", "ewind"), workspace::ActivateItem(0)),
-        VimCommand::new(("bl", "ast"), workspace::ActivateLastItem),
-        VimCommand::new(
+        VimCommand.new(("bn", "ext"), workspace.ActivateNextItem),
+        VimCommand.new(("bN", "ext"), workspace.ActivatePrevItem),
+        VimCommand.new(("bp", "revious"), workspace.ActivatePrevItem),
+        VimCommand.new(("bf", "irst"), workspace.ActivateItem(0)),
+        VimCommand.new(("br", "ewind"), workspace.ActivateItem(0)),
+        VimCommand.new(("bl", "ast"), workspace.ActivateLastItem),
+        VimCommand.new(
             ("new", ""),
-            workspace::NewFileInDirection(workspace::SplitDirection::Up),
+            workspace.NewFileInDirection(workspace.SplitDirection.Up),
         ),
-        VimCommand::new(
+        VimCommand.new(
             ("vne", "w"),
-            workspace::NewFileInDirection(workspace::SplitDirection::Left),
+            workspace.NewFileInDirection(workspace.SplitDirection.Left),
         ),
-        VimCommand::new(("tabe", "dit"), workspace::NewFile),
-        VimCommand::new(("tabnew", ""), workspace::NewFile),
-        VimCommand::new(("tabn", "ext"), workspace::ActivateNextItem),
-        VimCommand::new(("tabp", "revious"), workspace::ActivatePrevItem),
-        VimCommand::new(("tabN", "ext"), workspace::ActivatePrevItem),
-        VimCommand::new(
+        VimCommand.new(("tabe", "dit"), workspace.NewFile),
+        VimCommand.new(("tabnew", ""), workspace.NewFile),
+        VimCommand.new(("tabn", "ext"), workspace.ActivateNextItem),
+        VimCommand.new(("tabp", "revious"), workspace.ActivatePrevItem),
+        VimCommand.new(("tabN", "ext"), workspace.ActivatePrevItem),
+        VimCommand.new(
             ("tabc", "lose"),
-            workspace::CloseActiveItem {
-                save_intent: Some(SaveIntent::Close),
+            workspace.CloseActiveItem {
+                save_intent: Some(SaveIntent.Close),
             },
         ),
-        VimCommand::new(
+        VimCommand.new(
             ("tabo", "nly"),
-            workspace::CloseInactiveItems {
-                save_intent: Some(SaveIntent::Close),
+            workspace.CloseInactiveItems {
+                save_intent: Some(SaveIntent.Close),
             },
         )
-        .bang(workspace::CloseInactiveItems {
-            save_intent: Some(SaveIntent::Skip),
+        .bang(workspace.CloseInactiveItems {
+            save_intent: Some(SaveIntent.Skip),
         }),
-        VimCommand::new(
+        VimCommand.new(
             ("on", "ly"),
-            workspace::CloseInactiveTabsAndPanes {
-                save_intent: Some(SaveIntent::Close),
+            workspace.CloseInactiveTabsAndPanes {
+                save_intent: Some(SaveIntent.Close),
             },
         )
-        .bang(workspace::CloseInactiveTabsAndPanes {
-            save_intent: Some(SaveIntent::Skip),
+        .bang(workspace.CloseInactiveTabsAndPanes {
+            save_intent: Some(SaveIntent.Skip),
         }),
-        VimCommand::str(("cl", "ist"), "diagnostics::Deploy"),
-        VimCommand::new(("cc", ""), editor::actions::Hover),
-        VimCommand::new(("ll", ""), editor::actions::Hover),
-        VimCommand::new(("cn", "ext"), editor::actions::GoToDiagnostic),
-        VimCommand::new(("cp", "revious"), editor::actions::GoToPrevDiagnostic),
-        VimCommand::new(("cN", "ext"), editor::actions::GoToPrevDiagnostic),
-        VimCommand::new(("lp", "revious"), editor::actions::GoToPrevDiagnostic),
-        VimCommand::new(("lN", "ext"), editor::actions::GoToPrevDiagnostic),
-        VimCommand::new(("j", "oin"), JoinLines),
-        VimCommand::new(("d", "elete"), editor::actions::DeleteLine),
-        VimCommand::new(("sor", "t"), SortLinesCaseSensitive),
-        VimCommand::new(("sort i", ""), SortLinesCaseInsensitive),
-        VimCommand::str(("E", "xplore"), "project_panel::ToggleFocus"),
-        VimCommand::str(("H", "explore"), "project_panel::ToggleFocus"),
-        VimCommand::str(("L", "explore"), "project_panel::ToggleFocus"),
-        VimCommand::str(("S", "explore"), "project_panel::ToggleFocus"),
-        VimCommand::str(("Ve", "xplore"), "project_panel::ToggleFocus"),
-        VimCommand::str(("te", "rm"), "terminal_panel::ToggleFocus"),
-        VimCommand::str(("T", "erm"), "terminal_panel::ToggleFocus"),
-        VimCommand::str(("C", "ollab"), "collab_panel::ToggleFocus"),
-        VimCommand::str(("Ch", "at"), "chat_panel::ToggleFocus"),
-        VimCommand::str(("No", "tifications"), "notification_panel::ToggleFocus"),
-        VimCommand::str(("A", "I"), "assistant::ToggleFocus"),
-        VimCommand::new(("$", ""), EndOfDocument),
-        VimCommand::new(("%", ""), EndOfDocument),
-        VimCommand::new(("0", ""), StartOfDocument),
+        VimCommand.str(("cl", "ist"), "diagnostics.Deploy"),
+        VimCommand.new(("cc", ""), editor.actions.Hover),
+        VimCommand.new(("ll", ""), editor.actions.Hover),
+        VimCommand.new(("cn", "ext"), editor.actions.GoToDiagnostic),
+        VimCommand.new(("cp", "revious"), editor.actions.GoToPrevDiagnostic),
+        VimCommand.new(("cN", "ext"), editor.actions.GoToPrevDiagnostic),
+        VimCommand.new(("lp", "revious"), editor.actions.GoToPrevDiagnostic),
+        VimCommand.new(("lN", "ext"), editor.actions.GoToPrevDiagnostic),
+        VimCommand.new(("j", "oin"), JoinLines),
+        VimCommand.new(("d", "elete"), editor.actions.DeleteLine),
+        VimCommand.new(("sor", "t"), SortLinesCaseSensitive),
+        VimCommand.new(("sort i", ""), SortLinesCaseInsensitive),
+        VimCommand.str(("E", "xplore"), "project_panel.ToggleFocus"),
+        VimCommand.str(("H", "explore"), "project_panel.ToggleFocus"),
+        VimCommand.str(("L", "explore"), "project_panel.ToggleFocus"),
+        VimCommand.str(("S", "explore"), "project_panel.ToggleFocus"),
+        VimCommand.str(("Ve", "xplore"), "project_panel.ToggleFocus"),
+        VimCommand.str(("te", "rm"), "terminal_panel.ToggleFocus"),
+        VimCommand.str(("T", "erm"), "terminal_panel.ToggleFocus"),
+        VimCommand.str(("C", "ollab"), "collab_panel.ToggleFocus"),
+        VimCommand.str(("Ch", "at"), "chat_panel.ToggleFocus"),
+        VimCommand.str(("No", "tifications"), "notification_panel.ToggleFocus"),
+        VimCommand.str(("A", "I"), "assistant.ToggleFocus"),
+        VimCommand.new(("$", ""), EndOfDocument),
+        VimCommand.new(("%", ""), EndOfDocument),
+        VimCommand.new(("0", ""), StartOfDocument),
     ]
 }
 
@@ -283,7 +283,7 @@ unsafe impl Sync for VimCommands {}
 impl Global for VimCommands {}
 
 fn commands(cx: &AppContext) -> &Vec<VimCommand> {
-    static COMMANDS: OnceLock<VimCommands> = OnceLock::new();
+    static COMMANDS: OnceLock<VimCommands> = OnceLock.new();
     &COMMANDS
         .get_or_init(|| VimCommands(generate_commands(cx)))
         .0
@@ -330,7 +330,7 @@ pub fn command_interceptor(mut query: &str, cx: &AppContext) -> Option<CommandIn
             }
             .boxed_clone(),
         )
-    } else if let Ok(line) = query.parse::<u32>() {
+    } else if let Ok(line) = query.parse.<u32>() {
         (query, GoToLine { line }.boxed_clone())
     } else if range_regex().is_match(query) {
         (
@@ -355,7 +355,7 @@ pub fn command_interceptor(mut query: &str, cx: &AppContext) -> Option<CommandIn
 }
 
 fn generate_positions(string: &str, query: &str) -> Vec<usize> {
-    let mut positions = Vec::new();
+    let mut positions = Vec.new();
     let mut chars = query.chars();
 
     let Some(mut current) = chars.next() else {
@@ -378,15 +378,15 @@ fn generate_positions(string: &str, query: &str) -> Vec<usize> {
 
 #[cfg(test)]
 mod test {
-    use std::path::Path;
+    use std.path.Path;
 
-    use crate::test::{NeovimBackedTestContext, VimTestContext};
-    use gpui::TestAppContext;
-    use indoc::indoc;
+    use crate.test.{NeovimBackedTestContext, VimTestContext};
+    use gpui.TestAppContext;
+    use indoc.indoc;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_command_basics(cx: &mut TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {"
             ˇa
@@ -404,9 +404,9 @@ mod test {
         });
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_command_goto(cx: &mut TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {"
             ˇa
@@ -420,9 +420,9 @@ mod test {
             ˇc"});
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_command_replace(cx: &mut TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {"
             ˇa
@@ -442,9 +442,9 @@ mod test {
             ˇcc"});
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_command_search(cx: &mut TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {"
                 ˇa
@@ -466,10 +466,10 @@ mod test {
                 c"});
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_command_write(cx: &mut TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
-        let path = Path::new("/root/dir/file.rs");
+        let mut cx = VimTestContext.new(cx, true).await;
+        let path = Path.new("/root/dir/file.rs");
         let fs = cx.workspace(|workspace, cx| workspace.project().read(cx).fs().clone());
 
         cx.simulate_keystrokes("i @ escape");
@@ -493,9 +493,9 @@ mod test {
         assert_eq!(fs.load(&path).await.unwrap(), "@@\n");
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_command_quit(cx: &mut TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+        let mut cx = VimTestContext.new(cx, true).await;
 
         cx.simulate_keystrokes(": n e w enter");
         cx.workspace(|workspace, cx| assert_eq!(workspace.items(cx).count(), 2));

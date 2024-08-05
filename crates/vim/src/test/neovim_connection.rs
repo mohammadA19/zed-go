@@ -1,40 +1,40 @@
-use std::path::PathBuf;
+use std.path.PathBuf;
 #[cfg(feature = "neovim")]
-use std::{
+use std.{
     cmp,
-    ops::{Deref, DerefMut, Range},
+    ops.{Deref, DerefMut, Range},
 };
 
 #[cfg(feature = "neovim")]
-use async_compat::Compat;
+use async_compat.Compat;
 #[cfg(feature = "neovim")]
-use async_trait::async_trait;
+use async_trait.async_trait;
 #[cfg(feature = "neovim")]
-use gpui::Keystroke;
+use gpui.Keystroke;
 
 #[cfg(feature = "neovim")]
-use language::Point;
+use language.Point;
 
 #[cfg(feature = "neovim")]
-use nvim_rs::{
-    create::tokio::new_child_cmd, error::LoopError, Handler, Neovim, UiAttachOptions, Value,
+use nvim_rs.{
+    create.tokio.new_child_cmd, error.LoopError, Handler, Neovim, UiAttachOptions, Value,
 };
 #[cfg(feature = "neovim")]
-use parking_lot::ReentrantMutex;
-use serde::{Deserialize, Serialize};
+use parking_lot.ReentrantMutex;
+use serde.{Deserialize, Serialize};
 #[cfg(feature = "neovim")]
-use tokio::{
-    process::{Child, ChildStdin, Command},
-    task::JoinHandle,
+use tokio.{
+    process.{Child, ChildStdin, Command},
+    task.JoinHandle,
 };
 
-use crate::state::Mode;
-use collections::VecDeque;
+use crate.state.Mode;
+use collections.VecDeque;
 
 // Neovim doesn't like to be started simultaneously from multiple threads. We use this lock
 // to ensure we are only constructing one neovim connection at a time.
 #[cfg(feature = "neovim")]
-static NEOVIM_LOCK: ReentrantMutex<()> = ReentrantMutex::new(());
+static NEOVIM_LOCK: ReentrantMutex<()> = ReentrantMutex.new(());
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum NeovimData {
@@ -51,7 +51,7 @@ pub struct NeovimConnection {
     #[cfg(feature = "neovim")]
     test_case_id: String,
     #[cfg(feature = "neovim")]
-    nvim: Neovim<nvim_rs::compat::tokio::Compat<ChildStdin>>,
+    nvim: Neovim<nvim_rs.compat.tokio.Compat<ChildStdin>>,
     #[cfg(feature = "neovim")]
     _join_handle: JoinHandle<Result<(), Box<LoopError>>>,
     #[cfg(feature = "neovim")]
@@ -63,11 +63,11 @@ impl NeovimConnection {
         #[cfg(feature = "neovim")]
         let handler = NvimHandler {};
         #[cfg(feature = "neovim")]
-        let (nvim, join_handle, child) = Compat::new(async {
+        let (nvim, join_handle, child) = Compat.new(async {
             // Ensure we don't create neovim connections in parallel
             let _lock = NEOVIM_LOCK.lock();
             let (nvim, join_handle, child) = new_child_cmd(
-                &mut Command::new("nvim")
+                &mut Command.new("nvim")
                     .arg("--embed")
                     .arg("--clean")
                     // disable swap (otherwise after about 1000 test runs you run out of swap file names)
@@ -79,12 +79,12 @@ impl NeovimConnection {
             .await
             .expect("Could not connect to neovim process");
 
-            nvim.ui_attach(100, 100, &UiAttachOptions::default())
+            nvim.ui_attach(100, 100, &UiAttachOptions.default())
                 .await
                 .expect("Could not attach to ui");
 
             // Makes system act a little more like zed in terms of indentation
-            nvim.set_option("smartindent", nvim_rs::Value::Boolean(true))
+            nvim.set_option("smartindent", nvim_rs.Value.Boolean(true))
                 .await
                 .expect("Could not set smartindent on startup");
 
@@ -94,9 +94,9 @@ impl NeovimConnection {
 
         Self {
             #[cfg(feature = "neovim")]
-            data: Default::default(),
+            data: Default.default(),
             #[cfg(not(feature = "neovim"))]
-            data: Self::read_test_data(&test_case_id),
+            data: Self.read_test_data(&test_case_id),
             #[cfg(feature = "neovim")]
             test_case_id,
             #[cfg(feature = "neovim")]
@@ -111,7 +111,7 @@ impl NeovimConnection {
     // Sends a keystroke to the neovim process.
     #[cfg(feature = "neovim")]
     pub async fn send_keystroke(&mut self, keystroke_text: &str) {
-        let mut keystroke = Keystroke::parse(keystroke_text).unwrap();
+        let mut keystroke = Keystroke.parse(keystroke_text).unwrap();
 
         if keystroke.key == "<" {
             keystroke.key = "lt".to_string()
@@ -140,7 +140,7 @@ impl NeovimConnection {
         let key = format!("{start}{shift}{ctrl}{alt}{cmd}{}{end}", keystroke.key);
 
         self.data
-            .push_back(NeovimData::Key(keystroke_text.to_string()));
+            .push_back(NeovimData.Key(keystroke_text.to_string()));
         self.nvim
             .input(&key)
             .await
@@ -149,12 +149,12 @@ impl NeovimConnection {
 
     #[cfg(not(feature = "neovim"))]
     pub async fn send_keystroke(&mut self, keystroke_text: &str) {
-        if matches!(self.data.front(), Some(NeovimData::Get { .. })) {
+        if matches!(self.data.front(), Some(NeovimData.Get { .. })) {
             self.data.pop_front();
         }
         assert_eq!(
             self.data.pop_front(),
-            Some(NeovimData::Key(keystroke_text.to_string())),
+            Some(NeovimData.Key(keystroke_text.to_string())),
             "operation does not match recorded script. re-record with --features=neovim"
         );
     }
@@ -171,7 +171,7 @@ impl NeovimConnection {
         let lines = text
             .split('\n')
             .map(|line| line.to_string())
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         nvim_buffer
             .set_lines(0, -1, false, lines)
@@ -217,27 +217,27 @@ impl NeovimConnection {
                 .expect("Could not set nvim cursor position");
         }
 
-        if let Some(NeovimData::Get { mode, state }) = self.data.back() {
-            if *mode == Mode::Normal && *state == marked_text {
+        if let Some(NeovimData.Get { mode, state }) = self.data.back() {
+            if *mode == Mode.Normal && *state == marked_text {
                 return;
             }
         }
-        self.data.push_back(NeovimData::Put {
+        self.data.push_back(NeovimData.Put {
             state: marked_text.to_string(),
         })
     }
 
     #[cfg(not(feature = "neovim"))]
     pub async fn set_state(&mut self, marked_text: &str) {
-        if let Some(NeovimData::Get { mode, state: text }) = self.data.front() {
-            if *mode == Mode::Normal && *text == marked_text {
+        if let Some(NeovimData.Get { mode, state: text }) = self.data.front() {
+            if *mode == Mode.Normal && *text == marked_text {
                 return;
             }
             self.data.pop_front();
         }
         assert_eq!(
             self.data.pop_front(),
-            Some(NeovimData::Put {
+            Some(NeovimData.Put {
                 state: marked_text.to_string()
             }),
             "operation does not match recorded script. re-record with --features=neovim"
@@ -251,19 +251,19 @@ impl NeovimConnection {
             .await
             .unwrap();
 
-        self.data.push_back(NeovimData::SetOption {
+        self.data.push_back(NeovimData.SetOption {
             value: value.to_string(),
         })
     }
 
     #[cfg(not(feature = "neovim"))]
     pub async fn set_option(&mut self, value: &str) {
-        if let Some(NeovimData::Get { .. }) = self.data.front() {
+        if let Some(NeovimData.Get { .. }) = self.data.front() {
             self.data.pop_front();
         };
         assert_eq!(
             self.data.pop_front(),
-            Some(NeovimData::SetOption {
+            Some(NeovimData.SetOption {
                 value: value.to_string(),
             }),
             "operation does not match recorded script. re-record with --features=neovim"
@@ -274,19 +274,19 @@ impl NeovimConnection {
     pub async fn exec(&mut self, value: &str) {
         self.nvim.command_output(value).await.unwrap();
 
-        self.data.push_back(NeovimData::Exec {
+        self.data.push_back(NeovimData.Exec {
             command: value.to_string(),
         })
     }
 
     #[cfg(not(feature = "neovim"))]
     pub async fn exec(&mut self, value: &str) {
-        if let Some(NeovimData::Get { .. }) = self.data.front() {
+        if let Some(NeovimData.Get { .. }) = self.data.front() {
             self.data.pop_front();
         };
         assert_eq!(
             self.data.pop_front(),
-            Some(NeovimData::Exec {
+            Some(NeovimData.Exec {
                 command: value.to_string(),
             }),
             "operation does not match recorded script. re-record with --features=neovim"
@@ -295,10 +295,10 @@ impl NeovimConnection {
 
     #[cfg(not(feature = "neovim"))]
     pub async fn read_register(&mut self, register: char) -> String {
-        if let Some(NeovimData::Get { .. }) = self.data.front() {
+        if let Some(NeovimData.Get { .. }) = self.data.front() {
             self.data.pop_front();
         };
-        if let Some(NeovimData::ReadRegister { name, value }) = self.data.pop_front() {
+        if let Some(NeovimData.ReadRegister { name, value }) = self.data.pop_front() {
             if name == register {
                 return value;
             }
@@ -315,7 +315,7 @@ impl NeovimConnection {
             .await
             .unwrap();
 
-        self.data.push_back(NeovimData::ReadRegister {
+        self.data.push_back(NeovimData.ReadRegister {
             name,
             value: value.clone(),
         });
@@ -329,7 +329,7 @@ impl NeovimConnection {
             .command_output(cmd)
             .await
             .unwrap()
-            .parse::<u32>()
+            .parse.<u32>()
             .unwrap()
     }
 
@@ -369,31 +369,31 @@ impl NeovimConnection {
             .expect("Could not find mode value");
 
         let mode = match nvim_mode_text.as_ref() {
-            "i" => Mode::Insert,
-            "n" => Mode::Normal,
-            "v" => Mode::Visual,
-            "V" => Mode::VisualLine,
-            "R" => Mode::Replace,
-            "\x16" => Mode::VisualBlock,
+            "i" => Mode.Insert,
+            "n" => Mode.Normal,
+            "v" => Mode.Visual,
+            "V" => Mode.VisualLine,
+            "R" => Mode.Replace,
+            "\x16" => Mode.VisualBlock,
             _ => panic!("unexpected vim mode: {nvim_mode_text}"),
         };
 
-        let mut selections = Vec::new();
+        let mut selections = Vec.new();
         // Vim uses the index of the first and last character in the selection
         // Zed uses the index of the positions between the characters, so we need
         // to add one to the end in visual mode.
         match mode {
-            Mode::VisualBlock if selection_row != cursor_row => {
+            Mode.VisualBlock if selection_row != cursor_row => {
                 // in zed we fake a block selection by using multiple cursors (one per line)
                 // this code emulates that.
                 // to deal with casees where the selection is not perfectly rectangular we extract
                 // the content of the selection via the "a register to get the shape correctly.
                 self.nvim.input("\"aygv").await.unwrap();
                 let content = self.nvim.command_output("echo getreg('a')").await.unwrap();
-                let lines = content.split('\n').collect::<Vec<_>>();
-                let top = cmp::min(selection_row, cursor_row);
-                let left = cmp::min(selection_col, cursor_col);
-                for row in top..=cmp::max(selection_row, cursor_row) {
+                let lines = content.split('\n').collect.<Vec<_>>();
+                let top = cmp.min(selection_row, cursor_row);
+                let left = cmp.min(selection_col, cursor_col);
+                for row in top..=cmp.max(selection_row, cursor_row) {
                     let content = if row - top >= lines.len() as u32 {
                         ""
                     } else {
@@ -407,8 +407,8 @@ impl NeovimConnection {
                         continue;
                     }
 
-                    let start = Point::new(row, left);
-                    let end = Point::new(row, left + content.len() as u32);
+                    let start = Point.new(row, left);
+                    let end = Point.new(row, left + content.len() as u32);
                     if cursor_col >= selection_col {
                         selections.push(start..end)
                     } else {
@@ -416,7 +416,7 @@ impl NeovimConnection {
                     }
                 }
             }
-            Mode::Visual | Mode::VisualLine | Mode::VisualBlock => {
+            Mode.Visual | Mode.VisualLine | Mode.VisualBlock => {
                 if (selection_row, selection_col) > (cursor_row, cursor_col) {
                     let selection_line_length =
                         self.read_position("echo strlen(getline(line('v')))").await;
@@ -437,15 +437,15 @@ impl NeovimConnection {
                     }
                 }
                 selections.push(
-                    Point::new(selection_row, selection_col)..Point::new(cursor_row, cursor_col),
+                    Point.new(selection_row, selection_col)..Point.new(cursor_row, cursor_col),
                 )
             }
-            Mode::Insert | Mode::Normal | Mode::Replace => selections
-                .push(Point::new(selection_row, selection_col)..Point::new(cursor_row, cursor_col)),
+            Mode.Insert | Mode.Normal | Mode.Replace => selections
+                .push(Point.new(selection_row, selection_col)..Point.new(cursor_row, cursor_col)),
         }
 
         let ranges = encode_ranges(&text, &selections);
-        let state = NeovimData::Get {
+        let state = NeovimData.Get {
             mode,
             state: ranges.clone(),
         };
@@ -459,7 +459,7 @@ impl NeovimConnection {
 
     #[cfg(not(feature = "neovim"))]
     pub async fn state(&mut self) -> (Mode, String) {
-        if let Some(NeovimData::Get { state: raw, mode }) = self.data.front() {
+        if let Some(NeovimData.Get { state: raw, mode }) = self.data.front() {
             (*mode, raw.to_string())
         } else {
             panic!("operation does not match recorded script. re-record with --features=neovim");
@@ -467,7 +467,7 @@ impl NeovimConnection {
     }
 
     fn test_data_path(test_case_id: &str) -> PathBuf {
-        let mut data_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut data_path = PathBuf.from(env!("CARGO_MANIFEST_DIR"));
         data_path.push("test_data");
         data_path.push(format!("{}.json", test_case_id));
         data_path
@@ -475,15 +475,15 @@ impl NeovimConnection {
 
     #[cfg(not(feature = "neovim"))]
     fn read_test_data(test_case_id: &str) -> VecDeque<NeovimData> {
-        let path = Self::test_data_path(test_case_id);
-        let json = std::fs::read_to_string(path).expect(
+        let path = Self.test_data_path(test_case_id);
+        let json = std.fs.read_to_string(path).expect(
             "Could not read test data. Is it generated? Try running test with '--features neovim'",
         );
 
-        let mut result = VecDeque::new();
+        let mut result = VecDeque.new();
         for line in json.lines() {
             result.push_back(
-                serde_json::from_str(line)
+                serde_json.from_str(line)
                     .expect("invalid test data. regenerate it with '--features neovim'"),
             );
         }
@@ -492,30 +492,30 @@ impl NeovimConnection {
 
     #[cfg(feature = "neovim")]
     fn write_test_data(test_case_id: &str, data: &VecDeque<NeovimData>) {
-        let path = Self::test_data_path(test_case_id);
-        let mut json = Vec::new();
+        let path = Self.test_data_path(test_case_id);
+        let mut json = Vec.new();
         for entry in data {
-            serde_json::to_writer(&mut json, entry).unwrap();
+            serde_json.to_writer(&mut json, entry).unwrap();
             json.push(b'\n');
         }
-        std::fs::create_dir_all(path.parent().unwrap())
+        std.fs.create_dir_all(path.parent().unwrap())
             .expect("could not create test data directory");
-        std::fs::write(path, json).expect("could not write out test data");
+        std.fs.write(path, json).expect("could not write out test data");
     }
 }
 
 #[cfg(feature = "neovim")]
 impl Deref for NeovimConnection {
-    type Target = Neovim<nvim_rs::compat::tokio::Compat<ChildStdin>>;
+    type Target = Neovim<nvim_rs.compat.tokio.Compat<ChildStdin>>;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.nvim
     }
 }
 
 #[cfg(feature = "neovim")]
 impl DerefMut for NeovimConnection {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+    fn deref_mut(&mut self) -> &mut Self.Target {
         &mut self.nvim
     }
 }
@@ -523,7 +523,7 @@ impl DerefMut for NeovimConnection {
 #[cfg(feature = "neovim")]
 impl Drop for NeovimConnection {
     fn drop(&mut self) {
-        Self::write_test_data(&self.test_case_id, &self.data);
+        Self.write_test_data(&self.test_case_id, &self.data);
     }
 }
 
@@ -534,13 +534,13 @@ struct NvimHandler {}
 #[cfg(feature = "neovim")]
 #[async_trait]
 impl Handler for NvimHandler {
-    type Writer = nvim_rs::compat::tokio::Compat<ChildStdin>;
+    type Writer = nvim_rs.compat.tokio.Compat<ChildStdin>;
 
     async fn handle_request(
         &self,
         _event_name: String,
         _arguments: Vec<Value>,
-        _neovim: Neovim<Self::Writer>,
+        _neovim: Neovim<Self.Writer>,
     ) -> Result<Value, Value> {
         unimplemented!();
     }
@@ -549,20 +549,20 @@ impl Handler for NvimHandler {
         &self,
         _event_name: String,
         _arguments: Vec<Value>,
-        _neovim: Neovim<Self::Writer>,
+        _neovim: Neovim<Self.Writer>,
     ) {
     }
 }
 
 #[cfg(feature = "neovim")]
 fn parse_state(marked_text: &str) -> (String, Vec<Range<Point>>) {
-    let (text, ranges) = util::test::marked_text_ranges(marked_text, true);
+    let (text, ranges) = util.test.marked_text_ranges(marked_text, true);
     let point_ranges = ranges
         .into_iter()
         .map(|byte_range| {
-            let mut point_range = Point::zero()..Point::zero();
+            let mut point_range = Point.zero()..Point.zero();
             let mut ix = 0;
-            let mut position = Point::zero();
+            let mut position = Point.zero();
             for c in text.chars().chain(['\0']) {
                 if ix == byte_range.start {
                     point_range.start = position;
@@ -581,7 +581,7 @@ fn parse_state(marked_text: &str) -> (String, Vec<Range<Point>>) {
             }
             point_range
         })
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     (text, point_ranges)
 }
 
@@ -592,7 +592,7 @@ fn encode_ranges(text: &str, point_ranges: &Vec<Range<Point>>) -> String {
         .map(|range| {
             let mut byte_range = 0..0;
             let mut ix = 0;
-            let mut position = Point::zero();
+            let mut position = Point.zero();
             for c in text.chars().chain(['\0']) {
                 if position == range.start {
                     byte_range.start = ix;
@@ -611,6 +611,6 @@ fn encode_ranges(text: &str, point_ranges: &Vec<Range<Point>>) -> String {
             }
             byte_range
         })
-        .collect::<Vec<_>>();
-    util::test::generate_marked_text(text, &byte_ranges[..], true)
+        .collect.<Vec<_>>();
+    util.test.generate_marked_text(text, &byte_ranges[..], true)
 }

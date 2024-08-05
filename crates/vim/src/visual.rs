@@ -1,25 +1,25 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use collections::HashMap;
-use editor::{
-    display_map::{DisplaySnapshot, ToDisplayPoint},
+use collections.HashMap;
+use editor.{
+    display_map.{DisplaySnapshot, ToDisplayPoint},
     movement,
-    scroll::Autoscroll,
+    scroll.Autoscroll,
     Bias, DisplayPoint, Editor, ToOffset,
 };
-use gpui::{actions, ViewContext, WindowContext};
-use language::{Point, Selection, SelectionGoal};
-use multi_buffer::MultiBufferRow;
-use search::BufferSearchBar;
-use util::ResultExt;
-use workspace::{searchable::Direction, Workspace};
+use gpui.{actions, ViewContext, WindowContext};
+use language.{Point, Selection, SelectionGoal};
+use multi_buffer.MultiBufferRow;
+use search.BufferSearchBar;
+use util.ResultExt;
+use workspace.{searchable.Direction, Workspace};
 
-use crate::{
-    motion::{start_of_line, Motion},
-    normal::yank::{copy_selections_content, yank_selections_content},
-    normal::{mark::create_visual_marks, substitute::substitute},
-    object::Object,
-    state::{Mode, Operator},
+use crate.{
+    motion.{start_of_line, Motion},
+    normal.yank.{copy_selections_content, yank_selections_content},
+    normal.{mark.create_visual_marks, substitute.substitute},
+    object.Object,
+    state.{Mode, Operator},
     Vim,
 };
 
@@ -43,31 +43,31 @@ actions!(
 
 pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
     workspace.register_action(|_, _: &ToggleVisual, cx: &mut ViewContext<Workspace>| {
-        toggle_mode(Mode::Visual, cx)
+        toggle_mode(Mode.Visual, cx)
     });
     workspace.register_action(|_, _: &ToggleVisualLine, cx: &mut ViewContext<Workspace>| {
-        toggle_mode(Mode::VisualLine, cx)
+        toggle_mode(Mode.VisualLine, cx)
     });
     workspace.register_action(
         |_, _: &ToggleVisualBlock, cx: &mut ViewContext<Workspace>| {
-            toggle_mode(Mode::VisualBlock, cx)
+            toggle_mode(Mode.VisualBlock, cx)
         },
     );
     workspace.register_action(other_end);
     workspace.register_action(|_, _: &VisualDelete, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             delete(vim, false, cx);
         });
     });
     workspace.register_action(|_, _: &VisualDeleteLine, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.record_current_action(cx);
             delete(vim, true, cx);
         });
     });
     workspace.register_action(|_, _: &VisualYank, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             yank(vim, cx);
         });
     });
@@ -75,18 +75,18 @@ pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
     workspace.register_action(select_next);
     workspace.register_action(select_previous);
     workspace.register_action(|workspace, _: &SelectNextMatch, cx| {
-        Vim::update(cx, |vim, cx| {
-            select_match(workspace, vim, Direction::Next, cx);
+        Vim.update(cx, |vim, cx| {
+            select_match(workspace, vim, Direction.Next, cx);
         });
     });
     workspace.register_action(|workspace, _: &SelectPreviousMatch, cx| {
-        Vim::update(cx, |vim, cx| {
-            select_match(workspace, vim, Direction::Prev, cx);
+        Vim.update(cx, |vim, cx| {
+            select_match(workspace, vim, Direction.Prev, cx);
         });
     });
 
     workspace.register_action(|_, _: &RestoreVisualSelection, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             let Some((stored_mode, reversed)) =
                 vim.update_state(|state| state.stored_visual_mode.take())
             else {
@@ -101,26 +101,26 @@ pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
                 .zip(end)
                 .zip(reversed)
                 .map(|((start, end), reversed)| (*start, *end, reversed))
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
             if vim.state().mode.is_visual() {
                 create_visual_marks(vim, vim.state().mode, cx);
             }
 
             vim.update_active_editor(cx, |_, editor, cx| {
-                editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+                editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                     let map = s.display_map();
                     let ranges = ranges
                         .into_iter()
                         .map(|(start, end, reversed)| {
                             let new_end =
-                                movement::saturating_right(&map, end.to_display_point(&map));
+                                movement.saturating_right(&map, end.to_display_point(&map));
                             Selection {
                                 id: s.new_selection_id(),
                                 start: start.to_offset(&map.buffer_snapshot),
-                                end: new_end.to_offset(&map, Bias::Left),
+                                end: new_end.to_offset(&map, Bias.Left),
                                 reversed,
-                                goal: SelectionGoal::None,
+                                goal: SelectionGoal.None,
                             }
                         })
                         .collect();
@@ -133,23 +133,23 @@ pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
 }
 
 pub fn visual_motion(motion: Motion, times: Option<usize>, cx: &mut WindowContext) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.update_active_editor(cx, |vim, editor, cx| {
             let text_layout_details = editor.text_layout_details(cx);
-            if vim.state().mode == Mode::VisualBlock
+            if vim.state().mode == Mode.VisualBlock
                 && !matches!(
                     motion,
-                    Motion::EndOfLine {
+                    Motion.EndOfLine {
                         display_lines: false
                     }
                 )
             {
-                let is_up_or_down = matches!(motion, Motion::Up { .. } | Motion::Down { .. });
+                let is_up_or_down = matches!(motion, Motion.Up { .. } | Motion.Down { .. });
                 visual_block_motion(is_up_or_down, editor, cx, |map, point, goal| {
                     motion.move_point(map, point, goal, times, &text_layout_details)
                 })
             } else {
-                editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+                editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                     s.move_with(|map, selection| {
                         let was_reversed = selection.reversed;
                         let mut current_head = selection.head();
@@ -161,12 +161,12 @@ pub fn visual_motion(motion: Motion, times: Option<usize>, cx: &mut WindowContex
                         // If the file ends with a newline (which is common) we don't do this.
                         // so that if you go to the end of such a file you can use "up" to go
                         // to the previous line and have it work somewhat as expected.
-                        #[allow(clippy::nonminimal_bool)]
+                        #[allow(clippy.nonminimal_bool)]
                         if !selection.reversed
                             && !selection.is_empty()
                             && !(selection.end.column() == 0 && selection.end == map.max_point())
                         {
-                            current_head = movement::left(map, selection.end)
+                            current_head = movement.left(map, selection.end)
                         }
 
                         let Some((new_head, goal)) = motion.move_point(
@@ -183,10 +183,10 @@ pub fn visual_motion(motion: Motion, times: Option<usize>, cx: &mut WindowContex
 
                         // ensure the current character is included in the selection.
                         if !selection.reversed {
-                            let next_point = if vim.state().mode == Mode::VisualBlock {
-                                movement::saturating_right(map, selection.end)
+                            let next_point = if vim.state().mode == Mode.VisualBlock {
+                                movement.saturating_right(map, selection.end)
                             } else {
-                                movement::right(map, selection.end)
+                                movement.right(map, selection.end)
                             };
 
                             if !(next_point.column() == 0 && next_point == map.max_point()) {
@@ -198,9 +198,9 @@ pub fn visual_motion(motion: Motion, times: Option<usize>, cx: &mut WindowContex
                         // if our selection has reversed, we need to move the opposite end
                         // to ensure the anchor is still selected.
                         if was_reversed && !selection.reversed {
-                            selection.start = movement::left(map, selection.start);
+                            selection.start = movement.left(map, selection.start);
                         } else if !was_reversed && selection.reversed {
-                            selection.end = movement::right(map, selection.end);
+                            selection.end = movement.right(map, selection.end);
                         }
                     })
                 });
@@ -220,7 +220,7 @@ pub fn visual_block_motion(
     ) -> Option<(DisplayPoint, SelectionGoal)>,
 ) {
     let text_layout_details = editor.text_layout_details(cx);
-    editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+    editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
         let map = &s.display_map();
         let mut head = s.newest_anchor().head().to_display_point(map);
         let mut tail = s.oldest_anchor().tail().to_display_point(map);
@@ -229,15 +229,15 @@ pub fn visual_block_motion(
         let mut tail_x = map.x_for_display_point(tail, &text_layout_details);
 
         let (start, end) = match s.newest_anchor().goal {
-            SelectionGoal::HorizontalRange { start, end } if preserve_goal => (start, end),
-            SelectionGoal::HorizontalPosition(start) if preserve_goal => (start, start),
+            SelectionGoal.HorizontalRange { start, end } if preserve_goal => (start, end),
+            SelectionGoal.HorizontalPosition(start) if preserve_goal => (start, start),
             _ => (tail_x.0, head_x.0),
         };
-        let mut goal = SelectionGoal::HorizontalRange { start, end };
+        let mut goal = SelectionGoal.HorizontalRange { start, end };
 
         let was_reversed = tail_x > head_x;
         if !was_reversed && !preserve_goal {
-            head = movement::saturating_left(map, head);
+            head = movement.saturating_left(map, head);
         }
 
         let Some((new_head, _)) = move_selection(&map, head, goal) else {
@@ -248,14 +248,14 @@ pub fn visual_block_motion(
 
         let is_reversed = tail_x > head_x;
         if was_reversed && !is_reversed {
-            tail = movement::saturating_left(map, tail);
+            tail = movement.saturating_left(map, tail);
             tail_x = map.x_for_display_point(tail, &text_layout_details);
         } else if !was_reversed && is_reversed {
-            tail = movement::saturating_right(map, tail);
+            tail = movement.saturating_right(map, tail);
             tail_x = map.x_for_display_point(tail, &text_layout_details);
         }
         if !is_reversed && !preserve_goal {
-            head = movement::saturating_right(map, head);
+            head = movement.saturating_right(map, head);
             head_x = map.x_for_display_point(head, &text_layout_details);
         }
 
@@ -266,28 +266,28 @@ pub fn visual_block_motion(
         };
 
         if !preserve_goal {
-            goal = SelectionGoal::HorizontalRange {
+            goal = SelectionGoal.HorizontalRange {
                 start: positions.start.0,
                 end: positions.end.0,
             };
         }
 
-        let mut selections = Vec::new();
+        let mut selections = Vec.new();
         let mut row = tail.row();
 
         loop {
             let laid_out_line = map.layout_row(row, &text_layout_details);
-            let start = DisplayPoint::new(
+            let start = DisplayPoint.new(
                 row,
                 laid_out_line.closest_index_for_x(positions.start) as u32,
             );
             let mut end =
-                DisplayPoint::new(row, laid_out_line.closest_index_for_x(positions.end) as u32);
+                DisplayPoint.new(row, laid_out_line.closest_index_for_x(positions.end) as u32);
             if end <= start {
                 if start.column() == map.line_len(start.row()) {
                     end = start;
                 } else {
-                    end = movement::saturating_right(map, start);
+                    end = movement.saturating_right(map, start);
                 }
             }
 
@@ -317,8 +317,8 @@ pub fn visual_block_motion(
 }
 
 pub fn visual_object(object: Object, cx: &mut WindowContext) {
-    Vim::update(cx, |vim, cx| {
-        if let Some(Operator::Object { around }) = vim.active_operator() {
+    Vim.update(cx, |vim, cx| {
+        if let Some(Operator.Object { around }) = vim.active_operator() {
             vim.pop_operator(cx);
             let current_mode = vim.state().mode;
             let target_mode = object.target_visual_mode(current_mode);
@@ -327,7 +327,7 @@ pub fn visual_object(object: Object, cx: &mut WindowContext) {
             }
 
             vim.update_active_editor(cx, |_, editor, cx| {
-                editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+                editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                     s.move_with(|map, selection| {
                         let mut mut_selection = selection.clone();
 
@@ -336,9 +336,9 @@ pub fn visual_object(object: Object, cx: &mut WindowContext) {
                         // the current character is before the cursor.
                         // But this will affect the judgment of the html tag
                         // so the html tag needs to skip this logic.
-                        if !selection.reversed && object != Object::Tag {
+                        if !selection.reversed && object != Object.Tag {
                             mut_selection.set_head(
-                                movement::left(map, mut_selection.head()),
+                                movement.left(map, mut_selection.head()),
                                 mut_selection.goal,
                             );
                         }
@@ -347,7 +347,7 @@ pub fn visual_object(object: Object, cx: &mut WindowContext) {
                             if !range.is_empty() {
                                 let expand_both_ways = object.always_expands_both_ways()
                                     || selection.is_empty()
-                                    || movement::right(map, selection.start) == selection.end;
+                                    || movement.right(map, selection.start) == selection.end;
 
                                 if expand_both_ways {
                                     selection.start = range.start;
@@ -366,16 +366,16 @@ pub fn visual_object(object: Object, cx: &mut WindowContext) {
                             //
                             // We don't do this adjustment for a one-line blank paragraph since the
                             // trailing newline is included in its selection from the beginning.
-                            if object == Object::Paragraph && range.start != range.end {
+                            if object == Object.Paragraph && range.start != range.end {
                                 let row_of_selection_end_line = selection.end.to_point(map).row;
                                 let new_selection_end = if map
                                     .buffer_snapshot
                                     .line_len(MultiBufferRow(row_of_selection_end_line))
                                     == 0
                                 {
-                                    Point::new(row_of_selection_end_line + 1, 0)
+                                    Point.new(row_of_selection_end_line + 1, 0)
                                 } else {
-                                    Point::new(row_of_selection_end_line, 1)
+                                    Point.new(row_of_selection_end_line, 1)
                                 };
                                 selection.end = new_selection_end.to_display_point(map);
                             }
@@ -388,9 +388,9 @@ pub fn visual_object(object: Object, cx: &mut WindowContext) {
 }
 
 fn toggle_mode(mode: Mode, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         if vim.state().mode == mode {
-            vim.switch_mode(Mode::Normal, false, cx);
+            vim.switch_mode(Mode.Normal, false, cx);
         } else {
             vim.switch_mode(mode, false, cx);
         }
@@ -398,7 +398,7 @@ fn toggle_mode(mode: Mode, cx: &mut ViewContext<Workspace>) {
 }
 
 pub fn other_end(_: &mut Workspace, _: &OtherEnd, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.update_active_editor(cx, |_, editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.move_with(|_, selection| {
@@ -412,22 +412,22 @@ pub fn other_end(_: &mut Workspace, _: &OtherEnd, cx: &mut ViewContext<Workspace
 pub fn delete(vim: &mut Vim, line_mode: bool, cx: &mut WindowContext) {
     vim.store_visual_marks(cx);
     vim.update_active_editor(cx, |vim, editor, cx| {
-        let mut original_columns: HashMap<_, _> = Default::default();
+        let mut original_columns: HashMap<_, _> = Default.default();
         let line_mode = line_mode || editor.selections.line_mode;
 
         editor.transact(cx, |editor, cx| {
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     if line_mode {
                         let mut position = selection.head();
                         if !selection.reversed {
-                            position = movement::left(map, position);
+                            position = movement.left(map, position);
                         }
                         original_columns.insert(selection.id, position.to_point(map).column);
-                        if vim.state().mode == Mode::VisualBlock {
+                        if vim.state().mode == Mode.VisualBlock {
                             *selection.end.column_mut() = map.line_len(selection.end.row())
-                        } else if vim.state().mode != Mode::VisualLine {
-                            selection.start = DisplayPoint::new(selection.start.row(), 0);
+                        } else if vim.state().mode != Mode.VisualLine {
+                            selection.start = DisplayPoint.new(selection.start.row(), 0);
                             if selection.end.row() == map.max_point().row() {
                                 selection.end = map.max_point()
                             } else {
@@ -436,7 +436,7 @@ pub fn delete(vim: &mut Vim, line_mode: bool, cx: &mut WindowContext) {
                             }
                         }
                     }
-                    selection.goal = SelectionGoal::None;
+                    selection.goal = SelectionGoal.None;
                 });
             });
             copy_selections_content(vim, editor, line_mode, cx);
@@ -444,23 +444,23 @@ pub fn delete(vim: &mut Vim, line_mode: bool, cx: &mut WindowContext) {
 
             // Fixup cursor position after the deletion
             editor.set_clip_at_line_ends(true, cx);
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     let mut cursor = selection.head().to_point(map);
 
                     if let Some(column) = original_columns.get(&selection.id) {
                         cursor.column = *column
                     }
-                    let cursor = map.clip_point(cursor.to_display_point(map), Bias::Left);
+                    let cursor = map.clip_point(cursor.to_display_point(map), Bias.Left);
                     selection.collapse_to(cursor, selection.goal)
                 });
-                if vim.state().mode == Mode::VisualBlock {
+                if vim.state().mode == Mode.VisualBlock {
                     s.select_anchors(vec![s.first_anchor()])
                 }
             });
         })
     });
-    vim.switch_mode(Mode::Normal, true, cx);
+    vim.switch_mode(Mode.Normal, true, cx);
 }
 
 pub fn yank(vim: &mut Vim, cx: &mut WindowContext) {
@@ -473,18 +473,18 @@ pub fn yank(vim: &mut Vim, cx: &mut WindowContext) {
                 if line_mode {
                     selection.start = start_of_line(map, false, selection.start);
                 };
-                selection.collapse_to(selection.start, SelectionGoal::None)
+                selection.collapse_to(selection.start, SelectionGoal.None)
             });
-            if vim.state().mode == Mode::VisualBlock {
+            if vim.state().mode == Mode.VisualBlock {
                 s.select_anchors(vec![s.first_anchor()])
             }
         });
     });
-    vim.switch_mode(Mode::Normal, true, cx);
+    vim.switch_mode(Mode.Normal, true, cx);
 }
 
 pub(crate) fn visual_replace(text: Arc<str>, cx: &mut WindowContext) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.stop_recording();
         vim.update_active_editor(cx, |_, editor, cx| {
             editor.transact(cx, |editor, cx| {
@@ -501,16 +501,16 @@ pub(crate) fn visual_replace(text: Arc<str>, cx: &mut WindowContext) {
                         let start = selection.start.bias_left(&display_map.buffer_snapshot);
                         start..start
                     })
-                    .collect::<Vec<_>>();
+                    .collect.<Vec<_>>();
 
-                let mut edits = Vec::new();
+                let mut edits = Vec.new();
                 for selection in selections.iter() {
                     let selection = selection.clone();
                     for row_range in
-                        movement::split_display_range_by_lines(&display_map, selection.range())
+                        movement.split_display_range_by_lines(&display_map, selection.range())
                     {
-                        let range = row_range.start.to_offset(&display_map, Bias::Right)
-                            ..row_range.end.to_offset(&display_map, Bias::Right);
+                        let range = row_range.start.to_offset(&display_map, Bias.Right)
+                            ..row_range.end.to_offset(&display_map, Bias.Right);
                         let text = text.repeat(range.len());
                         edits.push((range, text));
                     }
@@ -522,12 +522,12 @@ pub(crate) fn visual_replace(text: Arc<str>, cx: &mut WindowContext) {
                 editor.change_selections(None, cx, |s| s.select_ranges(stable_anchors));
             });
         });
-        vim.switch_mode(Mode::Normal, false, cx);
+        vim.switch_mode(Mode.Normal, false, cx);
     });
 }
 
 pub fn select_next(_: &mut Workspace, _: &SelectNext, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let count =
             vim.take_count(cx)
                 .unwrap_or_else(|| if vim.state().mode.is_visual() { 1 } else { 2 });
@@ -535,7 +535,7 @@ pub fn select_next(_: &mut Workspace, _: &SelectNext, cx: &mut ViewContext<Works
             editor.set_clip_at_line_ends(false, cx);
             for _ in 0..count {
                 if editor
-                    .select_next(&Default::default(), cx)
+                    .select_next(&Default.default(), cx)
                     .log_err()
                     .is_none()
                 {
@@ -547,14 +547,14 @@ pub fn select_next(_: &mut Workspace, _: &SelectNext, cx: &mut ViewContext<Works
 }
 
 pub fn select_previous(_: &mut Workspace, _: &SelectPrevious, cx: &mut ViewContext<Workspace>) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         let count =
             vim.take_count(cx)
                 .unwrap_or_else(|| if vim.state().mode.is_visual() { 1 } else { 2 });
         vim.update_active_editor(cx, |_, editor, cx| {
             for _ in 0..count {
                 if editor
-                    .select_previous(&Default::default(), cx)
+                    .select_previous(&Default.default(), cx)
                     .log_err()
                     .is_none()
                 {
@@ -573,7 +573,7 @@ pub fn select_match(
 ) {
     let count = vim.take_count(cx).unwrap_or(1);
     let pane = workspace.active_pane().clone();
-    let vim_is_normal = vim.state().mode == Mode::Normal;
+    let vim_is_normal = vim.state().mode == Mode.Normal;
     let mut start_selection = 0usize;
     let mut end_selection = 0usize;
 
@@ -582,7 +582,7 @@ pub fn select_match(
     });
     if vim_is_normal {
         pane.update(cx, |pane, cx| {
-            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() {
+            if let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() {
                 search_bar.update(cx, |search_bar, cx| {
                     if !search_bar.has_active_match() || !search_bar.show(cx) {
                         return;
@@ -595,14 +595,14 @@ pub fn select_match(
         });
     }
     vim.update_active_editor(cx, |_, editor, cx| {
-        let latest = editor.selections.newest::<usize>(cx);
+        let latest = editor.selections.newest.<usize>(cx);
         start_selection = latest.start;
         end_selection = latest.end;
     });
 
     let mut match_exists = false;
     pane.update(cx, |pane, cx| {
-        if let Some(search_bar) = pane.toolbar().read(cx).item_of_type::<BufferSearchBar>() {
+        if let Some(search_bar) = pane.toolbar().read(cx).item_of_type.<BufferSearchBar>() {
             search_bar.update(cx, |search_bar, cx| {
                 search_bar.update_match_index(cx);
                 search_bar.select_match(direction, count, cx);
@@ -616,7 +616,7 @@ pub fn select_match(
         return;
     }
     vim.update_active_editor(cx, |_, editor, cx| {
-        let latest = editor.selections.newest::<usize>(cx);
+        let latest = editor.selections.newest.<usize>(cx);
         if vim_is_normal {
             start_selection = latest.start;
             end_selection = latest.end;
@@ -624,39 +624,39 @@ pub fn select_match(
             start_selection = start_selection.min(latest.start);
             end_selection = end_selection.max(latest.end);
         }
-        if direction == Direction::Prev {
-            std::mem::swap(&mut start_selection, &mut end_selection);
+        if direction == Direction.Prev {
+            std.mem.swap(&mut start_selection, &mut end_selection);
         }
-        editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+        editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
             s.select_ranges([start_selection..end_selection]);
         });
         editor.set_collapse_matches(true);
     });
 
     match vim.maybe_pop_operator() {
-        Some(Operator::Change) => substitute(vim, None, false, cx),
-        Some(Operator::Delete) => {
+        Some(Operator.Change) => substitute(vim, None, false, cx),
+        Some(Operator.Delete) => {
             vim.stop_recording();
             delete(vim, false, cx)
         }
-        Some(Operator::Yank) => yank(vim, cx),
+        Some(Operator.Yank) => yank(vim, cx),
         _ => {} // Ignoring other operators
     }
 }
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
-    use workspace::item::Item;
+    use indoc.indoc;
+    use workspace.item.Item;
 
-    use crate::{
-        state::Mode,
-        test::{NeovimBackedTestContext, VimTestContext},
+    use crate.{
+        state.Mode,
+        test.{NeovimBackedTestContext, VimTestContext},
     };
 
-    #[gpui::test]
-    async fn test_enter_visual_mode(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_enter_visual_mode(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "The ˇquick brown
@@ -733,9 +733,9 @@ mod test {
             ˇ"});
     }
 
-    #[gpui::test]
-    async fn test_enter_visual_line_mode(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_enter_visual_line_mode(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "The ˇquick brown
@@ -788,9 +788,9 @@ mod test {
             ˇb"});
     }
 
-    #[gpui::test]
-    async fn test_visual_delete(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_delete(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.simulate("v w", "The quick ˇbrown")
             .await
@@ -832,9 +832,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_visual_line_delete(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_line_delete(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {"
                 The quˇick brown
@@ -878,9 +878,9 @@ mod test {
         cx.shared_state().await.assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_visual_yank(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_yank(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("The quick ˇbrown").await;
         cx.simulate_shared_keystrokes("v w y").await;
@@ -948,9 +948,9 @@ mod test {
             .assert_eq("fox jumps over\nthe lazy dog\n");
     }
 
-    #[gpui::test]
-    async fn test_visual_block_mode(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_block_mode(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "The ˇquick brown
@@ -1079,9 +1079,9 @@ mod test {
         });
     }
 
-    #[gpui::test]
-    async fn test_visual_block_issue_2123(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_block_issue_2123(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "The ˇquick brown
@@ -1099,9 +1099,9 @@ mod test {
         });
     }
 
-    #[gpui::test]
-    async fn test_visual_block_insert(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_block_insert(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "ˇThe quick brown
@@ -1149,9 +1149,9 @@ mod test {
         });
     }
 
-    #[gpui::test]
-    async fn test_visual_object(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_object(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("hello (in [parˇens] o)").await;
         cx.simulate_shared_keystrokes("ctrl-v l").await;
@@ -1169,27 +1169,27 @@ mod test {
         cx.shared_state()
             .await
             .assert_eq("hello in a w«ordˇ» again.");
-        assert_eq!(cx.mode(), Mode::VisualBlock);
+        assert_eq!(cx.mode(), Mode.VisualBlock);
         cx.simulate_shared_keystrokes("o a s").await;
         cx.shared_state()
             .await
             .assert_eq("«ˇhello in a word» again.");
     }
 
-    #[gpui::test]
-    async fn test_mode_across_command(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_mode_across_command(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
 
-        cx.set_state("aˇbc", Mode::Normal);
+        cx.set_state("aˇbc", Mode.Normal);
         cx.simulate_keystrokes("ctrl-v");
-        assert_eq!(cx.mode(), Mode::VisualBlock);
+        assert_eq!(cx.mode(), Mode.VisualBlock);
         cx.simulate_keystrokes("cmd-shift-p escape");
-        assert_eq!(cx.mode(), Mode::VisualBlock);
+        assert_eq!(cx.mode(), Mode.VisualBlock);
     }
 
-    #[gpui::test]
-    async fn test_gn(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_gn(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("aaˇ aa aa aa aa").await;
         cx.simulate_shared_keystrokes("/ a a enter").await;
@@ -1216,20 +1216,20 @@ mod test {
         cx.shared_state().await.assert_eq("«ˇaa aa» aa aa aa");
     }
 
-    #[gpui::test]
-    async fn test_gl(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_gl(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
 
-        cx.set_state("aaˇ aa\naa", Mode::Normal);
+        cx.set_state("aaˇ aa\naa", Mode.Normal);
         cx.simulate_keystrokes("g l");
-        cx.assert_state("«aaˇ» «aaˇ»\naa", Mode::Visual);
+        cx.assert_state("«aaˇ» «aaˇ»\naa", Mode.Visual);
         cx.simulate_keystrokes("g >");
-        cx.assert_state("«aaˇ» aa\n«aaˇ»", Mode::Visual);
+        cx.assert_state("«aaˇ» aa\n«aaˇ»", Mode.Visual);
     }
 
-    #[gpui::test]
-    async fn test_dgn_repeat(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_dgn_repeat(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("aaˇ aa aa aa aa").await;
         cx.simulate_shared_keystrokes("/ a a enter").await;
@@ -1243,9 +1243,9 @@ mod test {
         cx.shared_state().await.assert_eq("aa   ˇ aa");
     }
 
-    #[gpui::test]
-    async fn test_cgn_repeat(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_cgn_repeat(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("aaˇ aa aa aa aa").await;
         cx.simulate_shared_keystrokes("/ a a enter").await;
@@ -1256,9 +1256,9 @@ mod test {
         cx.shared_state().await.assert_eq("aa x ˇx aa aa");
     }
 
-    #[gpui::test]
-    async fn test_cgn_nomatch(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_cgn_nomatch(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("aaˇ aa aa aa aa").await;
         cx.simulate_shared_keystrokes("/ b b enter").await;
@@ -1277,9 +1277,9 @@ mod test {
         cx.shared_state().await.assert_eq("aa ˇx aa aa aa");
     }
 
-    #[gpui::test]
-    async fn test_visual_shift_d(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_shift_d(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "The ˇquick brown
@@ -1309,9 +1309,9 @@ mod test {
         });
     }
 
-    #[gpui::test]
-    async fn test_gv(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_gv(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state(indoc! {
             "The ˇquick brown"
@@ -1347,7 +1347,7 @@ mod test {
             fish red
             fish blue
         "},
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("4 g l escape escape g v");
         cx.assert_state(
@@ -1357,7 +1357,7 @@ mod test {
                 «fishˇ» red
                 «fishˇ» blue
             "},
-            Mode::Visual,
+            Mode.Visual,
         );
         cx.simulate_keystrokes("y g v");
         cx.assert_state(
@@ -1367,7 +1367,7 @@ mod test {
                 «fishˇ» red
                 «fishˇ» blue
             "},
-            Mode::Visual,
+            Mode.Visual,
         );
     }
 }

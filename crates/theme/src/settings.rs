@@ -1,22 +1,22 @@
-use crate::one_themes::one_dark;
-use crate::{Appearance, SyntaxTheme, Theme, ThemeRegistry, ThemeStyleContent};
-use anyhow::Result;
-use derive_more::{Deref, DerefMut};
-use gpui::{
+use crate.one_themes.one_dark;
+use crate.{Appearance, SyntaxTheme, Theme, ThemeRegistry, ThemeStyleContent};
+use anyhow.Result;
+use derive_more.{Deref, DerefMut};
+use gpui.{
     px, AppContext, Font, FontFallbacks, FontFeatures, FontStyle, FontWeight, Global, Pixels,
     Subscription, ViewContext, WindowContext,
 };
-use refineable::Refineable;
-use schemars::{
-    gen::SchemaGenerator,
-    schema::{InstanceType, Schema, SchemaObject},
+use refineable.Refineable;
+use schemars.{
+    gen.SchemaGenerator,
+    schema.{InstanceType, Schema, SchemaObject},
     JsonSchema,
 };
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use settings::{add_references_to_properties, Settings, SettingsJsonSchemaParams, SettingsSources};
-use std::sync::Arc;
-use util::ResultExt as _;
+use serde.{Deserialize, Serialize};
+use serde_json.Value;
+use settings.{add_references_to_properties, Settings, SettingsJsonSchemaParams, SettingsSources};
+use std.sync.Arc;
+use util.ResultExt as _;
 
 const MIN_FONT_SIZE: Pixels = px(6.0);
 const MIN_LINE_HEIGHT: f32 = 1.0;
@@ -52,9 +52,9 @@ pub enum UiDensity {
 impl UiDensity {
     pub fn spacing_ratio(self) -> f32 {
         match self {
-            UiDensity::Compact => 0.75,
-            UiDensity::Default => 1.0,
-            UiDensity::Comfortable => 1.25,
+            UiDensity.Compact => 0.75,
+            UiDensity.Default => 1.0,
+            UiDensity.Comfortable => 1.25,
         }
     }
 }
@@ -62,10 +62,10 @@ impl UiDensity {
 impl From<String> for UiDensity {
     fn from(s: String) -> Self {
         match s.as_str() {
-            "compact" => Self::Compact,
-            "default" => Self::Default,
-            "comfortable" => Self::Comfortable,
-            _ => Self::default(),
+            "compact" => Self.Compact,
+            "default" => Self.Default,
+            "comfortable" => Self.Comfortable,
+            _ => Self.default(),
         }
     }
 }
@@ -73,9 +73,9 @@ impl From<String> for UiDensity {
 impl Into<String> for UiDensity {
     fn into(self) -> String {
         match self {
-            UiDensity::Compact => "compact".to_string(),
-            UiDensity::Default => "default".to_string(),
-            UiDensity::Comfortable => "comfortable".to_string(),
+            UiDensity.Compact => "compact".to_string(),
+            UiDensity.Default => "default".to_string(),
+            UiDensity.Comfortable => "comfortable".to_string(),
         }
     }
 }
@@ -100,8 +100,8 @@ impl ThemeSettings {
     /// Returns the name of the default theme for the given [`Appearance`].
     pub fn default_theme(appearance: Appearance) -> &'static str {
         match appearance {
-            Appearance::Light => Self::DEFAULT_LIGHT_THEME,
-            Appearance::Dark => Self::DEFAULT_DARK_THEME,
+            Appearance.Light => Self.DEFAULT_LIGHT_THEME,
+            Appearance.Dark => Self.DEFAULT_DARK_THEME,
         }
     }
 
@@ -110,21 +110,21 @@ impl ThemeSettings {
     /// Reads the [`ThemeSettings`] to know which theme should be loaded,
     /// taking into account the current [`SystemAppearance`].
     pub fn reload_current_theme(cx: &mut AppContext) {
-        let mut theme_settings = ThemeSettings::get_global(cx).clone();
-        let system_appearance = SystemAppearance::global(cx);
+        let mut theme_settings = ThemeSettings.get_global(cx).clone();
+        let system_appearance = SystemAppearance.global(cx);
 
         if let Some(theme_selection) = theme_settings.theme_selection.clone() {
             let mut theme_name = theme_selection.theme(*system_appearance);
 
             // If the selected theme doesn't exist, fall back to a default theme
             // based on the system appearance.
-            let theme_registry = ThemeRegistry::global(cx);
+            let theme_registry = ThemeRegistry.global(cx);
             if theme_registry.get(theme_name).ok().is_none() {
-                theme_name = Self::default_theme(*system_appearance);
+                theme_name = Self.default_theme(*system_appearance);
             };
 
             if let Some(_theme) = theme_settings.switch_theme(theme_name, cx) {
-                ThemeSettings::override_global(theme_settings, cx);
+                ThemeSettings.override_global(theme_settings, cx);
             }
         }
     }
@@ -136,7 +136,7 @@ pub struct SystemAppearance(pub Appearance);
 
 impl Default for SystemAppearance {
     fn default() -> Self {
-        Self(Appearance::Dark)
+        Self(Appearance.Dark)
     }
 }
 
@@ -148,7 +148,7 @@ impl Global for GlobalSystemAppearance {}
 impl SystemAppearance {
     /// Initializes the [`SystemAppearance`] for the application.
     pub fn init(cx: &mut AppContext) {
-        *cx.default_global::<GlobalSystemAppearance>() =
+        *cx.default_global.<GlobalSystemAppearance>() =
             GlobalSystemAppearance(SystemAppearance(cx.window_appearance().into()));
     }
 
@@ -156,17 +156,17 @@ impl SystemAppearance {
     ///
     /// Inserts a default [`SystemAppearance`] if one does not yet exist.
     pub(crate) fn default_global(cx: &mut AppContext) -> Self {
-        cx.default_global::<GlobalSystemAppearance>().0
+        cx.default_global.<GlobalSystemAppearance>().0
     }
 
     /// Returns the global [`SystemAppearance`].
     pub fn global(cx: &AppContext) -> Self {
-        cx.global::<GlobalSystemAppearance>().0
+        cx.global.<GlobalSystemAppearance>().0
     }
 
     /// Returns a mutable reference to the global [`SystemAppearance`].
     pub fn global_mut(cx: &mut AppContext) -> &mut Self {
-        cx.global_mut::<GlobalSystemAppearance>()
+        cx.global_mut.<GlobalSystemAppearance>()
     }
 }
 
@@ -195,7 +195,7 @@ pub enum ThemeSelection {
 }
 
 fn theme_name_ref(_: &mut SchemaGenerator) -> Schema {
-    Schema::new_ref("#/definitions/ThemeName".into())
+    Schema.new_ref("#/definitions/ThemeName".into())
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default, Serialize, Deserialize, JsonSchema)]
@@ -215,13 +215,13 @@ pub enum ThemeMode {
 impl ThemeSelection {
     pub fn theme(&self, system_appearance: Appearance) -> &str {
         match self {
-            Self::Static(theme) => theme,
-            Self::Dynamic { mode, light, dark } => match mode {
-                ThemeMode::Light => light,
-                ThemeMode::Dark => dark,
-                ThemeMode::System => match system_appearance {
-                    Appearance::Light => light,
-                    Appearance::Dark => dark,
+            Self.Static(theme) => theme,
+            Self.Dynamic { mode, light, dark } => match mode {
+                ThemeMode.Light => light,
+                ThemeMode.Dark => dark,
+                ThemeMode.System => match system_appearance {
+                    Appearance.Light => light,
+                    Appearance.Dark => dark,
                 },
             },
         }
@@ -229,8 +229,8 @@ impl ThemeSelection {
 
     pub fn mode(&self) -> Option<ThemeMode> {
         match self {
-            ThemeSelection::Static(_) => None,
-            ThemeSelection::Dynamic { mode, .. } => Some(*mode),
+            ThemeSelection.Static(_) => None,
+            ThemeSelection.Dynamic { mode, .. } => Some(*mode),
         }
     }
 }
@@ -293,46 +293,46 @@ impl ThemeSettingsContent {
     pub fn set_theme(&mut self, theme_name: String, appearance: Appearance) {
         if let Some(selection) = self.theme.as_mut() {
             let theme_to_update = match selection {
-                ThemeSelection::Static(theme) => theme,
-                ThemeSelection::Dynamic { mode, light, dark } => match mode {
-                    ThemeMode::Light => light,
-                    ThemeMode::Dark => dark,
-                    ThemeMode::System => match appearance {
-                        Appearance::Light => light,
-                        Appearance::Dark => dark,
+                ThemeSelection.Static(theme) => theme,
+                ThemeSelection.Dynamic { mode, light, dark } => match mode {
+                    ThemeMode.Light => light,
+                    ThemeMode.Dark => dark,
+                    ThemeMode.System => match appearance {
+                        Appearance.Light => light,
+                        Appearance.Dark => dark,
                     },
                 },
             };
 
             *theme_to_update = theme_name.to_string();
         } else {
-            self.theme = Some(ThemeSelection::Static(theme_name.to_string()));
+            self.theme = Some(ThemeSelection.Static(theme_name.to_string()));
         }
     }
 
     pub fn set_mode(&mut self, mode: ThemeMode) {
         if let Some(selection) = self.theme.as_mut() {
             match selection {
-                ThemeSelection::Static(theme) => {
+                ThemeSelection.Static(theme) => {
                     // If the theme was previously set to a single static theme,
                     // we don't know whether it was a light or dark theme, so we
                     // just use it for both.
-                    self.theme = Some(ThemeSelection::Dynamic {
+                    self.theme = Some(ThemeSelection.Dynamic {
                         mode,
                         light: theme.clone(),
                         dark: theme.clone(),
                     });
                 }
-                ThemeSelection::Dynamic {
+                ThemeSelection.Dynamic {
                     mode: mode_to_update,
                     ..
                 } => *mode_to_update = mode,
             }
         } else {
-            self.theme = Some(ThemeSelection::Dynamic {
+            self.theme = Some(ThemeSelection.Dynamic {
                 mode,
-                light: ThemeSettings::DEFAULT_LIGHT_THEME.into(),
-                dark: ThemeSettings::DEFAULT_DARK_THEME.into(),
+                light: ThemeSettings.DEFAULT_LIGHT_THEME.into(),
+                dark: ThemeSettings.DEFAULT_DARK_THEME.into(),
             });
         }
     }
@@ -350,22 +350,22 @@ pub enum BufferLineHeight {
 impl BufferLineHeight {
     pub fn value(&self) -> f32 {
         match self {
-            BufferLineHeight::Comfortable => 1.618,
-            BufferLineHeight::Standard => 1.3,
-            BufferLineHeight::Custom(line_height) => *line_height,
+            BufferLineHeight.Comfortable => 1.618,
+            BufferLineHeight.Standard => 1.3,
+            BufferLineHeight.Custom(line_height) => *line_height,
         }
     }
 }
 
 impl ThemeSettings {
     pub fn buffer_font_size(&self, cx: &AppContext) -> Pixels {
-        cx.try_global::<AdjustedBufferFontSize>()
+        cx.try_global.<AdjustedBufferFontSize>()
             .map_or(self.buffer_font_size, |size| size.0)
             .max(MIN_FONT_SIZE)
     }
 
     pub fn line_height(&self) -> f32 {
-        f32::max(self.buffer_line_height.value(), MIN_LINE_HEIGHT)
+        f32.max(self.buffer_line_height.value(), MIN_LINE_HEIGHT)
     }
 
     /// Switches to the theme with the given name, if it exists.
@@ -373,7 +373,7 @@ impl ThemeSettings {
     /// Returns a `Some` containing the new theme if it was successful.
     /// Returns `None` otherwise.
     pub fn switch_theme(&mut self, theme: &str, cx: &mut AppContext) -> Option<Arc<Theme>> {
-        let themes = ThemeRegistry::default_global(cx);
+        let themes = ThemeRegistry.default_global(cx);
 
         let mut new_theme = None;
 
@@ -409,9 +409,9 @@ impl ThemeSettings {
             base_theme.styles.player.merge(&theme_overrides.players);
             base_theme.styles.accents.merge(&theme_overrides.accents);
             base_theme.styles.syntax =
-                SyntaxTheme::merge(base_theme.styles.syntax, theme_overrides.syntax_overrides());
+                SyntaxTheme.merge(base_theme.styles.syntax, theme_overrides.syntax_overrides());
 
-            self.active_theme = Arc::new(base_theme);
+            self.active_theme = Arc.new(base_theme);
         }
     }
 }
@@ -420,12 +420,12 @@ pub fn observe_buffer_font_size_adjustment<V: 'static>(
     cx: &mut ViewContext<V>,
     f: impl 'static + Fn(&mut V, &mut ViewContext<V>),
 ) -> Subscription {
-    cx.observe_global::<AdjustedBufferFontSize>(f)
+    cx.observe_global.<AdjustedBufferFontSize>(f)
 }
 
 pub fn adjusted_font_size(size: Pixels, cx: &mut AppContext) -> Pixels {
-    if let Some(AdjustedBufferFontSize(adjusted_size)) = cx.try_global::<AdjustedBufferFontSize>() {
-        let buffer_font_size = ThemeSettings::get_global(cx).buffer_font_size;
+    if let Some(AdjustedBufferFontSize(adjusted_size)) = cx.try_global.<AdjustedBufferFontSize>() {
+        let buffer_font_size = ThemeSettings.get_global(cx).buffer_font_size;
         let delta = *adjusted_size - buffer_font_size;
         size + delta
     } else {
@@ -435,15 +435,15 @@ pub fn adjusted_font_size(size: Pixels, cx: &mut AppContext) -> Pixels {
 }
 
 pub fn get_buffer_font_size(cx: &AppContext) -> Pixels {
-    let buffer_font_size = ThemeSettings::get_global(cx).buffer_font_size;
-    cx.try_global::<AdjustedBufferFontSize>()
+    let buffer_font_size = ThemeSettings.get_global(cx).buffer_font_size;
+    cx.try_global.<AdjustedBufferFontSize>()
         .map_or(buffer_font_size, |adjusted_size| adjusted_size.0)
 }
 
 pub fn adjust_buffer_font_size(cx: &mut AppContext, f: fn(&mut Pixels)) {
-    let buffer_font_size = ThemeSettings::get_global(cx).buffer_font_size;
+    let buffer_font_size = ThemeSettings.get_global(cx).buffer_font_size;
     let mut adjusted_size = cx
-        .try_global::<AdjustedBufferFontSize>()
+        .try_global.<AdjustedBufferFontSize>()
         .map_or(buffer_font_size, |adjusted_size| adjusted_size.0);
 
     f(&mut adjusted_size);
@@ -453,19 +453,19 @@ pub fn adjust_buffer_font_size(cx: &mut AppContext, f: fn(&mut Pixels)) {
 }
 
 pub fn has_adjusted_buffer_font_size(cx: &mut AppContext) -> bool {
-    cx.has_global::<AdjustedBufferFontSize>()
+    cx.has_global.<AdjustedBufferFontSize>()
 }
 
 pub fn reset_buffer_font_size(cx: &mut AppContext) {
-    if cx.has_global::<AdjustedBufferFontSize>() {
-        cx.remove_global::<AdjustedBufferFontSize>();
+    if cx.has_global.<AdjustedBufferFontSize>() {
+        cx.remove_global.<AdjustedBufferFontSize>();
         cx.refresh();
     }
 }
 
-pub fn setup_ui_font(cx: &mut WindowContext) -> gpui::Font {
+pub fn setup_ui_font(cx: &mut WindowContext) -> gpui.Font {
     let (ui_font, ui_font_size) = {
-        let theme_settings = ThemeSettings::get_global(cx);
+        let theme_settings = ThemeSettings.get_global(cx);
         let font = theme_settings.ui_font.clone();
         (font, get_ui_font_size(cx))
     };
@@ -475,15 +475,15 @@ pub fn setup_ui_font(cx: &mut WindowContext) -> gpui::Font {
 }
 
 pub fn get_ui_font_size(cx: &WindowContext) -> Pixels {
-    let ui_font_size = ThemeSettings::get_global(cx).ui_font_size;
-    cx.try_global::<AdjustedUiFontSize>()
+    let ui_font_size = ThemeSettings.get_global(cx).ui_font_size;
+    cx.try_global.<AdjustedUiFontSize>()
         .map_or(ui_font_size, |adjusted_size| adjusted_size.0)
 }
 
 pub fn adjust_ui_font_size(cx: &mut WindowContext, f: fn(&mut Pixels)) {
-    let ui_font_size = ThemeSettings::get_global(cx).ui_font_size;
+    let ui_font_size = ThemeSettings.get_global(cx).ui_font_size;
     let mut adjusted_size = cx
-        .try_global::<AdjustedUiFontSize>()
+        .try_global.<AdjustedUiFontSize>()
         .map_or(ui_font_size, |adjusted_size| adjusted_size.0);
 
     f(&mut adjusted_size);
@@ -493,24 +493,24 @@ pub fn adjust_ui_font_size(cx: &mut WindowContext, f: fn(&mut Pixels)) {
 }
 
 pub fn has_adjusted_ui_font_size(cx: &mut AppContext) -> bool {
-    cx.has_global::<AdjustedUiFontSize>()
+    cx.has_global.<AdjustedUiFontSize>()
 }
 
 pub fn reset_ui_font_size(cx: &mut WindowContext) {
-    if cx.has_global::<AdjustedUiFontSize>() {
-        cx.remove_global::<AdjustedUiFontSize>();
+    if cx.has_global.<AdjustedUiFontSize>() {
+        cx.remove_global.<AdjustedUiFontSize>();
         cx.refresh();
     }
 }
 
-impl settings::Settings for ThemeSettings {
+impl settings.Settings for ThemeSettings {
     const KEY: Option<&'static str> = None;
 
     type FileContent = ThemeSettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, cx: &mut AppContext) -> Result<Self> {
-        let themes = ThemeRegistry::default_global(cx);
-        let system_appearance = SystemAppearance::default_global(cx);
+    fn load(sources: SettingsSources<Self.FileContent>, cx: &mut AppContext) -> Result<Self> {
+        let themes = ThemeRegistry.default_global(cx);
+        let system_appearance = SystemAppearance.default_global(cx);
 
         let defaults = sources.default;
         let mut this = Self {
@@ -521,9 +521,9 @@ impl settings::Settings for ThemeSettings {
                 fallbacks: defaults
                     .ui_font_fallbacks
                     .as_ref()
-                    .map(|fallbacks| FontFallbacks::from_fonts(fallbacks.clone())),
+                    .map(|fallbacks| FontFallbacks.from_fonts(fallbacks.clone())),
                 weight: defaults.ui_font_weight.map(FontWeight).unwrap(),
-                style: Default::default(),
+                style: Default.default(),
             },
             buffer_font: Font {
                 family: defaults.buffer_font_family.as_ref().unwrap().clone().into(),
@@ -531,9 +531,9 @@ impl settings::Settings for ThemeSettings {
                 fallbacks: defaults
                     .buffer_font_fallbacks
                     .as_ref()
-                    .map(|fallbacks| FontFallbacks::from_fonts(fallbacks.clone())),
+                    .map(|fallbacks| FontFallbacks.from_fonts(fallbacks.clone())),
                 weight: defaults.buffer_font_weight.map(FontWeight).unwrap(),
-                style: FontStyle::default(),
+                style: FontStyle.default(),
             },
             buffer_font_size: defaults.buffer_font_size.unwrap().into(),
             buffer_line_height: defaults.buffer_line_height.unwrap(),
@@ -543,7 +543,7 @@ impl settings::Settings for ThemeSettings {
                 .or(themes.get(&one_dark().name))
                 .unwrap(),
             theme_overrides: None,
-            ui_density: defaults.ui_density.unwrap_or(UiDensity::Default),
+            ui_density: defaults.ui_density.unwrap_or(UiDensity.Default),
         };
 
         for value in sources.user.into_iter().chain(sources.release_channel) {
@@ -558,7 +558,7 @@ impl settings::Settings for ThemeSettings {
                 this.buffer_font.features = value;
             }
             if let Some(value) = value.buffer_font_fallbacks.clone() {
-                this.buffer_font.fallbacks = Some(FontFallbacks::from_fonts(value));
+                this.buffer_font.fallbacks = Some(FontFallbacks.from_fonts(value));
             }
             if let Some(value) = value.buffer_font_weight {
                 this.buffer_font.weight = FontWeight(value);
@@ -571,7 +571,7 @@ impl settings::Settings for ThemeSettings {
                 this.ui_font.features = value;
             }
             if let Some(value) = value.ui_font_fallbacks.clone() {
-                this.ui_font.fallbacks = Some(FontFallbacks::from_fonts(value));
+                this.ui_font.fallbacks = Some(FontFallbacks.from_fonts(value));
             }
             if let Some(value) = value.ui_font_weight {
                 this.ui_font.weight = FontWeight(value);
@@ -590,10 +590,10 @@ impl settings::Settings for ThemeSettings {
             this.theme_overrides.clone_from(&value.theme_overrides);
             this.apply_theme_overrides();
 
-            merge(&mut this.ui_font_size, value.ui_font_size.map(Into::into));
+            merge(&mut this.ui_font_size, value.ui_font_size.map(Into.into));
             merge(
                 &mut this.buffer_font_size,
-                value.buffer_font_size.map(Into::into),
+                value.buffer_font_size.map(Into.into),
             );
             merge(&mut this.buffer_line_height, value.buffer_line_height);
         }
@@ -605,18 +605,18 @@ impl settings::Settings for ThemeSettings {
         generator: &mut SchemaGenerator,
         params: &SettingsJsonSchemaParams,
         cx: &AppContext,
-    ) -> schemars::schema::RootSchema {
-        let mut root_schema = generator.root_schema_for::<ThemeSettingsContent>();
-        let theme_names = ThemeRegistry::global(cx)
+    ) -> schemars.schema.RootSchema {
+        let mut root_schema = generator.root_schema_for.<ThemeSettingsContent>();
+        let theme_names = ThemeRegistry.global(cx)
             .list_names(params.staff_mode)
             .into_iter()
-            .map(|theme_name| Value::String(theme_name.to_string()))
+            .map(|theme_name| Value.String(theme_name.to_string()))
             .collect();
 
         let theme_name_schema = SchemaObject {
-            instance_type: Some(InstanceType::String.into()),
+            instance_type: Some(InstanceType.String.into()),
             enum_values: Some(theme_names),
-            ..Default::default()
+            ..Default.default()
         };
 
         root_schema.definitions.extend([

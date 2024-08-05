@@ -1,13 +1,13 @@
-use std::path::PathBuf;
+use std.path.PathBuf;
 
-use anyhow::{bail, Context};
-use collections::{HashMap, HashSet};
-use schemars::{gen::SchemaSettings, JsonSchema};
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use util::{truncate_and_remove_front, ResultExt};
+use anyhow.{bail, Context};
+use collections.{HashMap, HashSet};
+use schemars.{gen.SchemaSettings, JsonSchema};
+use serde.{Deserialize, Serialize};
+use sha2.{Digest, Sha256};
+use util.{truncate_and_remove_front, ResultExt};
 
-use crate::{
+use crate.{
     ResolvedTask, Shell, SpawnInTerminal, TaskContext, TaskId, VariableName,
     ZED_VARIABLE_NAME_PREFIX,
 };
@@ -89,13 +89,13 @@ pub struct TaskTemplates(pub Vec<TaskTemplate>);
 
 impl TaskTemplates {
     /// Generates JSON schema of Tasks JSON template format.
-    pub fn generate_json_schema() -> serde_json_lenient::Value {
-        let schema = SchemaSettings::draft07()
+    pub fn generate_json_schema() -> serde_json_lenient.Value {
+        let schema = SchemaSettings.draft07()
             .with(|settings| settings.option_add_null_type = false)
             .into_generator()
-            .into_root_schema_for::<Self>();
+            .into_root_schema_for.<Self>();
 
-        serde_json_lenient::to_value(schema).unwrap()
+        serde_json_lenient.to_value(schema).unwrap()
     }
 }
 
@@ -111,8 +111,8 @@ impl TaskTemplate {
             return None;
         }
 
-        let mut variable_names = HashMap::default();
-        let mut substituted_variables = HashSet::default();
+        let mut variable_names = HashMap.default();
+        let mut substituted_variables = HashSet.default();
         let task_variables = cx
             .task_variables
             .0
@@ -124,7 +124,7 @@ impl TaskTemplate {
                 }
                 (key_string, value.as_str())
             })
-            .collect::<HashMap<_, _>>();
+            .collect.<HashMap<_, _>>();
         let truncated_variables = truncate_variables(&task_variables);
         let cwd = match self.cwd.as_deref() {
             Some(cwd) => {
@@ -134,7 +134,7 @@ impl TaskTemplate {
                     &variable_names,
                     &mut substituted_variables,
                 )?;
-                Some(PathBuf::from(substitured_cwd))
+                Some(PathBuf.from(substitured_cwd))
             }
             None => None,
         }
@@ -146,7 +146,7 @@ impl TaskTemplate {
             &mut substituted_variables,
         )?
         .lines()
-        .fold(String::new(), |mut string, line| {
+        .fold(String.new(), |mut string, line| {
             if string.is_empty() {
                 string.push_str(line);
             } else {
@@ -247,11 +247,11 @@ fn truncate_variables(task_variables: &HashMap<String, &str>) -> HashMap<String,
         .collect()
 }
 
-fn to_hex_hash(object: impl Serialize) -> anyhow::Result<String> {
-    let json = serde_json_lenient::to_string(&object).context("serializing the object")?;
-    let mut hasher = Sha256::new();
+fn to_hex_hash(object: impl Serialize) -> anyhow.Result<String> {
+    let json = serde_json_lenient.to_string(&object).context("serializing the object")?;
+    let mut hasher = Sha256.new();
     hasher.update(json.as_bytes());
-    Ok(hex::encode(hasher.finalize()))
+    Ok(hex.encode(hasher.finalize()))
 }
 
 fn substitute_all_template_variables_in_str<A: AsRef<str>>(
@@ -260,7 +260,7 @@ fn substitute_all_template_variables_in_str<A: AsRef<str>>(
     variable_names: &HashMap<String, VariableName>,
     substituted_variables: &mut HashSet<VariableName>,
 ) -> Option<String> {
-    let substituted_string = shellexpand::env_with_context(template_str, |var| {
+    let substituted_string = shellexpand.env_with_context(template_str, |var| {
         // Colons denote a default value in case the variable is not set. We want to preserve that default, as otherwise shellexpand will substitute it for us.
         let colon_position = var.find(':').unwrap_or(var.len());
         let (variable_name, default) = var.split_at(colon_position);
@@ -297,7 +297,7 @@ fn substitute_all_template_variables_in_vec(
     variable_names: &HashMap<String, VariableName>,
     substituted_variables: &mut HashSet<VariableName>,
 ) -> Option<Vec<String>> {
-    let mut expanded = Vec::with_capacity(template_strs.len());
+    let mut expanded = Vec.with_capacity(template_strs.len());
     for variable in template_strs {
         let new_value = substitute_all_template_variables_in_str(
             variable,
@@ -316,7 +316,7 @@ fn substitute_all_template_variables_in_map(
     variable_names: &HashMap<String, VariableName>,
     substituted_variables: &mut HashSet<VariableName>,
 ) -> Option<HashMap<String, String>> {
-    let mut new_map: HashMap<String, String> = Default::default();
+    let mut new_map: HashMap<String, String> = Default.default();
     for (key, value) in keys_and_values {
         let new_value = substitute_all_template_variables_in_str(
             &value,
@@ -337,11 +337,11 @@ fn substitute_all_template_variables_in_map(
 
 #[cfg(test)]
 mod tests {
-    use std::{borrow::Cow, path::Path};
+    use std.{borrow.Cow, path.Path};
 
-    use crate::{TaskVariables, VariableName};
+    use crate.{TaskVariables, VariableName};
 
-    use super::*;
+    use super.*;
 
     const TEST_ID_BASE: &str = "test_base";
 
@@ -351,8 +351,8 @@ mod tests {
             label: "test_label".to_string(),
             command: "test_command".to_string(),
             args: vec!["test_arg".to_string()],
-            env: HashMap::from_iter([("test_env_key".to_string(), "test_env_var".to_string())]),
-            ..TaskTemplate::default()
+            env: HashMap.from_iter([("test_env_key".to_string(), "test_env_var".to_string())]),
+            ..TaskTemplate.default()
         };
 
         for task_with_blank_property in &[
@@ -371,7 +371,7 @@ mod tests {
             },
         ] {
             assert_eq!(
-                task_with_blank_property.resolve_task(TEST_ID_BASE, &TaskContext::default()),
+                task_with_blank_property.resolve_task(TEST_ID_BASE, &TaskContext.default()),
                 None,
                 "should not resolve task with blank label and/or command: {task_with_blank_property:?}"
             );
@@ -384,14 +384,14 @@ mod tests {
             cwd: None,
             label: "test task".to_string(),
             command: "echo 4".to_string(),
-            ..TaskTemplate::default()
+            ..TaskTemplate.default()
         };
 
         let resolved_task = |task_template: &TaskTemplate, task_cx| {
             let resolved_task = task_template
                 .resolve_task(TEST_ID_BASE, task_cx)
                 .unwrap_or_else(|| panic!("failed to resolve task {task_without_cwd:?}"));
-            assert_substituted_variables(&resolved_task, Vec::new());
+            assert_substituted_variables(&resolved_task, Vec.new());
             resolved_task
                 .resolved
                 .clone()
@@ -402,8 +402,8 @@ mod tests {
 
         let cx = TaskContext {
             cwd: None,
-            task_variables: TaskVariables::default(),
-            project_env: HashMap::default(),
+            task_variables: TaskVariables.default(),
+            project_env: HashMap.default(),
         };
         assert_eq!(
             resolved_task(&task_without_cwd, &cx).cwd,
@@ -411,11 +411,11 @@ mod tests {
             "When neither task nor task context have cwd, it should be None"
         );
 
-        let context_cwd = Path::new("a").join("b").join("c");
+        let context_cwd = Path.new("a").join("b").join("c");
         let cx = TaskContext {
             cwd: Some(context_cwd.clone()),
-            task_variables: TaskVariables::default(),
-            project_env: HashMap::default(),
+            task_variables: TaskVariables.default(),
+            project_env: HashMap.default(),
         };
         assert_eq!(
             resolved_task(&task_without_cwd, &cx).cwd,
@@ -423,15 +423,15 @@ mod tests {
             "TaskContext's cwd should be taken on resolve if task's cwd is None"
         );
 
-        let task_cwd = Path::new("d").join("e").join("f");
+        let task_cwd = Path.new("d").join("e").join("f");
         let mut task_with_cwd = task_without_cwd.clone();
         task_with_cwd.cwd = Some(task_cwd.display().to_string());
         let task_with_cwd = task_with_cwd;
 
         let cx = TaskContext {
             cwd: None,
-            task_variables: TaskVariables::default(),
-            project_env: HashMap::default(),
+            task_variables: TaskVariables.default(),
+            project_env: HashMap.default(),
         };
         assert_eq!(
             resolved_task(&task_with_cwd, &cx).cwd,
@@ -441,8 +441,8 @@ mod tests {
 
         let cx = TaskContext {
             cwd: Some(context_cwd.clone()),
-            task_variables: TaskVariables::default(),
-            project_env: HashMap::default(),
+            task_variables: TaskVariables.default(),
+            project_env: HashMap.default(),
         };
         assert_eq!(
             resolved_task(&task_with_cwd, &cx).cwd,
@@ -453,16 +453,16 @@ mod tests {
 
     #[test]
     fn test_template_variables_resolution() {
-        let custom_variable_1 = VariableName::Custom(Cow::Borrowed("custom_variable_1"));
-        let custom_variable_2 = VariableName::Custom(Cow::Borrowed("custom_variable_2"));
+        let custom_variable_1 = VariableName.Custom(Cow.Borrowed("custom_variable_1"));
+        let custom_variable_2 = VariableName.Custom(Cow.Borrowed("custom_variable_2"));
         let long_value = "01".repeat(MAX_DISPLAY_VARIABLE_LENGTH * 2);
         let all_variables = [
-            (VariableName::Row, "1234".to_string()),
-            (VariableName::Column, "5678".to_string()),
-            (VariableName::File, "test_file".to_string()),
-            (VariableName::SelectedText, "test_selected_text".to_string()),
-            (VariableName::Symbol, long_value.clone()),
-            (VariableName::WorktreeRoot, "/test_root/".to_string()),
+            (VariableName.Row, "1234".to_string()),
+            (VariableName.Column, "5678".to_string()),
+            (VariableName.File, "test_file".to_string()),
+            (VariableName.SelectedText, "test_selected_text".to_string()),
+            (VariableName.Symbol, long_value.clone()),
+            (VariableName.WorktreeRoot, "/test_root/".to_string()),
             (
                 custom_variable_1.clone(),
                 "test_custom_variable_1".to_string(),
@@ -476,24 +476,24 @@ mod tests {
         let task_with_all_variables = TaskTemplate {
             label: format!(
                 "test label for {} and {}",
-                VariableName::Row.template_value(),
-                VariableName::Symbol.template_value(),
+                VariableName.Row.template_value(),
+                VariableName.Symbol.template_value(),
             ),
             command: format!(
                 "echo {} {}",
-                VariableName::File.template_value(),
-                VariableName::Symbol.template_value(),
+                VariableName.File.template_value(),
+                VariableName.Symbol.template_value(),
             ),
             args: vec![
-                format!("arg1 {}", VariableName::SelectedText.template_value()),
-                format!("arg2 {}", VariableName::Column.template_value()),
-                format!("arg3 {}", VariableName::Symbol.template_value()),
+                format!("arg1 {}", VariableName.SelectedText.template_value()),
+                format!("arg2 {}", VariableName.Column.template_value()),
+                format!("arg3 {}", VariableName.Symbol.template_value()),
             ],
-            env: HashMap::from_iter([
+            env: HashMap.from_iter([
                 ("test_env_key".to_string(), "test_env_var".to_string()),
                 (
                     "env_key_1".to_string(),
-                    VariableName::WorktreeRoot.template_value(),
+                    VariableName.WorktreeRoot.template_value(),
                 ),
                 (
                     "env_key_2".to_string(),
@@ -505,10 +505,10 @@ mod tests {
                 ),
                 (
                     "env_key_3".to_string(),
-                    format!("env_var_3 {}", VariableName::Symbol.template_value()),
+                    format!("env_var_3 {}", VariableName.Symbol.template_value()),
                 ),
             ]),
-            ..TaskTemplate::default()
+            ..TaskTemplate.default()
         };
 
         let mut first_resolved_id = None;
@@ -517,8 +517,8 @@ mod tests {
                 TEST_ID_BASE,
                 &TaskContext {
                     cwd: None,
-                    task_variables: TaskVariables::from_iter(all_variables.clone()),
-                    project_env: HashMap::default(),
+                    task_variables: TaskVariables.from_iter(all_variables.clone()),
+                    project_env: HashMap.default(),
                 },
             ).unwrap_or_else(|| panic!("Should successfully resolve task {task_with_all_variables:?} with variables {all_variables:?}"));
 
@@ -605,8 +605,8 @@ mod tests {
                 TEST_ID_BASE,
                 &TaskContext {
                     cwd: None,
-                    task_variables: TaskVariables::from_iter(not_all_variables),
-                    project_env: HashMap::default(),
+                    task_variables: TaskVariables.from_iter(not_all_variables),
+                    project_env: HashMap.default(),
                 },
             );
             assert_eq!(resolved_task_attempt, None, "If any of the Zed task variables is not substituted, the task should not be resolved, but got some resolution without the variable {removed_variable:?} (index {i})");
@@ -619,12 +619,12 @@ mod tests {
             label: "My task".into(),
             command: "echo".into(),
             args: vec!["$PATH".into()],
-            ..Default::default()
+            ..Default.default()
         };
         let resolved_task = task
-            .resolve_task(TEST_ID_BASE, &TaskContext::default())
+            .resolve_task(TEST_ID_BASE, &TaskContext.default())
             .unwrap();
-        assert_substituted_variables(&resolved_task, Vec::new());
+        assert_substituted_variables(&resolved_task, Vec.new());
         let resolved = resolved_task.resolved.unwrap();
         assert_eq!(resolved.label, task.label);
         assert_eq!(resolved.command, task.command);
@@ -637,10 +637,10 @@ mod tests {
             label: "My task".into(),
             command: "echo".into(),
             args: vec!["$ZED_VARIABLE".into()],
-            ..Default::default()
+            ..Default.default()
         };
         assert!(task
-            .resolve_task(TEST_ID_BASE, &TaskContext::default())
+            .resolve_task(TEST_ID_BASE, &TaskContext.default())
             .is_none());
     }
 
@@ -650,38 +650,38 @@ mod tests {
             label: "test_label".to_string(),
             command: "test_command".to_string(),
             args: vec!["test_arg".to_string()],
-            env: HashMap::from_iter([("test_env_key".to_string(), "test_env_var".to_string())]),
-            ..TaskTemplate::default()
+            env: HashMap.from_iter([("test_env_key".to_string(), "test_env_var".to_string())]),
+            ..TaskTemplate.default()
         };
         let cx = TaskContext {
             cwd: None,
-            task_variables: TaskVariables::from_iter(Some((
-                VariableName::Symbol,
+            task_variables: TaskVariables.from_iter(Some((
+                VariableName.Symbol,
                 "test_symbol".to_string(),
             ))),
-            project_env: HashMap::default(),
+            project_env: HashMap.default(),
         };
 
         for (i, symbol_dependent_task) in [
             TaskTemplate {
-                label: format!("test_label_{}", VariableName::Symbol.template_value()),
+                label: format!("test_label_{}", VariableName.Symbol.template_value()),
                 ..task_with_all_properties.clone()
             },
             TaskTemplate {
-                command: format!("test_command_{}", VariableName::Symbol.template_value()),
+                command: format!("test_command_{}", VariableName.Symbol.template_value()),
                 ..task_with_all_properties.clone()
             },
             TaskTemplate {
                 args: vec![format!(
                     "test_arg_{}",
-                    VariableName::Symbol.template_value()
+                    VariableName.Symbol.template_value()
                 )],
                 ..task_with_all_properties.clone()
             },
             TaskTemplate {
-                env: HashMap::from_iter([(
+                env: HashMap.from_iter([(
                     "test_env_key".to_string(),
-                    format!("test_env_var_{}", VariableName::Symbol.template_value()),
+                    format!("test_env_var_{}", VariableName.Symbol.template_value()),
                 )]),
                 ..task_with_all_properties.clone()
             },
@@ -694,7 +694,7 @@ mod tests {
                 .unwrap_or_else(|| panic!("Failed to resolve task {symbol_dependent_task:?}"));
             assert_eq!(
                 resolved.substituted_variables,
-                HashSet::from_iter(Some(VariableName::Symbol)),
+                HashSet.from_iter(Some(VariableName.Symbol)),
                 "(index {i}) Expected the task to depend on symbol task variable: {resolved:?}"
             )
         }
@@ -706,7 +706,7 @@ mod tests {
             .substituted_variables
             .iter()
             .cloned()
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         resolved_variables.sort_by_key(|var| var.to_string());
         expected.sort_by_key(|var| var.to_string());
         assert_eq!(resolved_variables, expected)
@@ -717,42 +717,42 @@ mod tests {
         let faulty_go_test = TaskTemplate {
             label: format!(
                 "go test {}/{}",
-                VariableName::Symbol.template_value(),
-                VariableName::Symbol.template_value(),
+                VariableName.Symbol.template_value(),
+                VariableName.Symbol.template_value(),
             ),
             command: "go".into(),
             args: vec![format!(
                 "^{}$/^{}$",
-                VariableName::Symbol.template_value(),
-                VariableName::Symbol.template_value()
+                VariableName.Symbol.template_value(),
+                VariableName.Symbol.template_value()
             )],
-            ..TaskTemplate::default()
+            ..TaskTemplate.default()
         };
-        let mut context = TaskContext::default();
+        let mut context = TaskContext.default();
         context
             .task_variables
-            .insert(VariableName::Symbol, "my-symbol".to_string());
+            .insert(VariableName.Symbol, "my-symbol".to_string());
         assert!(faulty_go_test.resolve_task("base", &context).is_some());
     }
 
     #[test]
     fn test_project_env() {
         let all_variables = [
-            (VariableName::Row, "1234".to_string()),
-            (VariableName::Column, "5678".to_string()),
-            (VariableName::File, "test_file".to_string()),
-            (VariableName::Symbol, "my symbol".to_string()),
+            (VariableName.Row, "1234".to_string()),
+            (VariableName.Column, "5678".to_string()),
+            (VariableName.File, "test_file".to_string()),
+            (VariableName.Symbol, "my symbol".to_string()),
         ];
 
         let template = TaskTemplate {
             label: "my task".to_string(),
             command: format!(
                 "echo {} {}",
-                VariableName::File.template_value(),
-                VariableName::Symbol.template_value(),
+                VariableName.File.template_value(),
+                VariableName.Symbol.template_value(),
             ),
             args: vec![],
-            env: HashMap::from_iter([
+            env: HashMap.from_iter([
                 (
                     "TASK_ENV_VAR1".to_string(),
                     "TASK_ENV_VAR1_VALUE".to_string(),
@@ -761,8 +761,8 @@ mod tests {
                     "TASK_ENV_VAR2".to_string(),
                     format!(
                         "env_var_2 {} {}",
-                        VariableName::Row.template_value(),
-                        VariableName::Column.template_value()
+                        VariableName.Row.template_value(),
+                        VariableName.Column.template_value()
                     ),
                 ),
                 (
@@ -770,10 +770,10 @@ mod tests {
                     "overwritten".to_string(),
                 ),
             ]),
-            ..TaskTemplate::default()
+            ..TaskTemplate.default()
         };
 
-        let project_env = HashMap::from_iter([
+        let project_env = HashMap.from_iter([
             (
                 "PROJECT_ENV_VAR1".to_string(),
                 "PROJECT_ENV_VAR1_VALUE".to_string(),
@@ -786,7 +786,7 @@ mod tests {
 
         let context = TaskContext {
             cwd: None,
-            task_variables: TaskVariables::from_iter(all_variables.clone()),
+            task_variables: TaskVariables.from_iter(all_variables.clone()),
             project_env,
         };
 

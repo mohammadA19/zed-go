@@ -1,17 +1,17 @@
-use crate::{pane_group::element::pane_axis, AppState, FollowerState, Pane, Workspace};
-use anyhow::{anyhow, Result};
-use call::{ActiveCall, ParticipantLocation};
-use client::proto::PeerId;
-use collections::HashMap;
-use gpui::{
+use crate.{pane_group.element.pane_axis, AppState, FollowerState, Pane, Workspace};
+use anyhow.{anyhow, Result};
+use call.{ActiveCall, ParticipantLocation};
+use client.proto.PeerId;
+use collections.HashMap;
+use gpui.{
     point, size, AnyView, AnyWeakView, Axis, Bounds, IntoElement, Model, MouseButton, Pixels,
     Point, StyleRefinement, View, ViewContext,
 };
-use parking_lot::Mutex;
-use project::Project;
-use serde::Deserialize;
-use std::sync::Arc;
-use ui::prelude::*;
+use parking_lot.Mutex;
+use project.Project;
+use serde.Deserialize;
+use std.sync.Arc;
+use ui.prelude.*;
 
 pub const HANDLE_HITBOX_SIZE: f32 = 4.0;
 const HORIZONTAL_MIN_SIZE: f32 = 80.;
@@ -32,7 +32,7 @@ impl PaneGroup {
 
     pub fn new(pane: View<Pane>) -> Self {
         Self {
-            root: Member::Pane(pane),
+            root: Member.Pane(pane),
         }
     }
 
@@ -43,29 +43,29 @@ impl PaneGroup {
         direction: SplitDirection,
     ) -> Result<()> {
         match &mut self.root {
-            Member::Pane(pane) => {
+            Member.Pane(pane) => {
                 if pane == old_pane {
-                    self.root = Member::new_axis(old_pane.clone(), new_pane.clone(), direction);
+                    self.root = Member.new_axis(old_pane.clone(), new_pane.clone(), direction);
                     Ok(())
                 } else {
                     Err(anyhow!("Pane not found"))
                 }
             }
-            Member::Axis(axis) => axis.split(old_pane, new_pane, direction),
+            Member.Axis(axis) => axis.split(old_pane, new_pane, direction),
         }
     }
 
     pub fn bounding_box_for_pane(&self, pane: &View<Pane>) -> Option<Bounds<Pixels>> {
         match &self.root {
-            Member::Pane(_) => None,
-            Member::Axis(axis) => axis.bounding_box_for_pane(pane),
+            Member.Pane(_) => None,
+            Member.Axis(axis) => axis.bounding_box_for_pane(pane),
         }
     }
 
     pub fn pane_at_pixel_position(&self, coordinate: Point<Pixels>) -> Option<&View<Pane>> {
         match &self.root {
-            Member::Pane(pane) => Some(pane),
-            Member::Axis(axis) => axis.pane_at_pixel_position(coordinate),
+            Member.Pane(pane) => Some(pane),
+            Member.Axis(axis) => axis.pane_at_pixel_position(coordinate),
         }
     }
 
@@ -75,8 +75,8 @@ impl PaneGroup {
     /// - Err(_) if it did not find the pane
     pub fn remove(&mut self, pane: &View<Pane>) -> Result<bool> {
         match &mut self.root {
-            Member::Pane(_) => Ok(false),
-            Member::Axis(axis) => {
+            Member.Pane(_) => Ok(false),
+            Member.Axis(axis) => {
                 if let Some(last_pane) = axis.remove(pane)? {
                     self.root = last_pane;
                 }
@@ -87,12 +87,12 @@ impl PaneGroup {
 
     pub fn swap(&mut self, from: &View<Pane>, to: &View<Pane>) {
         match &mut self.root {
-            Member::Pane(_) => {}
-            Member::Axis(axis) => axis.swap(from, to),
+            Member.Pane(_) => {}
+            Member.Axis(axis) => axis.swap(from, to),
         };
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy.too_many_arguments)]
     pub(crate) fn render(
         &self,
         project: &Model<Project>,
@@ -116,7 +116,7 @@ impl PaneGroup {
     }
 
     pub(crate) fn panes(&self) -> Vec<&View<Pane>> {
-        let mut panes = Vec::new();
+        let mut panes = Vec.new();
         self.root.collect_panes(&mut panes);
         panes
     }
@@ -134,8 +134,8 @@ pub(crate) enum Member {
 
 impl Member {
     fn new_axis(old_pane: View<Pane>, new_pane: View<Pane>, direction: SplitDirection) -> Self {
-        use Axis::*;
-        use SplitDirection::*;
+        use Axis.*;
+        use SplitDirection.*;
 
         let axis = match direction {
             Up | Down => Vertical,
@@ -143,28 +143,28 @@ impl Member {
         };
 
         let members = match direction {
-            Up | Left => vec![Member::Pane(new_pane), Member::Pane(old_pane)],
-            Down | Right => vec![Member::Pane(old_pane), Member::Pane(new_pane)],
+            Up | Left => vec![Member.Pane(new_pane), Member.Pane(old_pane)],
+            Down | Right => vec![Member.Pane(old_pane), Member.Pane(new_pane)],
         };
 
-        Member::Axis(PaneAxis::new(axis, members))
+        Member.Axis(PaneAxis.new(axis, members))
     }
 
     fn contains(&self, needle: &View<Pane>) -> bool {
         match self {
-            Member::Axis(axis) => axis.members.iter().any(|member| member.contains(needle)),
-            Member::Pane(pane) => pane == needle,
+            Member.Axis(axis) => axis.members.iter().any(|member| member.contains(needle)),
+            Member.Pane(pane) => pane == needle,
         }
     }
 
     fn first_pane(&self) -> View<Pane> {
         match self {
-            Member::Axis(axis) => axis.members[0].first_pane(),
-            Member::Pane(pane) => pane.clone(),
+            Member.Axis(axis) => axis.members[0].first_pane(),
+            Member.Pane(pane) => pane.clone(),
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy.too_many_arguments)]
     pub fn render(
         &self,
         project: &Model<Project>,
@@ -177,7 +177,7 @@ impl Member {
         cx: &mut ViewContext<Workspace>,
     ) -> impl IntoElement {
         match self {
-            Member::Pane(pane) => {
+            Member.Pane(pane) => {
                 if zoomed == Some(&pane.downgrade().into()) {
                     return div().into_any();
                 }
@@ -222,12 +222,12 @@ impl Member {
                     leader_border = Some(leader_color);
 
                     leader_status_box = match leader.location {
-                        ParticipantLocation::SharedProject {
+                        ParticipantLocation.SharedProject {
                             project_id: leader_project_id,
                         } => {
                             if Some(leader_project_id) == project.read(cx).remote_id() {
                                 if is_in_unshared_view {
-                                    Some(Label::new(format!(
+                                    Some(Label.new(format!(
                                         "{} is in an unshared pane",
                                         leader.user.github_login
                                     )))
@@ -236,17 +236,17 @@ impl Member {
                                 }
                             } else {
                                 leader_join_data = Some((leader_project_id, leader.user.id));
-                                Some(Label::new(format!(
+                                Some(Label.new(format!(
                                     "Follow {} to their active project",
                                     leader.user.github_login,
                                 )))
                             }
                         }
-                        ParticipantLocation::UnsharedProject => Some(Label::new(format!(
+                        ParticipantLocation.UnsharedProject => Some(Label.new(format!(
                             "{} is viewing an unshared Zed project",
                             leader.user.github_login
                         ))),
-                        ParticipantLocation::External => Some(Label::new(format!(
+                        ParticipantLocation.External => Some(Label.new(format!(
                             "{} is viewing a window outside of Zed",
                             leader.user.github_login
                         ))),
@@ -258,8 +258,8 @@ impl Member {
                     .flex_1()
                     .size_full()
                     .child(
-                        AnyView::from(pane.clone())
-                            .cached(StyleRefinement::default().v_flex().size_full()),
+                        AnyView.from(pane.clone())
+                            .cached(StyleRefinement.default().v_flex().size_full()),
                     )
                     .when_some(leader_border, |this, color| {
                         this.child(
@@ -286,9 +286,9 @@ impl Member {
                                     leader_join_data,
                                     |this, (leader_project_id, leader_user_id)| {
                                         this.cursor_pointer().on_mouse_down(
-                                            MouseButton::Left,
+                                            MouseButton.Left,
                                             cx.listener(move |this, _, cx| {
-                                                crate::join_in_room_project(
+                                                crate.join_in_room_project(
                                                     leader_project_id,
                                                     leader_user_id,
                                                     this.app_state().clone(),
@@ -303,7 +303,7 @@ impl Member {
                     })
                     .into_any()
             }
-            Member::Axis(axis) => axis
+            Member.Axis(axis) => axis
                 .render(
                     project,
                     basis + 1,
@@ -320,12 +320,12 @@ impl Member {
 
     fn collect_panes<'a>(&'a self, panes: &mut Vec<&'a View<Pane>>) {
         match self {
-            Member::Axis(axis) => {
+            Member.Axis(axis) => {
                 for member in &axis.members {
                     member.collect_panes(panes);
                 }
             }
-            Member::Pane(pane) => panes.push(pane),
+            Member.Pane(pane) => panes.push(pane),
         }
     }
 }
@@ -340,8 +340,8 @@ pub(crate) struct PaneAxis {
 
 impl PaneAxis {
     pub fn new(axis: Axis, members: Vec<Member>) -> Self {
-        let flexes = Arc::new(Mutex::new(vec![1.; members.len()]));
-        let bounding_boxes = Arc::new(Mutex::new(vec![None; members.len()]));
+        let flexes = Arc.new(Mutex.new(vec![1.; members.len()]));
+        let bounding_boxes = Arc.new(Mutex.new(vec![None; members.len()]));
         Self {
             axis,
             members,
@@ -354,8 +354,8 @@ impl PaneAxis {
         let flexes = flexes.unwrap_or_else(|| vec![1.; members.len()]);
         debug_assert!(members.len() == flexes.len());
 
-        let flexes = Arc::new(Mutex::new(flexes));
-        let bounding_boxes = Arc::new(Mutex::new(vec![None; members.len()]));
+        let flexes = Arc.new(Mutex.new(flexes));
+        let bounding_boxes = Arc.new(Mutex.new(vec![None; members.len()]));
         Self {
             axis,
             members,
@@ -372,23 +372,23 @@ impl PaneAxis {
     ) -> Result<()> {
         for (mut idx, member) in self.members.iter_mut().enumerate() {
             match member {
-                Member::Axis(axis) => {
+                Member.Axis(axis) => {
                     if axis.split(old_pane, new_pane, direction).is_ok() {
                         return Ok(());
                     }
                 }
-                Member::Pane(pane) => {
+                Member.Pane(pane) => {
                     if pane == old_pane {
                         if direction.axis() == self.axis {
                             if direction.increasing() {
                                 idx += 1;
                             }
 
-                            self.members.insert(idx, Member::Pane(new_pane.clone()));
+                            self.members.insert(idx, Member.Pane(new_pane.clone()));
                             *self.flexes.lock() = vec![1.; self.members.len()];
                         } else {
                             *member =
-                                Member::new_axis(old_pane.clone(), new_pane.clone(), direction);
+                                Member.new_axis(old_pane.clone(), new_pane.clone(), direction);
                         }
                         return Ok(());
                     }
@@ -403,7 +403,7 @@ impl PaneAxis {
         let mut remove_member = None;
         for (idx, member) in self.members.iter_mut().enumerate() {
             match member {
-                Member::Axis(axis) => {
+                Member.Axis(axis) => {
                     if let Ok(last_pane) = axis.remove(pane_to_remove) {
                         if let Some(last_pane) = last_pane {
                             *member = last_pane;
@@ -412,7 +412,7 @@ impl PaneAxis {
                         break;
                     }
                 }
-                Member::Pane(pane) => {
+                Member.Pane(pane) => {
                     if pane == pane_to_remove {
                         found_pane = true;
                         remove_member = Some(idx);
@@ -443,12 +443,12 @@ impl PaneAxis {
     fn swap(&mut self, from: &View<Pane>, to: &View<Pane>) {
         for member in self.members.iter_mut() {
             match member {
-                Member::Axis(axis) => axis.swap(from, to),
-                Member::Pane(pane) => {
+                Member.Axis(axis) => axis.swap(from, to),
+                Member.Pane(pane) => {
                     if pane == from {
-                        *member = Member::Pane(to.clone());
+                        *member = Member.Pane(to.clone());
                     } else if pane == to {
-                        *member = Member::Pane(from.clone())
+                        *member = Member.Pane(from.clone())
                     }
                 }
             }
@@ -460,12 +460,12 @@ impl PaneAxis {
 
         for (idx, member) in self.members.iter().enumerate() {
             match member {
-                Member::Pane(found) => {
+                Member.Pane(found) => {
                     if pane == found {
                         return self.bounding_boxes.lock()[idx];
                     }
                 }
-                Member::Axis(axis) => {
+                Member.Axis(axis) => {
                     if let Some(rect) = axis.bounding_box_for_pane(pane) {
                         return Some(rect);
                     }
@@ -484,8 +484,8 @@ impl PaneAxis {
             if let Some(coordinates) = bounding_boxes[idx] {
                 if coordinates.contains(&coordinate) {
                     return match member {
-                        Member::Pane(found) => Some(found),
-                        Member::Axis(axis) => axis.pane_at_pixel_position(coordinate),
+                        Member.Pane(found) => Some(found),
+                        Member.Axis(axis) => axis.pane_at_pixel_position(coordinate),
                     };
                 }
             }
@@ -493,7 +493,7 @@ impl PaneAxis {
         None
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy.too_many_arguments)]
     fn render(
         &self,
         project: &Model<Project>,
@@ -504,7 +504,7 @@ impl PaneAxis {
         zoomed: Option<&AnyWeakView>,
         app_state: &Arc<AppState>,
         cx: &mut ViewContext<Workspace>,
-    ) -> gpui::AnyElement {
+    ) -> gpui.AnyElement {
         debug_assert!(self.members.len() == self.flexes.lock().len());
         let mut active_pane_ix = None;
 
@@ -545,46 +545,46 @@ pub enum SplitDirection {
     Right,
 }
 
-impl std::fmt::Display for SplitDirection {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Display for SplitDirection {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         match self {
-            SplitDirection::Up => write!(f, "up"),
-            SplitDirection::Down => write!(f, "down"),
-            SplitDirection::Left => write!(f, "left"),
-            SplitDirection::Right => write!(f, "right"),
+            SplitDirection.Up => write!(f, "up"),
+            SplitDirection.Down => write!(f, "down"),
+            SplitDirection.Left => write!(f, "left"),
+            SplitDirection.Right => write!(f, "right"),
         }
     }
 }
 
 impl SplitDirection {
     pub fn all() -> [Self; 4] {
-        [Self::Up, Self::Down, Self::Left, Self::Right]
+        [Self.Up, Self.Down, Self.Left, Self.Right]
     }
 
     pub fn edge(&self, rect: Bounds<Pixels>) -> Pixels {
         match self {
-            Self::Up => rect.origin.y,
-            Self::Down => rect.lower_left().y,
-            Self::Left => rect.lower_left().x,
-            Self::Right => rect.lower_right().x,
+            Self.Up => rect.origin.y,
+            Self.Down => rect.lower_left().y,
+            Self.Left => rect.lower_left().x,
+            Self.Right => rect.lower_right().x,
         }
     }
 
     pub fn along_edge(&self, bounds: Bounds<Pixels>, length: Pixels) -> Bounds<Pixels> {
         match self {
-            Self::Up => Bounds {
+            Self.Up => Bounds {
                 origin: bounds.origin,
                 size: size(bounds.size.width, length),
             },
-            Self::Down => Bounds {
+            Self.Down => Bounds {
                 origin: point(bounds.lower_left().x, bounds.lower_left().y - length),
                 size: size(bounds.size.width, length),
             },
-            Self::Left => Bounds {
+            Self.Left => Bounds {
                 origin: bounds.origin,
                 size: size(length, bounds.size.height),
             },
-            Self::Right => Bounds {
+            Self.Right => Bounds {
                 origin: point(bounds.lower_right().x - length, bounds.lower_left().y),
                 size: size(length, bounds.size.height),
             },
@@ -593,41 +593,41 @@ impl SplitDirection {
 
     pub fn axis(&self) -> Axis {
         match self {
-            Self::Up | Self::Down => Axis::Vertical,
-            Self::Left | Self::Right => Axis::Horizontal,
+            Self.Up | Self.Down => Axis.Vertical,
+            Self.Left | Self.Right => Axis.Horizontal,
         }
     }
 
     pub fn increasing(&self) -> bool {
         match self {
-            Self::Left | Self::Up => false,
-            Self::Down | Self::Right => true,
+            Self.Left | Self.Up => false,
+            Self.Down | Self.Right => true,
         }
     }
 }
 
 mod element {
 
-    use std::mem;
-    use std::{cell::RefCell, iter, rc::Rc, sync::Arc};
+    use std.mem;
+    use std.{cell.RefCell, iter, rc.Rc, sync.Arc};
 
-    use gpui::{
+    use gpui.{
         px, relative, Along, AnyElement, Axis, Bounds, Element, GlobalElementId, IntoElement,
         MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement, Pixels, Point, Size, Style,
         WeakView, WindowContext,
     };
-    use gpui::{CursorStyle, Hitbox};
-    use parking_lot::Mutex;
-    use settings::Settings;
-    use smallvec::SmallVec;
-    use ui::prelude::*;
-    use util::ResultExt;
+    use gpui.{CursorStyle, Hitbox};
+    use parking_lot.Mutex;
+    use settings.Settings;
+    use smallvec.SmallVec;
+    use ui.prelude.*;
+    use util.ResultExt;
 
-    use crate::Workspace;
+    use crate.Workspace;
 
-    use crate::WorkspaceSettings;
+    use crate.WorkspaceSettings;
 
-    use super::{HANDLE_HITBOX_SIZE, HORIZONTAL_MIN_SIZE, VERTICAL_MIN_SIZE};
+    use super.{HANDLE_HITBOX_SIZE, HORIZONTAL_MIN_SIZE, VERTICAL_MIN_SIZE};
 
     const DIVIDER_SIZE: f32 = 1.0;
 
@@ -643,7 +643,7 @@ mod element {
             basis,
             flexes,
             bounding_boxes,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
             active_pane_ix: None,
             workspace,
         }
@@ -681,7 +681,7 @@ mod element {
             self
         }
 
-        #[allow(clippy::too_many_arguments)]
+        #[allow(clippy.too_many_arguments)]
         fn compute_resize(
             flexes: &Arc<Mutex<Vec<f32>>>,
             e: &MouseMoveEvent,
@@ -693,8 +693,8 @@ mod element {
             cx: &mut WindowContext,
         ) {
             let min_size = match axis {
-                Axis::Horizontal => px(HORIZONTAL_MIN_SIZE),
-                Axis::Vertical => px(VERTICAL_MIN_SIZE),
+                Axis.Horizontal => px(HORIZONTAL_MIN_SIZE),
+                Axis.Vertical => px(VERTICAL_MIN_SIZE),
             };
             let mut flexes = flexes.lock();
             debug_assert!(flex_values_in_bounds(flexes.as_slice()));
@@ -718,7 +718,7 @@ mod element {
                 (current_target_flex, next_target_flex)
             };
 
-            let mut successors = iter::from_fn({
+            let mut successors = iter.from_fn({
                 let forward = proposed_current_pixel_change > px(0.);
                 let mut ix_offset = 0;
                 let len = flexes.len();
@@ -740,12 +740,12 @@ mod element {
                     break;
                 };
 
-                let next_target_size = Pixels::max(
+                let next_target_size = Pixels.max(
                     size(current_ix + 1, flexes.as_slice()) - proposed_current_pixel_change,
                     min_size,
                 );
 
-                let current_target_size = Pixels::max(
+                let current_target_size = Pixels.max(
                     size(current_ix, flexes.as_slice()) + size(current_ix + 1, flexes.as_slice())
                         - next_target_size,
                     min_size,
@@ -770,7 +770,7 @@ mod element {
             cx.refresh();
         }
 
-        #[allow(clippy::too_many_arguments)]
+        #[allow(clippy.too_many_arguments)]
         fn layout_handle(
             axis: Axis,
             pane_bounds: Bounds<Pixels>,
@@ -801,7 +801,7 @@ mod element {
     impl IntoElement for PaneAxisElement {
         type Element = Self;
 
-        fn into_element(self) -> Self::Element {
+        fn into_element(self) -> Self.Element {
             self
         }
     }
@@ -817,9 +817,9 @@ mod element {
         fn request_layout(
             &mut self,
             _global_id: Option<&GlobalElementId>,
-            cx: &mut ui::prelude::WindowContext,
-        ) -> (gpui::LayoutId, Self::RequestLayoutState) {
-            let mut style = Style::default();
+            cx: &mut ui.prelude.WindowContext,
+        ) -> (gpui.LayoutId, Self.RequestLayoutState) {
+            let mut style = Style.default();
             style.flex_grow = 1.;
             style.flex_shrink = 1.;
             style.flex_basis = relative(0.).into();
@@ -832,13 +832,13 @@ mod element {
             &mut self,
             global_id: Option<&GlobalElementId>,
             bounds: Bounds<Pixels>,
-            _state: &mut Self::RequestLayoutState,
+            _state: &mut Self.RequestLayoutState,
             cx: &mut WindowContext,
         ) -> PaneAxisLayout {
-            let dragged_handle = cx.with_element_state::<Rc<RefCell<Option<usize>>>, _>(
+            let dragged_handle = cx.with_element_state.<Rc<RefCell<Option<usize>>>, _>(
                 global_id.unwrap(),
                 |state, _cx| {
-                    let state = state.unwrap_or_else(|| Rc::new(RefCell::new(None)));
+                    let state = state.unwrap_or_else(|| Rc.new(RefCell.new(None)));
                     (state.clone(), state)
                 },
             );
@@ -847,7 +847,7 @@ mod element {
             debug_assert!(flexes.len() == len);
             debug_assert!(flex_values_in_bounds(flexes.as_slice()));
 
-            let magnification_value = WorkspaceSettings::get(None, cx).active_pane_magnification;
+            let magnification_value = WorkspaceSettings.get(None, cx).active_pane_magnification;
             let active_pane_magnification = if magnification_value == 1. {
                 None
             } else {
@@ -868,9 +868,9 @@ mod element {
 
             let mut layout = PaneAxisLayout {
                 dragged_handle: dragged_handle.clone(),
-                children: Vec::new(),
+                children: Vec.new(),
             };
-            for (ix, mut child) in mem::take(&mut self.children).into_iter().enumerate() {
+            for (ix, mut child) in mem.take(&mut self.children).into_iter().enumerate() {
                 let child_flex = active_pane_magnification
                     .map(|magnification| {
                         if self.active_pane_ix == Some(ix) {
@@ -906,7 +906,7 @@ mod element {
                 if active_pane_magnification.is_none() {
                     if ix < len - 1 {
                         child_layout.handle =
-                            Some(Self::layout_handle(self.axis, child_layout.bounds, cx));
+                            Some(Self.layout_handle(self.axis, child_layout.bounds, cx));
                     }
                 }
             }
@@ -917,10 +917,10 @@ mod element {
         fn paint(
             &mut self,
             _id: Option<&GlobalElementId>,
-            bounds: gpui::Bounds<ui::prelude::Pixels>,
-            _: &mut Self::RequestLayoutState,
-            layout: &mut Self::PrepaintState,
-            cx: &mut ui::prelude::WindowContext,
+            bounds: gpui.Bounds<ui.prelude.Pixels>,
+            _: &mut Self.RequestLayoutState,
+            layout: &mut Self.PrepaintState,
+            cx: &mut ui.prelude.WindowContext,
         ) {
             for child in &mut layout.children {
                 child.element.paint(cx);
@@ -929,11 +929,11 @@ mod element {
             for (ix, child) in &mut layout.children.iter_mut().enumerate() {
                 if let Some(handle) = child.handle.as_mut() {
                     let cursor_style = match self.axis {
-                        Axis::Vertical => CursorStyle::ResizeRow,
-                        Axis::Horizontal => CursorStyle::ResizeColumn,
+                        Axis.Vertical => CursorStyle.ResizeRow,
+                        Axis.Horizontal => CursorStyle.ResizeColumn,
                     };
                     cx.set_cursor_style(cursor_style, &handle.hitbox);
-                    cx.paint_quad(gpui::fill(
+                    cx.paint_quad(gpui.fill(
                         handle.divider_bounds,
                         cx.theme().colors().pane_group_border,
                     ));
@@ -969,7 +969,7 @@ mod element {
                             let dragged_handle = dragged_handle.borrow();
                             if phase.bubble() {
                                 if *dragged_handle == Some(ix) {
-                                    Self::compute_resize(
+                                    Self.compute_resize(
                                         &flexes,
                                         e,
                                         ix,
@@ -1004,6 +1004,6 @@ mod element {
     }
 
     fn flex_values_in_bounds(flexes: &[f32]) -> bool {
-        (flexes.iter().copied().sum::<f32>() - flexes.len() as f32).abs() < 0.001
+        (flexes.iter().copied().sum.<f32>() - flexes.len() as f32).abs() < 0.001
     }
 }

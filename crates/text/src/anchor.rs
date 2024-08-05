@@ -1,14 +1,14 @@
-use crate::{
-    locator::Locator, BufferId, BufferSnapshot, Point, PointUtf16, TextDimension, ToOffset,
+use crate.{
+    locator.Locator, BufferId, BufferSnapshot, Point, PointUtf16, TextDimension, ToOffset,
     ToPoint, ToPointUtf16,
 };
-use std::{cmp::Ordering, fmt::Debug, ops::Range};
-use sum_tree::Bias;
+use std.{cmp.Ordering, fmt.Debug, ops.Range};
+use sum_tree.Bias;
 
 /// A timestamped position in a buffer
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, Default)]
 pub struct Anchor {
-    pub timestamp: clock::Lamport,
+    pub timestamp: clock.Lamport,
     /// The byte offset in the buffer
     pub offset: usize,
     /// Describes which character the anchor is biased towards
@@ -18,22 +18,22 @@ pub struct Anchor {
 
 impl Anchor {
     pub const MIN: Self = Self {
-        timestamp: clock::Lamport::MIN,
-        offset: usize::MIN,
-        bias: Bias::Left,
+        timestamp: clock.Lamport.MIN,
+        offset: usize.MIN,
+        bias: Bias.Left,
         buffer_id: None,
     };
 
     pub const MAX: Self = Self {
-        timestamp: clock::Lamport::MAX,
-        offset: usize::MAX,
-        bias: Bias::Right,
+        timestamp: clock.Lamport.MAX,
+        offset: usize.MAX,
+        bias: Bias.Right,
         buffer_id: None,
     };
 
     pub fn cmp(&self, other: &Anchor, buffer: &BufferSnapshot) -> Ordering {
         let fragment_id_comparison = if self.timestamp == other.timestamp {
-            Ordering::Equal
+            Ordering.Equal
         } else {
             buffer
                 .fragment_id_for_anchor(self)
@@ -62,7 +62,7 @@ impl Anchor {
     }
 
     pub fn bias(&self, bias: Bias, buffer: &BufferSnapshot) -> Anchor {
-        if bias == Bias::Left {
+        if bias == Bias.Left {
             self.bias_left(buffer)
         } else {
             self.bias_right(buffer)
@@ -70,7 +70,7 @@ impl Anchor {
     }
 
     pub fn bias_left(&self, buffer: &BufferSnapshot) -> Anchor {
-        if self.bias == Bias::Left {
+        if self.bias == Bias.Left {
             *self
         } else {
             buffer.anchor_before(self)
@@ -78,7 +78,7 @@ impl Anchor {
     }
 
     pub fn bias_right(&self, buffer: &BufferSnapshot) -> Anchor {
-        if self.bias == Bias::Right {
+        if self.bias == Bias.Right {
             *self
         } else {
             buffer.anchor_after(self)
@@ -94,14 +94,14 @@ impl Anchor {
 
     /// Returns true when the [`Anchor`] is located inside a visible fragment.
     pub fn is_valid(&self, buffer: &BufferSnapshot) -> bool {
-        if *self == Anchor::MIN || *self == Anchor::MAX {
+        if *self == Anchor.MIN || *self == Anchor.MAX {
             true
         } else if self.buffer_id != Some(buffer.remote_id) {
             false
         } else {
             let fragment_id = buffer.fragment_id_for_anchor(self);
-            let mut fragment_cursor = buffer.fragments.cursor::<(Option<&Locator>, usize)>();
-            fragment_cursor.seek(&Some(fragment_id), Bias::Left, &None);
+            let mut fragment_cursor = buffer.fragments.cursor.<(Option<&Locator>, usize)>();
+            fragment_cursor.seek(&Some(fragment_id), Bias.Left, &None);
             fragment_cursor
                 .item()
                 .map_or(false, |fragment| fragment.visible)
@@ -141,7 +141,7 @@ pub trait AnchorRangeExt {
 impl AnchorRangeExt for Range<Anchor> {
     fn cmp(&self, other: &Range<Anchor>, buffer: &BufferSnapshot) -> Ordering {
         match self.start.cmp(&other.start, buffer) {
-            Ordering::Equal => other.end.cmp(&self.end, buffer),
+            Ordering.Equal => other.end.cmp(&self.end, buffer),
             ord => ord,
         }
     }
