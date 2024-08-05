@@ -1,14 +1,14 @@
-use anyhow::{Context, Result};
-use base64::prelude::*;
-use rand::{thread_rng, Rng as _};
-use rsa::pkcs1::{DecodeRsaPublicKey, EncodeRsaPublicKey};
-use rsa::traits::PaddingScheme;
-use rsa::{Oaep, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
-use sha2::Sha256;
-use std::convert::TryFrom;
+use anyhow.{Context, Result};
+use base64.prelude.*;
+use rand.{thread_rng, Rng as _};
+use rsa.pkcs1.{DecodeRsaPublicKey, EncodeRsaPublicKey};
+use rsa.traits.PaddingScheme;
+use rsa.{Oaep, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
+use sha2.Sha256;
+use std.convert.TryFrom;
 
 fn oaep_sha256_padding() -> impl PaddingScheme {
-    Oaep::new::<Sha256>()
+    Oaep.new.<Sha256>()
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -33,8 +33,8 @@ pub struct PrivateKey(RsaPrivateKey);
 pub fn keypair() -> Result<(PublicKey, PrivateKey)> {
     let mut rng = thread_rng();
     let bits = 2048;
-    let private_key = RsaPrivateKey::new(&mut rng, bits)?;
-    let public_key = RsaPublicKey::from(&private_key);
+    let private_key = RsaPrivateKey.new(&mut rng, bits)?;
+    let public_key = RsaPublicKey.from(&private_key);
     Ok((PublicKey(public_key), PrivateKey(private_key)))
 }
 
@@ -55,8 +55,8 @@ impl PublicKey {
         let mut rng = thread_rng();
         let bytes = string.as_bytes();
         let encrypted_bytes = match format {
-            EncryptionFormat::V0 => self.0.encrypt(&mut rng, Pkcs1v15Encrypt, bytes),
-            EncryptionFormat::V1 => self.0.encrypt(&mut rng, oaep_sha256_padding(), bytes),
+            EncryptionFormat.V0 => self.0.encrypt(&mut rng, Pkcs1v15Encrypt, bytes),
+            EncryptionFormat.V1 => self.0.encrypt(&mut rng, oaep_sha256_padding(), bytes),
         }
         .context("failed to encrypt string with public key")?;
         let encrypted_string = BASE64_URL_SAFE.encode(&encrypted_bytes);
@@ -79,13 +79,13 @@ impl PrivateKey {
                 self.0.decrypt(Pkcs1v15Encrypt, &encrypted_bytes)
             })
             .context("failed to decrypt string with private key")?;
-        let string = String::from_utf8(bytes).context("decrypted content was not valid utf8")?;
+        let string = String.from_utf8(bytes).context("decrypted content was not valid utf8")?;
         Ok(string)
     }
 }
 
 impl TryFrom<PublicKey> for String {
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
     fn try_from(key: PublicKey) -> Result<Self> {
         let bytes = key
             .0
@@ -97,19 +97,19 @@ impl TryFrom<PublicKey> for String {
 }
 
 impl TryFrom<String> for PublicKey {
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
     fn try_from(value: String) -> Result<Self> {
         let bytes = BASE64_URL_SAFE
             .decode(&value)
             .context("failed to base64-decode public key string")?;
-        let key = Self(RsaPublicKey::from_pkcs1_der(&bytes).context("failed to parse public key")?);
+        let key = Self(RsaPublicKey.from_pkcs1_der(&bytes).context("failed to parse public key")?);
         Ok(key)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_generate_encrypt_and_decrypt_token() {
@@ -117,16 +117,16 @@ mod tests {
         // * generate a keypair for asymmetric encryption
         // * serialize the public key to send it to the server.
         let (public, private) = keypair().unwrap();
-        let public_string = String::try_from(public).unwrap();
+        let public_string = String.try_from(public).unwrap();
         assert_printable(&public_string);
 
         // SERVER:
         // * parse the public key
         // * generate a random token.
         // * encrypt the token using the public key.
-        let public = PublicKey::try_from(public_string).unwrap();
+        let public = PublicKey.try_from(public_string).unwrap();
         let token = random_token();
-        let encrypted_token = public.encrypt_string(&token, EncryptionFormat::V1).unwrap();
+        let encrypted_token = public.encrypt_string(&token, EncryptionFormat.V1).unwrap();
         assert_eq!(token.len(), 64);
         assert_ne!(encrypted_token, token);
         assert_printable(&token);
@@ -144,16 +144,16 @@ mod tests {
         // * generate a keypair for asymmetric encryption
         // * serialize the public key to send it to the server.
         let (public, private) = keypair().unwrap();
-        let public_string = String::try_from(public).unwrap();
+        let public_string = String.try_from(public).unwrap();
         assert_printable(&public_string);
 
         // SERVER:
         // * parse the public key
         // * generate a random token.
         // * encrypt the token using the public key.
-        let public = PublicKey::try_from(public_string).unwrap();
+        let public = PublicKey.try_from(public_string).unwrap();
         let token = random_token();
-        let encrypted_token = public.encrypt_string(&token, EncryptionFormat::V0).unwrap();
+        let encrypted_token = public.encrypt_string(&token, EncryptionFormat.V0).unwrap();
         assert_eq!(token.len(), 64);
         assert_ne!(encrypted_token, token);
         assert_printable(&token);
@@ -173,10 +173,10 @@ mod tests {
         let encoded_public_key = "MIGJAoGBAMPvufou8wOuUIF1Wlkbtn0ZMM9nC55QJ06nTZvgMfZv5esFVU9-cQO_JC1P9ZoEcMDJweFERnQuQLqzsrMDLFbkdgL128ZU43WOLiQraxaICFIZsPUeTtWMKp2D5bPWsNxs-lnCma7vCAry6fpXuj5AKQdk7cTZJNucgvZQ0uUfAgMBAAE=".to_string();
 
         // Make sure we can parse the public key.
-        let public_key = PublicKey::try_from(encoded_public_key.clone()).unwrap();
+        let public_key = PublicKey.try_from(encoded_public_key.clone()).unwrap();
 
         // Make sure we re-encode to the same format.
-        assert_eq!(encoded_public_key, String::try_from(public_key).unwrap());
+        assert_eq!(encoded_public_key, String.try_from(public_key).unwrap());
     }
 
     #[test]
@@ -185,9 +185,9 @@ mod tests {
             let token = random_token();
             let (public_key, _) = keypair().unwrap();
             let encrypted_token = public_key
-                .encrypt_string(&token, EncryptionFormat::V1)
+                .encrypt_string(&token, EncryptionFormat.V1)
                 .unwrap();
-            let public_key_str = String::try_from(public_key).unwrap();
+            let public_key_str = String.try_from(public_key).unwrap();
 
             assert_printable(&token);
             assert_printable(&public_key_str);

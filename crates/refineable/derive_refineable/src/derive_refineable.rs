@@ -1,7 +1,7 @@
-use proc_macro::TokenStream;
-use proc_macro2::TokenStream as TokenStream2;
-use quote::{format_ident, quote};
-use syn::{
+use proc_macro.TokenStream;
+use proc_macro2.TokenStream as TokenStream2;
+use quote.{format_ident, quote};
+use syn.{
     parse_macro_input, parse_quote, DeriveInput, Field, FieldsNamed, PredicateType, TraitBound,
     Type, TypeParamBound, WhereClause, WherePredicate,
 };
@@ -22,9 +22,9 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
     let mut refinement_traits_to_derive = vec![];
 
     if let Some(refineable_attr) = refineable_attr {
-        if let Ok(syn::Meta::List(meta_list)) = refineable_attr.parse_meta() {
+        if let Ok(syn.Meta.List(meta_list)) = refineable_attr.parse_meta() {
             for nested in meta_list.nested {
-                let syn::NestedMeta::Meta(syn::Meta::Path(path)) = nested else {
+                let syn.NestedMeta.Meta(syn.Meta.Path(path)) = nested else {
                     continue;
                 };
 
@@ -41,10 +41,10 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let fields = match data {
-        syn::Data::Struct(syn::DataStruct {
-            fields: syn::Fields::Named(FieldsNamed { named, .. }),
+        syn.Data.Struct(syn.DataStruct {
+            fields: syn.Fields.Named(FieldsNamed { named, .. }),
             ..
-        }) => named.into_iter().collect::<Vec<Field>>(),
+        }) => named.into_iter().collect.<Vec<Field>>(),
         _ => panic!("This derive macro only supports structs with named fields"),
     };
 
@@ -56,15 +56,15 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
     let type_param_bounds: Vec<_> = wrapped_types
         .iter()
         .map(|ty| {
-            WherePredicate::Type(PredicateType {
+            WherePredicate.Type(PredicateType {
                 lifetimes: None,
                 bounded_ty: ty.clone(),
-                colon_token: Default::default(),
+                colon_token: Default.default(),
                 bounds: {
-                    let mut punctuated = syn::punctuated::Punctuated::new();
-                    punctuated.push_value(TypeParamBound::Trait(TraitBound {
+                    let mut punctuated = syn.punctuated.Punctuated.new();
+                    punctuated.push_value(TypeParamBound.Trait(TraitBound {
                         paren_token: None,
-                        modifier: syn::TraitBoundModifier::None,
+                        modifier: syn.TraitBoundModifier.None,
                         lifetimes: None,
                         path: parse_quote!(Clone),
                     }));
@@ -82,7 +82,7 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
             where_clause.clone()
         }
         None => WhereClause {
-            where_token: Default::default(),
+            where_token: Default.default(),
             predicates: type_param_bounds.into_iter().collect(),
         },
     };
@@ -220,10 +220,10 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
             .collect();
 
         quote! {
-            impl #impl_generics std::fmt::Debug for #refinement_ident #ty_generics
+            impl #impl_generics std.fmt.Debug for #refinement_ident #ty_generics
                 #where_clause
             {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
                     let mut debug_struct = f.debug_struct(stringify!(#refinement_ident));
                     let mut all_some = true;
                     #( #refinement_field_debugs )*
@@ -260,11 +260,11 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
         {
             type Refinement = #refinement_ident #ty_generics;
 
-            fn refine(&mut self, refinement: &Self::Refinement) {
+            fn refine(&mut self, refinement: &Self.Refinement) {
                 #( #refineable_refine_assignments )*
             }
 
-            fn refined(mut self, refinement: Self::Refinement) -> Self {
+            fn refined(mut self, refinement: Self.Refinement) -> Self {
                 #( #refineable_refined_assignments )*
                 self
             }
@@ -275,11 +275,11 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
         {
             type Refinement = #refinement_ident #ty_generics;
 
-            fn refine(&mut self, refinement: &Self::Refinement) {
+            fn refine(&mut self, refinement: &Self.Refinement) {
                 #( #refinement_refine_assignments )*
             }
 
-            fn refined(mut self, refinement: Self::Refinement) -> Self {
+            fn refined(mut self, refinement: Self.Refinement) -> Self {
                 #( #refinement_refined_assignments )*
                 self
             }
@@ -295,12 +295,12 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl #impl_generics ::core::default::Default for #refinement_ident #ty_generics
+        impl #impl_generics .core.default.Default for #refinement_ident #ty_generics
             #where_clause
         {
             fn default() -> Self {
                 #refinement_ident {
-                    #( #field_names: Default::default() ),*
+                    #( #field_names: Default.default() ),*
                 }
             }
         }
@@ -329,7 +329,7 @@ fn is_refineable_field(f: &Field) -> bool {
 }
 
 fn is_optional_field(f: &Field) -> bool {
-    if let Type::Path(typepath) = &f.ty {
+    if let Type.Path(typepath) = &f.ty {
         if typepath.qself.is_none() {
             let segments = &typepath.path.segments;
             if segments.len() == 1 && segments.iter().any(|s| s.ident == "Option") {
@@ -340,18 +340,18 @@ fn is_optional_field(f: &Field) -> bool {
     false
 }
 
-fn get_wrapper_type(field: &Field, ty: &Type) -> syn::Type {
+fn get_wrapper_type(field: &Field, ty: &Type) -> syn.Type {
     if is_refineable_field(field) {
-        let struct_name = if let Type::Path(tp) = ty {
+        let struct_name = if let Type.Path(tp) = ty {
             tp.path.segments.last().unwrap().ident.clone()
         } else {
             panic!("Expected struct type for a refineable field");
         };
         let refinement_struct_name = format_ident!("{}Refinement", struct_name);
-        let generics = if let Type::Path(tp) = ty {
+        let generics = if let Type.Path(tp) = ty {
             &tp.path.segments.last().unwrap().arguments
         } else {
-            &syn::PathArguments::None
+            &syn.PathArguments.None
         };
         parse_quote!(#refinement_struct_name #generics)
     } else if is_optional_field(field) {

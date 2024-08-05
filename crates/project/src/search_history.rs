@@ -38,7 +38,7 @@ impl SearchHistory {
         SearchHistory {
             max_history_len,
             insertion_behavior,
-            history: Vec::new(),
+            history: Vec.new(),
         }
     }
 
@@ -49,7 +49,7 @@ impl SearchHistory {
             }
         }
 
-        if self.insertion_behavior == QueryInsertionBehavior::ReplacePreviousIfContains {
+        if self.insertion_behavior == QueryInsertionBehavior.ReplacePreviousIfContains {
             if let Some(previously_searched) = self.history.last_mut() {
                 if search_string.contains(previously_searched.as_str()) {
                     *previously_searched = search_string;
@@ -114,16 +114,16 @@ impl SearchHistory {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_add() {
         const MAX_HISTORY_LEN: usize = 20;
-        let mut search_history = SearchHistory::new(
+        let mut search_history = SearchHistory.new(
             Some(MAX_HISTORY_LEN),
-            QueryInsertionBehavior::ReplacePreviousIfContains,
+            QueryInsertionBehavior.ReplacePreviousIfContains,
         );
-        let mut cursor = SearchHistoryCursor::default();
+        let mut cursor = SearchHistoryCursor.default();
 
         assert_eq!(
             search_history.current(&cursor),
@@ -165,8 +165,8 @@ mod tests {
 
     #[test]
     fn test_next_and_previous() {
-        let mut search_history = SearchHistory::new(None, QueryInsertionBehavior::AlwaysInsert);
-        let mut cursor = SearchHistoryCursor::default();
+        let mut search_history = SearchHistory.new(None, QueryInsertionBehavior.AlwaysInsert);
+        let mut cursor = SearchHistoryCursor.default();
 
         assert_eq!(
             search_history.next(&mut cursor),
@@ -204,8 +204,8 @@ mod tests {
 
     #[test]
     fn test_reset_selection() {
-        let mut search_history = SearchHistory::new(None, QueryInsertionBehavior::AlwaysInsert);
-        let mut cursor = SearchHistoryCursor::default();
+        let mut search_history = SearchHistory.new(None, QueryInsertionBehavior.AlwaysInsert);
+        let mut cursor = SearchHistoryCursor.default();
 
         search_history.add(&mut cursor, "Rust".to_string());
         search_history.add(&mut cursor, "JavaScript".to_string());
@@ -231,9 +231,9 @@ mod tests {
 
     #[test]
     fn test_multiple_cursors() {
-        let mut search_history = SearchHistory::new(None, QueryInsertionBehavior::AlwaysInsert);
-        let mut cursor1 = SearchHistoryCursor::default();
-        let mut cursor2 = SearchHistoryCursor::default();
+        let mut search_history = SearchHistory.new(None, QueryInsertionBehavior.AlwaysInsert);
+        let mut cursor1 = SearchHistoryCursor.default();
+        let mut cursor2 = SearchHistoryCursor.default();
 
         search_history.add(&mut cursor1, "Rust".to_string());
         search_history.add(&mut cursor1, "JavaScript".to_string());

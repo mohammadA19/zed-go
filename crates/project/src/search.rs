@@ -1,19 +1,19 @@
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
-use anyhow::Result;
-use client::proto;
-use language::{char_kind, BufferSnapshot};
-use regex::{Captures, Regex, RegexBuilder};
-use smol::future::yield_now;
-use std::{
-    borrow::Cow,
-    io::{BufRead, BufReader, Read},
-    ops::Range,
-    path::Path,
-    sync::{Arc, OnceLock},
+use aho_corasick.{AhoCorasick, AhoCorasickBuilder};
+use anyhow.Result;
+use client.proto;
+use language.{char_kind, BufferSnapshot};
+use regex.{Captures, Regex, RegexBuilder};
+use smol.future.yield_now;
+use std.{
+    borrow.Cow,
+    io.{BufRead, BufReader, Read},
+    ops.Range,
+    path.Path,
+    sync.{Arc, OnceLock},
 };
-use util::paths::PathMatcher;
+use util.paths.PathMatcher;
 
-static TEXT_REPLACEMENT_SPECIAL_CHARACTERS_REGEX: OnceLock<Regex> = OnceLock::new();
+static TEXT_REPLACEMENT_SPECIAL_CHARACTERS_REGEX: OnceLock<Regex> = OnceLock.new();
 
 #[derive(Clone, Debug)]
 pub struct SearchInputs {
@@ -65,7 +65,7 @@ impl SearchQuery {
         files_to_exclude: PathMatcher,
     ) -> Result<Self> {
         let query = query.to_string();
-        let search = AhoCorasickBuilder::new()
+        let search = AhoCorasickBuilder.new()
             .ascii_case_insensitive(!case_sensitive)
             .build(&[&query])?;
         let inner = SearchInputs {
@@ -73,8 +73,8 @@ impl SearchQuery {
             files_to_exclude,
             files_to_include,
         };
-        Ok(Self::Text {
-            search: Arc::new(search),
+        Ok(Self.Text {
+            search: Arc.new(search),
             replacement: None,
             whole_word,
             case_sensitive,
@@ -92,9 +92,9 @@ impl SearchQuery {
         files_to_exclude: PathMatcher,
     ) -> Result<Self> {
         let mut query = query.to_string();
-        let initial_query = Arc::from(query.as_str());
+        let initial_query = Arc.from(query.as_str());
         if whole_word {
-            let mut word_query = String::new();
+            let mut word_query = String.new();
             word_query.push_str("\\b");
             word_query.push_str(&query);
             word_query.push_str("\\b");
@@ -102,7 +102,7 @@ impl SearchQuery {
         }
 
         let multiline = query.contains('\n') || query.contains("\\n");
-        let regex = RegexBuilder::new(&query)
+        let regex = RegexBuilder.new(&query)
             .case_insensitive(!case_sensitive)
             .multi_line(multiline)
             .build()?;
@@ -111,7 +111,7 @@ impl SearchQuery {
             files_to_exclude,
             files_to_include,
         };
-        Ok(Self::Regex {
+        Ok(Self.Regex {
             regex,
             replacement: None,
             multiline,
@@ -122,9 +122,9 @@ impl SearchQuery {
         })
     }
 
-    pub fn from_proto(message: proto::SearchProject) -> Result<Self> {
+    pub fn from_proto(message: proto.SearchProject) -> Result<Self> {
         if message.regex {
-            Self::regex(
+            Self.regex(
                 message.query,
                 message.whole_word,
                 message.case_sensitive,
@@ -133,7 +133,7 @@ impl SearchQuery {
                 deserialize_path_matches(&message.files_to_exclude)?,
             )
         } else {
-            Self::text(
+            Self.text(
                 message.query,
                 message.whole_word,
                 message.case_sensitive,
@@ -145,11 +145,11 @@ impl SearchQuery {
     }
     pub fn with_replacement(mut self, new_replacement: String) -> Self {
         match self {
-            Self::Text {
+            Self.Text {
                 ref mut replacement,
                 ..
             }
-            | Self::Regex {
+            | Self.Regex {
                 ref mut replacement,
                 ..
             } => {
@@ -158,8 +158,8 @@ impl SearchQuery {
             }
         }
     }
-    pub fn to_proto(&self, project_id: u64) -> proto::SearchProject {
-        proto::SearchProject {
+    pub fn to_proto(&self, project_id: u64) -> proto.SearchProject {
+        proto.SearchProject {
             project_id,
             query: self.as_str().to_string(),
             regex: self.is_regex(),
@@ -177,7 +177,7 @@ impl SearchQuery {
         }
 
         match self {
-            Self::Text { search, .. } => {
+            Self.Text { search, .. } => {
                 let mat = search.stream_find_iter(stream).next();
                 match mat {
                     Some(Ok(_)) => Ok(true),
@@ -185,12 +185,12 @@ impl SearchQuery {
                     None => Ok(false),
                 }
             }
-            Self::Regex {
+            Self.Regex {
                 regex, multiline, ..
             } => {
-                let mut reader = BufReader::new(stream);
+                let mut reader = BufReader.new(stream);
                 if *multiline {
-                    let mut text = String::new();
+                    let mut text = String.new();
                     if let Err(err) = reader.read_to_string(&mut text) {
                         Err(err.into())
                     } else {
@@ -211,7 +211,7 @@ impl SearchQuery {
     /// Returns the replacement text for this `SearchQuery`.
     pub fn replacement(&self) -> Option<&str> {
         match self {
-            SearchQuery::Text { replacement, .. } | SearchQuery::Regex { replacement, .. } => {
+            SearchQuery.Text { replacement, .. } | SearchQuery.Regex { replacement, .. } => {
                 replacement.as_deref()
             }
         }
@@ -219,13 +219,13 @@ impl SearchQuery {
     /// Replaces search hits if replacement is set. `text` is assumed to be a string that matches this `SearchQuery` exactly, without any leftovers on either side.
     pub fn replacement_for<'a>(&self, text: &'a str) -> Option<Cow<'a, str>> {
         match self {
-            SearchQuery::Text { replacement, .. } => replacement.clone().map(Cow::from),
-            SearchQuery::Regex {
+            SearchQuery.Text { replacement, .. } => replacement.clone().map(Cow.from),
+            SearchQuery.Regex {
                 regex, replacement, ..
             } => {
                 if let Some(replacement) = replacement {
                     let replacement = TEXT_REPLACEMENT_SPECIAL_CHARACTERS_REGEX
-                        .get_or_init(|| Regex::new(r"\\\\|\\n|\\t").unwrap())
+                        .get_or_init(|| Regex.new(r"\\\\|\\n|\\t").unwrap())
                         .replace_all(replacement, |c: &Captures| {
                             match c.get(0).unwrap().as_str() {
                                 r"\\" => "\\",
@@ -250,7 +250,7 @@ impl SearchQuery {
         const YIELD_INTERVAL: usize = 20000;
 
         if self.as_str().is_empty() {
-            return Default::default();
+            return Default.default();
         }
 
         let range_offset = subrange.as_ref().map(|r| r.start).unwrap_or(0);
@@ -260,9 +260,9 @@ impl SearchQuery {
             buffer.as_rope().clone()
         };
 
-        let mut matches = Vec::new();
+        let mut matches = Vec.new();
         match self {
-            Self::Text {
+            Self.Text {
                 search, whole_word, ..
             } => {
                 for (ix, mat) in search
@@ -290,7 +290,7 @@ impl SearchQuery {
                 }
             }
 
-            Self::Regex {
+            Self.Regex {
                 regex, multiline, ..
             } => {
                 if *multiline {
@@ -303,7 +303,7 @@ impl SearchQuery {
                         matches.push(mat.start()..mat.end());
                     }
                 } else {
-                    let mut line = String::new();
+                    let mut line = String.new();
                     let mut line_offset = 0;
                     for (chunk_ix, chunk) in rope.chunks().chain(["\n"]).enumerate() {
                         if (chunk_ix + 1) % YIELD_INTERVAL == 0 {
@@ -341,31 +341,31 @@ impl SearchQuery {
 
     pub fn whole_word(&self) -> bool {
         match self {
-            Self::Text { whole_word, .. } => *whole_word,
-            Self::Regex { whole_word, .. } => *whole_word,
+            Self.Text { whole_word, .. } => *whole_word,
+            Self.Regex { whole_word, .. } => *whole_word,
         }
     }
 
     pub fn case_sensitive(&self) -> bool {
         match self {
-            Self::Text { case_sensitive, .. } => *case_sensitive,
-            Self::Regex { case_sensitive, .. } => *case_sensitive,
+            Self.Text { case_sensitive, .. } => *case_sensitive,
+            Self.Regex { case_sensitive, .. } => *case_sensitive,
         }
     }
 
     pub fn include_ignored(&self) -> bool {
         match self {
-            Self::Text {
+            Self.Text {
                 include_ignored, ..
             } => *include_ignored,
-            Self::Regex {
+            Self.Regex {
                 include_ignored, ..
             } => *include_ignored,
         }
     }
 
     pub fn is_regex(&self) -> bool {
-        matches!(self, Self::Regex { .. })
+        matches!(self, Self.Regex { .. })
     }
 
     pub fn files_to_include(&self) -> &PathMatcher {
@@ -397,23 +397,23 @@ impl SearchQuery {
     }
     pub fn as_inner(&self) -> &SearchInputs {
         match self {
-            Self::Regex { inner, .. } | Self::Text { inner, .. } => inner,
+            Self.Regex { inner, .. } | Self.Text { inner, .. } => inner,
         }
     }
 }
 
-fn deserialize_path_matches(glob_set: &str) -> anyhow::Result<PathMatcher> {
+fn deserialize_path_matches(glob_set: &str) -> anyhow.Result<PathMatcher> {
     let globs = glob_set
         .split(',')
-        .map(str::trim)
+        .map(str.trim)
         .filter_map(|glob_str| (!glob_str.is_empty()).then(|| glob_str.to_owned()))
-        .collect::<Vec<_>>();
-    Ok(PathMatcher::new(&globs)?)
+        .collect.<Vec<_>>();
+    Ok(PathMatcher.new(&globs)?)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn path_matcher_creation_for_valid_paths() {
@@ -426,7 +426,7 @@ mod tests {
             "dir/[a-z].txt",
             "../dir/filé",
         ] {
-            let path_matcher = PathMatcher::new(&[valid_path.to_owned()]).unwrap_or_else(|e| {
+            let path_matcher = PathMatcher.new(&[valid_path.to_owned()]).unwrap_or_else(|e| {
                 panic!("Valid path {valid_path} should be accepted, but got: {e}")
             });
             assert!(
@@ -439,7 +439,7 @@ mod tests {
     #[test]
     fn path_matcher_creation_for_globs() {
         for invalid_glob in ["dir/[].txt", "dir/[a-z.txt", "dir/{file"] {
-            match PathMatcher::new(&[invalid_glob.to_owned()]) {
+            match PathMatcher.new(&[invalid_glob.to_owned()]) {
                 Ok(_) => panic!("Invalid glob {invalid_glob} should not be accepted"),
                 Err(_expected) => {}
             }
@@ -452,7 +452,7 @@ mod tests {
             "dir/[a-z].txt",
             "{dir,file}",
         ] {
-            match PathMatcher::new(&[valid_glob.to_owned()]) {
+            match PathMatcher.new(&[valid_glob.to_owned()]) {
                 Ok(_expected) => {}
                 Err(e) => panic!("Valid glob should be accepted, but got: {e}"),
             }

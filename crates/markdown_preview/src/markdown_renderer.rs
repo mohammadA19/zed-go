@@ -1,24 +1,24 @@
-use crate::markdown_elements::{
+use crate.markdown_elements.{
     HeadingLevel, Link, ParsedMarkdown, ParsedMarkdownBlockQuote, ParsedMarkdownCodeBlock,
     ParsedMarkdownElement, ParsedMarkdownHeading, ParsedMarkdownListItem,
     ParsedMarkdownListItemType, ParsedMarkdownTable, ParsedMarkdownTableAlignment,
     ParsedMarkdownTableRow, ParsedMarkdownText,
 };
-use gpui::{
+use gpui.{
     div, px, rems, AbsoluteLength, AnyElement, DefiniteLength, Div, Element, ElementId,
     HighlightStyle, Hsla, InteractiveText, IntoElement, Keystroke, Modifiers, ParentElement,
     SharedString, Styled, StyledText, TextStyle, WeakView, WindowContext,
 };
-use std::{
-    ops::{Mul, Range},
-    sync::Arc,
+use std.{
+    ops.{Mul, Range},
+    sync.Arc,
 };
-use theme::{ActiveTheme, SyntaxTheme};
-use ui::{
+use theme.{ActiveTheme, SyntaxTheme};
+use ui.{
     h_flex, v_flex, Checkbox, FluentBuilder, InteractiveElement, LinkPreview, Selection,
     StatefulInteractiveElement, Tooltip,
 };
-use workspace::Workspace;
+use workspace.Workspace;
 
 type CheckboxClickedCallback = Arc<Box<dyn Fn(bool, Range<usize>, &mut WindowContext)>>;
 
@@ -59,14 +59,14 @@ impl RenderContext {
         mut self,
         callback: impl Fn(bool, Range<usize>, &mut WindowContext) + 'static,
     ) -> Self {
-        self.checkbox_clicked_callback = Some(Arc::new(Box::new(callback)));
+        self.checkbox_clicked_callback = Some(Arc.new(Box.new(callback)));
         self
     }
 
     fn next_id(&mut self, span: &Range<usize>) -> ElementId {
         let id = format!("markdown-{}-{}-{}", self.next_id, span.start, span.end);
         self.next_id += 1;
-        ElementId::from(SharedString::from(id))
+        ElementId.from(SharedString.from(id))
     }
 
     /// This ensures that children inside of block quotes
@@ -96,8 +96,8 @@ pub fn render_parsed_markdown(
     workspace: Option<WeakView<Workspace>>,
     cx: &WindowContext,
 ) -> Vec<AnyElement> {
-    let mut cx = RenderContext::new(workspace, cx);
-    let mut elements = Vec::new();
+    let mut cx = RenderContext.new(workspace, cx);
+    let mut elements = Vec.new();
 
     for child in &parsed.children {
         elements.push(render_markdown_block(child, &mut cx));
@@ -107,7 +107,7 @@ pub fn render_parsed_markdown(
 }
 
 pub fn render_markdown_block(block: &ParsedMarkdownElement, cx: &mut RenderContext) -> AnyElement {
-    use ParsedMarkdownElement::*;
+    use ParsedMarkdownElement.*;
     match block {
         Paragraph(text) => render_markdown_paragraph(text, cx),
         Heading(heading) => render_markdown_heading(heading, cx),
@@ -121,20 +121,20 @@ pub fn render_markdown_block(block: &ParsedMarkdownElement, cx: &mut RenderConte
 
 fn render_markdown_heading(parsed: &ParsedMarkdownHeading, cx: &mut RenderContext) -> AnyElement {
     let size = match parsed.level {
-        HeadingLevel::H1 => rems(2.),
-        HeadingLevel::H2 => rems(1.5),
-        HeadingLevel::H3 => rems(1.25),
-        HeadingLevel::H4 => rems(1.),
-        HeadingLevel::H5 => rems(0.875),
-        HeadingLevel::H6 => rems(0.85),
+        HeadingLevel.H1 => rems(2.),
+        HeadingLevel.H2 => rems(1.5),
+        HeadingLevel.H3 => rems(1.25),
+        HeadingLevel.H4 => rems(1.),
+        HeadingLevel.H5 => rems(0.875),
+        HeadingLevel.H6 => rems(0.85),
     };
 
     let color = match parsed.level {
-        HeadingLevel::H6 => cx.text_muted_color,
+        HeadingLevel.H6 => cx.text_muted_color,
         _ => cx.text_color,
     };
 
-    let line_height = DefiniteLength::from(size.mul(1.25));
+    let line_height = DefiniteLength.from(size.mul(1.25));
 
     div()
         .line_height(line_height)
@@ -151,7 +151,7 @@ fn render_markdown_list_item(
     parsed: &ParsedMarkdownListItem,
     cx: &mut RenderContext,
 ) -> AnyElement {
-    use ParsedMarkdownListItemType::*;
+    use ParsedMarkdownListItemType.*;
 
     let padding = rems((parsed.depth - 1) as f32);
 
@@ -162,12 +162,12 @@ fn render_markdown_list_item(
             .id(cx.next_id(range))
             .mt(px(3.))
             .child(
-                Checkbox::new(
+                Checkbox.new(
                     "checkbox",
                     if *checked {
-                        Selection::Selected
+                        Selection.Selected
                     } else {
-                        Selection::Unselected
+                        Selection.Unselected
                     },
                 )
                 .when_some(
@@ -177,8 +177,8 @@ fn render_markdown_list_item(
                             let range = range.clone();
                             move |selection, cx| {
                                 let checked = match selection {
-                                    Selection::Selected => true,
-                                    Selection::Unselected => false,
+                                    Selection.Selected => true,
+                                    Selection.Unselected => false,
                                     _ => return,
                                 };
 
@@ -194,10 +194,10 @@ fn render_markdown_list_item(
             .tooltip(|cx| {
                 let secondary_modifier = Keystroke {
                     key: "".to_string(),
-                    modifiers: Modifiers::secondary_key(),
+                    modifiers: Modifiers.secondary_key(),
                     ime_key: None,
                 };
-                Tooltip::text(
+                Tooltip.text(
                     format!("{}-click to toggle the checkbox", secondary_modifier),
                     cx,
                 )
@@ -213,7 +213,7 @@ fn render_markdown_list_item(
         .collect();
 
     let item = h_flex()
-        .pl(DefiniteLength::Absolute(AbsoluteLength::Rems(padding)))
+        .pl(DefiniteLength.Absolute(AbsoluteLength.Rems(padding)))
         .items_start()
         .children(vec![bullet, div().children(contents).pr_4().w_full()]);
 
@@ -248,14 +248,14 @@ fn render_markdown_table_row(
         let alignment = alignments
             .get(items.len())
             .copied()
-            .unwrap_or(ParsedMarkdownTableAlignment::None);
+            .unwrap_or(ParsedMarkdownTableAlignment.None);
 
         let contents = render_markdown_text(cell, cx);
 
         let container = match alignment {
-            ParsedMarkdownTableAlignment::Left | ParsedMarkdownTableAlignment::None => div(),
-            ParsedMarkdownTableAlignment::Center => v_flex().items_center(),
-            ParsedMarkdownTableAlignment::Right => v_flex().items_end(),
+            ParsedMarkdownTableAlignment.Left | ParsedMarkdownTableAlignment.None => div(),
+            ParsedMarkdownTableAlignment.Center => v_flex().items_center(),
+            ParsedMarkdownTableAlignment.Right => v_flex().items_end(),
         };
 
         let mut cell = container
@@ -307,7 +307,7 @@ fn render_markdown_code_block(
     cx: &mut RenderContext,
 ) -> AnyElement {
     let body = if let Some(highlights) = parsed.highlights.as_ref() {
-        StyledText::new(parsed.contents.clone()).with_highlights(
+        StyledText.new(parsed.contents.clone()).with_highlights(
             &cx.text_style,
             highlights.iter().filter_map(|(range, highlight_id)| {
                 highlight_id
@@ -316,7 +316,7 @@ fn render_markdown_code_block(
             }),
         )
     } else {
-        StyledText::new(parsed.contents.clone())
+        StyledText.new(parsed.contents.clone())
     };
 
     cx.with_common_p(div())
@@ -337,7 +337,7 @@ fn render_markdown_paragraph(parsed: &ParsedMarkdownText, cx: &mut RenderContext
 fn render_markdown_text(parsed: &ParsedMarkdownText, cx: &mut RenderContext) -> AnyElement {
     let element_id = cx.next_id(&parsed.source_range);
 
-    let highlights = gpui::combine_highlights(
+    let highlights = gpui.combine_highlights(
         parsed.highlights.iter().filter_map(|(range, highlight)| {
             let highlight = highlight.to_highlight_style(&cx.syntax_theme)?;
             Some((range.clone(), highlight))
@@ -352,7 +352,7 @@ fn render_markdown_text(parsed: &ParsedMarkdownText, cx: &mut RenderContext) -> 
                         range.clone(),
                         HighlightStyle {
                             background_color: Some(cx.code_span_background_color),
-                            ..Default::default()
+                            ..Default.default()
                         },
                     ))
                 } else {
@@ -361,8 +361,8 @@ fn render_markdown_text(parsed: &ParsedMarkdownText, cx: &mut RenderContext) -> 
             }),
     );
 
-    let mut links = Vec::new();
-    let mut link_ranges = Vec::new();
+    let mut links = Vec.new();
+    let mut link_ranges = Vec.new();
     for (range, region) in parsed.region_ranges.iter().zip(&parsed.regions) {
         if let Some(link) = region.link.clone() {
             links.push(link);
@@ -372,9 +372,9 @@ fn render_markdown_text(parsed: &ParsedMarkdownText, cx: &mut RenderContext) -> 
 
     let workspace = cx.workspace.clone();
 
-    InteractiveText::new(
+    InteractiveText.new(
         element_id,
-        StyledText::new(parsed.contents.clone()).with_highlights(&cx.text_style, highlights),
+        StyledText.new(parsed.contents.clone()).with_highlights(&cx.text_style, highlights),
     )
     .tooltip({
         let links = links.clone();
@@ -382,7 +382,7 @@ fn render_markdown_text(parsed: &ParsedMarkdownText, cx: &mut RenderContext) -> 
         move |idx, cx| {
             for (ix, range) in link_ranges.iter().enumerate() {
                 if range.contains(&idx) {
-                    return Some(LinkPreview::new(&links[ix].to_string(), cx));
+                    return Some(LinkPreview.new(&links[ix].to_string(), cx));
                 }
             }
             None
@@ -391,8 +391,8 @@ fn render_markdown_text(parsed: &ParsedMarkdownText, cx: &mut RenderContext) -> 
     .on_click(
         link_ranges,
         move |clicked_range_ix, window_cx| match &links[clicked_range_ix] {
-            Link::Web { url } => window_cx.open_url(url),
-            Link::Path {
+            Link.Web { url } => window_cx.open_url(url),
+            Link.Path {
                 path,
                 display_path: _,
             } => {

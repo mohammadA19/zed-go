@@ -2,15 +2,15 @@ mod cloud;
 mod ollama;
 mod open_ai;
 
-pub use cloud::*;
-pub use ollama::*;
-pub use open_ai::*;
-use sha2::{Digest, Sha256};
+pub use cloud.*;
+pub use ollama.*;
+pub use open_ai.*;
+use sha2.{Digest, Sha256};
 
-use anyhow::Result;
-use futures::{future::BoxFuture, FutureExt};
-use serde::{Deserialize, Serialize};
-use std::{fmt, future};
+use anyhow.Result;
+use futures.{future.BoxFuture, FutureExt};
+use serde.{Deserialize, Serialize};
+use std.{fmt, future};
 
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Embedding(Vec<f32>);
@@ -47,8 +47,8 @@ impl Embedding {
     }
 }
 
-impl fmt::Display for Embedding {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Display for Embedding {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         let digits_to_display = 3;
 
         // Start the Embedding display format
@@ -82,7 +82,7 @@ pub struct TextToEmbed<'a> {
 
 impl<'a> TextToEmbed<'a> {
     pub fn new(text: &'a str) -> Self {
-        let digest = Sha256::digest(text.as_bytes());
+        let digest = Sha256.digest(text.as_bytes());
         Self {
             text,
             digest: digest.into(),
@@ -101,10 +101,10 @@ impl EmbeddingProvider for FakeEmbeddingProvider {
                 for i in 0..embedding.len() {
                     embedding[i] = i as f32;
                 }
-                Embedding::new(embedding)
+                Embedding.new(embedding)
             })
             .collect();
-        future::ready(Ok(embeddings)).boxed()
+        future.ready(Ok(embeddings)).boxed()
     }
 
     fn batch_size(&self) -> usize {
@@ -114,11 +114,11 @@ impl EmbeddingProvider for FakeEmbeddingProvider {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use super.*;
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_normalize_embedding() {
-        let normalized = Embedding::new(vec![1.0, 1.0, 1.0]);
+        let normalized = Embedding.new(vec![1.0, 1.0, 1.0]);
         let value: f32 = 1.0 / 3.0_f32.sqrt();
         assert_eq!(normalized, Embedding(vec![value; 3]));
     }

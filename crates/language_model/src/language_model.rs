@@ -6,21 +6,21 @@ mod request;
 mod role;
 pub mod settings;
 
-use anyhow::Result;
-use client::{Client, UserStore};
-use futures::{future::BoxFuture, stream::BoxStream};
-use gpui::{AnyView, AppContext, AsyncAppContext, Model, SharedString, Task, WindowContext};
-pub use model::*;
-use project::Fs;
-use proto::Plan;
-pub(crate) use rate_limiter::*;
-pub use registry::*;
-pub use request::*;
-pub use role::*;
-use schemars::JsonSchema;
-use serde::de::DeserializeOwned;
-use std::{future::Future, sync::Arc};
-use ui::IconName;
+use anyhow.Result;
+use client.{Client, UserStore};
+use futures.{future.BoxFuture, stream.BoxStream};
+use gpui.{AnyView, AppContext, AsyncAppContext, Model, SharedString, Task, WindowContext};
+pub use model.*;
+use project.Fs;
+use proto.Plan;
+pub(crate) use rate_limiter.*;
+pub use registry.*;
+pub use request.*;
+pub use role.*;
+use schemars.JsonSchema;
+use serde.de.DeserializeOwned;
+use std.{future.Future, sync.Arc};
+use ui.IconName;
 
 pub fn init(
     user_store: Model<UserStore>,
@@ -28,8 +28,8 @@ pub fn init(
     fs: Arc<dyn Fs>,
     cx: &mut AppContext,
 ) {
-    settings::init(fs, cx);
-    registry::init(user_store, client, cx);
+    settings.init(fs, cx);
+    registry.init(user_store, client, cx);
 }
 
 /// The availability of a [`LanguageModel`].
@@ -50,7 +50,7 @@ pub trait LanguageModel: Send + Sync {
 
     /// Returns the availability of this language model.
     fn availability(&self) -> LanguageModelAvailability {
-        LanguageModelAvailability::Public
+        LanguageModelAvailability.Public
     }
 
     fn max_token_count(&self) -> usize;
@@ -72,12 +72,12 @@ pub trait LanguageModel: Send + Sync {
         request: LanguageModelRequest,
         name: String,
         description: String,
-        schema: serde_json::Value,
+        schema: serde_json.Value,
         cx: &AsyncAppContext,
-    ) -> BoxFuture<'static, Result<serde_json::Value>>;
+    ) -> BoxFuture<'static, Result<serde_json.Value>>;
 
     #[cfg(any(test, feature = "test-support"))]
-    fn as_fake(&self) -> &provider::fake::FakeLanguageModel {
+    fn as_fake(&self) -> &provider.fake.FakeLanguageModel {
         unimplemented!()
     }
 }
@@ -88,12 +88,12 @@ impl dyn LanguageModel {
         request: LanguageModelRequest,
         cx: &AsyncAppContext,
     ) -> impl 'static + Future<Output = Result<T>> {
-        let schema = schemars::schema_for!(T);
-        let schema_json = serde_json::to_value(&schema).unwrap();
-        let request = self.use_any_tool(request, T::name(), T::description(), schema_json, cx);
+        let schema = schemars.schema_for!(T);
+        let schema_json = serde_json.to_value(&schema).unwrap();
+        let request = self.use_any_tool(request, T.name(), T.description(), schema_json, cx);
         async move {
             let response = request.await?;
-            Ok(serde_json::from_value(response)?)
+            Ok(serde_json.from_value(response)?)
         }
     }
 }
@@ -107,7 +107,7 @@ pub trait LanguageModelProvider: 'static {
     fn id(&self) -> LanguageModelProviderId;
     fn name(&self) -> LanguageModelProviderName;
     fn icon(&self) -> IconName {
-        IconName::ZedAssistant
+        IconName.ZedAssistant
     }
     fn provided_models(&self, cx: &AppContext) -> Vec<Arc<dyn LanguageModel>>;
     fn load_model(&self, _model: Arc<dyn LanguageModel>, _cx: &AppContext) {}
@@ -120,13 +120,13 @@ pub trait LanguageModelProvider: 'static {
 pub trait LanguageModelProviderState: 'static {
     type ObservableEntity;
 
-    fn observable_entity(&self) -> Option<gpui::Model<Self::ObservableEntity>>;
+    fn observable_entity(&self) -> Option<gpui.Model<Self.ObservableEntity>>;
 
     fn subscribe<T: 'static>(
         &self,
-        cx: &mut gpui::ModelContext<T>,
-        callback: impl Fn(&mut T, &mut gpui::ModelContext<T>) + 'static,
-    ) -> Option<gpui::Subscription> {
+        cx: &mut gpui.ModelContext<T>,
+        callback: impl Fn(&mut T, &mut gpui.ModelContext<T>) + 'static,
+    ) -> Option<gpui.Subscription> {
         let entity = self.observable_entity()?;
         Some(cx.observe(&entity, move |this, _, cx| {
             callback(this, cx);
@@ -148,24 +148,24 @@ pub struct LanguageModelProviderName(pub SharedString);
 
 impl From<String> for LanguageModelId {
     fn from(value: String) -> Self {
-        Self(SharedString::from(value))
+        Self(SharedString.from(value))
     }
 }
 
 impl From<String> for LanguageModelName {
     fn from(value: String) -> Self {
-        Self(SharedString::from(value))
+        Self(SharedString.from(value))
     }
 }
 
 impl From<String> for LanguageModelProviderId {
     fn from(value: String) -> Self {
-        Self(SharedString::from(value))
+        Self(SharedString.from(value))
     }
 }
 
 impl From<String> for LanguageModelProviderName {
     fn from(value: String) -> Self {
-        Self(SharedString::from(value))
+        Self(SharedString.from(value))
     }
 }

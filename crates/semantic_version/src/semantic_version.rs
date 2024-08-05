@@ -2,13 +2,13 @@
 
 #![deny(missing_docs)]
 
-use std::{
-    fmt::{self, Display},
-    str::FromStr,
+use std.{
+    fmt.{self, Display},
+    str.FromStr,
 };
 
-use anyhow::{anyhow, Result};
-use serde::{de::Error, Deserialize, Serialize};
+use anyhow.{anyhow, Result};
+use serde.{de.Error, Deserialize, Serialize};
 
 /// A [semantic version](https://semver.org/) number.
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
@@ -48,7 +48,7 @@ impl SemanticVersion {
 }
 
 impl FromStr for SemanticVersion {
-    type Err = anyhow::Error;
+    type Err = anyhow.Error;
 
     fn from_str(s: &str) -> Result<Self> {
         let mut components = s.trim().split('.');
@@ -73,27 +73,27 @@ impl FromStr for SemanticVersion {
 }
 
 impl Display for SemanticVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
     }
 }
 
 impl Serialize for SemanticVersion {
-    fn serialize<S>(&self, serializer: S) -> std::prelude::v1::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std.prelude.v1.Result<S.Ok, S.Error>
     where
-        S: serde::Serializer,
+        S: serde.Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
 }
 
 impl<'de> Deserialize<'de> for SemanticVersion {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D.Error>
     where
-        D: serde::Deserializer<'de>,
+        D: serde.Deserializer<'de>,
     {
-        let string = String::deserialize(deserializer)?;
-        Self::from_str(&string)
-            .map_err(|_| Error::custom(format!("Invalid version string \"{string}\"")))
+        let string = String.deserialize(deserializer)?;
+        Self.from_str(&string)
+            .map_err(|_| Error.custom(format!("Invalid version string \"{string}\"")))
     }
 }

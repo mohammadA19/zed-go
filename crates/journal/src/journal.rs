@@ -1,17 +1,17 @@
-use anyhow::Result;
-use chrono::{Datelike, Local, NaiveTime, Timelike};
-use editor::scroll::Autoscroll;
-use editor::Editor;
-use gpui::{actions, AppContext, ViewContext, WindowContext};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
-use std::{
-    fs::OpenOptions,
-    path::{Path, PathBuf},
-    sync::Arc,
+use anyhow.Result;
+use chrono.{Datelike, Local, NaiveTime, Timelike};
+use editor.scroll.Autoscroll;
+use editor.Editor;
+use gpui.{actions, AppContext, ViewContext, WindowContext};
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
+use std.{
+    fs.OpenOptions,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
-use workspace::{AppState, OpenVisible, Workspace};
+use workspace.{AppState, OpenVisible, Workspace};
 
 actions!(journal, [NewJournalEntry]);
 
@@ -32,7 +32,7 @@ impl Default for JournalSettings {
     fn default() -> Self {
         Self {
             path: Some("~".into()),
-            hour_format: Some(Default::default()),
+            hour_format: Some(Default.default()),
         }
     }
 }
@@ -45,18 +45,18 @@ pub enum HourFormat {
     Hour24,
 }
 
-impl settings::Settings for JournalSettings {
+impl settings.Settings for JournalSettings {
     const KEY: Option<&'static str> = Some("journal");
 
     type FileContent = Self;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
         sources.json_merge()
     }
 }
 
 pub fn init(_: Arc<AppState>, cx: &mut AppContext) {
-    JournalSettings::register(cx);
+    JournalSettings.register(cx);
 
     cx.observe_new_views(
         |workspace: &mut Workspace, _cx: &mut ViewContext<Workspace>| {
@@ -69,16 +69,16 @@ pub fn init(_: Arc<AppState>, cx: &mut AppContext) {
 }
 
 pub fn new_journal_entry(app_state: Arc<AppState>, cx: &mut WindowContext) {
-    let settings = JournalSettings::get_global(cx);
+    let settings = JournalSettings.get_global(cx);
     let journal_dir = match journal_dir(settings.path.as_ref().unwrap()) {
         Some(journal_dir) => journal_dir,
         None => {
-            log::error!("Can't determine journal directory");
+            log.error!("Can't determine journal directory");
             return;
         }
     };
 
-    let now = Local::now();
+    let now = Local.now();
     let month_dir = journal_dir
         .join(format!("{:02}", now.year()))
         .join(format!("{:02}", now.month()));
@@ -87,23 +87,23 @@ pub fn new_journal_entry(app_state: Arc<AppState>, cx: &mut WindowContext) {
     let entry_heading = heading_entry(now, &settings.hour_format);
 
     let create_entry = cx.background_executor().spawn(async move {
-        std::fs::create_dir_all(month_dir)?;
-        OpenOptions::new()
+        std.fs.create_dir_all(month_dir)?;
+        OpenOptions.new()
             .create(true)
             .truncate(false)
             .write(true)
             .open(&entry_path)?;
-        Ok::<_, std::io::Error>((journal_dir, entry_path))
+        Ok.<_, std.io.Error>((journal_dir, entry_path))
     });
 
     cx.spawn(|mut cx| async move {
         let (journal_dir, entry_path) = create_entry.await?;
         let (workspace, _) = cx
             .update(|cx| {
-                workspace::open_paths(
+                workspace.open_paths(
                     &[journal_dir],
                     app_state,
-                    workspace::OpenOptions::default(),
+                    workspace.OpenOptions.default(),
                     cx,
                 )
             })?
@@ -111,15 +111,15 @@ pub fn new_journal_entry(app_state: Arc<AppState>, cx: &mut WindowContext) {
 
         let opened = workspace
             .update(&mut cx, |workspace, cx| {
-                workspace.open_paths(vec![entry_path], OpenVisible::All, None, cx)
+                workspace.open_paths(vec![entry_path], OpenVisible.All, None, cx)
             })?
             .await;
 
         if let Some(Some(Ok(item))) = opened.first() {
-            if let Some(editor) = item.downcast::<Editor>().map(|editor| editor.downgrade()) {
+            if let Some(editor) = item.downcast.<Editor>().map(|editor| editor.downgrade()) {
                 editor.update(&mut cx, |editor, cx| {
                     let len = editor.buffer().read(cx).len(cx);
-                    editor.change_selections(Some(Autoscroll::center()), cx, |s| {
+                    editor.change_selections(Some(Autoscroll.center()), cx, |s| {
                         s.select_ranges([len..len])
                     });
                     if len > 0 {
@@ -131,22 +131,22 @@ pub fn new_journal_entry(app_state: Arc<AppState>, cx: &mut WindowContext) {
             }
         }
 
-        anyhow::Ok(())
+        anyhow.Ok(())
     })
     .detach_and_log_err(cx);
 }
 
 fn journal_dir(path: &str) -> Option<PathBuf> {
-    let expanded_journal_dir = shellexpand::full(path) //TODO handle this better
+    let expanded_journal_dir = shellexpand.full(path) //TODO handle this better
         .ok()
-        .map(|dir| Path::new(&dir.to_string()).to_path_buf().join("journal"));
+        .map(|dir| Path.new(&dir.to_string()).to_path_buf().join("journal"));
 
     return expanded_journal_dir;
 }
 
 fn heading_entry(now: NaiveTime, hour_format: &Option<HourFormat>) -> String {
     match hour_format {
-        Some(HourFormat::Hour24) => {
+        Some(HourFormat.Hour24) => {
             let hour = now.hour();
             format!("# {}:{:02}", hour, now.minute())
         }
@@ -161,11 +161,11 @@ fn heading_entry(now: NaiveTime, hour_format: &Option<HourFormat>) -> String {
 #[cfg(test)]
 mod tests {
     mod heading_entry_tests {
-        use super::super::*;
+        use super.super.*;
 
         #[test]
         fn test_heading_entry_defaults_to_hour_12() {
-            let naive_time = NaiveTime::from_hms_milli_opt(15, 0, 0, 0).unwrap();
+            let naive_time = NaiveTime.from_hms_milli_opt(15, 0, 0, 0).unwrap();
             let actual_heading_entry = heading_entry(naive_time, &None);
             let expected_heading_entry = "# 3:00 PM";
 
@@ -174,8 +174,8 @@ mod tests {
 
         #[test]
         fn test_heading_entry_is_hour_12() {
-            let naive_time = NaiveTime::from_hms_milli_opt(15, 0, 0, 0).unwrap();
-            let actual_heading_entry = heading_entry(naive_time, &Some(HourFormat::Hour12));
+            let naive_time = NaiveTime.from_hms_milli_opt(15, 0, 0, 0).unwrap();
+            let actual_heading_entry = heading_entry(naive_time, &Some(HourFormat.Hour12));
             let expected_heading_entry = "# 3:00 PM";
 
             assert_eq!(actual_heading_entry, expected_heading_entry);
@@ -183,8 +183,8 @@ mod tests {
 
         #[test]
         fn test_heading_entry_is_hour_24() {
-            let naive_time = NaiveTime::from_hms_milli_opt(15, 0, 0, 0).unwrap();
-            let actual_heading_entry = heading_entry(naive_time, &Some(HourFormat::Hour24));
+            let naive_time = NaiveTime.from_hms_milli_opt(15, 0, 0, 0).unwrap();
+            let actual_heading_entry = heading_entry(naive_time, &Some(HourFormat.Hour24));
             let expected_heading_entry = "# 15:00";
 
             assert_eq!(actual_heading_entry, expected_heading_entry);

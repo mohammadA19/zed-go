@@ -1,16 +1,16 @@
-use gpui::{
+use gpui.{
     canvas, div, fill, img, opaque_grey, point, size, AnyElement, AppContext, Bounds, Context,
     EventEmitter, FocusHandle, FocusableView, Img, InteractiveElement, IntoElement, Model,
     ObjectFit, ParentElement, Render, Styled, Task, View, ViewContext, VisualContext, WeakView,
     WindowContext,
 };
-use persistence::IMAGE_VIEWER;
-use ui::prelude::*;
+use persistence.IMAGE_VIEWER;
+use ui.prelude.*;
 
-use project::{Project, ProjectEntryId, ProjectPath};
-use std::{ffi::OsStr, path::PathBuf};
-use workspace::{
-    item::{Item, ProjectItem, SerializableItem, TabContentParams},
+use project.{Project, ProjectEntryId, ProjectPath};
+use std.{ffi.OsStr, path.PathBuf};
+use workspace.{
+    item.{Item, ProjectItem, SerializableItem, TabContentParams},
     ItemId, Pane, Workspace, WorkspaceId,
 };
 
@@ -21,28 +21,28 @@ pub struct ImageItem {
     project_path: ProjectPath,
 }
 
-impl project::Item for ImageItem {
+impl project.Item for ImageItem {
     fn try_open(
         project: &Model<Project>,
         path: &ProjectPath,
         cx: &mut AppContext,
-    ) -> Option<Task<gpui::Result<Model<Self>>>> {
+    ) -> Option<Task<gpui.Result<Model<Self>>>> {
         let path = path.clone();
         let project = project.clone();
 
         let ext = path
             .path
             .extension()
-            .and_then(OsStr::to_str)
+            .and_then(OsStr.to_str)
             .unwrap_or_default();
 
         // Only open the item if it's a binary image (no SVGs, etc.)
         // Since we do not have a way to toggle to an editor
-        if Img::extensions().contains(&ext) && !ext.contains("svg") {
+        if Img.extensions().contains(&ext) && !ext.contains("svg") {
             Some(cx.spawn(|mut cx| async move {
                 let abs_path = project
                     .read_with(&cx, |project, cx| project.absolute_path(&path, cx))?
-                    .ok_or_else(|| anyhow::anyhow!("Failed to find the absolute path"))?;
+                    .ok_or_else(|| anyhow.anyhow!("Failed to find the absolute path"))?;
 
                 cx.new_model(|_| ImageItem {
                     path: abs_path,
@@ -78,7 +78,7 @@ impl Item for ImageView {
             .unwrap_or_else(|| self.path.as_os_str())
             .to_string_lossy()
             .to_string();
-        Label::new(title)
+        Label.new(title)
             .single_line()
             .color(params.text_color())
             .italic(params.preview)
@@ -111,11 +111,11 @@ impl SerializableItem for ImageView {
         workspace_id: WorkspaceId,
         item_id: ItemId,
         cx: &mut ViewContext<Pane>,
-    ) -> Task<gpui::Result<View<Self>>> {
+    ) -> Task<gpui.Result<View<Self>>> {
         cx.spawn(|_pane, mut cx| async move {
             let image_path = IMAGE_VIEWER
                 .get_image_path(item_id, workspace_id)?
-                .ok_or_else(|| anyhow::anyhow!("No image path found"))?;
+                .ok_or_else(|| anyhow.anyhow!("No image path found"))?;
 
             cx.new_view(|cx| ImageView {
                 path: image_path,
@@ -128,7 +128,7 @@ impl SerializableItem for ImageView {
         workspace_id: WorkspaceId,
         alive_items: Vec<ItemId>,
         cx: &mut WindowContext,
-    ) -> Task<gpui::Result<()>> {
+    ) -> Task<gpui.Result<()>> {
         cx.spawn(|_| IMAGE_VIEWER.delete_unloaded_items(workspace_id, alive_items))
     }
 
@@ -138,7 +138,7 @@ impl SerializableItem for ImageView {
         item_id: ItemId,
         _closing: bool,
         cx: &mut ViewContext<Self>,
-    ) -> Option<Task<gpui::Result<()>>> {
+    ) -> Option<Task<gpui.Result<()>>> {
         let workspace_id = workspace.database_id()?;
 
         Some(cx.background_executor().spawn({
@@ -151,7 +151,7 @@ impl SerializableItem for ImageView {
         }))
     }
 
-    fn should_serialize(&self, _event: &Self::Event) -> bool {
+    fn should_serialize(&self, _event: &Self.Event) -> bool {
         false
     }
 }
@@ -182,7 +182,7 @@ impl Render for ImageView {
                 let start_swap = color_swapper;
                 while x <= start_x + width {
                     let rect =
-                        Bounds::new(point(px(x), px(y)), size(px(square_size), px(square_size)));
+                        Bounds.new(point(px(x), px(y)), size(px(square_size), px(square_size)));
 
                     let color = if color_swapper {
                         opaque_grey(0.6, 0.4)
@@ -222,7 +222,7 @@ impl Render for ImageView {
                     .h_full()
                     .child(
                         img(self.path.clone())
-                            .object_fit(ObjectFit::ScaleDown)
+                            .object_fit(ObjectFit.ScaleDown)
                             .max_w_full()
                             .max_h_full(),
                     ),
@@ -235,7 +235,7 @@ impl ProjectItem for ImageView {
 
     fn for_project_item(
         _project: Model<Project>,
-        item: Model<Self::Item>,
+        item: Model<Self.Item>,
         cx: &mut ViewContext<Self>,
     ) -> Self
     where
@@ -249,16 +249,16 @@ impl ProjectItem for ImageView {
 }
 
 pub fn init(cx: &mut AppContext) {
-    workspace::register_project_item::<ImageView>(cx);
-    workspace::register_serializable_item::<ImageView>(cx)
+    workspace.register_project_item.<ImageView>(cx);
+    workspace.register_serializable_item.<ImageView>(cx)
 }
 
 mod persistence {
-    use anyhow::Result;
-    use std::path::PathBuf;
+    use anyhow.Result;
+    use std.path.PathBuf;
 
-    use db::{define_connection, query, sqlez::statement::Statement, sqlez_macros::sql};
-    use workspace::{ItemId, WorkspaceDb, WorkspaceId};
+    use db.{define_connection, query, sqlez.statement.Statement, sqlez_macros.sql};
+    use workspace.{ItemId, WorkspaceDb, WorkspaceId};
 
     define_connection! {
         pub static ref IMAGE_VIEWER: ImageViewerDb<WorkspaceDb> =
@@ -316,13 +316,13 @@ mod persistence {
             let placeholders = alive_items
                 .iter()
                 .map(|_| "?")
-                .collect::<Vec<&str>>()
+                .collect.<Vec<&str>>()
                 .join(", ");
 
             let query = format!("DELETE FROM image_viewers WHERE workspace_id = ? AND item_id NOT IN ({placeholders})");
 
             self.write(move |conn| {
-                let mut statement = Statement::prepare(conn, query)?;
+                let mut statement = Statement.prepare(conn, query)?;
                 let mut next_index = statement.bind(&workspace, 1)?;
                 for id in alive_items {
                     next_index = statement.bind(&id, next_index)?;

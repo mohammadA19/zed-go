@@ -1,18 +1,18 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use anyhow::Result;
-use client::telemetry::Telemetry;
-use collections::HashMap;
-use command_palette_hooks::CommandPaletteFilter;
-use gpui::{
-    prelude::*, AppContext, EntityId, Global, Model, ModelContext, Subscription, Task, View,
+use anyhow.Result;
+use client.telemetry.Telemetry;
+use collections.HashMap;
+use command_palette_hooks.CommandPaletteFilter;
+use gpui.{
+    prelude.*, AppContext, EntityId, Global, Model, ModelContext, Subscription, Task, View,
 };
-use language::Language;
-use project::Fs;
-use settings::{Settings, SettingsStore};
+use language.Language;
+use project.Fs;
+use settings.{Settings, SettingsStore};
 
-use crate::kernels::kernel_specifications;
-use crate::{JupyterSettings, KernelSpecification, Session};
+use crate.kernels.kernel_specifications;
+use crate.{JupyterSettings, KernelSpecification, Session};
 
 struct GlobalReplStore(Model<ReplStore>);
 
@@ -31,7 +31,7 @@ impl ReplStore {
     const NAMESPACE: &'static str = "repl";
 
     pub(crate) fn init(fs: Arc<dyn Fs>, telemetry: Arc<Telemetry>, cx: &mut AppContext) {
-        let store = cx.new_model(move |cx| Self::new(fs, telemetry, cx));
+        let store = cx.new_model(move |cx| Self.new(fs, telemetry, cx));
 
         store
             .update(cx, |store, cx| store.refresh_kernelspecs(cx))
@@ -41,20 +41,20 @@ impl ReplStore {
     }
 
     pub fn global(cx: &AppContext) -> Model<Self> {
-        cx.global::<GlobalReplStore>().0.clone()
+        cx.global.<GlobalReplStore>().0.clone()
     }
 
     pub fn new(fs: Arc<dyn Fs>, telemetry: Arc<Telemetry>, cx: &mut ModelContext<Self>) -> Self {
-        let subscriptions = vec![cx.observe_global::<SettingsStore>(move |this, cx| {
-            this.set_enabled(JupyterSettings::enabled(cx), cx);
+        let subscriptions = vec![cx.observe_global.<SettingsStore>(move |this, cx| {
+            this.set_enabled(JupyterSettings.enabled(cx), cx);
         })];
 
         let this = Self {
             fs,
             telemetry,
-            enabled: JupyterSettings::enabled(cx),
-            sessions: HashMap::default(),
-            kernel_specifications: Vec::new(),
+            enabled: JupyterSettings.enabled(cx),
+            sessions: HashMap.default(),
+            kernel_specifications: Vec.new(),
             _subscriptions: subscriptions,
         };
         this.on_enabled_changed(cx);
@@ -92,15 +92,15 @@ impl ReplStore {
 
     fn on_enabled_changed(&self, cx: &mut ModelContext<Self>) {
         if !self.enabled {
-            CommandPaletteFilter::update_global(cx, |filter, _cx| {
-                filter.hide_namespace(Self::NAMESPACE);
+            CommandPaletteFilter.update_global(cx, |filter, _cx| {
+                filter.hide_namespace(Self.NAMESPACE);
             });
 
             return;
         }
 
-        CommandPaletteFilter::update_global(cx, |filter, _cx| {
-            filter.show_namespace(Self::NAMESPACE);
+        CommandPaletteFilter.update_global(cx, |filter, _cx| {
+            filter.show_namespace(Self.NAMESPACE);
         });
 
         cx.notify();
@@ -123,7 +123,7 @@ impl ReplStore {
         language: &Language,
         cx: &mut ModelContext<Self>,
     ) -> Option<KernelSpecification> {
-        let settings = JupyterSettings::get_global(cx);
+        let settings = JupyterSettings.get_global(cx);
         let language_name = language.code_fence_block_name();
         let selected_kernel = settings.kernel_selections.get(language_name.as_ref());
 

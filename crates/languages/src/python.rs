@@ -1,22 +1,22 @@
-use anyhow::Result;
-use async_trait::async_trait;
-use gpui::AppContext;
-use gpui::AsyncAppContext;
-use language::{ContextProvider, LanguageServerName, LspAdapter, LspAdapterDelegate};
-use lsp::LanguageServerBinary;
-use node_runtime::NodeRuntime;
-use project::project_settings::ProjectSettings;
-use serde_json::Value;
-use settings::Settings;
-use std::{
-    any::Any,
-    borrow::Cow,
-    ffi::OsString,
-    path::{Path, PathBuf},
-    sync::Arc,
+use anyhow.Result;
+use async_trait.async_trait;
+use gpui.AppContext;
+use gpui.AsyncAppContext;
+use language.{ContextProvider, LanguageServerName, LspAdapter, LspAdapterDelegate};
+use lsp.LanguageServerBinary;
+use node_runtime.NodeRuntime;
+use project.project_settings.ProjectSettings;
+use serde_json.Value;
+use settings.Settings;
+use std.{
+    any.Any,
+    borrow.Cow,
+    ffi.OsString,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
-use task::{TaskTemplate, TaskTemplates, VariableName};
-use util::ResultExt;
+use task.{TaskTemplate, TaskTemplates, VariableName};
+use util.ResultExt;
 
 const SERVER_PATH: &str = "node_modules/pyright/langserver.index.js";
 
@@ -39,16 +39,16 @@ impl PythonLspAdapter {
 #[async_trait(?Send)]
 impl LspAdapter for PythonLspAdapter {
     fn name(&self) -> LanguageServerName {
-        LanguageServerName(Self::SERVER_NAME.into())
+        LanguageServerName(Self.SERVER_NAME.into())
     }
 
     async fn fetch_latest_server_version(
         &self,
         _: &dyn LspAdapterDelegate,
     ) -> Result<Box<dyn 'static + Any + Send>> {
-        Ok(Box::new(
+        Ok(Box.new(
             self.node
-                .npm_package_latest_version(Self::SERVER_NAME)
+                .npm_package_latest_version(Self.SERVER_NAME)
                 .await?,
         ) as Box<_>)
     }
@@ -59,9 +59,9 @@ impl LspAdapter for PythonLspAdapter {
         container_dir: PathBuf,
         _: &dyn LspAdapterDelegate,
     ) -> Result<LanguageServerBinary> {
-        let latest_version = latest_version.downcast::<String>().unwrap();
+        let latest_version = latest_version.downcast.<String>().unwrap();
         let server_path = container_dir.join(SERVER_PATH);
-        let package_name = Self::SERVER_NAME;
+        let package_name = Self.SERVER_NAME;
 
         let should_install_language_server = self
             .node
@@ -96,7 +96,7 @@ impl LspAdapter for PythonLspAdapter {
         get_cached_server_binary(container_dir, &*self.node).await
     }
 
-    async fn process_completions(&self, items: &mut [lsp::CompletionItem]) {
+    async fn process_completions(&self, items: &mut [lsp.CompletionItem]) {
         // Pyright assigns each completion item a `sortText` of the form `XX.YYYY.name`.
         // Where `XX` is the sorting category, `YYYY` is based on most recent usage,
         // and `name` is the symbol name itself.
@@ -121,19 +121,19 @@ impl LspAdapter for PythonLspAdapter {
 
     async fn label_for_completion(
         &self,
-        item: &lsp::CompletionItem,
-        language: &Arc<language::Language>,
-    ) -> Option<language::CodeLabel> {
+        item: &lsp.CompletionItem,
+        language: &Arc<language.Language>,
+    ) -> Option<language.CodeLabel> {
         let label = &item.label;
         let grammar = language.grammar()?;
         let highlight_id = match item.kind? {
-            lsp::CompletionItemKind::METHOD => grammar.highlight_id_for_name("function.method")?,
-            lsp::CompletionItemKind::FUNCTION => grammar.highlight_id_for_name("function")?,
-            lsp::CompletionItemKind::CLASS => grammar.highlight_id_for_name("type")?,
-            lsp::CompletionItemKind::CONSTANT => grammar.highlight_id_for_name("constant")?,
+            lsp.CompletionItemKind.METHOD => grammar.highlight_id_for_name("function.method")?,
+            lsp.CompletionItemKind.FUNCTION => grammar.highlight_id_for_name("function")?,
+            lsp.CompletionItemKind.CLASS => grammar.highlight_id_for_name("type")?,
+            lsp.CompletionItemKind.CONSTANT => grammar.highlight_id_for_name("constant")?,
             _ => return None,
         };
-        Some(language::CodeLabel {
+        Some(language.CodeLabel {
             text: label.clone(),
             runs: vec![(0..label.len(), highlight_id)],
             filter_range: 0..label.len(),
@@ -143,23 +143,23 @@ impl LspAdapter for PythonLspAdapter {
     async fn label_for_symbol(
         &self,
         name: &str,
-        kind: lsp::SymbolKind,
-        language: &Arc<language::Language>,
-    ) -> Option<language::CodeLabel> {
+        kind: lsp.SymbolKind,
+        language: &Arc<language.Language>,
+    ) -> Option<language.CodeLabel> {
         let (text, filter_range, display_range) = match kind {
-            lsp::SymbolKind::METHOD | lsp::SymbolKind::FUNCTION => {
+            lsp.SymbolKind.METHOD | lsp.SymbolKind.FUNCTION => {
                 let text = format!("def {}():\n", name);
                 let filter_range = 4..4 + name.len();
                 let display_range = 0..filter_range.end;
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::CLASS => {
+            lsp.SymbolKind.CLASS => {
                 let text = format!("class {}:", name);
                 let filter_range = 6..6 + name.len();
                 let display_range = 0..filter_range.end;
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::CONSTANT => {
+            lsp.SymbolKind.CONSTANT => {
                 let text = format!("{} = 0", name);
                 let filter_range = 0..name.len();
                 let display_range = 0..filter_range.end;
@@ -168,7 +168,7 @@ impl LspAdapter for PythonLspAdapter {
             _ => return None,
         };
 
-        Some(language::CodeLabel {
+        Some(language.CodeLabel {
             runs: language.highlight_text(&text.as_str().into(), display_range.clone()),
             text: text[display_range].to_string(),
             filter_range,
@@ -181,9 +181,9 @@ impl LspAdapter for PythonLspAdapter {
         cx: &mut AsyncAppContext,
     ) -> Result<Value> {
         cx.update(|cx| {
-            ProjectSettings::get_global(cx)
+            ProjectSettings.get_global(cx)
                 .lsp
-                .get(Self::SERVER_NAME)
+                .get(Self.SERVER_NAME)
                 .and_then(|s| s.settings.clone())
                 .unwrap_or_default()
         })
@@ -202,7 +202,7 @@ async fn get_cached_server_binary(
             arguments: server_binary_arguments(&server_path),
         })
     } else {
-        log::error!("missing executable in directory {:?}", server_path);
+        log.error!("missing executable in directory {:?}", server_path);
         None
     }
 }
@@ -210,21 +210,21 @@ async fn get_cached_server_binary(
 pub(crate) struct PythonContextProvider;
 
 const PYTHON_UNITTEST_TARGET_TASK_VARIABLE: VariableName =
-    VariableName::Custom(Cow::Borrowed("PYTHON_UNITTEST_TARGET"));
+    VariableName.Custom(Cow.Borrowed("PYTHON_UNITTEST_TARGET"));
 
 impl ContextProvider for PythonContextProvider {
     fn build_context(
         &self,
-        variables: &task::TaskVariables,
-        _location: &project::Location,
-        _cx: &mut gpui::AppContext,
-    ) -> Result<task::TaskVariables> {
+        variables: &task.TaskVariables,
+        _location: &project.Location,
+        _cx: &mut gpui.AppContext,
+    ) -> Result<task.TaskVariables> {
         let python_module_name = python_module_name_from_relative_path(
-            variables.get(&VariableName::RelativeFile).unwrap_or(""),
+            variables.get(&VariableName.RelativeFile).unwrap_or(""),
         );
         let unittest_class_name =
-            variables.get(&VariableName::Custom(Cow::Borrowed("_unittest_class_name")));
-        let unittest_method_name = variables.get(&VariableName::Custom(Cow::Borrowed(
+            variables.get(&VariableName.Custom(Cow.Borrowed("_unittest_class_name")));
+        let unittest_method_name = variables.get(&VariableName.Custom(Cow.Borrowed(
             "_unittest_method_name",
         )));
 
@@ -234,7 +234,7 @@ impl ContextProvider for PythonContextProvider {
             }
             (Some(class_name), None) => format!("{}.{}", python_module_name, class_name),
             (None, None) => python_module_name,
-            (None, Some(_)) => return Ok(task::TaskVariables::default()), // should never happen, a TestCase class is the unit of testing
+            (None, Some(_)) => return Ok(task.TaskVariables.default()), // should never happen, a TestCase class is the unit of testing
         };
 
         let unittest_target = (
@@ -242,36 +242,36 @@ impl ContextProvider for PythonContextProvider {
             unittest_target_str,
         );
 
-        Ok(task::TaskVariables::from_iter([unittest_target]))
+        Ok(task.TaskVariables.from_iter([unittest_target]))
     }
 
     fn associated_tasks(
         &self,
-        _: Option<Arc<dyn language::File>>,
+        _: Option<Arc<dyn language.File>>,
         _: &AppContext,
     ) -> Option<TaskTemplates> {
         Some(TaskTemplates(vec![
             TaskTemplate {
                 label: "execute selection".to_owned(),
                 command: "python3".to_owned(),
-                args: vec!["-c".to_owned(), VariableName::SelectedText.template_value()],
-                ..TaskTemplate::default()
+                args: vec!["-c".to_owned(), VariableName.SelectedText.template_value()],
+                ..TaskTemplate.default()
             },
             TaskTemplate {
-                label: format!("run '{}'", VariableName::File.template_value()),
+                label: format!("run '{}'", VariableName.File.template_value()),
                 command: "python3".to_owned(),
-                args: vec![VariableName::File.template_value()],
-                ..TaskTemplate::default()
+                args: vec![VariableName.File.template_value()],
+                ..TaskTemplate.default()
             },
             TaskTemplate {
-                label: format!("unittest '{}'", VariableName::File.template_value()),
+                label: format!("unittest '{}'", VariableName.File.template_value()),
                 command: "python3".to_owned(),
                 args: vec![
                     "-m".to_owned(),
                     "unittest".to_owned(),
-                    VariableName::File.template_value(),
+                    VariableName.File.template_value(),
                 ],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
             TaskTemplate {
                 label: "unittest $ZED_CUSTOM_PYTHON_UNITTEST_TARGET".to_owned(),
@@ -285,7 +285,7 @@ impl ContextProvider for PythonContextProvider {
                     "python-unittest-class".to_owned(),
                     "python-unittest-method".to_owned(),
                 ],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
         ]))
     }
@@ -301,31 +301,31 @@ fn python_module_name_from_relative_path(relative_path: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{BorrowAppContext, Context, ModelContext, TestAppContext};
-    use language::{language_settings::AllLanguageSettings, AutoindentMode, Buffer};
-    use settings::SettingsStore;
-    use std::num::NonZeroU32;
+    use gpui.{BorrowAppContext, Context, ModelContext, TestAppContext};
+    use language.{language_settings.AllLanguageSettings, AutoindentMode, Buffer};
+    use settings.SettingsStore;
+    use std.num.NonZeroU32;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_python_autoindent(cx: &mut TestAppContext) {
-        cx.executor().set_block_on_ticks(usize::MAX..=usize::MAX);
-        let language = crate::language("python", tree_sitter_python::language());
+        cx.executor().set_block_on_ticks(usize.MAX..=usize.MAX);
+        let language = crate.language("python", tree_sitter_python.language());
         cx.update(|cx| {
-            let test_settings = SettingsStore::test(cx);
+            let test_settings = SettingsStore.test(cx);
             cx.set_global(test_settings);
-            language::init(cx);
-            cx.update_global::<SettingsStore, _>(|store, cx| {
-                store.update_user_settings::<AllLanguageSettings>(cx, |s| {
-                    s.defaults.tab_size = NonZeroU32::new(2);
+            language.init(cx);
+            cx.update_global.<SettingsStore, _>(|store, cx| {
+                store.update_user_settings.<AllLanguageSettings>(cx, |s| {
+                    s.defaults.tab_size = NonZeroU32.new(2);
                 });
             });
         });
 
         cx.new_model(|cx| {
-            let mut buffer = Buffer::local("", cx).with_language(language, cx);
+            let mut buffer = Buffer.local("", cx).with_language(language, cx);
             let append = |buffer: &mut Buffer, text: &str, cx: &mut ModelContext<Buffer>| {
                 let ix = buffer.len();
-                buffer.edit([(ix..ix, text)], Some(AutoindentMode::EachLine), cx);
+                buffer.edit([(ix..ix, text)], Some(AutoindentMode.EachLine), cx);
             };
 
             // indent after "def():"
@@ -371,7 +371,7 @@ mod tests {
             let argument_ix = buffer.text().find('1').unwrap();
             buffer.edit(
                 [(argument_ix..argument_ix + 1, "")],
-                Some(AutoindentMode::EachLine),
+                Some(AutoindentMode.EachLine),
                 cx,
             );
             assert_eq!(
@@ -390,7 +390,7 @@ mod tests {
             let end_whitespace_ix = buffer.len() - 4;
             buffer.edit(
                 [(end_whitespace_ix..buffer.len(), "")],
-                Some(AutoindentMode::EachLine),
+                Some(AutoindentMode.EachLine),
                 cx,
             );
             assert_eq!(

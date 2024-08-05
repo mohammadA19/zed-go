@@ -1,10 +1,10 @@
-use anyhow::{anyhow, Context, Result};
-use futures::{io::BufReader, stream::BoxStream, AsyncBufReadExt, AsyncReadExt, StreamExt};
-use http_client::{AsyncBody, HttpClient, Method, Request as HttpRequest};
-use isahc::config::Configurable;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, sync::Arc, time::Duration};
+use anyhow.{anyhow, Context, Result};
+use futures.{io.BufReader, stream.BoxStream, AsyncBufReadExt, AsyncReadExt, StreamExt};
+use http_client.{AsyncBody, HttpClient, Method, Request as HttpRequest};
+use isahc.config.Configurable;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use std.{convert.TryFrom, sync.Arc, time.Duration};
 
 pub const OLLAMA_API_URL: &str = "http://localhost:11434";
 
@@ -17,13 +17,13 @@ pub enum Role {
 }
 
 impl TryFrom<String> for Role {
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
 
     fn try_from(value: String) -> Result<Self> {
         match value.as_str() {
-            "user" => Ok(Self::User),
-            "assistant" => Ok(Self::Assistant),
-            "system" => Ok(Self::System),
+            "user" => Ok(Self.User),
+            "assistant" => Ok(Self.Assistant),
+            "system" => Ok(Self.System),
             _ => Err(anyhow!("invalid role '{value}'")),
         }
     }
@@ -32,9 +32,9 @@ impl TryFrom<String> for Role {
 impl From<Role> for String {
     fn from(val: Role) -> Self {
         match val {
-            Role::User => "user".to_owned(),
-            Role::Assistant => "assistant".to_owned(),
-            Role::System => "system".to_owned(),
+            Role.User => "user".to_owned(),
+            Role.Assistant => "assistant".to_owned(),
+            Role.System => "system".to_owned(),
         }
     }
 }
@@ -51,17 +51,17 @@ pub enum KeepAlive {
 impl KeepAlive {
     /// Keep model alive until a new model is loaded or until Ollama shuts down
     fn indefinite() -> Self {
-        Self::Seconds(-1)
+        Self.Seconds(-1)
     }
 }
 
 impl Default for KeepAlive {
     fn default() -> Self {
-        Self::indefinite()
+        Self.indefinite()
     }
 }
 
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars.JsonSchema))]
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Model {
     pub name: String,
@@ -74,7 +74,7 @@ impl Model {
         Self {
             name: name.to_owned(),
             max_tokens: 2048,
-            keep_alive: Some(KeepAlive::indefinite()),
+            keep_alive: Some(KeepAlive.indefinite()),
         }
     }
 
@@ -169,8 +169,8 @@ pub async fn stream_chat_completion(
     low_speed_timeout: Option<Duration>,
 ) -> Result<BoxStream<'static, Result<ChatResponseDelta>>> {
     let uri = format!("{api_url}/api/chat");
-    let mut request_builder = HttpRequest::builder()
-        .method(Method::POST)
+    let mut request_builder = HttpRequest.builder()
+        .method(Method.POST)
         .uri(uri)
         .header("Content-Type", "application/json");
 
@@ -178,24 +178,24 @@ pub async fn stream_chat_completion(
         request_builder = request_builder.low_speed_timeout(100, low_speed_timeout);
     };
 
-    let request = request_builder.body(AsyncBody::from(serde_json::to_string(&request)?))?;
+    let request = request_builder.body(AsyncBody.from(serde_json.to_string(&request)?))?;
     let mut response = client.send(request).await?;
     if response.status().is_success() {
-        let reader = BufReader::new(response.into_body());
+        let reader = BufReader.new(response.into_body());
 
         Ok(reader
             .lines()
             .filter_map(|line| async move {
                 match line {
                     Ok(line) => {
-                        Some(serde_json::from_str(&line).context("Unable to parse chat response"))
+                        Some(serde_json.from_str(&line).context("Unable to parse chat response"))
                     }
                     Err(e) => Some(Err(e.into())),
                 }
             })
             .boxed())
     } else {
-        let mut body = String::new();
+        let mut body = String.new();
         response.body_mut().read_to_string(&mut body).await?;
 
         Err(anyhow!(
@@ -212,8 +212,8 @@ pub async fn get_models(
     low_speed_timeout: Option<Duration>,
 ) -> Result<Vec<LocalModelListing>> {
     let uri = format!("{api_url}/api/tags");
-    let mut request_builder = HttpRequest::builder()
-        .method(Method::GET)
+    let mut request_builder = HttpRequest.builder()
+        .method(Method.GET)
         .uri(uri)
         .header("Accept", "application/json");
 
@@ -221,16 +221,16 @@ pub async fn get_models(
         request_builder = request_builder.low_speed_timeout(100, low_speed_timeout);
     };
 
-    let request = request_builder.body(AsyncBody::default())?;
+    let request = request_builder.body(AsyncBody.default())?;
 
     let mut response = client.send(request).await?;
 
-    let mut body = String::new();
+    let mut body = String.new();
     response.body_mut().read_to_string(&mut body).await?;
 
     if response.status().is_success() {
         let response: LocalModelsResponse =
-            serde_json::from_str(&body).context("Unable to parse Ollama tag listing")?;
+            serde_json.from_str(&body).context("Unable to parse Ollama tag listing")?;
 
         Ok(response.models)
     } else {
@@ -245,12 +245,12 @@ pub async fn get_models(
 /// Sends an empty request to Ollama to trigger loading the model
 pub async fn preload_model(client: Arc<dyn HttpClient>, api_url: &str, model: &str) -> Result<()> {
     let uri = format!("{api_url}/api/generate");
-    let request = HttpRequest::builder()
-        .method(Method::POST)
+    let request = HttpRequest.builder()
+        .method(Method.POST)
         .uri(uri)
         .header("Content-Type", "application/json")
-        .body(AsyncBody::from(serde_json::to_string(
-            &serde_json::json!({
+        .body(AsyncBody.from(serde_json.to_string(
+            &serde_json.json!({
                 "model": model,
                 "keep_alive": "15m",
             }),
@@ -271,7 +271,7 @@ pub async fn preload_model(client: Arc<dyn HttpClient>, api_url: &str, model: &s
     if response.status().is_success() {
         Ok(())
     } else {
-        let mut body = String::new();
+        let mut body = String.new();
         response.body_mut().read_to_string(&mut body).await?;
 
         Err(anyhow!(

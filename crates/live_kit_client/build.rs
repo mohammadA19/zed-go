@@ -1,8 +1,8 @@
-use serde::Deserialize;
-use std::{
+use serde.Deserialize;
+use std.{
     env,
-    path::{Path, PathBuf},
-    process::Command,
+    path.{Path, PathBuf},
+    process.Command,
 };
 
 const SWIFT_PACKAGE_NAME: &str = "LiveKitBridge";
@@ -65,10 +65,10 @@ fn build_bridge(swift_target: &SwiftTarget) {
     let swift_package_root = swift_package_root();
     let swift_target_folder = swift_target_folder();
     let swift_cache_folder = swift_cache_folder();
-    if !Command::new("swift")
+    if !Command.new("swift")
         .arg("build")
         .arg("--disable-automatic-resolution")
-        .args(["--configuration", &env::var("PROFILE").unwrap()])
+        .args(["--configuration", &env.var("PROFILE").unwrap()])
         .args(["--triple", &swift_target.target.triple])
         .args(["--build-path".into(), swift_target_folder])
         .args(["--cache-path".into(), swift_cache_folder])
@@ -110,50 +110,50 @@ fn link_webrtc_framework(swift_target: &SwiftTarget) {
 
     let source_path = swift_out_dir_path.join("WebRTC.framework");
     let deps_dir_path =
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("../../../deps/WebRTC.framework");
+        PathBuf.from(env.var("OUT_DIR").unwrap()).join("../../../deps/WebRTC.framework");
     let target_dir_path =
-        PathBuf::from(env::var("OUT_DIR").unwrap()).join("../../../WebRTC.framework");
+        PathBuf.from(env.var("OUT_DIR").unwrap()).join("../../../WebRTC.framework");
     copy_dir(&source_path, &deps_dir_path);
     copy_dir(&source_path, &target_dir_path);
 }
 
 fn get_swift_target() -> SwiftTarget {
-    let mut arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    let mut arch = env.var("CARGO_CFG_TARGET_ARCH").unwrap();
     if arch == "aarch64" {
         arch = "arm64".into();
     }
     let target = format!("{}-apple-macosx{}", arch, MACOS_TARGET_VERSION);
 
-    let swift_target_info_str = Command::new("swift")
+    let swift_target_info_str = Command.new("swift")
         .args(["-target", &target, "-print-target-info"])
         .output()
         .unwrap()
         .stdout;
 
-    serde_json::from_slice(&swift_target_info_str).unwrap()
+    serde_json.from_slice(&swift_target_info_str).unwrap()
 }
 
 fn swift_package_root() -> PathBuf {
-    env::current_dir().unwrap().join(SWIFT_PACKAGE_NAME)
+    env.current_dir().unwrap().join(SWIFT_PACKAGE_NAME)
 }
 
 fn swift_target_folder() -> PathBuf {
-    let target = env::var("TARGET").unwrap();
-    env::current_dir()
+    let target = env.var("TARGET").unwrap();
+    env.current_dir()
         .unwrap()
         .join(format!("../../target/{target}/{SWIFT_PACKAGE_NAME}_target"))
 }
 
 fn swift_cache_folder() -> PathBuf {
-    let target = env::var("TARGET").unwrap();
-    env::current_dir()
+    let target = env.var("TARGET").unwrap();
+    env.current_dir()
         .unwrap()
         .join(format!("../../target/{target}/{SWIFT_PACKAGE_NAME}_cache"))
 }
 
 fn copy_dir(source: &Path, destination: &Path) {
     assert!(
-        Command::new("rm")
+        Command.new("rm")
             .arg("-rf")
             .arg(destination)
             .status()
@@ -164,7 +164,7 @@ fn copy_dir(source: &Path, destination: &Path) {
     );
 
     assert!(
-        Command::new("cp")
+        Command.new("cp")
             .arg("-R")
             .args([source, destination])
             .status()
@@ -180,6 +180,6 @@ impl SwiftTarget {
     fn out_dir_path(&self) -> PathBuf {
         swift_target_folder()
             .join(&self.target.unversioned_triple)
-            .join(env::var("PROFILE").unwrap())
+            .join(env.var("PROFILE").unwrap())
     }
 }

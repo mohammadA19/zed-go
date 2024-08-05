@@ -1,10 +1,10 @@
 #[macro_export]
 macro_rules! messages {
     ($(($name:ident, $priority:ident)),* $(,)?) => {
-        pub fn build_typed_envelope(sender_id: PeerId, received_at: std::time::Instant, envelope: Envelope) -> Option<Box<dyn AnyTypedEnvelope>> {
+        pub fn build_typed_envelope(sender_id: PeerId, received_at: std.time.Instant, envelope: Envelope) -> Option<Box<dyn AnyTypedEnvelope>> {
             match envelope.payload {
-                $(Some(envelope::Payload::$name(payload)) => {
-                    Some(Box::new(TypedEnvelope {
+                $(Some(envelope.Payload.$name(payload)) => {
+                    Some(Box.new(TypedEnvelope {
                         sender_id,
                         original_sender_id: envelope.original_sender_id,
                         message_id: envelope.id,
@@ -18,8 +18,8 @@ macro_rules! messages {
 
         $(
             impl EnvelopedMessage for $name {
-                const NAME: &'static str = std::stringify!($name);
-                const PRIORITY: MessagePriority = MessagePriority::$priority;
+                const NAME: &'static str = std.stringify!($name);
+                const PRIORITY: MessagePriority = MessagePriority.$priority;
 
                 fn into_envelope(
                     self,
@@ -31,12 +31,12 @@ macro_rules! messages {
                         id,
                         responding_to,
                         original_sender_id,
-                        payload: Some(envelope::Payload::$name(self)),
+                        payload: Some(envelope.Payload.$name(self)),
                     }
                 }
 
                 fn from_envelope(envelope: Envelope) -> Option<Self> {
-                    if let Some(envelope::Payload::$name(msg)) = envelope.payload {
+                    if let Some(envelope.Payload.$name(msg)) = envelope.payload {
                         Some(msg)
                     } else {
                         None

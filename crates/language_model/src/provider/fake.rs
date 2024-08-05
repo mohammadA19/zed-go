@@ -1,35 +1,35 @@
-use crate::{
+use crate.{
     LanguageModel, LanguageModelId, LanguageModelName, LanguageModelProvider,
     LanguageModelProviderId, LanguageModelProviderName, LanguageModelProviderState,
     LanguageModelRequest,
 };
-use anyhow::Context as _;
-use futures::{
-    channel::{mpsc, oneshot},
-    future::BoxFuture,
-    stream::BoxStream,
+use anyhow.Context as _;
+use futures.{
+    channel.{mpsc, oneshot},
+    future.BoxFuture,
+    stream.BoxStream,
     FutureExt, StreamExt,
 };
-use gpui::{AnyView, AppContext, AsyncAppContext, Task};
-use http_client::Result;
-use parking_lot::Mutex;
-use std::sync::Arc;
-use ui::WindowContext;
+use gpui.{AnyView, AppContext, AsyncAppContext, Task};
+use http_client.Result;
+use parking_lot.Mutex;
+use std.sync.Arc;
+use ui.WindowContext;
 
 pub fn language_model_id() -> LanguageModelId {
-    LanguageModelId::from("fake".to_string())
+    LanguageModelId.from("fake".to_string())
 }
 
 pub fn language_model_name() -> LanguageModelName {
-    LanguageModelName::from("Fake".to_string())
+    LanguageModelName.from("Fake".to_string())
 }
 
 pub fn provider_id() -> LanguageModelProviderId {
-    LanguageModelProviderId::from("fake".to_string())
+    LanguageModelProviderId.from("fake".to_string())
 }
 
 pub fn provider_name() -> LanguageModelProviderName {
-    LanguageModelProviderName::from("Fake".to_string())
+    LanguageModelProviderName.from("Fake".to_string())
 }
 
 #[derive(Clone, Default)]
@@ -38,7 +38,7 @@ pub struct FakeLanguageModelProvider;
 impl LanguageModelProviderState for FakeLanguageModelProvider {
     type ObservableEntity = ();
 
-    fn observable_entity(&self) -> Option<gpui::Model<Self::ObservableEntity>> {
+    fn observable_entity(&self) -> Option<gpui.Model<Self.ObservableEntity>> {
         None
     }
 }
@@ -53,7 +53,7 @@ impl LanguageModelProvider for FakeLanguageModelProvider {
     }
 
     fn provided_models(&self, _: &AppContext) -> Vec<Arc<dyn LanguageModel>> {
-        vec![Arc::new(FakeLanguageModel::default())]
+        vec![Arc.new(FakeLanguageModel.default())]
     }
 
     fn is_authenticated(&self, _: &AppContext) -> bool {
@@ -61,7 +61,7 @@ impl LanguageModelProvider for FakeLanguageModelProvider {
     }
 
     fn authenticate(&self, _: &mut AppContext) -> Task<Result<()>> {
-        Task::ready(Ok(()))
+        Task.ready(Ok(()))
     }
 
     fn configuration_view(&self, _: &mut WindowContext) -> AnyView {
@@ -69,13 +69,13 @@ impl LanguageModelProvider for FakeLanguageModelProvider {
     }
 
     fn reset_credentials(&self, _: &mut AppContext) -> Task<Result<()>> {
-        Task::ready(Ok(()))
+        Task.ready(Ok(()))
     }
 }
 
 impl FakeLanguageModelProvider {
     pub fn test_model(&self) -> FakeLanguageModel {
-        FakeLanguageModel::default()
+        FakeLanguageModel.default()
     }
 }
 
@@ -84,13 +84,13 @@ pub struct ToolUseRequest {
     pub request: LanguageModelRequest,
     pub name: String,
     pub description: String,
-    pub schema: serde_json::Value,
+    pub schema: serde_json.Value,
 }
 
 #[derive(Default)]
 pub struct FakeLanguageModel {
-    current_completion_txs: Mutex<Vec<(LanguageModelRequest, mpsc::UnboundedSender<String>)>>,
-    current_tool_use_txs: Mutex<Vec<(ToolUseRequest, oneshot::Sender<Result<serde_json::Value>>)>>,
+    current_completion_txs: Mutex<Vec<(LanguageModelRequest, mpsc.UnboundedSender<String>)>>,
+    current_tool_use_txs: Mutex<Vec<(ToolUseRequest, oneshot.Sender<Result<serde_json.Value>>)>>,
 }
 
 impl FakeLanguageModel {
@@ -133,7 +133,7 @@ impl FakeLanguageModel {
     pub fn respond_to_tool_use(
         &self,
         tool_call: &ToolUseRequest,
-        response: Result<serde_json::Value>,
+        response: Result<serde_json.Value>,
     ) {
         let mut current_tool_call_txs = self.current_tool_use_txs.lock();
         if let Some(index) = current_tool_call_txs
@@ -145,7 +145,7 @@ impl FakeLanguageModel {
         }
     }
 
-    pub fn respond_to_last_tool_use(&self, response: Result<serde_json::Value>) {
+    pub fn respond_to_last_tool_use(&self, response: Result<serde_json.Value>) {
         let mut current_tool_call_txs = self.current_tool_use_txs.lock();
         let (_, tx) = current_tool_call_txs.pop().unwrap();
         tx.send(response).unwrap();
@@ -182,7 +182,7 @@ impl LanguageModel for FakeLanguageModel {
         _: LanguageModelRequest,
         _: &AppContext,
     ) -> BoxFuture<'static, Result<usize>> {
-        futures::future::ready(Ok(0)).boxed()
+        futures.future.ready(Ok(0)).boxed()
     }
 
     fn stream_completion(
@@ -190,7 +190,7 @@ impl LanguageModel for FakeLanguageModel {
         request: LanguageModelRequest,
         _: &AsyncAppContext,
     ) -> BoxFuture<'static, Result<BoxStream<'static, Result<String>>>> {
-        let (tx, rx) = mpsc::unbounded();
+        let (tx, rx) = mpsc.unbounded();
         self.current_completion_txs.lock().push((request, tx));
         async move { Ok(rx.map(Ok).boxed()) }.boxed()
     }
@@ -200,10 +200,10 @@ impl LanguageModel for FakeLanguageModel {
         request: LanguageModelRequest,
         name: String,
         description: String,
-        schema: serde_json::Value,
+        schema: serde_json.Value,
         _cx: &AsyncAppContext,
-    ) -> BoxFuture<'static, Result<serde_json::Value>> {
-        let (tx, rx) = oneshot::channel();
+    ) -> BoxFuture<'static, Result<serde_json.Value>> {
+        let (tx, rx) = oneshot.channel();
         let tool_call = ToolUseRequest {
             request,
             name,

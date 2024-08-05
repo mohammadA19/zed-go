@@ -1,21 +1,21 @@
-use std::ops::Range;
+use std.ops.Range;
 
-use criterion::{
+use criterion.{
     black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
 };
-use rand::prelude::*;
-use rand::rngs::StdRng;
-use rope::{Point, Rope};
-use sum_tree::Bias;
-use util::RandomCharIter;
+use rand.prelude.*;
+use rand.rngs.StdRng;
+use rope.{Point, Rope};
+use sum_tree.Bias;
+use util.RandomCharIter;
 
 fn generate_random_text(mut rng: StdRng, text_len: usize) -> String {
-    RandomCharIter::new(&mut rng).take(text_len).collect()
+    RandomCharIter.new(&mut rng).take(text_len).collect()
 }
 
 fn generate_random_rope(rng: StdRng, text_len: usize) -> Rope {
     let text = generate_random_text(rng, text_len);
-    let mut rope = Rope::new();
+    let mut rope = Rope.new();
     rope.push(&text);
     rope
 }
@@ -24,16 +24,16 @@ fn generate_random_rope_ranges(mut rng: StdRng, rope: &Rope) -> Vec<Range<usize>
     let range_max_len = 50;
     let num_ranges = rope.len() / range_max_len;
 
-    let mut ranges = Vec::new();
+    let mut ranges = Vec.new();
     let mut start = 0;
     for _ in 0..num_ranges {
         let range_start = rope.clip_offset(
             rng.gen_range(start..=(start + range_max_len)),
-            sum_tree::Bias::Left,
+            sum_tree.Bias.Left,
         );
         let range_end = rope.clip_offset(
             rng.gen_range(range_start..(range_start + range_max_len)),
-            sum_tree::Bias::Right,
+            sum_tree.Bias.Right,
         );
 
         let range = range_start..range_end;
@@ -50,7 +50,7 @@ fn generate_random_rope_ranges(mut rng: StdRng, rope: &Rope) -> Vec<Range<usize>
 fn generate_random_rope_points(mut rng: StdRng, rope: &Rope) -> Vec<Point> {
     let num_points = rope.len() / 10;
 
-    let mut points = Vec::new();
+    let mut points = Vec.new();
     for _ in 0..num_points {
         points.push(rope.offset_to_point(rng.gen_range(0..rope.len())));
     }
@@ -61,17 +61,17 @@ fn rope_benchmarks(c: &mut Criterion) {
     static SEED: u64 = 9999;
     static KB: usize = 1024;
 
-    let rng = StdRng::seed_from_u64(SEED);
+    let rng = StdRng.seed_from_u64(SEED);
     let sizes = [4 * KB, 64 * KB];
 
     let mut group = c.benchmark_group("push");
     for size in sizes.iter() {
-        group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+        group.throughput(Throughput.Bytes(*size as u64));
+        group.bench_with_input(BenchmarkId.from_parameter(size), &size, |b, &size| {
             let text = generate_random_text(rng.clone(), *size);
 
             b.iter(|| {
-                let mut rope = Rope::new();
+                let mut rope = Rope.new();
                 for _ in 0..10 {
                     rope.push(&text);
                 }
@@ -82,15 +82,15 @@ fn rope_benchmarks(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("append");
     for size in sizes.iter() {
-        group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
-            let mut random_ropes = Vec::new();
+        group.throughput(Throughput.Bytes(*size as u64));
+        group.bench_with_input(BenchmarkId.from_parameter(size), &size, |b, &size| {
+            let mut random_ropes = Vec.new();
             for _ in 0..5 {
                 random_ropes.push(generate_random_rope(rng.clone(), *size));
             }
 
             b.iter(|| {
-                let mut rope_b = Rope::new();
+                let mut rope_b = Rope.new();
                 for rope in &random_ropes {
                     rope_b.append(rope.clone())
                 }
@@ -101,8 +101,8 @@ fn rope_benchmarks(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("slice");
     for size in sizes.iter() {
-        group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+        group.throughput(Throughput.Bytes(*size as u64));
+        group.bench_with_input(BenchmarkId.from_parameter(size), &size, |b, &size| {
             let rope = generate_random_rope(rng.clone(), *size);
 
             b.iter_batched(
@@ -112,7 +112,7 @@ fn rope_benchmarks(c: &mut Criterion) {
                         rope.slice(range.clone());
                     }
                 },
-                BatchSize::SmallInput,
+                BatchSize.SmallInput,
             );
         });
     }
@@ -120,8 +120,8 @@ fn rope_benchmarks(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("bytes_in_range");
     for size in sizes.iter() {
-        group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+        group.throughput(Throughput.Bytes(*size as u64));
+        group.bench_with_input(BenchmarkId.from_parameter(size), &size, |b, &size| {
             let rope = generate_random_rope(rng.clone(), *size);
 
             b.iter_batched(
@@ -132,7 +132,7 @@ fn rope_benchmarks(c: &mut Criterion) {
                         assert!(bytes.into_iter().count() > 0);
                     }
                 },
-                BatchSize::SmallInput,
+                BatchSize.SmallInput,
             );
         });
     }
@@ -140,8 +140,8 @@ fn rope_benchmarks(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("chars");
     for size in sizes.iter() {
-        group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+        group.throughput(Throughput.Bytes(*size as u64));
+        group.bench_with_input(BenchmarkId.from_parameter(size), &size, |b, &size| {
             let rope = generate_random_rope(rng.clone(), *size);
 
             b.iter_with_large_drop(|| {
@@ -154,19 +154,19 @@ fn rope_benchmarks(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("clip_point");
     for size in sizes.iter() {
-        group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+        group.throughput(Throughput.Bytes(*size as u64));
+        group.bench_with_input(BenchmarkId.from_parameter(size), &size, |b, &size| {
             let rope = generate_random_rope(rng.clone(), *size);
 
             b.iter_batched(
                 || generate_random_rope_points(rng.clone(), &rope),
                 |offsets| {
                     for offset in offsets.iter() {
-                        black_box(rope.clip_point(*offset, Bias::Left));
-                        black_box(rope.clip_point(*offset, Bias::Right));
+                        black_box(rope.clip_point(*offset, Bias.Left));
+                        black_box(rope.clip_point(*offset, Bias.Right));
                     }
                 },
-                BatchSize::SmallInput,
+                BatchSize.SmallInput,
             );
         });
     }

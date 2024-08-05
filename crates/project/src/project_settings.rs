@@ -1,9 +1,9 @@
-use collections::HashMap;
-use gpui::AppContext;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
-use std::{sync::Arc, time::Duration};
+use collections.HashMap;
+use gpui.AppContext;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
+use std.{sync.Arc, time.Duration};
 
 #[derive(Clone, Default, Serialize, Deserialize, JsonSchema)]
 pub struct ProjectSettings {
@@ -59,7 +59,7 @@ pub struct GitSettings {
 
 impl GitSettings {
     pub fn inline_blame_enabled(&self) -> bool {
-        #[allow(unknown_lints, clippy::manual_unwrap_or_default)]
+        #[allow(unknown_lints, clippy.manual_unwrap_or_default)]
         match self.inline_blame {
             Some(InlineBlameSettings { enabled, .. }) => enabled,
             _ => false,
@@ -71,7 +71,7 @@ impl GitSettings {
             Some(InlineBlameSettings {
                 delay_ms: Some(delay_ms),
                 ..
-            }) if delay_ms > 0 => Some(Duration::from_millis(delay_ms)),
+            }) if delay_ms > 0 => Some(Duration.from_millis(delay_ms)),
             _ => None,
         }
     }
@@ -122,8 +122,8 @@ pub struct BinarySettings {
 #[serde(rename_all = "snake_case")]
 pub struct LspSettings {
     pub binary: Option<BinarySettings>,
-    pub initialization_options: Option<serde_json::Value>,
-    pub settings: Option<serde_json::Value>,
+    pub initialization_options: Option<serde_json.Value>,
+    pub settings: Option<serde_json.Value>,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -151,9 +151,9 @@ impl Settings for ProjectSettings {
     type FileContent = Self;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
+        sources: SettingsSources<Self.FileContent>,
         _: &mut AppContext,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 }

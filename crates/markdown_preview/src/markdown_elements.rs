@@ -1,8 +1,8 @@
-use gpui::{
+use gpui.{
     px, FontStyle, FontWeight, HighlightStyle, SharedString, StrikethroughStyle, UnderlineStyle,
 };
-use language::HighlightId;
-use std::{fmt::Display, ops::Range, path::PathBuf};
+use language.HighlightId;
+use std.{fmt.Display, ops.Range, path.PathBuf};
 
 #[derive(Debug)]
 #[cfg_attr(test, derive(PartialEq))]
@@ -20,18 +20,18 @@ pub enum ParsedMarkdownElement {
 impl ParsedMarkdownElement {
     pub fn source_range(&self) -> Range<usize> {
         match self {
-            Self::Heading(heading) => heading.source_range.clone(),
-            Self::ListItem(list_item) => list_item.source_range.clone(),
-            Self::Table(table) => table.source_range.clone(),
-            Self::BlockQuote(block_quote) => block_quote.source_range.clone(),
-            Self::CodeBlock(code_block) => code_block.source_range.clone(),
-            Self::Paragraph(text) => text.source_range.clone(),
-            Self::HorizontalRule(range) => range.clone(),
+            Self.Heading(heading) => heading.source_range.clone(),
+            Self.ListItem(list_item) => list_item.source_range.clone(),
+            Self.Table(table) => table.source_range.clone(),
+            Self.BlockQuote(block_quote) => block_quote.source_range.clone(),
+            Self.CodeBlock(code_block) => code_block.source_range.clone(),
+            Self.Paragraph(text) => text.source_range.clone(),
+            Self.HorizontalRule(range) => range.clone(),
         }
     }
 
     pub fn is_list_item(&self) -> bool {
-        matches!(self, Self::ListItem(_))
+        matches!(self, Self.ListItem(_))
     }
 }
 
@@ -113,7 +113,7 @@ pub struct ParsedMarkdownTableRow {
 impl ParsedMarkdownTableRow {
     pub fn new() -> Self {
         Self {
-            children: Vec::new(),
+            children: Vec.new(),
         }
     }
 
@@ -154,37 +154,37 @@ pub enum MarkdownHighlight {
 
 impl MarkdownHighlight {
     /// Converts this [`MarkdownHighlight`] to a [`HighlightStyle`].
-    pub fn to_highlight_style(&self, theme: &theme::SyntaxTheme) -> Option<HighlightStyle> {
+    pub fn to_highlight_style(&self, theme: &theme.SyntaxTheme) -> Option<HighlightStyle> {
         match self {
-            MarkdownHighlight::Style(style) => {
-                let mut highlight = HighlightStyle::default();
+            MarkdownHighlight.Style(style) => {
+                let mut highlight = HighlightStyle.default();
 
                 if style.italic {
-                    highlight.font_style = Some(FontStyle::Italic);
+                    highlight.font_style = Some(FontStyle.Italic);
                 }
 
                 if style.underline {
                     highlight.underline = Some(UnderlineStyle {
                         thickness: px(1.),
-                        ..Default::default()
+                        ..Default.default()
                     });
                 }
 
                 if style.strikethrough {
                     highlight.strikethrough = Some(StrikethroughStyle {
                         thickness: px(1.),
-                        ..Default::default()
+                        ..Default.default()
                     });
                 }
 
-                if style.weight != FontWeight::default() {
+                if style.weight != FontWeight.default() {
                     highlight.font_weight = Some(style.weight);
                 }
 
                 Some(highlight)
             }
 
-            MarkdownHighlight::Code(id) => id.style(theme),
+            MarkdownHighlight.Code(id) => id.style(theme),
         }
     }
 }
@@ -233,12 +233,12 @@ pub enum Link {
 impl Link {
     pub fn identify(file_location_directory: Option<PathBuf>, text: String) -> Option<Link> {
         if text.starts_with("http") {
-            return Some(Link::Web { url: text });
+            return Some(Link.Web { url: text });
         }
 
-        let path = PathBuf::from(&text);
+        let path = PathBuf.from(&text);
         if path.is_absolute() && path.exists() {
-            return Some(Link::Path {
+            return Some(Link.Path {
                 display_path: path.clone(),
                 path,
             });
@@ -248,7 +248,7 @@ impl Link {
             let display_path = path;
             let path = file_location_directory.join(text);
             if path.exists() {
-                return Some(Link::Path { display_path, path });
+                return Some(Link.Path { display_path, path });
             }
         }
 
@@ -257,10 +257,10 @@ impl Link {
 }
 
 impl Display for Link {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         match self {
-            Link::Web { url } => write!(f, "{}", url),
-            Link::Path {
+            Link.Web { url } => write!(f, "{}", url),
+            Link.Path {
                 display_path,
                 path: _,
             } => write!(f, "{}", display_path.display()),

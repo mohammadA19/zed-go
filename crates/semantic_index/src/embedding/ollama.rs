@@ -1,10 +1,10 @@
-use anyhow::{Context as _, Result};
-use futures::{future::BoxFuture, AsyncReadExt, FutureExt};
-use http_client::HttpClient;
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use anyhow.{Context as _, Result};
+use futures.{future.BoxFuture, AsyncReadExt, FutureExt};
+use http_client.HttpClient;
+use serde.{Deserialize, Serialize};
+use std.sync.Arc;
 
-use crate::{Embedding, EmbeddingProvider, TextToEmbed};
+use crate.{Embedding, EmbeddingProvider, TextToEmbed};
 
 pub enum OllamaEmbeddingModel {
     NomicEmbedText,
@@ -37,17 +37,17 @@ impl EmbeddingProvider for OllamaEmbeddingProvider {
     fn embed<'a>(&'a self, texts: &'a [TextToEmbed<'a>]) -> BoxFuture<'a, Result<Vec<Embedding>>> {
         //
         let model = match self.model {
-            OllamaEmbeddingModel::NomicEmbedText => "nomic-embed-text",
-            OllamaEmbeddingModel::MxbaiEmbedLarge => "mxbai-embed-large",
+            OllamaEmbeddingModel.NomicEmbedText => "nomic-embed-text",
+            OllamaEmbeddingModel.MxbaiEmbedLarge => "mxbai-embed-large",
         };
 
-        futures::future::try_join_all(texts.into_iter().map(|to_embed| {
+        futures.future.try_join_all(texts.into_iter().map(|to_embed| {
             let request = OllamaEmbeddingRequest {
                 model: model.to_string(),
                 prompt: to_embed.text.to_string(),
             };
 
-            let request = serde_json::to_string(&request).unwrap();
+            let request = serde_json.to_string(&request).unwrap();
 
             async {
                 let response = self
@@ -55,13 +55,13 @@ impl EmbeddingProvider for OllamaEmbeddingProvider {
                     .post_json("http://localhost:11434/api/embeddings", request.into())
                     .await?;
 
-                let mut body = String::new();
+                let mut body = String.new();
                 response.into_body().read_to_string(&mut body).await?;
 
                 let response: OllamaEmbeddingResponse =
-                    serde_json::from_str(&body).context("Unable to pull response")?;
+                    serde_json.from_str(&body).context("Unable to pull response")?;
 
-                Ok(Embedding::new(response.embedding))
+                Ok(Embedding.new(response.embedding))
             }
         }))
         .boxed()

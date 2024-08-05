@@ -1,11 +1,11 @@
-use anyhow::{anyhow, Context, Result};
-use futures::{io::BufReader, stream::BoxStream, AsyncBufReadExt, AsyncReadExt, Stream, StreamExt};
-use http_client::{AsyncBody, HttpClient, Method, Request as HttpRequest};
-use isahc::config::Configurable;
-use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
-use std::{convert::TryFrom, future::Future, time::Duration};
-use strum::EnumIter;
+use anyhow.{anyhow, Context, Result};
+use futures.{io.BufReader, stream.BoxStream, AsyncBufReadExt, AsyncReadExt, Stream, StreamExt};
+use http_client.{AsyncBody, HttpClient, Method, Request as HttpRequest};
+use isahc.config.Configurable;
+use serde.{Deserialize, Serialize};
+use serde_json.{Map, Value};
+use std.{convert.TryFrom, future.Future, time.Duration};
+use strum.EnumIter;
 
 pub const OPEN_AI_API_URL: &str = "https://api.openai.com/v1";
 
@@ -23,14 +23,14 @@ pub enum Role {
 }
 
 impl TryFrom<String> for Role {
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
 
     fn try_from(value: String) -> Result<Self> {
         match value.as_str() {
-            "user" => Ok(Self::User),
-            "assistant" => Ok(Self::Assistant),
-            "system" => Ok(Self::System),
-            "tool" => Ok(Self::Tool),
+            "user" => Ok(Self.User),
+            "assistant" => Ok(Self.Assistant),
+            "system" => Ok(Self.System),
+            "tool" => Ok(Self.Tool),
             _ => Err(anyhow!("invalid role '{value}'")),
         }
     }
@@ -39,15 +39,15 @@ impl TryFrom<String> for Role {
 impl From<Role> for String {
     fn from(val: Role) -> Self {
         match val {
-            Role::User => "user".to_owned(),
-            Role::Assistant => "assistant".to_owned(),
-            Role::System => "system".to_owned(),
-            Role::Tool => "tool".to_owned(),
+            Role.User => "user".to_owned(),
+            Role.Assistant => "assistant".to_owned(),
+            Role.System => "system".to_owned(),
+            Role.Tool => "tool".to_owned(),
         }
     }
 }
 
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars.JsonSchema))]
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, EnumIter)]
 pub enum Model {
     #[serde(rename = "gpt-3.5-turbo", alias = "gpt-3.5-turbo-0613")]
@@ -68,45 +68,45 @@ pub enum Model {
 impl Model {
     pub fn from_id(id: &str) -> Result<Self> {
         match id {
-            "gpt-3.5-turbo" => Ok(Self::ThreePointFiveTurbo),
-            "gpt-4" => Ok(Self::Four),
-            "gpt-4-turbo-preview" => Ok(Self::FourTurbo),
-            "gpt-4o" => Ok(Self::FourOmni),
-            "gpt-4o-mini" => Ok(Self::FourOmniMini),
+            "gpt-3.5-turbo" => Ok(Self.ThreePointFiveTurbo),
+            "gpt-4" => Ok(Self.Four),
+            "gpt-4-turbo-preview" => Ok(Self.FourTurbo),
+            "gpt-4o" => Ok(Self.FourOmni),
+            "gpt-4o-mini" => Ok(Self.FourOmniMini),
             _ => Err(anyhow!("invalid model id")),
         }
     }
 
     pub fn id(&self) -> &str {
         match self {
-            Self::ThreePointFiveTurbo => "gpt-3.5-turbo",
-            Self::Four => "gpt-4",
-            Self::FourTurbo => "gpt-4-turbo-preview",
-            Self::FourOmni => "gpt-4o",
-            Self::FourOmniMini => "gpt-4o-mini",
-            Self::Custom { name, .. } => name,
+            Self.ThreePointFiveTurbo => "gpt-3.5-turbo",
+            Self.Four => "gpt-4",
+            Self.FourTurbo => "gpt-4-turbo-preview",
+            Self.FourOmni => "gpt-4o",
+            Self.FourOmniMini => "gpt-4o-mini",
+            Self.Custom { name, .. } => name,
         }
     }
 
     pub fn display_name(&self) -> &str {
         match self {
-            Self::ThreePointFiveTurbo => "gpt-3.5-turbo",
-            Self::Four => "gpt-4",
-            Self::FourTurbo => "gpt-4-turbo",
-            Self::FourOmni => "gpt-4o",
-            Self::FourOmniMini => "gpt-4o-mini",
-            Self::Custom { name, .. } => name,
+            Self.ThreePointFiveTurbo => "gpt-3.5-turbo",
+            Self.Four => "gpt-4",
+            Self.FourTurbo => "gpt-4-turbo",
+            Self.FourOmni => "gpt-4o",
+            Self.FourOmniMini => "gpt-4o-mini",
+            Self.Custom { name, .. } => name,
         }
     }
 
     pub fn max_token_count(&self) -> usize {
         match self {
-            Self::ThreePointFiveTurbo => 4096,
-            Self::Four => 8192,
-            Self::FourTurbo => 128000,
-            Self::FourOmni => 128000,
-            Self::FourOmniMini => 128000,
-            Self::Custom { max_tokens, .. } => *max_tokens,
+            Self.ThreePointFiveTurbo => 4096,
+            Self.Four => 8192,
+            Self.FourTurbo => 128000,
+            Self.FourOmni => 128000,
+            Self.FourOmniMini => 128000,
+            Self.Custom { max_tokens, .. } => *max_tokens,
         }
     }
 }
@@ -116,13 +116,13 @@ pub struct Request {
     pub model: String,
     pub messages: Vec<RequestMessage>,
     pub stream: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub max_tokens: Option<usize>,
     pub stop: Vec<String>,
     pub temperature: f32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub tool_choice: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec.is_empty")]
     pub tools: Vec<ToolDefinition>,
 }
 
@@ -145,7 +145,7 @@ pub enum ToolDefinition {
 pub enum RequestMessage {
     Assistant {
         content: Option<String>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec.is_empty")]
         tool_calls: Vec<ToolCall>,
     },
     User {
@@ -241,8 +241,8 @@ pub async fn stream_completion(
     low_speed_timeout: Option<Duration>,
 ) -> Result<BoxStream<'static, Result<ResponseStreamEvent>>> {
     let uri = format!("{api_url}/chat/completions");
-    let mut request_builder = HttpRequest::builder()
-        .method(Method::POST)
+    let mut request_builder = HttpRequest.builder()
+        .method(Method.POST)
         .uri(uri)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key));
@@ -251,10 +251,10 @@ pub async fn stream_completion(
         request_builder = request_builder.low_speed_timeout(100, low_speed_timeout);
     };
 
-    let request = request_builder.body(AsyncBody::from(serde_json::to_string(&request)?))?;
+    let request = request_builder.body(AsyncBody.from(serde_json.to_string(&request)?))?;
     let mut response = client.send(request).await?;
     if response.status().is_success() {
-        let reader = BufReader::new(response.into_body());
+        let reader = BufReader.new(response.into_body());
         Ok(reader
             .lines()
             .filter_map(|line| async move {
@@ -264,9 +264,9 @@ pub async fn stream_completion(
                         if line == "[DONE]" {
                             None
                         } else {
-                            match serde_json::from_str(line) {
-                                Ok(ResponseStreamResult::Ok(response)) => Some(Ok(response)),
-                                Ok(ResponseStreamResult::Err { error }) => {
+                            match serde_json.from_str(line) {
+                                Ok(ResponseStreamResult.Ok(response)) => Some(Ok(response)),
+                                Ok(ResponseStreamResult.Err { error }) => {
                                     Some(Err(anyhow!(error)))
                                 }
                                 Err(error) => Some(Err(anyhow!(error))),
@@ -278,7 +278,7 @@ pub async fn stream_completion(
             })
             .boxed())
     } else {
-        let mut body = String::new();
+        let mut body = String.new();
         response.body_mut().read_to_string(&mut body).await?;
 
         #[derive(Deserialize)]
@@ -291,7 +291,7 @@ pub async fn stream_completion(
             message: String,
         }
 
-        match serde_json::from_str::<OpenAiResponse>(&body) {
+        match serde_json.from_str.<OpenAiResponse>(&body) {
             Ok(response) if !response.error.message.is_empty() => Err(anyhow!(
                 "Failed to connect to OpenAI API: {}",
                 response.error.message,
@@ -343,9 +343,9 @@ pub fn embed<'a>(
         model,
         input: texts.into_iter().collect(),
     };
-    let body = AsyncBody::from(serde_json::to_string(&request).unwrap());
-    let request = HttpRequest::builder()
-        .method(Method::POST)
+    let body = AsyncBody.from(serde_json.to_string(&request).unwrap());
+    let request = HttpRequest.builder()
+        .method(Method.POST)
         .uri(uri)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
@@ -354,12 +354,12 @@ pub fn embed<'a>(
 
     async move {
         let mut response = request?.await?;
-        let mut body = String::new();
+        let mut body = String.new();
         response.body_mut().read_to_string(&mut body).await?;
 
         if response.status().is_success() {
             let response: OpenAiEmbeddingResponse =
-                serde_json::from_str(&body).context("failed to parse OpenAI embedding response")?;
+                serde_json.from_str(&body).context("failed to parse OpenAI embedding response")?;
             Ok(response)
         } else {
             Err(anyhow!(

@@ -1,20 +1,20 @@
-use crate::{settings_store::SettingsStore, Settings};
-use fs::Fs;
-use futures::{channel::mpsc, StreamExt};
-use gpui::{AppContext, BackgroundExecutor, ReadGlobal, UpdateGlobal};
-use std::{path::PathBuf, sync::Arc, time::Duration};
-use util::ResultExt;
+use crate.{settings_store.SettingsStore, Settings};
+use fs.Fs;
+use futures.{channel.mpsc, StreamExt};
+use gpui.{AppContext, BackgroundExecutor, ReadGlobal, UpdateGlobal};
+use std.{path.PathBuf, sync.Arc, time.Duration};
+use util.ResultExt;
 
 pub const EMPTY_THEME_NAME: &str = "empty-theme";
 
 #[cfg(any(test, feature = "test-support"))]
 pub fn test_settings() -> String {
-    let mut value = crate::settings_store::parse_json_with_comments::<serde_json::Value>(
-        crate::default_settings().as_ref(),
+    let mut value = crate.settings_store.parse_json_with_comments.<serde_json.Value>(
+        crate.default_settings().as_ref(),
     )
     .unwrap();
-    util::merge_non_null_json_value_into(
-        serde_json::json!({
+    util.merge_non_null_json_value_into(
+        serde_json.json!({
             "ui_font_family": "Courier",
             "ui_font_features": {},
             "ui_font_size": 14,
@@ -28,19 +28,19 @@ pub fn test_settings() -> String {
         &mut value,
     );
     value.as_object_mut().unwrap().remove("languages");
-    serde_json::to_string(&value).unwrap()
+    serde_json.to_string(&value).unwrap()
 }
 
 pub fn watch_config_file(
     executor: &BackgroundExecutor,
     fs: Arc<dyn Fs>,
     path: PathBuf,
-) -> mpsc::UnboundedReceiver<String> {
-    let (tx, rx) = mpsc::unbounded();
+) -> mpsc.UnboundedReceiver<String> {
+    let (tx, rx) = mpsc.unbounded();
     executor
         .spawn(async move {
-            let (events, _) = fs.watch(&path, Duration::from_millis(100)).await;
-            futures::pin_mut!(events);
+            let (events, _) = fs.watch(&path, Duration.from_millis(100)).await;
+            futures.pin_mut!(events);
 
             let contents = fs.load(&path).await.unwrap_or_default();
             if tx.unbounded_send(contents).is_err() {
@@ -64,14 +64,14 @@ pub fn watch_config_file(
 }
 
 pub fn handle_settings_file_changes(
-    mut user_settings_file_rx: mpsc::UnboundedReceiver<String>,
+    mut user_settings_file_rx: mpsc.UnboundedReceiver<String>,
     cx: &mut AppContext,
 ) {
     let user_settings_content = cx
         .background_executor()
         .block(user_settings_file_rx.next())
         .unwrap();
-    SettingsStore::update_global(cx, |store, cx| {
+    SettingsStore.update_global(cx, |store, cx| {
         store
             .set_user_settings(&user_settings_content, cx)
             .log_err();
@@ -95,7 +95,7 @@ pub fn handle_settings_file_changes(
 pub fn update_settings_file<T: Settings>(
     fs: Arc<dyn Fs>,
     cx: &AppContext,
-    update: impl 'static + Send + FnOnce(&mut T::FileContent, &AppContext),
+    update: impl 'static + Send + FnOnce(&mut T.FileContent, &AppContext),
 ) {
-    SettingsStore::global(cx).update_settings_file::<T>(fs, update);
+    SettingsStore.global(cx).update_settings_file.<T>(fs, update);
 }

@@ -1,9 +1,9 @@
-use crate::{proto, token};
-use anyhow::{anyhow, Result};
-use async_trait::async_trait;
-use prost::Message;
-use reqwest::header::CONTENT_TYPE;
-use std::{future::Future, sync::Arc, time::Duration};
+use crate.{proto, token};
+use anyhow.{anyhow, Result};
+use async_trait.async_trait;
+use prost.Message;
+use reqwest.header.CONTENT_TYPE;
+use std.{future.Future, sync.Arc, time.Duration};
 
 #[async_trait]
 pub trait Client: Send + Sync {
@@ -15,7 +15,7 @@ pub trait Client: Send + Sync {
         &self,
         room: String,
         identity: String,
-        permission: proto::ParticipantPermission,
+        permission: proto.ParticipantPermission,
     ) -> Result<()>;
     fn room_token(&self, room: &str, identity: &str) -> Result<String>;
     fn guest_token(&self, room: &str, identity: &str) -> Result<String>;
@@ -25,7 +25,7 @@ pub struct LiveKitParticipantUpdate {}
 
 #[derive(Clone)]
 pub struct LiveKitClient {
-    http: reqwest::Client,
+    http: reqwest.Client,
     url: Arc<str>,
     key: Arc<str>,
     secret: Arc<str>,
@@ -38,8 +38,8 @@ impl LiveKitClient {
         }
 
         Self {
-            http: reqwest::ClientBuilder::new()
-                .timeout(Duration::from_secs(5))
+            http: reqwest.ClientBuilder.new()
+                .timeout(Duration.from_secs(5))
                 .build()
                 .unwrap(),
             url: url.into(),
@@ -51,7 +51,7 @@ impl LiveKitClient {
     fn request<Req, Res>(
         &self,
         path: &str,
-        grant: token::VideoGrant,
+        grant: token.VideoGrant,
         body: Req,
     ) -> impl Future<Output = Result<Res>>
     where
@@ -59,9 +59,9 @@ impl LiveKitClient {
         Res: Default + Message,
     {
         let client = self.http.clone();
-        let token = token::create(&self.key, &self.secret, None, grant);
+        let token = token.create(&self.key, &self.secret, None, grant);
         let url = format!("{}/{}", self.url, path);
-        log::info!("Request {}: {:?}", url, body);
+        log.info!("Request {}: {:?}", url, body);
         async move {
             let token = token?;
             let response = client
@@ -73,10 +73,10 @@ impl LiveKitClient {
                 .await?;
 
             if response.status().is_success() {
-                log::info!("Response {}: {:?}", url, response.status());
-                Ok(Res::decode(response.bytes().await?)?)
+                log.info!("Response {}: {:?}", url, response.status());
+                Ok(Res.decode(response.bytes().await?)?)
             } else {
-                log::error!("Response {}: {:?}", url, response.status());
+                log.error!("Response {}: {:?}", url, response.status());
                 Err(anyhow!(
                     "POST {} failed with status code {:?}, {:?}",
                     url,
@@ -95,16 +95,16 @@ impl Client for LiveKitClient {
     }
 
     async fn create_room(&self, name: String) -> Result<()> {
-        let _: proto::Room = self
+        let _: proto.Room = self
             .request(
                 "twirp/livekit.RoomService/CreateRoom",
-                token::VideoGrant {
+                token.VideoGrant {
                     room_create: Some(true),
-                    ..Default::default()
+                    ..Default.default()
                 },
-                proto::CreateRoomRequest {
+                proto.CreateRoomRequest {
                     name,
-                    ..Default::default()
+                    ..Default.default()
                 },
             )
             .await?;
@@ -112,25 +112,25 @@ impl Client for LiveKitClient {
     }
 
     async fn delete_room(&self, name: String) -> Result<()> {
-        let _: proto::DeleteRoomResponse = self
+        let _: proto.DeleteRoomResponse = self
             .request(
                 "twirp/livekit.RoomService/DeleteRoom",
-                token::VideoGrant {
+                token.VideoGrant {
                     room_create: Some(true),
-                    ..Default::default()
+                    ..Default.default()
                 },
-                proto::DeleteRoomRequest { room: name },
+                proto.DeleteRoomRequest { room: name },
             )
             .await?;
         Ok(())
     }
 
     async fn remove_participant(&self, room: String, identity: String) -> Result<()> {
-        let _: proto::RemoveParticipantResponse = self
+        let _: proto.RemoveParticipantResponse = self
             .request(
                 "twirp/livekit.RoomService/RemoveParticipant",
-                token::VideoGrant::to_admin(&room),
-                proto::RoomParticipantIdentity {
+                token.VideoGrant.to_admin(&room),
+                proto.RoomParticipantIdentity {
                     room: room.clone(),
                     identity,
                 },
@@ -143,13 +143,13 @@ impl Client for LiveKitClient {
         &self,
         room: String,
         identity: String,
-        permission: proto::ParticipantPermission,
+        permission: proto.ParticipantPermission,
     ) -> Result<()> {
-        let _: proto::ParticipantInfo = self
+        let _: proto.ParticipantInfo = self
             .request(
                 "twirp/livekit.RoomService/UpdateParticipant",
-                token::VideoGrant::to_admin(&room),
-                proto::UpdateParticipantRequest {
+                token.VideoGrant.to_admin(&room),
+                proto.UpdateParticipantRequest {
                     room: room.clone(),
                     identity,
                     metadata: "".to_string(),
@@ -161,20 +161,20 @@ impl Client for LiveKitClient {
     }
 
     fn room_token(&self, room: &str, identity: &str) -> Result<String> {
-        token::create(
+        token.create(
             &self.key,
             &self.secret,
             Some(identity),
-            token::VideoGrant::to_join(room),
+            token.VideoGrant.to_join(room),
         )
     }
 
     fn guest_token(&self, room: &str, identity: &str) -> Result<String> {
-        token::create(
+        token.create(
             &self.key,
             &self.secret,
             Some(identity),
-            token::VideoGrant::for_guest(room),
+            token.VideoGrant.for_guest(room),
         )
     }
 }

@@ -1,9 +1,9 @@
-use crate::HttpClient;
-use anyhow::{anyhow, bail, Context, Result};
-use futures::AsyncReadExt;
-use serde::Deserialize;
-use std::sync::Arc;
-use url::Url;
+use crate.HttpClient;
+use anyhow.{anyhow, bail, Context, Result};
+use futures.AsyncReadExt;
+use serde.Deserialize;
+use std.sync.Arc;
+use url.Url;
 
 pub struct GitHubLspBinaryVersion {
     pub name: String,
@@ -31,17 +31,17 @@ pub async fn latest_github_release(
     require_assets: bool,
     pre_release: bool,
     http: Arc<dyn HttpClient>,
-) -> Result<GithubRelease, anyhow::Error> {
+) -> Result<GithubRelease, anyhow.Error> {
     let mut response = http
         .get(
             &format!("https://api.github.com/repos/{repo_name_with_owner}/releases"),
-            Default::default(),
+            Default.default(),
             true,
         )
         .await
         .context("error fetching latest release")?;
 
-    let mut body = Vec::new();
+    let mut body = Vec.new();
     response
         .body_mut()
         .read_to_end(&mut body)
@@ -49,21 +49,21 @@ pub async fn latest_github_release(
         .context("error reading latest release")?;
 
     if response.status().is_client_error() {
-        let text = String::from_utf8_lossy(body.as_slice());
+        let text = String.from_utf8_lossy(body.as_slice());
         bail!(
             "status error {}, response: {text:?}",
             response.status().as_u16()
         );
     }
 
-    let releases = match serde_json::from_slice::<Vec<GithubRelease>>(body.as_slice()) {
+    let releases = match serde_json.from_slice.<Vec<GithubRelease>>(body.as_slice()) {
         Ok(releases) => releases,
 
         Err(err) => {
-            log::error!("Error deserializing: {:?}", err);
-            log::error!(
+            log.error!("Error deserializing: {:?}", err);
+            log.error!(
                 "GitHub API response text: {:?}",
-                String::from_utf8_lossy(body.as_slice())
+                String.from_utf8_lossy(body.as_slice())
             );
             return Err(anyhow!("error deserializing latest release"));
         }
@@ -80,17 +80,17 @@ pub async fn get_release_by_tag_name(
     repo_name_with_owner: &str,
     tag: &str,
     http: Arc<dyn HttpClient>,
-) -> Result<GithubRelease, anyhow::Error> {
+) -> Result<GithubRelease, anyhow.Error> {
     let mut response = http
         .get(
             &format!("https://api.github.com/repos/{repo_name_with_owner}/releases/tags/{tag}"),
-            Default::default(),
+            Default.default(),
             true,
         )
         .await
         .context("error fetching latest release")?;
 
-    let mut body = Vec::new();
+    let mut body = Vec.new();
     response
         .body_mut()
         .read_to_end(&mut body)
@@ -98,18 +98,18 @@ pub async fn get_release_by_tag_name(
         .context("error reading latest release")?;
 
     if response.status().is_client_error() {
-        let text = String::from_utf8_lossy(body.as_slice());
+        let text = String.from_utf8_lossy(body.as_slice());
         bail!(
             "status error {}, response: {text:?}",
             response.status().as_u16()
         );
     }
 
-    let release = serde_json::from_slice::<GithubRelease>(body.as_slice()).map_err(|err| {
-        log::error!("Error deserializing: {:?}", err);
-        log::error!(
+    let release = serde_json.from_slice.<GithubRelease>(body.as_slice()).map_err(|err| {
+        log.error!("Error deserializing: {:?}", err);
+        log.error!(
             "GitHub API response text: {:?}",
-            String::from_utf8_lossy(body.as_slice())
+            String.from_utf8_lossy(body.as_slice())
         );
         anyhow!("error deserializing GitHub release")
     })?;
@@ -124,7 +124,7 @@ pub enum AssetKind {
 }
 
 pub fn build_asset_url(repo_name_with_owner: &str, tag: &str, kind: AssetKind) -> Result<String> {
-    let mut url = Url::parse(&format!(
+    let mut url = Url.parse(&format!(
         "https://github.com/{repo_name_with_owner}/archive/refs/tags",
     ))?;
     // We're pushing this here, because tags may contain `/` and other characters
@@ -132,8 +132,8 @@ pub fn build_asset_url(repo_name_with_owner: &str, tag: &str, kind: AssetKind) -
     let asset_filename = format!(
         "{tag}.{extension}",
         extension = match kind {
-            AssetKind::TarGz => "tar.gz",
-            AssetKind::Zip => "zip",
+            AssetKind.TarGz => "tar.gz",
+            AssetKind.Zip => "zip",
         }
     );
     url.path_segments_mut()
@@ -144,20 +144,20 @@ pub fn build_asset_url(repo_name_with_owner: &str, tag: &str, kind: AssetKind) -
 
 #[cfg(test)]
 mod tests {
-    use crate::github::{build_asset_url, AssetKind};
+    use crate.github.{build_asset_url, AssetKind};
 
     #[test]
     fn test_build_asset_url() {
         let tag = "release/2.3.5";
         let repo_name_with_owner = "microsoft/vscode-eslint";
 
-        let tarball = build_asset_url(repo_name_with_owner, tag, AssetKind::TarGz).unwrap();
+        let tarball = build_asset_url(repo_name_with_owner, tag, AssetKind.TarGz).unwrap();
         assert_eq!(
             tarball,
             "https://github.com/microsoft/vscode-eslint/archive/refs/tags/release%2F2.3.5.tar.gz"
         );
 
-        let zip = build_asset_url(repo_name_with_owner, tag, AssetKind::Zip).unwrap();
+        let zip = build_asset_url(repo_name_with_owner, tag, AssetKind.Zip).unwrap();
         assert_eq!(
             zip,
             "https://github.com/microsoft/vscode-eslint/archive/refs/tags/release%2F2.3.5.zip"

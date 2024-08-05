@@ -1,18 +1,18 @@
-use anyhow::{anyhow, Result};
-use async_trait::async_trait;
-use futures::StreamExt;
-use language::{LanguageServerName, LspAdapter, LspAdapterDelegate};
-use lsp::LanguageServerBinary;
-use node_runtime::NodeRuntime;
-use serde_json::json;
-use smol::fs;
-use std::{
-    any::Any,
-    ffi::OsString,
-    path::{Path, PathBuf},
-    sync::Arc,
+use anyhow.{anyhow, Result};
+use async_trait.async_trait;
+use futures.StreamExt;
+use language.{LanguageServerName, LspAdapter, LspAdapterDelegate};
+use lsp.LanguageServerBinary;
+use node_runtime.NodeRuntime;
+use serde_json.json;
+use smol.fs;
+use std.{
+    any.Any,
+    ffi.OsString,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
-use util::{maybe, ResultExt};
+use util.{maybe, ResultExt};
 
 const SERVER_PATH: &str =
     "node_modules/vscode-langservers-extracted/bin/vscode-css-language-server";
@@ -41,7 +41,7 @@ impl LspAdapter for CssLspAdapter {
         &self,
         _: &dyn LspAdapterDelegate,
     ) -> Result<Box<dyn 'static + Any + Send>> {
-        Ok(Box::new(
+        Ok(Box.new(
             self.node
                 .npm_package_latest_version("vscode-langservers-extracted")
                 .await?,
@@ -54,7 +54,7 @@ impl LspAdapter for CssLspAdapter {
         container_dir: PathBuf,
         _: &dyn LspAdapterDelegate,
     ) -> Result<LanguageServerBinary> {
-        let latest_version = latest_version.downcast::<String>().unwrap();
+        let latest_version = latest_version.downcast.<String>().unwrap();
         let server_path = container_dir.join(SERVER_PATH);
         let package_name = "vscode-langservers-extracted";
 
@@ -94,7 +94,7 @@ impl LspAdapter for CssLspAdapter {
     async fn initialization_options(
         self: Arc<Self>,
         _: &Arc<dyn LspAdapterDelegate>,
-    ) -> Result<Option<serde_json::Value>> {
+    ) -> Result<Option<serde_json.Value>> {
         Ok(Some(json!({
             "provideFormatter": true
         })))
@@ -107,7 +107,7 @@ async fn get_cached_server_binary(
 ) -> Option<LanguageServerBinary> {
     maybe!(async {
         let mut last_version_dir = None;
-        let mut entries = fs::read_dir(&container_dir).await?;
+        let mut entries = fs.read_dir(&container_dir).await?;
         while let Some(entry) = entries.next().await {
             let entry = entry?;
             if entry.file_type().await?.is_dir() {
@@ -135,12 +135,12 @@ async fn get_cached_server_binary(
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Context, TestAppContext};
-    use unindent::Unindent;
+    use gpui.{Context, TestAppContext};
+    use unindent.Unindent;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_outline(cx: &mut TestAppContext) {
-        let language = crate::language("css", tree_sitter_css::language());
+        let language = crate.language("css", tree_sitter_css.language());
 
         let text = r#"
             /* Import statement */
@@ -168,14 +168,14 @@ mod tests {
         .unindent();
 
         let buffer =
-            cx.new_model(|cx| language::Buffer::local(text, cx).with_language(language, cx));
+            cx.new_model(|cx| language.Buffer.local(text, cx).with_language(language, cx));
         let outline = buffer.update(cx, |buffer, _| buffer.snapshot().outline(None).unwrap());
         assert_eq!(
             outline
                 .items
                 .iter()
                 .map(|item| (item.text.as_str(), item.depth))
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             &[
                 ("@import './fonts.css'", 0),
                 (".test-class, div", 0),

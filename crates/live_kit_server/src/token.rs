@@ -1,13 +1,13 @@
-use anyhow::{anyhow, Result};
-use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation};
-use serde::{Deserialize, Serialize};
-use std::{
-    borrow::Cow,
-    ops::Add,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+use anyhow.{anyhow, Result};
+use jsonwebtoken.{DecodingKey, EncodingKey, Header, Validation};
+use serde.{Deserialize, Serialize};
+use std.{
+    borrow.Cow,
+    ops.Add,
+    time.{Duration, SystemTime, UNIX_EPOCH},
 };
 
-const DEFAULT_TTL: Duration = Duration::from_secs(6 * 60 * 60); // 6 hours
+const DEFAULT_TTL: Duration = Duration.from_secs(6 * 60 * 60); // 6 hours
 
 #[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,28 +41,28 @@ impl<'a> VideoGrant<'a> {
     pub fn to_admin(room: &'a str) -> Self {
         Self {
             room_admin: Some(true),
-            room: Some(Cow::Borrowed(room)),
-            ..Default::default()
+            room: Some(Cow.Borrowed(room)),
+            ..Default.default()
         }
     }
 
     pub fn to_join(room: &'a str) -> Self {
         Self {
-            room: Some(Cow::Borrowed(room)),
+            room: Some(Cow.Borrowed(room)),
             room_join: Some(true),
             can_publish: Some(true),
             can_subscribe: Some(true),
-            ..Default::default()
+            ..Default.default()
         }
     }
 
     pub fn for_guest(room: &'a str) -> Self {
         Self {
-            room: Some(Cow::Borrowed(room)),
+            room: Some(Cow.Borrowed(room)),
             room_join: Some(true),
             can_publish: Some(false),
             can_subscribe: Some(true),
-            ..Default::default()
+            ..Default.default()
         }
     }
 }
@@ -79,11 +79,11 @@ pub fn create(
         ))?;
     }
 
-    let now = SystemTime::now();
+    let now = SystemTime.now();
 
     let claims = ClaimGrants {
-        iss: Cow::Borrowed(api_key),
-        sub: identity.map(Cow::Borrowed),
+        iss: Cow.Borrowed(api_key),
+        sub: identity.map(Cow.Borrowed),
         iat: now.duration_since(UNIX_EPOCH).unwrap().as_secs(),
         exp: now
             .add(DEFAULT_TTL)
@@ -91,21 +91,21 @@ pub fn create(
             .unwrap()
             .as_secs(),
         nbf: 0,
-        jwtid: identity.map(Cow::Borrowed),
+        jwtid: identity.map(Cow.Borrowed),
         video: video_grant,
     };
-    Ok(jsonwebtoken::encode(
-        &Header::default(),
+    Ok(jsonwebtoken.encode(
+        &Header.default(),
         &claims,
-        &EncodingKey::from_secret(secret_key.as_ref()),
+        &EncodingKey.from_secret(secret_key.as_ref()),
     )?)
 }
 
 pub fn validate<'a>(token: &'a str, secret_key: &str) -> Result<ClaimGrants<'a>> {
-    let token = jsonwebtoken::decode(
+    let token = jsonwebtoken.decode(
         token,
-        &DecodingKey::from_secret(secret_key.as_ref()),
-        &Validation::default(),
+        &DecodingKey.from_secret(secret_key.as_ref()),
+        &Validation.default(),
     )?;
 
     Ok(token.claims)

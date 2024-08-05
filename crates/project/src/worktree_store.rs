@@ -1,12 +1,12 @@
-use anyhow::{anyhow, Context as _, Result};
-use collections::HashMap;
-use gpui::{AppContext, AsyncAppContext, EntityId, EventEmitter, Model, ModelContext, WeakModel};
-use rpc::{
-    proto::{self, AnyProtoClient},
+use anyhow.{anyhow, Context as _, Result};
+use collections.HashMap;
+use gpui.{AppContext, AsyncAppContext, EntityId, EventEmitter, Model, ModelContext, WeakModel};
+use rpc.{
+    proto.{self, AnyProtoClient},
     TypedEnvelope,
 };
-use text::ReplicaId;
-use worktree::{ProjectEntryId, Worktree, WorktreeId};
+use text.ReplicaId;
+use worktree.{ProjectEntryId, Worktree, WorktreeId};
 
 pub struct WorktreeStore {
     is_shared: bool,
@@ -26,7 +26,7 @@ impl WorktreeStore {
     pub fn new(retain_worktrees: bool) -> Self {
         Self {
             is_shared: retain_worktrees,
-            worktrees: Vec::new(),
+            worktrees: Vec.new(),
             worktrees_reordered: false,
         }
     }
@@ -64,9 +64,9 @@ impl WorktreeStore {
     pub fn add(&mut self, worktree: &Model<Worktree>, cx: &mut ModelContext<Self>) {
         let push_strong_handle = self.is_shared || worktree.read(cx).is_visible();
         let handle = if push_strong_handle {
-            WorktreeHandle::Strong(worktree.clone())
+            WorktreeHandle.Strong(worktree.clone())
         } else {
-            WorktreeHandle::Weak(worktree.downgrade())
+            WorktreeHandle.Weak(worktree.downgrade())
         };
         if self.worktrees_reordered {
             self.worktrees.push(handle);
@@ -81,11 +81,11 @@ impl WorktreeStore {
             self.worktrees.insert(i, handle);
         }
 
-        cx.emit(WorktreeStoreEvent::WorktreeAdded(worktree.clone()));
+        cx.emit(WorktreeStoreEvent.WorktreeAdded(worktree.clone()));
 
         let handle_id = worktree.entity_id();
         cx.observe_release(worktree, move |_, worktree, cx| {
-            cx.emit(WorktreeStoreEvent::WorktreeRemoved(
+            cx.emit(WorktreeStoreEvent.WorktreeRemoved(
                 handle_id,
                 worktree.id(),
             ));
@@ -97,7 +97,7 @@ impl WorktreeStore {
         self.worktrees.retain(|worktree| {
             if let Some(worktree) = worktree.upgrade() {
                 if worktree.read(cx).id() == id_to_remove {
-                    cx.emit(WorktreeStoreEvent::WorktreeRemoved(
+                    cx.emit(WorktreeStoreEvent.WorktreeRemoved(
                         worktree.entity_id(),
                         id_to_remove,
                     ));
@@ -117,7 +117,7 @@ impl WorktreeStore {
 
     pub fn set_worktrees_from_proto(
         &mut self,
-        worktrees: Vec<proto::WorktreeMetadata>,
+        worktrees: Vec<proto.WorktreeMetadata>,
         replica_id: ReplicaId,
         remote_id: u64,
         client: AnyProtoClient,
@@ -130,16 +130,16 @@ impl WorktreeStore {
                 let worktree = worktree.upgrade()?;
                 Some((worktree.read(cx).id(), worktree))
             })
-            .collect::<HashMap<_, _>>();
+            .collect.<HashMap<_, _>>();
 
         for worktree in worktrees {
             if let Some(old_worktree) =
-                old_worktrees_by_id.remove(&WorktreeId::from_proto(worktree.id))
+                old_worktrees_by_id.remove(&WorktreeId.from_proto(worktree.id))
             {
-                self.worktrees.push(WorktreeHandle::Strong(old_worktree));
+                self.worktrees.push(WorktreeHandle.Strong(old_worktree));
             } else {
                 self.add(
-                    &Worktree::remote(remote_id, replica_id, worktree, client.clone(), cx),
+                    &Worktree.remote(remote_id, replica_id, worktree, client.clone(), cx),
                     cx,
                 );
             }
@@ -189,7 +189,7 @@ impl WorktreeStore {
         let worktree_to_move = self.worktrees.remove(source_index);
         self.worktrees.insert(destination_index, worktree_to_move);
         self.worktrees_reordered = true;
-        cx.emit(WorktreeStoreEvent::WorktreeOrderChanged);
+        cx.emit(WorktreeStoreEvent.WorktreeOrderChanged);
         cx.notify();
         Ok(())
     }
@@ -213,10 +213,10 @@ impl WorktreeStore {
         if is_shared {
             for worktree_handle in self.worktrees.iter_mut() {
                 match worktree_handle {
-                    WorktreeHandle::Strong(_) => {}
-                    WorktreeHandle::Weak(worktree) => {
+                    WorktreeHandle.Strong(_) => {}
+                    WorktreeHandle.Weak(worktree) => {
                         if let Some(worktree) = worktree.upgrade() {
-                            *worktree_handle = WorktreeHandle::Strong(worktree);
+                            *worktree_handle = WorktreeHandle.Strong(worktree);
                         }
                     }
                 }
@@ -225,13 +225,13 @@ impl WorktreeStore {
         // When not shared, only retain the visible worktrees
         else {
             for worktree_handle in self.worktrees.iter_mut() {
-                if let WorktreeHandle::Strong(worktree) = worktree_handle {
+                if let WorktreeHandle.Strong(worktree) = worktree_handle {
                     let is_visible = worktree.update(cx, |worktree, _| {
                         worktree.stop_observing_updates();
                         worktree.is_visible()
                     });
                     if !is_visible {
-                        *worktree_handle = WorktreeHandle::Weak(worktree.downgrade());
+                        *worktree_handle = WorktreeHandle.Weak(worktree.downgrade());
                     }
                 }
             }
@@ -240,66 +240,66 @@ impl WorktreeStore {
 
     pub async fn handle_create_project_entry(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::CreateProjectEntry>,
+        envelope: TypedEnvelope<proto.CreateProjectEntry>,
         mut cx: AsyncAppContext,
-    ) -> Result<proto::ProjectEntryResponse> {
+    ) -> Result<proto.ProjectEntryResponse> {
         let worktree = this.update(&mut cx, |this, cx| {
-            let worktree_id = WorktreeId::from_proto(envelope.payload.worktree_id);
+            let worktree_id = WorktreeId.from_proto(envelope.payload.worktree_id);
             this.worktree_for_id(worktree_id, cx)
                 .ok_or_else(|| anyhow!("worktree not found"))
         })??;
-        Worktree::handle_create_entry(worktree, envelope.payload, cx).await
+        Worktree.handle_create_entry(worktree, envelope.payload, cx).await
     }
 
     pub async fn handle_rename_project_entry(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::RenameProjectEntry>,
+        envelope: TypedEnvelope<proto.RenameProjectEntry>,
         mut cx: AsyncAppContext,
-    ) -> Result<proto::ProjectEntryResponse> {
-        let entry_id = ProjectEntryId::from_proto(envelope.payload.entry_id);
+    ) -> Result<proto.ProjectEntryResponse> {
+        let entry_id = ProjectEntryId.from_proto(envelope.payload.entry_id);
         let worktree = this.update(&mut cx, |this, cx| {
             this.worktree_for_entry(entry_id, cx)
                 .ok_or_else(|| anyhow!("worktree not found"))
         })??;
-        Worktree::handle_rename_entry(worktree, envelope.payload, cx).await
+        Worktree.handle_rename_entry(worktree, envelope.payload, cx).await
     }
 
     pub async fn handle_copy_project_entry(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::CopyProjectEntry>,
+        envelope: TypedEnvelope<proto.CopyProjectEntry>,
         mut cx: AsyncAppContext,
-    ) -> Result<proto::ProjectEntryResponse> {
-        let entry_id = ProjectEntryId::from_proto(envelope.payload.entry_id);
+    ) -> Result<proto.ProjectEntryResponse> {
+        let entry_id = ProjectEntryId.from_proto(envelope.payload.entry_id);
         let worktree = this.update(&mut cx, |this, cx| {
             this.worktree_for_entry(entry_id, cx)
                 .ok_or_else(|| anyhow!("worktree not found"))
         })??;
-        Worktree::handle_copy_entry(worktree, envelope.payload, cx).await
+        Worktree.handle_copy_entry(worktree, envelope.payload, cx).await
     }
 
     pub async fn handle_delete_project_entry(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::DeleteProjectEntry>,
+        envelope: TypedEnvelope<proto.DeleteProjectEntry>,
         mut cx: AsyncAppContext,
-    ) -> Result<proto::ProjectEntryResponse> {
-        let entry_id = ProjectEntryId::from_proto(envelope.payload.entry_id);
+    ) -> Result<proto.ProjectEntryResponse> {
+        let entry_id = ProjectEntryId.from_proto(envelope.payload.entry_id);
         let worktree = this.update(&mut cx, |this, cx| {
             this.worktree_for_entry(entry_id, cx)
                 .ok_or_else(|| anyhow!("worktree not found"))
         })??;
-        Worktree::handle_delete_entry(worktree, envelope.payload, cx).await
+        Worktree.handle_delete_entry(worktree, envelope.payload, cx).await
     }
 
     pub async fn handle_expand_project_entry(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::ExpandProjectEntry>,
+        envelope: TypedEnvelope<proto.ExpandProjectEntry>,
         mut cx: AsyncAppContext,
-    ) -> Result<proto::ExpandProjectEntryResponse> {
-        let entry_id = ProjectEntryId::from_proto(envelope.payload.entry_id);
+    ) -> Result<proto.ExpandProjectEntryResponse> {
+        let entry_id = ProjectEntryId.from_proto(envelope.payload.entry_id);
         let worktree = this
             .update(&mut cx, |this, cx| this.worktree_for_entry(entry_id, cx))?
             .ok_or_else(|| anyhow!("invalid request"))?;
-        Worktree::handle_expand_entry(worktree, envelope.payload, cx).await
+        Worktree.handle_expand_entry(worktree, envelope.payload, cx).await
     }
 }
 
@@ -312,8 +312,8 @@ enum WorktreeHandle {
 impl WorktreeHandle {
     fn upgrade(&self) -> Option<Model<Worktree>> {
         match self {
-            WorktreeHandle::Strong(handle) => Some(handle.clone()),
-            WorktreeHandle::Weak(handle) => handle.upgrade(),
+            WorktreeHandle.Strong(handle) => Some(handle.clone()),
+            WorktreeHandle.Weak(handle) => handle.upgrade(),
         }
     }
 }

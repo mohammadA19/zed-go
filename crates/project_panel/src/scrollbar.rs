@@ -1,10 +1,10 @@
-use std::{cell::Cell, ops::Range, rc::Rc};
+use std.{cell.Cell, ops.Range, rc.Rc};
 
-use gpui::{
+use gpui.{
     point, AnyView, Bounds, ContentMask, Hitbox, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     ScrollWheelEvent, Style, UniformListScrollHandle,
 };
-use ui::{prelude::*, px, relative, IntoElement};
+use ui.{prelude.*, px, relative, IntoElement};
 
 pub(crate) struct ProjectPanelScrollbar {
     thumb: Range<f32>,
@@ -33,21 +33,21 @@ impl ProjectPanelScrollbar {
     }
 }
 
-impl gpui::Element for ProjectPanelScrollbar {
+impl gpui.Element for ProjectPanelScrollbar {
     type RequestLayoutState = ();
 
     type PrepaintState = Hitbox;
 
-    fn id(&self) -> Option<ui::ElementId> {
+    fn id(&self) -> Option<ui.ElementId> {
         None
     }
 
     fn request_layout(
         &mut self,
-        _id: Option<&gpui::GlobalElementId>,
-        cx: &mut ui::WindowContext,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
-        let mut style = Style::default();
+        _id: Option<&gpui.GlobalElementId>,
+        cx: &mut ui.WindowContext,
+    ) -> (gpui.LayoutId, Self.RequestLayoutState) {
+        let mut style = Style.default();
         style.flex_grow = 1.;
         style.flex_shrink = 1.;
         style.size.width = px(12.).into();
@@ -57,11 +57,11 @@ impl gpui::Element for ProjectPanelScrollbar {
 
     fn prepaint(
         &mut self,
-        _id: Option<&gpui::GlobalElementId>,
-        bounds: Bounds<ui::Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
-        cx: &mut ui::WindowContext,
-    ) -> Self::PrepaintState {
+        _id: Option<&gpui.GlobalElementId>,
+        bounds: Bounds<ui.Pixels>,
+        _request_layout: &mut Self.RequestLayoutState,
+        cx: &mut ui.WindowContext,
+    ) -> Self.PrepaintState {
         cx.with_content_mask(Some(ContentMask { bounds }), |cx| {
             cx.insert_hitbox(bounds, false)
         })
@@ -69,17 +69,17 @@ impl gpui::Element for ProjectPanelScrollbar {
 
     fn paint(
         &mut self,
-        _id: Option<&gpui::GlobalElementId>,
-        bounds: Bounds<ui::Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
-        _prepaint: &mut Self::PrepaintState,
-        cx: &mut ui::WindowContext,
+        _id: Option<&gpui.GlobalElementId>,
+        bounds: Bounds<ui.Pixels>,
+        _request_layout: &mut Self.RequestLayoutState,
+        _prepaint: &mut Self.PrepaintState,
+        cx: &mut ui.WindowContext,
     ) {
         cx.with_content_mask(Some(ContentMask { bounds }), |cx| {
             let colors = cx.theme().colors();
             let scrollbar_background = colors.scrollbar_track_border;
             let thumb_background = colors.scrollbar_thumb_background;
-            cx.paint_quad(gpui::fill(bounds, scrollbar_background));
+            cx.paint_quad(gpui.fill(bounds, scrollbar_background));
 
             let thumb_offset = self.thumb.start * bounds.size.height;
             let thumb_end = self.thumb.end * bounds.size.height;
@@ -91,9 +91,9 @@ impl gpui::Element for ProjectPanelScrollbar {
                     bounds.origin.x + bounds.size.width,
                     bounds.origin.y + thumb_end,
                 );
-                Bounds::from_corners(thumb_upper_left, thumb_lower_right)
+                Bounds.from_corners(thumb_upper_left, thumb_lower_right)
             };
-            cx.paint_quad(gpui::fill(thumb_bounds, thumb_background));
+            cx.paint_quad(gpui.fill(thumb_bounds, thumb_background));
             let scroll = self.scroll.clone();
             let item_count = self.item_count;
             cx.on_mouse_event({

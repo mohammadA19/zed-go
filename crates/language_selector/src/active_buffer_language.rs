@@ -1,10 +1,10 @@
-use editor::Editor;
-use gpui::{div, IntoElement, ParentElement, Render, Subscription, View, ViewContext, WeakView};
-use std::sync::Arc;
-use ui::{Button, ButtonCommon, Clickable, FluentBuilder, LabelSize, Tooltip};
-use workspace::{item::ItemHandle, StatusItemView, Workspace};
+use editor.Editor;
+use gpui.{div, IntoElement, ParentElement, Render, Subscription, View, ViewContext, WeakView};
+use std.sync.Arc;
+use ui.{Button, ButtonCommon, Clickable, FluentBuilder, LabelSize, Tooltip};
+use workspace.{item.ItemHandle, StatusItemView, Workspace};
 
-use crate::LanguageSelector;
+use crate.LanguageSelector;
 
 pub struct ActiveBufferLanguage {
     active_language: Option<Option<Arc<str>>>,
@@ -45,16 +45,16 @@ impl Render for ActiveBufferLanguage {
             };
 
             el.child(
-                Button::new("change-language", active_language_text)
-                    .label_size(LabelSize::Small)
+                Button.new("change-language", active_language_text)
+                    .label_size(LabelSize.Small)
                     .on_click(cx.listener(|this, _, cx| {
                         if let Some(workspace) = this.workspace.upgrade() {
                             workspace.update(cx, |workspace, cx| {
-                                LanguageSelector::toggle(workspace, cx)
+                                LanguageSelector.toggle(workspace, cx)
                             });
                         }
                     }))
-                    .tooltip(|cx| Tooltip::text("Select Language", cx)),
+                    .tooltip(|cx| Tooltip.text("Select Language", cx)),
             )
         })
     }
@@ -66,8 +66,8 @@ impl StatusItemView for ActiveBufferLanguage {
         active_pane_item: Option<&dyn ItemHandle>,
         cx: &mut ViewContext<Self>,
     ) {
-        if let Some(editor) = active_pane_item.and_then(|item| item.act_as::<Editor>(cx)) {
-            self._observe_active_editor = Some(cx.observe(&editor, Self::update_language));
+        if let Some(editor) = active_pane_item.and_then(|item| item.act_as.<Editor>(cx)) {
+            self._observe_active_editor = Some(cx.observe(&editor, Self.update_language));
             self.update_language(editor, cx);
         } else {
             self.active_language = None;

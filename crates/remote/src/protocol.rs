@@ -1,17 +1,17 @@
-use anyhow::Result;
-use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use prost::Message as _;
-use rpc::proto::Envelope;
-use std::mem::size_of;
+use anyhow.Result;
+use futures.{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use prost.Message as _;
+use rpc.proto.Envelope;
+use std.mem.size_of;
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct MessageId(pub u32);
 
 pub type MessageLen = u32;
-pub const MESSAGE_LEN_SIZE: usize = size_of::<MessageLen>();
+pub const MESSAGE_LEN_SIZE: usize = size_of.<MessageLen>();
 
 pub fn message_len_from_buffer(buffer: &[u8]) -> MessageLen {
-    MessageLen::from_le_bytes(buffer.try_into().unwrap())
+    MessageLen.from_le_bytes(buffer.try_into().unwrap())
 }
 
 pub async fn read_message_with_len<S: AsyncRead + Unpin>(
@@ -21,7 +21,7 @@ pub async fn read_message_with_len<S: AsyncRead + Unpin>(
 ) -> Result<Envelope> {
     buffer.resize(message_len as usize, 0);
     stream.read_exact(buffer).await?;
-    Ok(Envelope::decode(buffer.as_slice())?)
+    Ok(Envelope.decode(buffer.as_slice())?)
 }
 
 pub async fn read_message<S: AsyncRead + Unpin>(

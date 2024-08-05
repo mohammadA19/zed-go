@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use collections::HashMap;
-use gpui::{AppContext, BackgroundExecutor, Global, ReadGlobal, UpdateGlobal};
-use parking_lot::RwLock;
+use collections.HashMap;
+use gpui.{AppContext, BackgroundExecutor, Global, ReadGlobal, UpdateGlobal};
+use parking_lot.RwLock;
 
-use crate::{IndexedDocsProvider, IndexedDocsStore, ProviderId};
+use crate.{IndexedDocsProvider, IndexedDocsStore, ProviderId};
 
 struct GlobalIndexedDocsRegistry(Arc<IndexedDocsRegistry>);
 
@@ -17,20 +17,20 @@ pub struct IndexedDocsRegistry {
 
 impl IndexedDocsRegistry {
     pub fn global(cx: &AppContext) -> Arc<Self> {
-        GlobalIndexedDocsRegistry::global(cx).0.clone()
+        GlobalIndexedDocsRegistry.global(cx).0.clone()
     }
 
     pub fn init_global(cx: &mut AppContext) {
-        GlobalIndexedDocsRegistry::set_global(
+        GlobalIndexedDocsRegistry.set_global(
             cx,
-            GlobalIndexedDocsRegistry(Arc::new(Self::new(cx.background_executor().clone()))),
+            GlobalIndexedDocsRegistry(Arc.new(Self.new(cx.background_executor().clone()))),
         );
     }
 
     pub fn new(executor: BackgroundExecutor) -> Self {
         Self {
             executor,
-            stores_by_provider: RwLock::new(HashMap::default()),
+            stores_by_provider: RwLock.new(HashMap.default()),
         }
     }
 
@@ -39,7 +39,7 @@ impl IndexedDocsRegistry {
             .read()
             .keys()
             .cloned()
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
     }
 
     pub fn register_provider(
@@ -48,7 +48,7 @@ impl IndexedDocsRegistry {
     ) {
         self.stores_by_provider.write().insert(
             provider.id(),
-            Arc::new(IndexedDocsStore::new(provider, self.executor.clone())),
+            Arc.new(IndexedDocsStore.new(provider, self.executor.clone())),
         );
     }
 

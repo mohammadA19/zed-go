@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub};
+use std.ops.{Add, AddAssign, Sub};
 
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 pub struct OffsetUtf16(pub usize);
@@ -6,7 +6,7 @@ pub struct OffsetUtf16(pub usize);
 impl<'a> Add<&'a Self> for OffsetUtf16 {
     type Output = Self;
 
-    fn add(self, other: &'a Self) -> Self::Output {
+    fn add(self, other: &'a Self) -> Self.Output {
         Self(self.0 + other.0)
     }
 }
@@ -14,7 +14,7 @@ impl<'a> Add<&'a Self> for OffsetUtf16 {
 impl Add for OffsetUtf16 {
     type Output = Self;
 
-    fn add(self, other: Self) -> Self::Output {
+    fn add(self, other: Self) -> Self.Output {
         Self(self.0 + other.0)
     }
 }
@@ -22,7 +22,7 @@ impl Add for OffsetUtf16 {
 impl<'a> Sub<&'a Self> for OffsetUtf16 {
     type Output = Self;
 
-    fn sub(self, other: &'a Self) -> Self::Output {
+    fn sub(self, other: &'a Self) -> Self.Output {
         debug_assert!(*other <= self);
         Self(self.0 - other.0)
     }
@@ -31,7 +31,7 @@ impl<'a> Sub<&'a Self> for OffsetUtf16 {
 impl Sub for OffsetUtf16 {
     type Output = OffsetUtf16;
 
-    fn sub(self, other: Self) -> Self::Output {
+    fn sub(self, other: Self) -> Self.Output {
         debug_assert!(other <= self);
         Self(self.0 - other.0)
     }

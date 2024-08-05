@@ -1,16 +1,16 @@
-use anyhow::Result;
-use editor::{scroll::Autoscroll, Editor};
-use gpui::{
-    actions, div, impl_actions, list, prelude::*, uniform_list, AnyElement, AppContext, ClickEvent,
+use anyhow.Result;
+use editor.{scroll.Autoscroll, Editor};
+use gpui.{
+    actions, div, impl_actions, list, prelude.*, uniform_list, AnyElement, AppContext, ClickEvent,
     DismissEvent, EventEmitter, FocusHandle, FocusableView, Length, ListSizingBehavior, ListState,
     MouseButton, MouseUpEvent, Render, Task, UniformListScrollHandle, View, ViewContext,
     WindowContext,
 };
-use head::Head;
-use serde::Deserialize;
-use std::{sync::Arc, time::Duration};
-use ui::{prelude::*, v_flex, Color, Divider, Label, ListItem, ListItemSpacing};
-use workspace::ModalView;
+use head.Head;
+use serde.Deserialize;
+use std.{sync.Arc, time.Duration};
+use ui.{prelude.*, v_flex, Color, Divider, Label, ListItem, ListItemSpacing};
+use workspace.ModalView;
 
 mod head;
 pub mod highlighted_match_with_paths;
@@ -57,7 +57,7 @@ pub trait PickerDelegate: Sized + 'static {
     fn match_count(&self) -> usize;
     fn selected_index(&self) -> usize;
     fn separators_after_indices(&self) -> Vec<usize> {
-        Vec::new()
+        Vec.new()
     }
     fn set_selected_index(&mut self, ix: usize, cx: &mut ViewContext<Picker<Self>>);
     // Allows binding some optional effect to when the selection changes.
@@ -76,7 +76,7 @@ pub trait PickerDelegate: Sized + 'static {
 
     // Delegates that support this method (e.g. the CommandPalette) can chose to block on any background
     // work for up to `duration` to try and get a result synchronously.
-    // This avoids a flash of an empty command-palette on cmd-shift-p, and lets workspace::SendKeystrokes
+    // This avoids a flash of an empty command-palette on cmd-shift-p, and lets workspace.SendKeystrokes
     // mostly work when dismissing a palette.
     fn finalize_update_matches(
         &mut self,
@@ -113,7 +113,7 @@ pub trait PickerDelegate: Sized + 'static {
                     .px_3()
                     .child(editor.clone()),
             )
-            .child(Divider::horizontal())
+            .child(Divider.horizontal())
     }
 
     fn render_match(
@@ -121,7 +121,7 @@ pub trait PickerDelegate: Sized + 'static {
         ix: usize,
         selected: bool,
         cx: &mut ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem>;
+    ) -> Option<Self.ListItem>;
     fn render_header(&self, _: &mut ViewContext<Picker<Self>>) -> Option<AnyElement> {
         None
     }
@@ -133,8 +133,8 @@ pub trait PickerDelegate: Sized + 'static {
 impl<D: PickerDelegate> FocusableView for Picker<D> {
     fn focus_handle(&self, cx: &AppContext) -> FocusHandle {
         match &self.head {
-            Head::Editor(editor) => editor.focus_handle(cx),
-            Head::Empty(head) => head.focus_handle(cx),
+            Head.Editor(editor) => editor.focus_handle(cx),
+            Head.Empty(head) => head.focus_handle(cx),
         }
     }
 }
@@ -146,45 +146,45 @@ enum ContainerKind {
 }
 
 impl<D: PickerDelegate> Picker<D> {
-    /// A picker, which displays its matches using `gpui::uniform_list`, all matches should have the same height.
+    /// A picker, which displays its matches using `gpui.uniform_list`, all matches should have the same height.
     /// The picker allows the user to perform search items by text.
-    /// If `PickerDelegate::render_match` can return items with different heights, use `Picker::list`.
+    /// If `PickerDelegate.render_match` can return items with different heights, use `Picker.list`.
     pub fn uniform_list(delegate: D, cx: &mut ViewContext<Self>) -> Self {
-        let head = Head::editor(
+        let head = Head.editor(
             delegate.placeholder_text(cx),
-            Self::on_input_editor_event,
+            Self.on_input_editor_event,
             cx,
         );
 
-        Self::new(delegate, ContainerKind::UniformList, head, cx)
+        Self.new(delegate, ContainerKind.UniformList, head, cx)
     }
 
-    /// A picker, which displays its matches using `gpui::uniform_list`, all matches should have the same height.
-    /// If `PickerDelegate::render_match` can return items with different heights, use `Picker::list`.
+    /// A picker, which displays its matches using `gpui.uniform_list`, all matches should have the same height.
+    /// If `PickerDelegate.render_match` can return items with different heights, use `Picker.list`.
     pub fn nonsearchable_uniform_list(delegate: D, cx: &mut ViewContext<Self>) -> Self {
-        let head = Head::empty(Self::on_empty_head_blur, cx);
+        let head = Head.empty(Self.on_empty_head_blur, cx);
 
-        Self::new(delegate, ContainerKind::UniformList, head, cx)
+        Self.new(delegate, ContainerKind.UniformList, head, cx)
     }
 
-    /// A picker, which displays its matches using `gpui::list`, matches can have different heights.
+    /// A picker, which displays its matches using `gpui.list`, matches can have different heights.
     /// The picker allows the user to perform search items by text.
-    /// If `PickerDelegate::render_match` only returns items with the same height, use `Picker::uniform_list` as its implementation is optimized for that.
+    /// If `PickerDelegate.render_match` only returns items with the same height, use `Picker.uniform_list` as its implementation is optimized for that.
     pub fn list(delegate: D, cx: &mut ViewContext<Self>) -> Self {
-        let head = Head::editor(
+        let head = Head.editor(
             delegate.placeholder_text(cx),
-            Self::on_input_editor_event,
+            Self.on_input_editor_event,
             cx,
         );
 
-        Self::new(delegate, ContainerKind::List, head, cx)
+        Self.new(delegate, ContainerKind.List, head, cx)
     }
 
     fn new(delegate: D, container: ContainerKind, head: Head, cx: &mut ViewContext<Self>) -> Self {
         let mut this = Self {
             delegate,
             head,
-            element_container: Self::create_element_container(container, cx),
+            element_container: Self.create_element_container(container, cx),
             pending_update_matches: None,
             confirm_on_update: None,
             width: None,
@@ -194,7 +194,7 @@ impl<D: PickerDelegate> Picker<D> {
         this.update_matches("".to_string(), cx);
         // give the delegate 4ms to render the first set of suggestions.
         this.delegate
-            .finalize_update_matches("".to_string(), Duration::from_millis(4), cx);
+            .finalize_update_matches("".to_string(), Duration.from_millis(4), cx);
         this
     }
 
@@ -203,14 +203,14 @@ impl<D: PickerDelegate> Picker<D> {
         cx: &mut ViewContext<Self>,
     ) -> ElementContainer {
         match container {
-            ContainerKind::UniformList => {
-                ElementContainer::UniformList(UniformListScrollHandle::new())
+            ContainerKind.UniformList => {
+                ElementContainer.UniformList(UniformListScrollHandle.new())
             }
-            ContainerKind::List => {
+            ContainerKind.List => {
                 let view = cx.view().downgrade();
-                ElementContainer::List(ListState::new(
+                ElementContainer.List(ListState.new(
                     0,
-                    gpui::ListAlignment::Top,
+                    gpui.ListAlignment.Top,
                     px(1000.),
                     move |ix, cx| {
                         view.upgrade()
@@ -226,12 +226,12 @@ impl<D: PickerDelegate> Picker<D> {
         }
     }
 
-    pub fn width(mut self, width: impl Into<gpui::Length>) -> Self {
+    pub fn width(mut self, width: impl Into<gpui.Length>) -> Self {
         self.width = Some(width.into());
         self
     }
 
-    pub fn max_height(mut self, max_height: Option<gpui::Length>) -> Self {
+    pub fn max_height(mut self, max_height: Option<gpui.Length>) -> Self {
         self.max_height = max_height;
         self
     }
@@ -269,7 +269,7 @@ impl<D: PickerDelegate> Picker<D> {
         }
     }
 
-    pub fn select_next(&mut self, _: &menu::SelectNext, cx: &mut ViewContext<Self>) {
+    pub fn select_next(&mut self, _: &menu.SelectNext, cx: &mut ViewContext<Self>) {
         let count = self.delegate.match_count();
         if count > 0 {
             let index = self.delegate.selected_index();
@@ -279,7 +279,7 @@ impl<D: PickerDelegate> Picker<D> {
         }
     }
 
-    fn select_prev(&mut self, _: &menu::SelectPrev, cx: &mut ViewContext<Self>) {
+    fn select_prev(&mut self, _: &menu.SelectPrev, cx: &mut ViewContext<Self>) {
         let count = self.delegate.match_count();
         if count > 0 {
             let index = self.delegate.selected_index();
@@ -289,7 +289,7 @@ impl<D: PickerDelegate> Picker<D> {
         }
     }
 
-    fn select_first(&mut self, _: &menu::SelectFirst, cx: &mut ViewContext<Self>) {
+    fn select_first(&mut self, _: &menu.SelectFirst, cx: &mut ViewContext<Self>) {
         let count = self.delegate.match_count();
         if count > 0 {
             self.set_selected_index(0, true, cx);
@@ -297,7 +297,7 @@ impl<D: PickerDelegate> Picker<D> {
         }
     }
 
-    fn select_last(&mut self, _: &menu::SelectLast, cx: &mut ViewContext<Self>) {
+    fn select_last(&mut self, _: &menu.SelectLast, cx: &mut ViewContext<Self>) {
         let count = self.delegate.match_count();
         if count > 0 {
             self.set_selected_index(count - 1, true, cx);
@@ -313,18 +313,18 @@ impl<D: PickerDelegate> Picker<D> {
         cx.notify();
     }
 
-    pub fn cancel(&mut self, _: &menu::Cancel, cx: &mut ViewContext<Self>) {
+    pub fn cancel(&mut self, _: &menu.Cancel, cx: &mut ViewContext<Self>) {
         if self.delegate.should_dismiss() {
             self.delegate.dismissed(cx);
             cx.emit(DismissEvent);
         }
     }
 
-    fn confirm(&mut self, _: &menu::Confirm, cx: &mut ViewContext<Self>) {
+    fn confirm(&mut self, _: &menu.Confirm, cx: &mut ViewContext<Self>) {
         if self.pending_update_matches.is_some()
             && !self
                 .delegate
-                .finalize_update_matches(self.query(cx), Duration::from_millis(16), cx)
+                .finalize_update_matches(self.query(cx), Duration.from_millis(16), cx)
         {
             self.confirm_on_update = Some(false)
         } else {
@@ -333,11 +333,11 @@ impl<D: PickerDelegate> Picker<D> {
         }
     }
 
-    fn secondary_confirm(&mut self, _: &menu::SecondaryConfirm, cx: &mut ViewContext<Self>) {
+    fn secondary_confirm(&mut self, _: &menu.SecondaryConfirm, cx: &mut ViewContext<Self>) {
         if self.pending_update_matches.is_some()
             && !self
                 .delegate
-                .finalize_update_matches(self.query(cx), Duration::from_millis(16), cx)
+                .finalize_update_matches(self.query(cx), Duration.from_millis(16), cx)
         {
             self.confirm_on_update = Some(true)
         } else {
@@ -376,29 +376,29 @@ impl<D: PickerDelegate> Picker<D> {
     fn on_input_editor_event(
         &mut self,
         _: View<Editor>,
-        event: &editor::EditorEvent,
+        event: &editor.EditorEvent,
         cx: &mut ViewContext<Self>,
     ) {
-        let Head::Editor(ref editor) = &self.head else {
+        let Head.Editor(ref editor) = &self.head else {
             panic!("unexpected call");
         };
         match event {
-            editor::EditorEvent::BufferEdited => {
+            editor.EditorEvent.BufferEdited => {
                 let query = editor.read(cx).text(cx);
                 self.update_matches(query, cx);
             }
-            editor::EditorEvent::Blurred => {
-                self.cancel(&menu::Cancel, cx);
+            editor.EditorEvent.Blurred => {
+                self.cancel(&menu.Cancel, cx);
             }
             _ => {}
         }
     }
 
     fn on_empty_head_blur(&mut self, cx: &mut ViewContext<Self>) {
-        let Head::Empty(_) = &self.head else {
+        let Head.Empty(_) = &self.head else {
             panic!("unexpected call");
         };
-        self.cancel(&menu::Cancel, cx);
+        self.cancel(&menu.Cancel, cx);
     }
 
     pub fn refresh(&mut self, cx: &mut ViewContext<Self>) {
@@ -436,7 +436,7 @@ impl<D: PickerDelegate> Picker<D> {
     }
 
     fn matches_updated(&mut self, cx: &mut ViewContext<Self>) {
-        if let ElementContainer::List(state) = &mut self.element_container {
+        if let ElementContainer.List(state) = &mut self.element_container {
             state.reset(self.delegate.match_count());
         }
 
@@ -451,17 +451,17 @@ impl<D: PickerDelegate> Picker<D> {
 
     pub fn query(&self, cx: &AppContext) -> String {
         match &self.head {
-            Head::Editor(editor) => editor.read(cx).text(cx),
-            Head::Empty(_) => "".to_string(),
+            Head.Editor(editor) => editor.read(cx).text(cx),
+            Head.Empty(_) => "".to_string(),
         }
     }
 
     pub fn set_query(&self, query: impl Into<Arc<str>>, cx: &mut ViewContext<Self>) {
-        if let Head::Editor(ref editor) = &self.head {
+        if let Head.Editor(ref editor) = &self.head {
             editor.update(cx, |editor, cx| {
                 editor.set_text(query, cx);
                 let editor_offset = editor.buffer().read(cx).len(cx);
-                editor.change_selections(Some(Autoscroll::Next), cx, |s| {
+                editor.change_selections(Some(Autoscroll.Next), cx, |s| {
                     s.select_ranges(Some(editor_offset..editor_offset))
                 });
             });
@@ -470,8 +470,8 @@ impl<D: PickerDelegate> Picker<D> {
 
     fn scroll_to_item_index(&mut self, ix: usize) {
         match &mut self.element_container {
-            ElementContainer::List(state) => state.scroll_to_reveal_item(ix),
-            ElementContainer::UniformList(scroll_handle) => scroll_handle.scroll_to_item(ix),
+            ElementContainer.List(state) => state.scroll_to_reveal_item(ix),
+            ElementContainer.UniformList(scroll_handle) => scroll_handle.scroll_to_item(ix),
         }
     }
 
@@ -487,7 +487,7 @@ impl<D: PickerDelegate> Picker<D> {
             // but means that UIs which depend on holding ctrl down (such as the tab
             // switcher) can't be clicked on. Hence, this handler.
             .on_mouse_up(
-                MouseButton::Right,
+                MouseButton.Right,
                 cx.listener(move |this, event: &MouseUpEvent, cx| {
                     // We specficially want to use the platform key here, as
                     // ctrl will already be held down for the tab switcher.
@@ -511,12 +511,12 @@ impl<D: PickerDelegate> Picker<D> {
 
     fn render_element_container(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let sizing_behavior = if self.max_height.is_some() {
-            ListSizingBehavior::Infer
+            ListSizingBehavior.Infer
         } else {
-            ListSizingBehavior::Auto
+            ListSizingBehavior.Auto
         };
         match &self.element_container {
-            ElementContainer::UniformList(scroll_handle) => uniform_list(
+            ElementContainer.UniformList(scroll_handle) => uniform_list(
                 cx.view().clone(),
                 "candidates",
                 self.delegate.match_count(),
@@ -531,7 +531,7 @@ impl<D: PickerDelegate> Picker<D> {
             .py_1()
             .track_scroll(scroll_handle.clone())
             .into_any_element(),
-            ElementContainer::List(state) => list(state.clone())
+            ElementContainer.List(state) => list(state.clone())
                 .with_sizing_behavior(sizing_behavior)
                 .flex_grow()
                 .py_2()
@@ -542,8 +542,8 @@ impl<D: PickerDelegate> Picker<D> {
     #[cfg(any(test, feature = "test-support"))]
     pub fn logical_scroll_top_index(&self) -> usize {
         match &self.element_container {
-            ElementContainer::List(state) => state.logical_scroll_top().item_ix,
-            ElementContainer::UniformList(scroll_handle) => {
+            ElementContainer.List(state) => state.logical_scroll_top().item_ix,
+            ElementContainer.UniformList(scroll_handle) => {
                 scroll_handle.logical_scroll_top_index()
             }
         }
@@ -565,18 +565,18 @@ impl<D: PickerDelegate> Render for Picker<D> {
             //
             // We should revisit how the `Picker` is styled to make it more composable.
             .when(self.is_modal, |this| this.elevation_3(cx))
-            .on_action(cx.listener(Self::select_next))
-            .on_action(cx.listener(Self::select_prev))
-            .on_action(cx.listener(Self::select_first))
-            .on_action(cx.listener(Self::select_last))
-            .on_action(cx.listener(Self::cancel))
-            .on_action(cx.listener(Self::confirm))
-            .on_action(cx.listener(Self::secondary_confirm))
-            .on_action(cx.listener(Self::confirm_completion))
-            .on_action(cx.listener(Self::confirm_input))
+            .on_action(cx.listener(Self.select_next))
+            .on_action(cx.listener(Self.select_prev))
+            .on_action(cx.listener(Self.select_first))
+            .on_action(cx.listener(Self.select_last))
+            .on_action(cx.listener(Self.cancel))
+            .on_action(cx.listener(Self.confirm))
+            .on_action(cx.listener(Self.secondary_confirm))
+            .on_action(cx.listener(Self.confirm_completion))
+            .on_action(cx.listener(Self.confirm_input))
             .child(match &self.head {
-                Head::Editor(editor) => self.delegate.render_editor(&editor.clone(), cx),
-                Head::Empty(empty_head) => div().child(empty_head.clone()),
+                Head.Editor(editor) => self.delegate.render_editor(&editor.clone(), cx),
+                Head.Empty(empty_head) => div().child(empty_head.clone()),
             })
             .when(self.delegate.match_count() > 0, |el| {
                 el.child(
@@ -591,12 +591,12 @@ impl<D: PickerDelegate> Render for Picker<D> {
             .when(self.delegate.match_count() == 0, |el| {
                 el.child(
                     v_flex().flex_grow().py_2().child(
-                        ListItem::new("empty_state")
+                        ListItem.new("empty_state")
                             .inset(true)
-                            .spacing(ListItemSpacing::Sparse)
+                            .spacing(ListItemSpacing.Sparse)
                             .disabled(true)
                             .child(
-                                Label::new(self.delegate.no_matches_text(cx)).color(Color::Muted),
+                                Label.new(self.delegate.no_matches_text(cx)).color(Color.Muted),
                             ),
                     ),
                 )

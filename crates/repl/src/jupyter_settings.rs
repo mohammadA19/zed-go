@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std.collections.HashMap;
 
-use editor::EditorSettings;
-use gpui::AppContext;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
+use editor.EditorSettings;
+use gpui.AppContext;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
 
 #[derive(Debug, Default)]
 pub struct JupyterSettings {
@@ -16,7 +16,7 @@ impl JupyterSettings {
         // In order to avoid a circular dependency between `editor` and `repl` crates,
         // we put the `enable` flag on its settings.
         // This allows the editor to set up context for key bindings/actions.
-        EditorSettings::jupyter_enabled(cx)
+        EditorSettings.jupyter_enabled(cx)
     }
 }
 
@@ -31,7 +31,7 @@ pub struct JupyterSettingsContent {
 impl Default for JupyterSettingsContent {
     fn default() -> Self {
         JupyterSettingsContent {
-            kernel_selections: Some(HashMap::new()),
+            kernel_selections: Some(HashMap.new()),
         }
     }
 }
@@ -42,13 +42,13 @@ impl Settings for JupyterSettings {
     type FileContent = JupyterSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _cx: &mut gpui::AppContext,
-    ) -> anyhow::Result<Self>
+        sources: SettingsSources<Self.FileContent>,
+        _cx: &mut gpui.AppContext,
+    ) -> anyhow.Result<Self>
     where
         Self: Sized,
     {
-        let mut settings = JupyterSettings::default();
+        let mut settings = JupyterSettings.default();
 
         for value in sources.defaults_and_customizations() {
             if let Some(source) = &value.kernel_selections {

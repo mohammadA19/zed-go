@@ -1,13 +1,13 @@
-use futures::FutureExt;
-use gpui::{
+use futures.FutureExt;
+use gpui.{
     AnyElement, AnyView, ElementId, FontStyle, FontWeight, HighlightStyle, InteractiveText,
     IntoElement, SharedString, StrikethroughStyle, StyledText, UnderlineStyle, WindowContext,
 };
-use language::{HighlightId, Language, LanguageRegistry};
-use std::{ops::Range, sync::Arc};
-use theme::ActiveTheme;
-use ui::LinkPreview;
-use util::RangeExt;
+use language.{HighlightId, Language, LanguageRegistry};
+use std.{ops.Range, sync.Arc};
+use theme.ActiveTheme;
+use ui.LinkPreview;
+use util.RangeExt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Highlight {
@@ -21,13 +21,13 @@ pub enum Highlight {
 
 impl From<HighlightStyle> for Highlight {
     fn from(style: HighlightStyle) -> Self {
-        Self::Highlight(style)
+        Self.Highlight(style)
     }
 }
 
 impl From<HighlightId> for Highlight {
     fn from(style: HighlightId) -> Self {
-        Self::Id(style)
+        Self.Id(style)
     }
 }
 
@@ -57,10 +57,10 @@ impl RichText {
         mentions: &[Mention],
         language_registry: &Arc<LanguageRegistry>,
     ) -> Self {
-        let mut text = String::new();
-        let mut highlights = Vec::new();
-        let mut link_ranges = Vec::new();
-        let mut link_urls = Vec::new();
+        let mut text = String.new();
+        let mut highlights = Vec.new();
+        let mut link_ranges = Vec.new();
+        let mut link_urls = Vec.new();
         render_markdown_mut(
             &block,
             mentions,
@@ -74,11 +74,11 @@ impl RichText {
         text.truncate(text.trim_end().len());
 
         RichText {
-            text: SharedString::from(text),
+            text: SharedString.from(text),
             link_urls: link_urls.into(),
             link_ranges,
             highlights,
-            custom_ranges: Vec::new(),
+            custom_ranges: Vec.new(),
             custom_ranges_tooltip_fn: None,
         }
     }
@@ -87,54 +87,54 @@ impl RichText {
         &mut self,
         f: impl Fn(usize, Range<usize>, &mut WindowContext) -> Option<AnyView> + 'static,
     ) {
-        self.custom_ranges_tooltip_fn = Some(Arc::new(f));
+        self.custom_ranges_tooltip_fn = Some(Arc.new(f));
     }
 
     pub fn element(&self, id: ElementId, cx: &mut WindowContext) -> AnyElement {
         let theme = cx.theme();
         let code_background = theme.colors().surface_background;
 
-        InteractiveText::new(
+        InteractiveText.new(
             id,
-            StyledText::new(self.text.clone()).with_highlights(
+            StyledText.new(self.text.clone()).with_highlights(
                 &cx.text_style(),
                 self.highlights.iter().map(|(range, highlight)| {
                     (
                         range.clone(),
                         match highlight {
-                            Highlight::Code => HighlightStyle {
+                            Highlight.Code => HighlightStyle {
                                 background_color: Some(code_background),
-                                ..Default::default()
+                                ..Default.default()
                             },
-                            Highlight::Id(id) => HighlightStyle {
+                            Highlight.Id(id) => HighlightStyle {
                                 background_color: Some(code_background),
                                 ..id.style(theme.syntax()).unwrap_or_default()
                             },
-                            Highlight::InlineCode(link) => {
+                            Highlight.InlineCode(link) => {
                                 if *link {
                                     HighlightStyle {
                                         background_color: Some(code_background),
                                         underline: Some(UnderlineStyle {
                                             thickness: 1.0.into(),
-                                            ..Default::default()
+                                            ..Default.default()
                                         }),
-                                        ..Default::default()
+                                        ..Default.default()
                                     }
                                 } else {
                                     HighlightStyle {
                                         background_color: Some(code_background),
-                                        ..Default::default()
+                                        ..Default.default()
                                     }
                                 }
                             }
-                            Highlight::Highlight(highlight) => *highlight,
-                            Highlight::Mention => HighlightStyle {
-                                font_weight: Some(FontWeight::BOLD),
-                                ..Default::default()
+                            Highlight.Highlight(highlight) => *highlight,
+                            Highlight.Mention => HighlightStyle {
+                                font_weight: Some(FontWeight.BOLD),
+                                ..Default.default()
                             },
-                            Highlight::SelfMention => HighlightStyle {
-                                font_weight: Some(FontWeight::BOLD),
-                                ..Default::default()
+                            Highlight.SelfMention => HighlightStyle {
+                                font_weight: Some(FontWeight.BOLD),
+                                ..Default.default()
                             },
                         },
                     )
@@ -158,7 +158,7 @@ impl RichText {
             move |idx, cx| {
                 for (ix, range) in link_ranges.iter().enumerate() {
                     if range.contains(&idx) {
-                        return Some(LinkPreview::new(&link_urls[ix], cx));
+                        return Some(LinkPreview.new(&link_urls[ix], cx));
                     }
                 }
                 for range in &custom_tooltip_ranges {
@@ -175,7 +175,7 @@ impl RichText {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy.too_many_arguments)]
 pub fn render_markdown_mut(
     block: &str,
     mut mentions: &[Mention],
@@ -186,20 +186,20 @@ pub fn render_markdown_mut(
     link_ranges: &mut Vec<Range<usize>>,
     link_urls: &mut Vec<String>,
 ) {
-    use pulldown_cmark::{CodeBlockKind, Event, Options, Parser, Tag, TagEnd};
+    use pulldown_cmark.{CodeBlockKind, Event, Options, Parser, Tag, TagEnd};
 
     let mut bold_depth = 0;
     let mut italic_depth = 0;
     let mut strikethrough_depth = 0;
     let mut link_url = None;
     let mut current_language = None;
-    let mut list_stack = Vec::new();
+    let mut list_stack = Vec.new();
 
-    let options = Options::all();
-    for (event, source_range) in Parser::new_ext(block, options).into_offset_iter() {
+    let options = Options.all();
+    for (event, source_range) in Parser.new_ext(block, options).into_offset_iter() {
         let prev_len = text.len();
         match event {
-            Event::Text(t) => {
+            Event.Text(t) => {
                 if let Some(language) = &current_language {
                     render_code(text, highlights, t.as_ref(), language);
                 } else {
@@ -213,25 +213,25 @@ pub fn render_markdown_mut(
                         highlights.push((
                             range.clone(),
                             if mention.is_self_mention {
-                                Highlight::SelfMention
+                                Highlight.SelfMention
                             } else {
-                                Highlight::Mention
+                                Highlight.Mention
                             },
                         ));
                     }
 
                     text.push_str(t.as_ref());
-                    let mut style = HighlightStyle::default();
+                    let mut style = HighlightStyle.default();
                     if bold_depth > 0 {
-                        style.font_weight = Some(FontWeight::BOLD);
+                        style.font_weight = Some(FontWeight.BOLD);
                     }
                     if italic_depth > 0 {
-                        style.font_style = Some(FontStyle::Italic);
+                        style.font_style = Some(FontStyle.Italic);
                     }
                     if strikethrough_depth > 0 {
                         style.strikethrough = Some(StrikethroughStyle {
                             thickness: 1.0.into(),
-                            ..Default::default()
+                            ..Default.default()
                         });
                     }
                     let last_run_len = if let Some(link_url) = link_url.clone() {
@@ -239,13 +239,13 @@ pub fn render_markdown_mut(
                         link_urls.push(link_url);
                         style.underline = Some(UnderlineStyle {
                             thickness: 1.0.into(),
-                            ..Default::default()
+                            ..Default.default()
                         });
                         prev_len
                     } else {
                         // Manually scan for links
-                        let mut finder = linkify::LinkFinder::new();
-                        finder.kinds(&[linkify::LinkKind::Url]);
+                        let mut finder = linkify.LinkFinder.new();
+                        finder.kinds(&[linkify.LinkKind.Url]);
                         let mut last_link_len = prev_len;
                         for link in finder.links(&t) {
                             let start = link.start();
@@ -255,19 +255,19 @@ pub fn render_markdown_mut(
                             link_urls.push(link.as_str().to_string());
 
                             // If there is a style before we match a link, we have to add this to the highlighted ranges
-                            if style != HighlightStyle::default() && last_link_len < link.start() {
+                            if style != HighlightStyle.default() && last_link_len < link.start() {
                                 highlights.push((
                                     last_link_len..link.start(),
-                                    Highlight::Highlight(style),
+                                    Highlight.Highlight(style),
                                 ));
                             }
 
                             highlights.push((
                                 range,
-                                Highlight::Highlight(HighlightStyle {
+                                Highlight.Highlight(HighlightStyle {
                                     underline: Some(UnderlineStyle {
                                         thickness: 1.0.into(),
-                                        ..Default::default()
+                                        ..Default.default()
                                     }),
                                     ..style
                                 }),
@@ -278,11 +278,11 @@ pub fn render_markdown_mut(
                         last_link_len
                     };
 
-                    if style != HighlightStyle::default() && last_run_len < text.len() {
+                    if style != HighlightStyle.default() && last_run_len < text.len() {
                         let mut new_highlight = true;
                         if let Some((last_range, last_style)) = highlights.last_mut() {
                             if last_range.end == last_run_len
-                                && last_style == &Highlight::Highlight(style)
+                                && last_style == &Highlight.Highlight(style)
                             {
                                 last_range.end = text.len();
                                 new_highlight = false;
@@ -290,12 +290,12 @@ pub fn render_markdown_mut(
                         }
                         if new_highlight {
                             highlights
-                                .push((last_run_len..text.len(), Highlight::Highlight(style)));
+                                .push((last_run_len..text.len(), Highlight.Highlight(style)));
                         }
                     }
                 }
             }
-            Event::Code(t) => {
+            Event.Code(t) => {
                 text.push_str(t.as_ref());
                 let is_link = link_url.is_some();
 
@@ -304,11 +304,11 @@ pub fn render_markdown_mut(
                     link_urls.push(link_url);
                 }
 
-                highlights.push((prev_len..text.len(), Highlight::InlineCode(is_link)))
+                highlights.push((prev_len..text.len(), Highlight.InlineCode(is_link)))
             }
-            Event::Start(tag) => match tag {
-                Tag::Paragraph => new_paragraph(text, &mut list_stack),
-                Tag::Heading {
+            Event.Start(tag) => match tag {
+                Tag.Paragraph => new_paragraph(text, &mut list_stack),
+                Tag.Heading {
                     level: _,
                     id: _,
                     classes: _,
@@ -317,30 +317,30 @@ pub fn render_markdown_mut(
                     new_paragraph(text, &mut list_stack);
                     bold_depth += 1;
                 }
-                Tag::CodeBlock(kind) => {
+                Tag.CodeBlock(kind) => {
                     new_paragraph(text, &mut list_stack);
-                    current_language = if let CodeBlockKind::Fenced(language) = kind {
+                    current_language = if let CodeBlockKind.Fenced(language) = kind {
                         language_registry
                             .language_for_name(language.as_ref())
                             .now_or_never()
-                            .and_then(Result::ok)
+                            .and_then(Result.ok)
                     } else {
                         language.cloned()
                     }
                 }
-                Tag::Emphasis => italic_depth += 1,
-                Tag::Strong => bold_depth += 1,
-                Tag::Strikethrough => strikethrough_depth += 1,
-                Tag::Link {
+                Tag.Emphasis => italic_depth += 1,
+                Tag.Strong => bold_depth += 1,
+                Tag.Strikethrough => strikethrough_depth += 1,
+                Tag.Link {
                     link_type: _,
                     dest_url,
                     title: _,
                     id: _,
                 } => link_url = Some(dest_url.to_string()),
-                Tag::List(number) => {
+                Tag.List(number) => {
                     list_stack.push((number, false));
                 }
-                Tag::Item => {
+                Tag.Item => {
                     let len = list_stack.len();
                     if let Some((list_number, has_content)) = list_stack.last_mut() {
                         *has_content = false;
@@ -361,18 +361,18 @@ pub fn render_markdown_mut(
                 }
                 _ => {}
             },
-            Event::End(tag) => match tag {
-                TagEnd::Heading(_) => bold_depth -= 1,
-                TagEnd::CodeBlock => current_language = None,
-                TagEnd::Emphasis => italic_depth -= 1,
-                TagEnd::Strong => bold_depth -= 1,
-                TagEnd::Strikethrough => strikethrough_depth -= 1,
-                TagEnd::Link => link_url = None,
-                TagEnd::List(_) => drop(list_stack.pop()),
+            Event.End(tag) => match tag {
+                TagEnd.Heading(_) => bold_depth -= 1,
+                TagEnd.CodeBlock => current_language = None,
+                TagEnd.Emphasis => italic_depth -= 1,
+                TagEnd.Strong => bold_depth -= 1,
+                TagEnd.Strikethrough => strikethrough_depth -= 1,
+                TagEnd.Link => link_url = None,
+                TagEnd.List(_) => drop(list_stack.pop()),
                 _ => {}
             },
-            Event::HardBreak => text.push('\n'),
-            Event::SoftBreak => text.push('\n'),
+            Event.HardBreak => text.push('\n'),
+            Event.SoftBreak => text.push('\n'),
             _ => {}
         }
     }
@@ -389,16 +389,16 @@ pub fn render_code(
     let mut offset = 0;
     for (range, highlight_id) in language.highlight_text(&content.into(), 0..content.len()) {
         if range.start > offset {
-            highlights.push((prev_len + offset..prev_len + range.start, Highlight::Code));
+            highlights.push((prev_len + offset..prev_len + range.start, Highlight.Code));
         }
         highlights.push((
             prev_len + range.start..prev_len + range.end,
-            Highlight::Id(highlight_id),
+            Highlight.Id(highlight_id),
         ));
         offset = range.end;
     }
     if offset < content.len() {
-        highlights.push((prev_len + offset..prev_len + content.len(), Highlight::Code));
+        highlights.push((prev_len + offset..prev_len + content.len(), Highlight.Code));
     }
 }
 

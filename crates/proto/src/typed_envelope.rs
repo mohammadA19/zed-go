@@ -1,6 +1,6 @@
-use crate::{PeerId, RequestMessage};
-use anyhow::{anyhow, Result};
-use std::{marker::PhantomData, time::Instant};
+use crate.{PeerId, RequestMessage};
+use anyhow.{anyhow, Result};
+use std.{marker.PhantomData, time.Instant};
 
 pub struct Receipt<T> {
     pub sender_id: PeerId,

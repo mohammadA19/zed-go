@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use editor::{Editor, EditorEvent};
-use gpui::{prelude::*, AppContext, FocusHandle, FocusableView, View};
-use ui::prelude::*;
+use editor.{Editor, EditorEvent};
+use gpui.{prelude.*, AppContext, FocusHandle, FocusableView, View};
+use ui.prelude.*;
 
-/// The head of a [`Picker`](crate::Picker).
+/// The head of a [`Picker`](crate.Picker).
 pub(crate) enum Head {
     /// Picker has an editor that allows the user to filter the list.
     Editor(View<Editor>),
@@ -20,21 +20,21 @@ impl Head {
         cx: &mut ViewContext<V>,
     ) -> Self {
         let editor = cx.new_view(|cx| {
-            let mut editor = Editor::single_line(cx);
+            let mut editor = Editor.single_line(cx);
             editor.set_placeholder_text(placeholder_text, cx);
             editor
         });
         cx.subscribe(&editor, edit_handler).detach();
-        Self::Editor(editor)
+        Self.Editor(editor)
     }
 
     pub fn empty<V: 'static>(
         blur_handler: impl FnMut(&mut V, &mut ViewContext<'_, V>) + 'static,
         cx: &mut ViewContext<V>,
     ) -> Self {
-        let head = cx.new_view(|cx| EmptyHead::new(cx));
+        let head = cx.new_view(|cx| EmptyHead.new(cx));
         cx.on_blur(&head.focus_handle(cx), blur_handler).detach();
-        Self::Empty(head)
+        Self.Empty(head)
     }
 }
 

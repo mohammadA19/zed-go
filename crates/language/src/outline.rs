@@ -1,9 +1,9 @@
-use crate::{BufferSnapshot, Point, ToPoint};
-use fuzzy::{StringMatch, StringMatchCandidate};
-use gpui::{relative, AppContext, BackgroundExecutor, HighlightStyle, StyledText, TextStyle};
-use settings::Settings;
-use std::ops::Range;
-use theme::{color_alpha, ActiveTheme, ThemeSettings};
+use crate.{BufferSnapshot, Point, ToPoint};
+use fuzzy.{StringMatch, StringMatchCandidate};
+use gpui.{relative, AppContext, BackgroundExecutor, HighlightStyle, StyledText, TextStyle};
+use settings.Settings;
+use std.ops.Range;
+use theme.{color_alpha, ActiveTheme, ThemeSettings};
 
 /// An outline of all the symbols contained in a buffer.
 #[derive(Debug)]
@@ -48,11 +48,11 @@ impl<T: ToPoint> OutlineItem<T> {
 
 impl<T> Outline<T> {
     pub fn new(items: Vec<OutlineItem<T>>) -> Self {
-        let mut candidates = Vec::new();
-        let mut path_candidates = Vec::new();
-        let mut path_candidate_prefixes = Vec::new();
-        let mut path_text = String::new();
-        let mut path_stack = Vec::new();
+        let mut candidates = Vec.new();
+        let mut path_candidates = Vec.new();
+        let mut path_candidate_prefixes = Vec.new();
+        let mut path_text = String.new();
+        let mut path_stack = Vec.new();
 
         for (id, item) in items.iter().enumerate() {
             if item.depth < path_stack.len() {
@@ -70,10 +70,10 @@ impl<T> Outline<T> {
                 .name_ranges
                 .iter()
                 .map(|range| &item.text[range.start..range.end])
-                .collect::<String>();
+                .collect.<String>();
 
-            path_candidates.push(StringMatchCandidate::new(id, path_text.clone()));
-            candidates.push(StringMatchCandidate::new(id, candidate_text));
+            path_candidates.push(StringMatchCandidate.new(id, path_text.clone()));
+            candidates.push(StringMatchCandidate.new(id, candidate_text));
         }
 
         Self {
@@ -87,8 +87,8 @@ impl<T> Outline<T> {
     /// Find the most similar symbol to the provided query according to the Jaro-Winkler distance measure.
     pub fn find_most_similar(&self, query: &str) -> Option<&OutlineItem<T>> {
         let candidate = self.path_candidates.iter().max_by(|a, b| {
-            strsim::jaro_winkler(&a.string, query)
-                .total_cmp(&strsim::jaro_winkler(&b.string, query))
+            strsim.jaro_winkler(&a.string, query)
+                .total_cmp(&strsim.jaro_winkler(&b.string, query))
         })?;
         Some(&self.items[candidate.id])
     }
@@ -98,7 +98,7 @@ impl<T> Outline<T> {
         let query = query.trim_start();
         let is_path_query = query.contains(' ');
         let smart_case = query.chars().any(|c| c.is_uppercase());
-        let mut matches = fuzzy::match_strings(
+        let mut matches = fuzzy.match_strings(
             if is_path_query {
                 &self.path_candidates
             } else {
@@ -107,13 +107,13 @@ impl<T> Outline<T> {
             query,
             smart_case,
             100,
-            &Default::default(),
+            &Default.default(),
             executor.clone(),
         )
         .await;
         matches.sort_unstable_by_key(|m| m.candidate_id);
 
-        let mut tree_matches = Vec::new();
+        let mut tree_matches = Vec.new();
 
         let mut prev_item_ix = 0;
         for mut string_match in matches {
@@ -158,9 +158,9 @@ impl<T> Outline<T> {
                         insertion_ix,
                         StringMatch {
                             candidate_id: candidate_index,
-                            score: Default::default(),
-                            positions: Default::default(),
-                            string: Default::default(),
+                            score: Default.default(),
+                            positions: Default.default(),
+                            string: Default.default(),
                         },
                     );
                     cur_depth -= 1;
@@ -180,17 +180,17 @@ pub fn render_item<T>(
     match_ranges: impl IntoIterator<Item = Range<usize>>,
     cx: &AppContext,
 ) -> StyledText {
-    let mut highlight_style = HighlightStyle::default();
+    let mut highlight_style = HighlightStyle.default();
     highlight_style.background_color = Some(color_alpha(cx.theme().colors().text_accent, 0.3));
     let custom_highlights = match_ranges
         .into_iter()
         .map(|range| (range, highlight_style));
 
-    let settings = ThemeSettings::get_global(cx);
+    let settings = ThemeSettings.get_global(cx);
 
     // TODO: We probably shouldn't need to build a whole new text style here
     // but I'm not sure how to get the current one and modify it.
-    // Before this change TextStyle::default() was used here, which was giving us the wrong font and text color.
+    // Before this change TextStyle.default() was used here, which was giving us the wrong font and text color.
     let text_style = TextStyle {
         color: cx.theme().colors().text,
         font_family: settings.buffer_font.family.clone(),
@@ -199,12 +199,12 @@ pub fn render_item<T>(
         font_size: settings.buffer_font_size(cx).into(),
         font_weight: settings.buffer_font.weight,
         line_height: relative(1.),
-        ..Default::default()
+        ..Default.default()
     };
-    let highlights = gpui::combine_highlights(
+    let highlights = gpui.combine_highlights(
         custom_highlights,
         outline_item.highlight_ranges.iter().cloned(),
     );
 
-    StyledText::new(outline_item.text.clone()).with_highlights(&text_style, highlights)
+    StyledText.new(outline_item.text.clone()).with_highlights(&text_style, highlights)
 }

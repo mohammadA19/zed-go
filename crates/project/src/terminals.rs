@@ -1,31 +1,31 @@
-use crate::Project;
-use anyhow::Context as _;
-use collections::HashMap;
-use gpui::{AnyWindowHandle, AppContext, Context, Entity, Model, ModelContext, WeakModel};
-use itertools::Itertools;
-use settings::{Settings, SettingsLocation};
-use smol::channel::bounded;
-use std::{
-    env::{self},
+use crate.Project;
+use anyhow.Context as _;
+use collections.HashMap;
+use gpui.{AnyWindowHandle, AppContext, Context, Entity, Model, ModelContext, WeakModel};
+use itertools.Itertools;
+use settings.{Settings, SettingsLocation};
+use smol.channel.bounded;
+use std.{
+    env.{self},
     iter,
-    path::{Path, PathBuf},
+    path.{Path, PathBuf},
 };
-use task::{Shell, SpawnInTerminal};
-use terminal::{
-    terminal_settings::{self, TerminalSettings},
+use task.{Shell, SpawnInTerminal};
+use terminal.{
+    terminal_settings.{self, TerminalSettings},
     TaskState, TaskStatus, Terminal, TerminalBuilder,
 };
-use util::ResultExt;
+use util.ResultExt;
 
 // #[cfg(target_os = "macos")]
-// use std::os::unix::ffi::OsStrExt;
+// use std.os.unix.ffi.OsStrExt;
 
 pub struct Terminals {
-    pub(crate) local_handles: Vec<WeakModel<terminal::Terminal>>,
+    pub(crate) local_handles: Vec<WeakModel<terminal.Terminal>>,
 }
 
 /// Terminals are opened either for the users shell, or to run a task.
-#[allow(clippy::large_enum_variant)]
+#[allow(clippy.large_enum_variant)]
 #[derive(Debug)]
 pub enum TerminalKind {
     /// Run a shell at the given path (or $HOME if None)
@@ -68,17 +68,17 @@ impl Project {
 
     fn ssh_command(&self, cx: &AppContext) -> Option<SshCommand> {
         if let Some(ssh_session) = self.ssh_session.as_ref() {
-            return Some(SshCommand::Direct(ssh_session.ssh_args()));
+            return Some(SshCommand.Direct(ssh_session.ssh_args()));
         }
 
         let dev_server_project_id = self.dev_server_project_id()?;
-        let projects_store = dev_server_projects::Store::global(cx).read(cx);
+        let projects_store = dev_server_projects.Store.global(cx).read(cx);
         let ssh_command = projects_store
             .dev_server_for_project(dev_server_project_id)?
             .ssh_connection_string
             .as_ref()?
             .to_string();
-        Some(SshCommand::DevServer(ssh_command))
+        Some(SshCommand.DevServer(ssh_command))
     }
 
     pub fn create_terminal(
@@ -86,10 +86,10 @@ impl Project {
         kind: TerminalKind,
         window: AnyWindowHandle,
         cx: &mut ModelContext<Self>,
-    ) -> anyhow::Result<Model<Terminal>> {
+    ) -> anyhow.Result<Model<Terminal>> {
         let path = match &kind {
-            TerminalKind::Shell(path) => path.as_ref().map(|path| path.to_path_buf()),
-            TerminalKind::Task(spawn_task) => {
+            TerminalKind.Shell(path) => path.as_ref().map(|path| path.to_path_buf()),
+            TerminalKind.Task(spawn_task) => {
                 if let Some(cwd) = &spawn_task.cwd {
                     Some(cwd.clone())
                 } else {
@@ -108,7 +108,7 @@ impl Project {
                 });
             }
         }
-        let settings = TerminalSettings::get(settings_location, cx);
+        let settings = TerminalSettings.get(settings_location, cx);
 
         let (completion_tx, completion_rx) = bounded(1);
 
@@ -125,7 +125,7 @@ impl Project {
         let mut python_venv_activate_command = None;
 
         let (spawn_task, shell) = match kind {
-            TerminalKind::Shell(_) => {
+            TerminalKind.Shell(_) => {
                 if let Some(python_venv_directory) = python_venv_directory {
                     python_venv_activate_command =
                         self.python_activate_command(&python_venv_directory, settings);
@@ -133,7 +133,7 @@ impl Project {
 
                 match &ssh_command {
                     Some(ssh_command) => {
-                        log::debug!("Connecting to a remote server: {ssh_command:?}");
+                        log.debug!("Connecting to a remote server: {ssh_command:?}");
 
                         // Alacritty sets its terminfo to `alacritty`, this requiring hosts to have it installed
                         // to properly display colors.
@@ -144,20 +144,20 @@ impl Project {
 
                         let (program, args) =
                             wrap_for_ssh(ssh_command, None, path.as_deref(), env, None);
-                        env = HashMap::default();
-                        (None, Shell::WithArguments { program, args })
+                        env = HashMap.default();
+                        (None, Shell.WithArguments { program, args })
                     }
                     None => (None, settings.shell.clone()),
                 }
             }
-            TerminalKind::Task(spawn_task) => {
+            TerminalKind.Task(spawn_task) => {
                 let task_state = Some(TaskState {
                     id: spawn_task.id,
                     full_label: spawn_task.full_label,
                     label: spawn_task.label,
                     command_label: spawn_task.command_label,
                     hide: spawn_task.hide,
-                    status: TaskStatus::Running,
+                    status: TaskStatus.Running,
                     completion_rx,
                 });
 
@@ -172,7 +172,7 @@ impl Project {
 
                 match &ssh_command {
                     Some(ssh_command) => {
-                        log::debug!("Connecting to a remote server: {ssh_command:?}");
+                        log.debug!("Connecting to a remote server: {ssh_command:?}");
                         env.entry("TERM".to_string())
                             .or_insert_with(|| "xterm-256color".to_string());
                         let (program, args) = wrap_for_ssh(
@@ -182,8 +182,8 @@ impl Project {
                             env,
                             python_venv_directory,
                         );
-                        env = HashMap::default();
-                        (task_state, Shell::WithArguments { program, args })
+                        env = HashMap.default();
+                        (task_state, Shell.WithArguments { program, args })
                     }
                     None => {
                         if let Some(venv_path) = &python_venv_directory {
@@ -192,7 +192,7 @@ impl Project {
 
                         (
                             task_state,
-                            Shell::WithArguments {
+                            Shell.WithArguments {
                                 program: spawn_task.command,
                                 args: spawn_task.args,
                             },
@@ -202,7 +202,7 @@ impl Project {
             }
         };
 
-        let terminal = TerminalBuilder::new(
+        let terminal = TerminalBuilder.new(
             local_path,
             spawn_task,
             shell,
@@ -271,20 +271,20 @@ impl Project {
     ) -> Option<String> {
         let venv_settings = settings.detect_venv.as_option()?;
         let activate_script_name = match venv_settings.activate_script {
-            terminal_settings::ActivateScript::Default => "activate",
-            terminal_settings::ActivateScript::Csh => "activate.csh",
-            terminal_settings::ActivateScript::Fish => "activate.fish",
-            terminal_settings::ActivateScript::Nushell => "activate.nu",
+            terminal_settings.ActivateScript.Default => "activate",
+            terminal_settings.ActivateScript.Csh => "activate.csh",
+            terminal_settings.ActivateScript.Fish => "activate.fish",
+            terminal_settings.ActivateScript.Nushell => "activate.nu",
         };
         let path = venv_base_directory
             .join("bin")
             .join(activate_script_name)
             .to_string_lossy()
             .to_string();
-        let quoted = shlex::try_quote(&path).ok()?;
+        let quoted = shlex.try_quote(&path).ok()?;
 
         Some(match venv_settings.activate_script {
-            terminal_settings::ActivateScript::Nushell => format!("overlay use {}\n", quoted),
+            terminal_settings.ActivateScript.Nushell => format!("overlay use {}\n", quoted),
             _ => format!("source {}\n", quoted),
         })
     }
@@ -298,7 +298,7 @@ impl Project {
         terminal_handle.update(cx, |this, _| this.input_bytes(command.into_bytes()));
     }
 
-    pub fn local_terminal_handles(&self) -> &Vec<WeakModel<terminal::Terminal>> {
+    pub fn local_terminal_handles(&self) -> &Vec<WeakModel<terminal.Terminal>> {
         &self.terminals.local_handles
     }
 }
@@ -311,22 +311,22 @@ pub fn wrap_for_ssh(
     venv_directory: Option<PathBuf>,
 ) -> (String, Vec<String>) {
     let to_run = if let Some((command, args)) = command {
-        iter::once(command)
+        iter.once(command)
             .chain(args)
-            .filter_map(|arg| shlex::try_quote(arg).ok())
+            .filter_map(|arg| shlex.try_quote(arg).ok())
             .join(" ")
     } else {
         "exec ${SHELL:-sh} -l".to_string()
     };
 
-    let mut env_changes = String::new();
+    let mut env_changes = String.new();
     for (k, v) in env.iter() {
-        if let Some((k, v)) = shlex::try_quote(k).ok().zip(shlex::try_quote(v).ok()) {
+        if let Some((k, v)) = shlex.try_quote(k).ok().zip(shlex.try_quote(v).ok()) {
             env_changes.push_str(&format!("{}={} ", k, v));
         }
     }
     if let Some(venv_directory) = venv_directory {
-        if let Some(str) = shlex::try_quote(venv_directory.to_string_lossy().as_ref()).ok() {
+        if let Some(str) = shlex.try_quote(venv_directory.to_string_lossy().as_ref()).ok() {
             env_changes.push_str(&format!("PATH={}:$PATH ", str));
         }
     }
@@ -336,15 +336,15 @@ pub fn wrap_for_ssh(
     } else {
         format!("cd; {env_changes} {to_run}")
     };
-    let shell_invocation = format!("sh -c {}", shlex::try_quote(&commands).unwrap());
+    let shell_invocation = format!("sh -c {}", shlex.try_quote(&commands).unwrap());
 
     let (program, mut args) = match ssh_command {
-        SshCommand::DevServer(ssh_command) => {
-            let mut args = shlex::split(&ssh_command).unwrap_or_default();
+        SshCommand.DevServer(ssh_command) => {
+            let mut args = shlex.split(&ssh_command).unwrap_or_default();
             let program = args.drain(0..1).next().unwrap_or("ssh".to_string());
             (program, args)
         }
-        SshCommand::Direct(ssh_args) => ("ssh".to_string(), ssh_args.clone()),
+        SshCommand.Direct(ssh_args) => ("ssh".to_string(), ssh_args.clone()),
     };
 
     if command.is_none() {
@@ -354,14 +354,14 @@ pub fn wrap_for_ssh(
     (program, args)
 }
 
-fn add_environment_path(env: &mut HashMap<String, String>, new_path: &Path) -> anyhow::Result<()> {
+fn add_environment_path(env: &mut HashMap<String, String>, new_path: &Path) -> anyhow.Result<()> {
     let mut env_paths = vec![new_path.to_path_buf()];
-    if let Some(path) = env.get("PATH").or(env::var("PATH").ok().as_ref()) {
-        let mut paths = std::env::split_paths(&path).collect::<Vec<_>>();
+    if let Some(path) = env.get("PATH").or(env.var("PATH").ok().as_ref()) {
+        let mut paths = std.env.split_paths(&path).collect.<Vec<_>>();
         env_paths.append(&mut paths);
     }
 
-    let paths = std::env::join_paths(env_paths).context("failed to create PATH env variable")?;
+    let paths = std.env.join_paths(env_paths).context("failed to create PATH env variable")?;
     env.insert("PATH".to_string(), paths.to_string_lossy().to_string());
 
     Ok(())
@@ -369,12 +369,12 @@ fn add_environment_path(env: &mut HashMap<String, String>, new_path: &Path) -> a
 
 #[cfg(test)]
 mod tests {
-    use collections::HashMap;
+    use collections.HashMap;
 
     #[test]
     fn test_add_environment_path_with_existing_path() {
-        let tmp_path = std::path::PathBuf::from("/tmp/new");
-        let mut env = HashMap::default();
+        let tmp_path = std.path.PathBuf.from("/tmp/new");
+        let mut env = HashMap.default();
         let old_path = if cfg!(windows) {
             "/usr/bin;/usr/local/bin"
         } else {
@@ -383,7 +383,7 @@ mod tests {
         env.insert("PATH".to_string(), old_path.to_string());
         env.insert("OTHER".to_string(), "aaa".to_string());
 
-        super::add_environment_path(&mut env, &tmp_path).unwrap();
+        super.add_environment_path(&mut env, &tmp_path).unwrap();
         if cfg!(windows) {
             assert_eq!(env.get("PATH").unwrap(), &format!("/tmp/new;{}", old_path));
         } else {
@@ -394,11 +394,11 @@ mod tests {
 
     #[test]
     fn test_add_environment_path_with_empty_path() {
-        let tmp_path = std::path::PathBuf::from("/tmp/new");
-        let mut env = HashMap::default();
+        let tmp_path = std.path.PathBuf.from("/tmp/new");
+        let mut env = HashMap.default();
         env.insert("OTHER".to_string(), "aaa".to_string());
-        let os_path = std::env::var("PATH").unwrap();
-        super::add_environment_path(&mut env, &tmp_path).unwrap();
+        let os_path = std.env.var("PATH").unwrap();
+        super.add_environment_path(&mut env, &tmp_path).unwrap();
         if cfg!(windows) {
             assert_eq!(env.get("PATH").unwrap(), &format!("/tmp/new;{}", os_path));
         } else {

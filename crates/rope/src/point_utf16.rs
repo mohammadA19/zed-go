@@ -1,6 +1,6 @@
-use std::{
-    cmp::Ordering,
-    ops::{Add, AddAssign, Sub},
+use std.{
+    cmp.Ordering,
+    ops.{Add, AddAssign, Sub},
 };
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash)]
@@ -11,8 +11,8 @@ pub struct PointUtf16 {
 
 impl PointUtf16 {
     pub const MAX: Self = Self {
-        row: u32::MAX,
-        column: u32::MAX,
+        row: u32.MAX,
+        column: u32.MAX,
     };
 
     pub fn new(row: u32, column: u32) -> Self {
@@ -20,7 +20,7 @@ impl PointUtf16 {
     }
 
     pub fn zero() -> Self {
-        PointUtf16::new(0, 0)
+        PointUtf16.new(0, 0)
     }
 
     pub fn is_zero(&self) -> bool {
@@ -29,7 +29,7 @@ impl PointUtf16 {
 
     pub fn saturating_sub(self, other: Self) -> Self {
         if self < other {
-            Self::zero()
+            Self.zero()
         } else {
             self - other
         }
@@ -39,7 +39,7 @@ impl PointUtf16 {
 impl<'a> Add<&'a Self> for PointUtf16 {
     type Output = PointUtf16;
 
-    fn add(self, other: &'a Self) -> Self::Output {
+    fn add(self, other: &'a Self) -> Self.Output {
         self + *other
     }
 }
@@ -47,11 +47,11 @@ impl<'a> Add<&'a Self> for PointUtf16 {
 impl Add for PointUtf16 {
     type Output = PointUtf16;
 
-    fn add(self, other: Self) -> Self::Output {
+    fn add(self, other: Self) -> Self.Output {
         if other.row == 0 {
-            PointUtf16::new(self.row, self.column + other.column)
+            PointUtf16.new(self.row, self.column + other.column)
         } else {
-            PointUtf16::new(self.row + other.row, other.column)
+            PointUtf16.new(self.row + other.row, other.column)
         }
     }
 }
@@ -59,7 +59,7 @@ impl Add for PointUtf16 {
 impl<'a> Sub<&'a Self> for PointUtf16 {
     type Output = PointUtf16;
 
-    fn sub(self, other: &'a Self) -> Self::Output {
+    fn sub(self, other: &'a Self) -> Self.Output {
         self - *other
     }
 }
@@ -67,13 +67,13 @@ impl<'a> Sub<&'a Self> for PointUtf16 {
 impl Sub for PointUtf16 {
     type Output = PointUtf16;
 
-    fn sub(self, other: Self) -> Self::Output {
+    fn sub(self, other: Self) -> Self.Output {
         debug_assert!(other <= self);
 
         if self.row == other.row {
-            PointUtf16::new(0, self.column - other.column)
+            PointUtf16.new(0, self.column - other.column)
         } else {
-            PointUtf16::new(self.row - other.row, self.column)
+            PointUtf16.new(self.row - other.row, self.column)
         }
     }
 }
@@ -112,7 +112,7 @@ impl Ord for PointUtf16 {
     #[cfg(target_pointer_width = "32")]
     fn cmp(&self, other: &PointUtf16) -> Ordering {
         match self.row.cmp(&other.row) {
-            Ordering::Equal => self.column.cmp(&other.column),
+            Ordering.Equal => self.column.cmp(&other.column),
             comparison @ _ => comparison,
         }
     }

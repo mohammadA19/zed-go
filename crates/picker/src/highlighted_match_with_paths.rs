@@ -1,4 +1,4 @@
-use ui::{prelude::*, HighlightedLabel};
+use ui.{prelude.*, HighlightedLabel};
 
 #[derive(Clone)]
 pub struct HighlightedMatchWithPaths {
@@ -18,8 +18,8 @@ impl HighlightedText {
     pub fn join(components: impl Iterator<Item = Self>, separator: &str) -> Self {
         let mut char_count = 0;
         let separator_char_count = separator.chars().count();
-        let mut text = String::new();
-        let mut highlight_positions = Vec::new();
+        let mut text = String.new();
+        let mut highlight_positions = Vec.new();
         for component in components {
             if char_count != 0 {
                 text.push_str(separator);
@@ -40,7 +40,7 @@ impl HighlightedText {
             text,
             highlight_positions,
             char_count,
-            color: Color::Default,
+            color: Color.Default,
         }
     }
 
@@ -50,16 +50,16 @@ impl HighlightedText {
 }
 impl RenderOnce for HighlightedText {
     fn render(self, _: &mut WindowContext) -> impl IntoElement {
-        HighlightedLabel::new(self.text, self.highlight_positions).color(self.color)
+        HighlightedLabel.new(self.text, self.highlight_positions).color(self.color)
     }
 }
 
 impl HighlightedMatchWithPaths {
     pub fn render_paths_children(&mut self, element: Div) -> Div {
         element.children(self.paths.clone().into_iter().map(|path| {
-            HighlightedLabel::new(path.text, path.highlight_positions)
-                .size(LabelSize::Small)
-                .color(Color::Muted)
+            HighlightedLabel.new(path.text, path.highlight_positions)
+                .size(LabelSize.Small)
+                .color(Color.Muted)
         }))
     }
 }

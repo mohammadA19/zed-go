@@ -1,6 +1,6 @@
-use crate::html_element::HtmlElement;
-use crate::markdown_writer::{HandlerOutcome, MarkdownWriter, StartTagOutcome};
-use crate::HandleTag;
+use crate.html_element.HtmlElement;
+use crate.markdown_writer.{HandlerOutcome, MarkdownWriter, StartTagOutcome};
+use crate.HandleTag;
 
 pub struct WikipediaChromeRemover;
 
@@ -15,30 +15,30 @@ impl HandleTag for WikipediaChromeRemover {
         _writer: &mut MarkdownWriter,
     ) -> StartTagOutcome {
         match tag.tag() {
-            "head" | "script" | "style" | "nav" => return StartTagOutcome::Skip,
+            "head" | "script" | "style" | "nav" => return StartTagOutcome.Skip,
             "sup" => {
                 if tag.has_class("reference") {
-                    return StartTagOutcome::Skip;
+                    return StartTagOutcome.Skip;
                 }
             }
             "div" | "span" | "a" => {
                 if tag.attr("id").as_deref() == Some("p-lang-btn") {
-                    return StartTagOutcome::Skip;
+                    return StartTagOutcome.Skip;
                 }
 
                 if tag.attr("id").as_deref() == Some("p-search") {
-                    return StartTagOutcome::Skip;
+                    return StartTagOutcome.Skip;
                 }
 
                 let classes_to_skip = ["noprint", "mw-editsection", "mw-jump-link"];
                 if tag.has_any_classes(&classes_to_skip) {
-                    return StartTagOutcome::Skip;
+                    return StartTagOutcome.Skip;
                 }
             }
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 }
 
@@ -57,13 +57,13 @@ impl HandleTag for WikipediaInfoboxHandler {
         match tag.tag() {
             "table" => {
                 if tag.has_class("infobox") {
-                    return StartTagOutcome::Skip;
+                    return StartTagOutcome.Skip;
                 }
             }
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 }
 
@@ -117,7 +117,7 @@ impl HandleTag for WikipediaCodeHandler {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn handle_tag_end(&mut self, tag: &HtmlElement, writer: &mut MarkdownWriter) {
@@ -135,32 +135,32 @@ impl HandleTag for WikipediaCodeHandler {
     fn handle_text(&mut self, text: &str, writer: &mut MarkdownWriter) -> HandlerOutcome {
         if writer.is_inside("pre") {
             writer.push_str(&text);
-            return HandlerOutcome::Handled;
+            return HandlerOutcome.Handled;
         }
 
-        HandlerOutcome::NoOp
+        HandlerOutcome.NoOp
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
-    use std::rc::Rc;
+    use std.cell.RefCell;
+    use std.rc.Rc;
 
-    use indoc::indoc;
-    use pretty_assertions::assert_eq;
+    use indoc.indoc;
+    use pretty_assertions.assert_eq;
 
-    use crate::{convert_html_to_markdown, markdown, TagHandler};
+    use crate.{convert_html_to_markdown, markdown, TagHandler};
 
-    use super::*;
+    use super.*;
 
     fn wikipedia_handlers() -> Vec<TagHandler> {
         vec![
-            Rc::new(RefCell::new(markdown::ParagraphHandler)),
-            Rc::new(RefCell::new(markdown::HeadingHandler)),
-            Rc::new(RefCell::new(markdown::ListHandler)),
-            Rc::new(RefCell::new(markdown::StyledTextHandler)),
-            Rc::new(RefCell::new(WikipediaChromeRemover)),
+            Rc.new(RefCell.new(markdown.ParagraphHandler)),
+            Rc.new(RefCell.new(markdown.HeadingHandler)),
+            Rc.new(RefCell.new(markdown.ListHandler)),
+            Rc.new(RefCell.new(markdown.StyledTextHandler)),
+            Rc.new(RefCell.new(WikipediaChromeRemover)),
         ]
     }
 

@@ -1,10 +1,10 @@
-use futures::{channel::oneshot, FutureExt};
-use gpui::{ModelContext, Task};
-use std::{marker::PhantomData, time::Duration};
+use futures.{channel.oneshot, FutureExt};
+use gpui.{ModelContext, Task};
+use std.{marker.PhantomData, time.Duration};
 
 pub struct DebouncedDelay<E: 'static> {
     task: Option<Task<()>>,
-    cancel_channel: Option<oneshot::Sender<()>>,
+    cancel_channel: Option<oneshot.Sender<()>>,
     _phantom_data: PhantomData<E>,
 }
 
@@ -25,7 +25,7 @@ impl<E: 'static> DebouncedDelay<E> {
             _ = channel.send(());
         }
 
-        let (sender, mut receiver) = oneshot::channel::<()>();
+        let (sender, mut receiver) = oneshot.channel.<()>();
         self.cancel_channel = Some(sender);
 
         let previous_task = self.task.take();
@@ -35,7 +35,7 @@ impl<E: 'static> DebouncedDelay<E> {
                 previous_task.await;
             }
 
-            futures::select_biased! {
+            futures.select_biased! {
                 _ = receiver => return,
                 _ = timer => {}
             }

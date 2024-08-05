@@ -4,21 +4,21 @@ pub mod error;
 mod macros;
 mod typed_envelope;
 
-pub use error::*;
-pub use typed_envelope::*;
+pub use error.*;
+pub use typed_envelope.*;
 
-use anyhow::anyhow;
-use collections::HashMap;
-use futures::{future::BoxFuture, Future};
-pub use prost::{DecodeError, Message};
-use serde::Serialize;
-use std::{
-    any::{Any, TypeId},
+use anyhow.anyhow;
+use collections.HashMap;
+use futures.{future.BoxFuture, Future};
+pub use prost.{DecodeError, Message};
+use serde.Serialize;
+use std.{
+    any.{Any, TypeId},
     cmp,
-    fmt::{self, Debug},
+    fmt.{self, Debug},
     iter, mem,
-    sync::Arc,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    sync.Arc,
+    time.{Duration, SystemTime, UNIX_EPOCH},
 };
 
 include!(concat!(env!("OUT_DIR"), "/zed.messages.rs"));
@@ -65,9 +65,9 @@ pub trait ProtoClient: Send + Sync {
         &self,
         envelope: Envelope,
         request_type: &'static str,
-    ) -> BoxFuture<'static, anyhow::Result<Envelope>>;
+    ) -> BoxFuture<'static, anyhow.Result<Envelope>>;
 
-    fn send(&self, envelope: Envelope) -> anyhow::Result<()>;
+    fn send(&self, envelope: Envelope) -> anyhow.Result<()>;
 }
 
 #[derive(Clone)]
@@ -90,32 +90,32 @@ impl AnyProtoClient {
     pub fn request<T: RequestMessage>(
         &self,
         request: T,
-    ) -> impl Future<Output = anyhow::Result<T::Response>> {
+    ) -> impl Future<Output = anyhow.Result<T.Response>> {
         let envelope = request.into_envelope(0, None, None);
-        let response = self.0.request(envelope, T::NAME);
+        let response = self.0.request(envelope, T.NAME);
         async move {
-            T::Response::from_envelope(response.await?)
+            T.Response.from_envelope(response.await?)
                 .ok_or_else(|| anyhow!("received response of the wrong type"))
         }
     }
 
-    pub fn send<T: EnvelopedMessage>(&self, request: T) -> anyhow::Result<()> {
+    pub fn send<T: EnvelopedMessage>(&self, request: T) -> anyhow.Result<()> {
         let envelope = request.into_envelope(0, None, None);
         self.0.send(envelope)
     }
 
-    pub fn send_dynamic(&self, message: Envelope) -> anyhow::Result<()> {
+    pub fn send_dynamic(&self, message: Envelope) -> anyhow.Result<()> {
         self.0.send(message)
     }
 }
 
 impl<T: EnvelopedMessage> AnyTypedEnvelope for TypedEnvelope<T> {
     fn payload_type_id(&self) -> TypeId {
-        TypeId::of::<T>()
+        TypeId.of.<T>()
     }
 
     fn payload_type_name(&self) -> &'static str {
-        T::NAME
+        T.NAME
     }
 
     fn as_any(&self) -> &dyn Any {
@@ -127,7 +127,7 @@ impl<T: EnvelopedMessage> AnyTypedEnvelope for TypedEnvelope<T> {
     }
 
     fn is_background(&self) -> bool {
-        matches!(T::PRIORITY, MessagePriority::Background)
+        matches!(T.PRIORITY, MessagePriority.Background)
     }
 
     fn original_sender_id(&self) -> Option<PeerId> {
@@ -160,7 +160,7 @@ impl Copy for PeerId {}
 impl Eq for PeerId {}
 
 impl Ord for PeerId {
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
+    fn cmp(&self, other: &Self) -> cmp.Ordering {
         self.owner_id
             .cmp(&other.owner_id)
             .then_with(|| self.id.cmp(&other.id))
@@ -168,20 +168,20 @@ impl Ord for PeerId {
 }
 
 impl PartialOrd for PeerId {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl std::hash::Hash for PeerId {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+impl std.hash.Hash for PeerId {
+    fn hash<H: std.hash.Hasher>(&self, state: &mut H) {
         self.owner_id.hash(state);
         self.id.hash(state);
     }
 }
 
-impl fmt::Display for PeerId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Display for PeerId {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{}/{}", self.owner_id, self.id)
     }
 }
@@ -611,7 +611,7 @@ entity_messages!(
 impl From<Timestamp> for SystemTime {
     fn from(val: Timestamp) -> Self {
         UNIX_EPOCH
-            .checked_add(Duration::new(val.seconds, val.nanos))
+            .checked_add(Duration.new(val.seconds, val.nanos))
             .unwrap()
     }
 }
@@ -655,20 +655,20 @@ pub fn split_worktree_update(
         .updated_repositories
         .into_iter()
         .map(|repo| (repo.work_directory_id, repo))
-        .collect::<HashMap<_, _>>();
+        .collect.<HashMap<_, _>>();
 
-    iter::from_fn(move || {
+    iter.from_fn(move || {
         if done_files {
             return None;
         }
 
-        let updated_entries_chunk_size = cmp::min(message.updated_entries.len(), max_chunk_size);
+        let updated_entries_chunk_size = cmp.min(message.updated_entries.len(), max_chunk_size);
         let updated_entries: Vec<_> = message
             .updated_entries
             .drain(..updated_entries_chunk_size)
             .collect();
 
-        let removed_entries_chunk_size = cmp::min(message.removed_entries.len(), max_chunk_size);
+        let removed_entries_chunk_size = cmp.min(message.removed_entries.len(), max_chunk_size);
         let removed_entries = message
             .removed_entries
             .drain(..removed_entries_chunk_size)
@@ -676,7 +676,7 @@ pub fn split_worktree_update(
 
         done_files = message.updated_entries.is_empty() && message.removed_entries.is_empty();
 
-        let mut updated_repositories = Vec::new();
+        let mut updated_repositories = Vec.new();
 
         if !repository_map.is_empty() {
             for entry in &updated_entries {
@@ -687,13 +687,13 @@ pub fn split_worktree_update(
         }
 
         let removed_repositories = if done_files {
-            mem::take(&mut message.removed_repositories)
+            mem.take(&mut message.removed_repositories)
         } else {
-            Default::default()
+            Default.default()
         };
 
         if done_files {
-            updated_repositories.extend(mem::take(&mut repository_map).into_values());
+            updated_repositories.extend(mem.take(&mut repository_map).into_values());
         }
 
         Some(UpdateWorktree {
@@ -713,7 +713,7 @@ pub fn split_worktree_update(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_converting_peer_id_from_and_to_u64() {
@@ -721,21 +721,21 @@ mod tests {
             owner_id: 10,
             id: 3,
         };
-        assert_eq!(PeerId::from_u64(peer_id.as_u64()), peer_id);
+        assert_eq!(PeerId.from_u64(peer_id.as_u64()), peer_id);
         let peer_id = PeerId {
-            owner_id: u32::MAX,
+            owner_id: u32.MAX,
             id: 3,
         };
-        assert_eq!(PeerId::from_u64(peer_id.as_u64()), peer_id);
+        assert_eq!(PeerId.from_u64(peer_id.as_u64()), peer_id);
         let peer_id = PeerId {
             owner_id: 10,
-            id: u32::MAX,
+            id: u32.MAX,
         };
-        assert_eq!(PeerId::from_u64(peer_id.as_u64()), peer_id);
+        assert_eq!(PeerId.from_u64(peer_id.as_u64()), peer_id);
         let peer_id = PeerId {
-            owner_id: u32::MAX,
-            id: u32::MAX,
+            owner_id: u32.MAX,
+            id: u32.MAX,
         };
-        assert_eq!(PeerId::from_u64(peer_id.as_u64()), peer_id);
+        assert_eq!(PeerId.from_u64(peer_id.as_u64()), peer_id);
     }
 }

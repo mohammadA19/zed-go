@@ -1,21 +1,21 @@
-use anyhow::{anyhow, Result};
-use async_trait::async_trait;
-use futures::StreamExt;
-use gpui::AsyncAppContext;
-use language::{
-    language_settings::all_language_settings, LanguageServerName, LspAdapter, LspAdapterDelegate,
+use anyhow.{anyhow, Result};
+use async_trait.async_trait;
+use futures.StreamExt;
+use gpui.AsyncAppContext;
+use language.{
+    language_settings.all_language_settings, LanguageServerName, LspAdapter, LspAdapterDelegate,
 };
-use lsp::LanguageServerBinary;
-use node_runtime::NodeRuntime;
-use serde_json::Value;
-use smol::fs;
-use std::{
-    any::Any,
-    ffi::OsString,
-    path::{Path, PathBuf},
-    sync::Arc,
+use lsp.LanguageServerBinary;
+use node_runtime.NodeRuntime;
+use serde_json.Value;
+use smol.fs;
+use std.{
+    any.Any,
+    ffi.OsString,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
-use util::{maybe, ResultExt};
+use util.{maybe, ResultExt};
 
 const SERVER_PATH: &str = "node_modules/yaml-language-server/bin/yaml-language-server";
 
@@ -43,7 +43,7 @@ impl LspAdapter for YamlLspAdapter {
         &self,
         _: &dyn LspAdapterDelegate,
     ) -> Result<Box<dyn 'static + Any + Send>> {
-        Ok(Box::new(
+        Ok(Box.new(
             self.node
                 .npm_package_latest_version("yaml-language-server")
                 .await?,
@@ -56,7 +56,7 @@ impl LspAdapter for YamlLspAdapter {
         container_dir: PathBuf,
         _: &dyn LspAdapterDelegate,
     ) -> Result<LanguageServerBinary> {
-        let latest_version = latest_version.downcast::<String>().unwrap();
+        let latest_version = latest_version.downcast.<String>().unwrap();
         let server_path = container_dir.join(SERVER_PATH);
         let package_name = "yaml-language-server";
 
@@ -104,7 +104,7 @@ impl LspAdapter for YamlLspAdapter {
                 .tab_size
         })?;
 
-        Ok(serde_json::json!({
+        Ok(serde_json.json!({
             "yaml": {
                 "keyOrdering": false
             },
@@ -121,7 +121,7 @@ async fn get_cached_server_binary(
 ) -> Option<LanguageServerBinary> {
     maybe!(async {
         let mut last_version_dir = None;
-        let mut entries = fs::read_dir(&container_dir).await?;
+        let mut entries = fs.read_dir(&container_dir).await?;
         while let Some(entry) = entries.next().await {
             let entry = entry?;
             if entry.file_type().await?.is_dir() {

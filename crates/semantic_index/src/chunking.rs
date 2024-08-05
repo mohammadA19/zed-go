@@ -1,14 +1,14 @@
-use language::{with_parser, with_query_cursor, Language};
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use std::{
-    cmp::{self, Reverse},
-    ops::Range,
-    path::Path,
-    sync::Arc,
+use language.{with_parser, with_query_cursor, Language};
+use serde.{Deserialize, Serialize};
+use sha2.{Digest, Sha256};
+use std.{
+    cmp.{self, Reverse},
+    ops.Range,
+    path.Path,
+    sync.Arc,
 };
-use tree_sitter::QueryCapture;
-use util::ResultExt as _;
+use tree_sitter.QueryCapture;
+use util.ResultExt as _;
 
 #[derive(Copy, Clone)]
 struct ChunkSizeRange {
@@ -55,7 +55,7 @@ fn syntactic_ranges(
     });
 
     let Some(tree) = tree else {
-        log::error!("failed to parse file {path:?} for chunking");
+        log.error!("failed to parse file {path:?} for chunking");
         return None;
     };
 
@@ -80,7 +80,7 @@ fn syntactic_ranges(
                 result
             }
         })
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
 
     // Retrieve a list of ranges of outline items (types, functions, etc) in the document.
     // Omit single-line outline items (e.g. struct fields, constant declarations), because
@@ -111,7 +111,7 @@ fn syntactic_ranges(
                         None
                     })
             })
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
     });
 
     ranges.sort_unstable_by_key(|range| (range.start, Reverse(range.end)));
@@ -123,7 +123,7 @@ fn chunk_text_with_syntactic_ranges(
     mut syntactic_ranges: &[Range<usize>],
     size_config: ChunkSizeRange,
 ) -> Vec<Chunk> {
-    let mut chunks = Vec::new();
+    let mut chunks = Vec.new();
     let mut range = 0..0;
     let mut range_end_nesting_depth = 0;
 
@@ -143,7 +143,7 @@ fn chunk_text_with_syntactic_ranges(
         // start a new chunk.
         if line_ix - range.start > size_config.max {
             if range.is_empty() {
-                range.end = cmp::min(range.start + size_config.max, line_ix);
+                range.end = cmp.min(range.start + size_config.max, line_ix);
                 while !text.is_char_boundary(range.end) {
                     range.end -= 1;
                 }
@@ -151,7 +151,7 @@ fn chunk_text_with_syntactic_ranges(
 
             chunks.push(Chunk {
                 range: range.clone(),
-                digest: Sha256::digest(&text[range.clone()]).into(),
+                digest: Sha256.digest(&text[range.clone()]).into(),
             });
             range_end_nesting_depth = 0;
             range.start = range.end;
@@ -192,7 +192,7 @@ fn chunk_text_with_syntactic_ranges(
     if !range.is_empty() {
         chunks.push(Chunk {
             range: range.clone(),
-            digest: Sha256::digest(&text[range]).into(),
+            digest: Sha256.digest(&text[range]).into(),
         });
     }
 
@@ -201,9 +201,9 @@ fn chunk_text_with_syntactic_ranges(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use language::{tree_sitter_rust, Language, LanguageConfig, LanguageMatcher};
-    use unindent::Unindent as _;
+    use super.*;
+    use language.{tree_sitter_rust, Language, LanguageConfig, LanguageMatcher};
+    use unindent.Unindent as _;
 
     #[test]
     fn test_chunk_text_with_syntax() {
@@ -241,7 +241,7 @@ mod tests {
         let chunks = chunk_text_with_size_range(
             &text,
             Some(&language),
-            Path::new("lib.rs"),
+            Path.new("lib.rs"),
             ChunkSizeRange {
                 min: text.find('}').unwrap(),
                 max: text.find("Self {").unwrap(),
@@ -275,7 +275,7 @@ mod tests {
         let chunks = chunk_text_with_size_range(
             &text,
             Some(&language),
-            Path::new("lib.rs"),
+            Path.new("lib.rs"),
             ChunkSizeRange {
                 min: text.find('{').unwrap(),
                 max: text.find('V').unwrap(),
@@ -312,7 +312,7 @@ mod tests {
         let chunks = chunk_text_with_size_range(
             &text,
             Some(&language),
-            Path::new("lib.rs"),
+            Path.new("lib.rs"),
             ChunkSizeRange { min: 32, max: 64 },
         );
 
@@ -380,7 +380,7 @@ mod tests {
     #[test]
     fn test_chunk_text() {
         let text = "a\n".repeat(1000);
-        let chunks = chunk_text(&text, None, Path::new("lib.rs"));
+        let chunks = chunk_text(&text, None, Path.new("lib.rs"));
         assert_eq!(
             chunks.len(),
             ((2000_f64) / (CHUNK_SIZE_RANGE.max as f64)).ceil() as usize
@@ -388,17 +388,17 @@ mod tests {
     }
 
     fn rust_language() -> Arc<Language> {
-        Arc::new(
-            Language::new(
+        Arc.new(
+            Language.new(
                 LanguageConfig {
                     name: "Rust".into(),
                     matcher: LanguageMatcher {
                         path_suffixes: vec!["rs".to_string()],
-                        ..Default::default()
+                        ..Default.default()
                     },
-                    ..Default::default()
+                    ..Default.default()
                 },
-                Some(tree_sitter_rust::language()),
+                Some(tree_sitter_rust.language()),
             )
             .with_outline_query(
                 "

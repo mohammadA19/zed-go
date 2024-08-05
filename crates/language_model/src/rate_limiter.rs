@@ -1,11 +1,11 @@
-use anyhow::Result;
-use futures::Stream;
-use smol::lock::{Semaphore, SemaphoreGuardArc};
-use std::{
-    future::Future,
-    pin::Pin,
-    sync::Arc,
-    task::{Context, Poll},
+use anyhow.Result;
+use futures.Stream;
+use smol.lock.{Semaphore, SemaphoreGuardArc};
+use std.{
+    future.Future,
+    pin.Pin,
+    sync.Arc,
+    task.{Context, Poll},
 };
 
 #[derive(Clone)]
@@ -22,17 +22,17 @@ impl<T> Stream for RateLimitGuard<T>
 where
     T: Stream,
 {
-    type Item = T::Item;
+    type Item = T.Item;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        unsafe { Pin::map_unchecked_mut(self, |this| &mut this.inner).poll_next(cx) }
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self.Item>> {
+        unsafe { Pin.map_unchecked_mut(self, |this| &mut this.inner).poll_next(cx) }
     }
 }
 
 impl RateLimiter {
     pub fn new(limit: usize) -> Self {
         Self {
-            semaphore: Arc::new(Semaphore::new(limit)),
+            semaphore: Arc.new(Semaphore.new(limit)),
         }
     }
 
@@ -52,7 +52,7 @@ impl RateLimiter {
     pub fn stream<'a, Fut, T>(
         &self,
         future: Fut,
-    ) -> impl 'a + Future<Output = Result<impl Stream<Item = T::Item>>>
+    ) -> impl 'a + Future<Output = Result<impl Stream<Item = T.Item>>>
     where
         Fut: 'a + Future<Output = Result<T>>,
         T: Stream,

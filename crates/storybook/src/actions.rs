@@ -1,2 +1,2 @@
-use gpui::actions;
+use gpui.actions;
 actions!(storybook, [Quit]);

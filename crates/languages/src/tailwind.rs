@@ -1,22 +1,22 @@
-use anyhow::{anyhow, Result};
-use async_trait::async_trait;
-use collections::HashMap;
-use futures::StreamExt;
-use gpui::AsyncAppContext;
-use language::{LanguageServerName, LspAdapter, LspAdapterDelegate};
-use lsp::LanguageServerBinary;
-use node_runtime::NodeRuntime;
-use project::project_settings::ProjectSettings;
-use serde_json::{json, Value};
-use settings::Settings;
-use smol::fs;
-use std::{
-    any::Any,
-    ffi::OsString,
-    path::{Path, PathBuf},
-    sync::Arc,
+use anyhow.{anyhow, Result};
+use async_trait.async_trait;
+use collections.HashMap;
+use futures.StreamExt;
+use gpui.AsyncAppContext;
+use language.{LanguageServerName, LspAdapter, LspAdapterDelegate};
+use lsp.LanguageServerBinary;
+use node_runtime.NodeRuntime;
+use project.project_settings.ProjectSettings;
+use serde_json.{json, Value};
+use settings.Settings;
+use smol.fs;
+use std.{
+    any.Any,
+    ffi.OsString,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
-use util::{maybe, ResultExt};
+use util.{maybe, ResultExt};
 
 #[cfg(target_os = "windows")]
 const SERVER_PATH: &str = "node_modules/.bin/tailwindcss-language-server.ps1";
@@ -42,7 +42,7 @@ impl TailwindLspAdapter {
 #[async_trait(?Send)]
 impl LspAdapter for TailwindLspAdapter {
     fn name(&self) -> LanguageServerName {
-        LanguageServerName(Self::SERVER_NAME.into())
+        LanguageServerName(Self.SERVER_NAME.into())
     }
 
     async fn check_if_user_installed(
@@ -52,14 +52,14 @@ impl LspAdapter for TailwindLspAdapter {
     ) -> Option<LanguageServerBinary> {
         let configured_binary = cx
             .update(|cx| {
-                ProjectSettings::get_global(cx)
+                ProjectSettings.get_global(cx)
                     .lsp
-                    .get(Self::SERVER_NAME)
+                    .get(Self.SERVER_NAME)
                     .and_then(|s| s.binary.clone())
             })
             .ok()??;
 
-        let path = if let Some(configured_path) = configured_binary.path.map(PathBuf::from) {
+        let path = if let Some(configured_path) = configured_binary.path.map(PathBuf.from) {
             configured_path
         } else {
             self.node.binary_path().await.ok()?
@@ -83,7 +83,7 @@ impl LspAdapter for TailwindLspAdapter {
         &self,
         _: &dyn LspAdapterDelegate,
     ) -> Result<Box<dyn 'static + Any + Send>> {
-        Ok(Box::new(
+        Ok(Box.new(
             self.node
                 .npm_package_latest_version("@tailwindcss/language-server")
                 .await?,
@@ -96,7 +96,7 @@ impl LspAdapter for TailwindLspAdapter {
         container_dir: PathBuf,
         _: &dyn LspAdapterDelegate,
     ) -> Result<LanguageServerBinary> {
-        let latest_version = latest_version.downcast::<String>().unwrap();
+        let latest_version = latest_version.downcast.<String>().unwrap();
         let server_path = container_dir.join(SERVER_PATH);
         let package_name = "@tailwindcss/language-server";
 
@@ -121,13 +121,13 @@ impl LspAdapter for TailwindLspAdapter {
                 .expect("invalid node binary path")
                 .to_path_buf()];
 
-            if let Some(existing_path) = std::env::var_os("PATH") {
-                let mut paths = std::env::split_paths(&existing_path).collect::<Vec<_>>();
+            if let Some(existing_path) = std.env.var_os("PATH") {
+                let mut paths = std.env.split_paths(&existing_path).collect.<Vec<_>>();
                 env_path.append(&mut paths);
             }
 
-            let env_path = std::env::join_paths(env_path)?;
-            let mut env = HashMap::default();
+            let env_path = std.env.join_paths(env_path)?;
+            let mut env = HashMap.default();
             env.insert("PATH".to_string(), env_path.to_string_lossy().to_string());
 
             Ok(LanguageServerBinary {
@@ -164,7 +164,7 @@ impl LspAdapter for TailwindLspAdapter {
     async fn initialization_options(
         self: Arc<Self>,
         _: &Arc<dyn LspAdapterDelegate>,
-    ) -> Result<Option<serde_json::Value>> {
+    ) -> Result<Option<serde_json.Value>> {
         Ok(Some(json!({
             "provideFormatter": true,
             "userLanguages": {
@@ -182,9 +182,9 @@ impl LspAdapter for TailwindLspAdapter {
         cx: &mut AsyncAppContext,
     ) -> Result<Value> {
         let tailwind_user_settings = cx.update(|cx| {
-            ProjectSettings::get_global(cx)
+            ProjectSettings.get_global(cx)
                 .lsp
-                .get(Self::SERVER_NAME)
+                .get(Self.SERVER_NAME)
                 .and_then(|s| s.settings.clone())
                 .unwrap_or_default()
         })?;
@@ -211,7 +211,7 @@ impl LspAdapter for TailwindLspAdapter {
     }
 
     fn language_ids(&self) -> HashMap<String, String> {
-        HashMap::from_iter([
+        HashMap.from_iter([
             ("Astro".to_string(), "astro".to_string()),
             ("HTML".to_string(), "html".to_string()),
             ("CSS".to_string(), "css".to_string()),
@@ -233,7 +233,7 @@ async fn get_cached_server_binary(
 ) -> Option<LanguageServerBinary> {
     maybe!(async {
         let mut last_version_dir = None;
-        let mut entries = fs::read_dir(&container_dir).await?;
+        let mut entries = fs.read_dir(&container_dir).await?;
         while let Some(entry) = entries.next().await {
             let entry = entry?;
             if entry.file_type().await?.is_dir() {

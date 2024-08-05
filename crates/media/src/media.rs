@@ -4,16 +4,16 @@
 mod bindings;
 
 #[cfg(target_os = "macos")]
-use core_foundation::{
-    base::{CFTypeID, TCFType},
+use core_foundation.{
+    base.{CFTypeID, TCFType},
     declare_TCFType, impl_CFTypeDescription, impl_TCFType,
 };
 #[cfg(target_os = "macos")]
-use std::ffi::c_void;
+use std.ffi.c_void;
 
 #[cfg(target_os = "macos")]
 pub mod io_surface {
-    use super::*;
+    use super.*;
 
     #[repr(C)]
     pub struct __IOSurface(c_void);
@@ -34,20 +34,20 @@ pub mod io_surface {
 pub mod core_video {
     #![allow(non_snake_case)]
 
-    use super::*;
-    pub use crate::bindings::{
+    use super.*;
+    pub use crate.bindings.{
         kCVPixelFormatType_32BGRA, kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
         kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, kCVPixelFormatType_420YpCbCr8Planar,
     };
-    use crate::bindings::{kCVReturnSuccess, CVReturn, OSType};
-    use anyhow::{anyhow, Result};
-    use core_foundation::{
-        base::kCFAllocatorDefault, dictionary::CFDictionaryRef, mach_port::CFAllocatorRef,
+    use crate.bindings.{kCVReturnSuccess, CVReturn, OSType};
+    use anyhow.{anyhow, Result};
+    use core_foundation.{
+        base.kCFAllocatorDefault, dictionary.CFDictionaryRef, mach_port.CFAllocatorRef,
     };
-    use foreign_types::ForeignTypeRef;
-    use io_surface::{IOSurface, IOSurfaceRef};
-    use metal::{MTLDevice, MTLPixelFormat};
-    use std::ptr;
+    use foreign_types.ForeignTypeRef;
+    use io_surface.{IOSurface, IOSurfaceRef};
+    use metal.{MTLDevice, MTLPixelFormat};
+    use std.ptr;
 
     #[repr(C)]
     pub struct __CVImageBuffer(c_void);
@@ -61,7 +61,7 @@ pub mod core_video {
     impl CVImageBuffer {
         pub fn io_surface(&self) -> IOSurface {
             unsafe {
-                IOSurface::wrap_under_get_rule(CVPixelBufferGetIOSurface(
+                IOSurface.wrap_under_get_rule(CVPixelBufferGetIOSurface(
                     self.as_concrete_TypeRef(),
                 ))
             }
@@ -116,16 +116,16 @@ pub mod core_video {
         ///
         /// metal_device must be valid according to CVMetalTextureCacheCreate
         pub unsafe fn new(metal_device: *mut MTLDevice) -> Result<Self> {
-            let mut this = ptr::null();
+            let mut this = ptr.null();
             let result = CVMetalTextureCacheCreate(
                 kCFAllocatorDefault,
-                ptr::null(),
+                ptr.null(),
                 metal_device,
-                ptr::null(),
+                ptr.null(),
                 &mut this,
             );
             if result == kCVReturnSuccess {
-                Ok(CVMetalTextureCache::wrap_under_create_rule(this))
+                Ok(CVMetalTextureCache.wrap_under_create_rule(this))
             } else {
                 Err(anyhow!("could not create texture cache, code: {}", result))
             }
@@ -143,7 +143,7 @@ pub mod core_video {
             height: usize,
             plane_index: usize,
         ) -> Result<CVMetalTexture> {
-            let mut this = ptr::null();
+            let mut this = ptr.null();
             let result = CVMetalTextureCacheCreateTextureFromImage(
                 kCFAllocatorDefault,
                 self.as_concrete_TypeRef(),
@@ -156,7 +156,7 @@ pub mod core_video {
                 &mut this,
             );
             if result == kCVReturnSuccess {
-                Ok(CVMetalTexture::wrap_under_create_rule(this))
+                Ok(CVMetalTexture.wrap_under_create_rule(this))
             } else {
                 Err(anyhow!("could not create texture, code: {}", result))
             }
@@ -195,10 +195,10 @@ pub mod core_video {
     impl_CFTypeDescription!(CVMetalTexture);
 
     impl CVMetalTexture {
-        pub fn as_texture_ref(&self) -> &metal::TextureRef {
+        pub fn as_texture_ref(&self) -> &metal.TextureRef {
             unsafe {
                 let texture = CVMetalTextureGetTexture(self.as_concrete_TypeRef());
-                metal::TextureRef::from_ptr(texture as *mut _)
+                metal.TextureRef.from_ptr(texture as *mut _)
             }
         }
     }
@@ -214,21 +214,21 @@ pub mod core_video {
 pub mod core_media {
     #![allow(non_snake_case)]
 
-    pub use crate::bindings::{
+    pub use crate.bindings.{
         kCMSampleAttachmentKey_NotSync, kCMTimeInvalid, kCMVideoCodecType_H264, CMItemIndex,
         CMSampleTimingInfo, CMTime, CMTimeMake, CMVideoCodecType,
     };
-    use crate::core_video::{CVImageBuffer, CVImageBufferRef};
-    use anyhow::{anyhow, Result};
-    use core_foundation::{
-        array::{CFArray, CFArrayRef},
-        base::{CFTypeID, OSStatus, TCFType},
+    use crate.core_video.{CVImageBuffer, CVImageBufferRef};
+    use anyhow.{anyhow, Result};
+    use core_foundation.{
+        array.{CFArray, CFArrayRef},
+        base.{CFTypeID, OSStatus, TCFType},
         declare_TCFType,
-        dictionary::CFDictionary,
+        dictionary.CFDictionary,
         impl_CFTypeDescription, impl_TCFType,
-        string::CFString,
+        string.CFString,
     };
-    use std::{ffi::c_void, ptr};
+    use std.{ffi.c_void, ptr};
 
     #[repr(C)]
     pub struct __CMSampleBuffer(c_void);
@@ -244,10 +244,10 @@ pub mod core_media {
             unsafe {
                 let attachments =
                     CMSampleBufferGetSampleAttachmentsArray(self.as_concrete_TypeRef(), true);
-                CFArray::<CFDictionary>::wrap_under_get_rule(attachments)
+                CFArray.<CFDictionary>.wrap_under_get_rule(attachments)
                     .into_iter()
                     .map(|attachments| {
-                        CFDictionary::wrap_under_get_rule(attachments.as_concrete_TypeRef())
+                        CFDictionary.wrap_under_get_rule(attachments.as_concrete_TypeRef())
                     })
                     .collect()
             }
@@ -255,7 +255,7 @@ pub mod core_media {
 
         pub fn image_buffer(&self) -> CVImageBuffer {
             unsafe {
-                CVImageBuffer::wrap_under_get_rule(CMSampleBufferGetImageBuffer(
+                CVImageBuffer.wrap_under_get_rule(CMSampleBufferGetImageBuffer(
                     self.as_concrete_TypeRef(),
                 ))
             }
@@ -284,7 +284,7 @@ pub mod core_media {
 
         pub fn format_description(&self) -> CMFormatDescription {
             unsafe {
-                CMFormatDescription::wrap_under_get_rule(CMSampleBufferGetFormatDescription(
+                CMFormatDescription.wrap_under_get_rule(CMSampleBufferGetFormatDescription(
                     self.as_concrete_TypeRef(),
                 ))
             }
@@ -292,7 +292,7 @@ pub mod core_media {
 
         pub fn data(&self) -> CMBlockBuffer {
             unsafe {
-                CMBlockBuffer::wrap_under_get_rule(CMSampleBufferGetDataBuffer(
+                CMBlockBuffer.wrap_under_get_rule(CMSampleBufferGetDataBuffer(
                     self.as_concrete_TypeRef(),
                 ))
             }
@@ -335,10 +335,10 @@ pub mod core_media {
                 let result = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
                     self.as_concrete_TypeRef(),
                     0,
-                    ptr::null_mut(),
-                    ptr::null_mut(),
+                    ptr.null_mut(),
+                    ptr.null_mut(),
                     &mut count,
-                    ptr::null_mut(),
+                    ptr.null_mut(),
                 );
                 assert_eq!(result, 0);
                 count
@@ -347,18 +347,18 @@ pub mod core_media {
 
         pub fn h264_parameter_set_at_index(&self, index: usize) -> Result<&[u8]> {
             unsafe {
-                let mut bytes = ptr::null();
+                let mut bytes = ptr.null();
                 let mut len = 0;
                 let result = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
                     self.as_concrete_TypeRef(),
                     index,
                     &mut bytes,
                     &mut len,
-                    ptr::null_mut(),
-                    ptr::null_mut(),
+                    ptr.null_mut(),
+                    ptr.null_mut(),
                 );
                 if result == 0 {
-                    Ok(std::slice::from_raw_parts(bytes, len))
+                    Ok(std.slice.from_raw_parts(bytes, len))
                 } else {
                     Err(anyhow!("error getting parameter set, code: {}", result))
                 }
@@ -390,7 +390,7 @@ pub mod core_media {
     impl CMBlockBuffer {
         pub fn bytes(&self) -> &[u8] {
             unsafe {
-                let mut bytes = ptr::null();
+                let mut bytes = ptr.null();
                 let mut len = 0;
                 let result = CMBlockBufferGetDataPointer(
                     self.as_concrete_TypeRef(),
@@ -400,7 +400,7 @@ pub mod core_media {
                     &mut bytes,
                 );
                 assert!(result == 0, "could not get block buffer data");
-                std::slice::from_raw_parts(bytes, len)
+                std.slice.from_raw_parts(bytes, len)
             }
         }
     }
@@ -422,15 +422,15 @@ pub mod core_media {
 pub mod video_toolbox {
     #![allow(non_snake_case)]
 
-    use super::*;
-    use crate::{
-        core_media::{CMSampleBufferRef, CMTime, CMVideoCodecType},
-        core_video::CVImageBufferRef,
+    use super.*;
+    use crate.{
+        core_media.{CMSampleBufferRef, CMTime, CMVideoCodecType},
+        core_video.CVImageBufferRef,
     };
-    use anyhow::{anyhow, Result};
-    pub use bindings::VTEncodeInfoFlags;
-    use core_foundation::{base::OSStatus, dictionary::CFDictionaryRef, mach_port::CFAllocatorRef};
-    use std::ptr;
+    use anyhow.{anyhow, Result};
+    pub use bindings.VTEncodeInfoFlags;
+    use core_foundation.{base.OSStatus, dictionary.CFDictionaryRef, mach_port.CFAllocatorRef};
+    use std.ptr;
 
     #[repr(C)]
     pub struct __VTCompressionSession(c_void);
@@ -459,22 +459,22 @@ pub mod video_toolbox {
             callback: VTCompressionOutputCallback,
             callback_data: *const c_void,
         ) -> Result<Self> {
-            let mut this = ptr::null();
+            let mut this = ptr.null();
             let result = VTCompressionSessionCreate(
-                ptr::null(),
+                ptr.null(),
                 width as i32,
                 height as i32,
                 codec,
-                ptr::null(),
-                ptr::null(),
-                ptr::null(),
+                ptr.null(),
+                ptr.null(),
+                ptr.null(),
                 callback,
                 callback_data,
                 &mut this,
             );
 
             if result == 0 {
-                Ok(Self::wrap_under_create_rule(this))
+                Ok(Self.wrap_under_create_rule(this))
             } else {
                 Err(anyhow!(
                     "error creating compression session, code {}",
@@ -497,9 +497,9 @@ pub mod video_toolbox {
                 buffer,
                 presentation_timestamp,
                 duration,
-                ptr::null(),
-                ptr::null(),
-                ptr::null_mut(),
+                ptr.null(),
+                ptr.null(),
+                ptr.null_mut(),
             );
             if result == 0 {
                 Ok(())

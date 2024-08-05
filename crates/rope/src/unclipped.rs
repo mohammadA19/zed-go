@@ -1,5 +1,5 @@
-use crate::{ChunkSummary, TextDimension, TextSummary};
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use crate.{ChunkSummary, TextDimension, TextSummary};
+use std.ops.{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Unclipped<T>(pub T);
@@ -10,7 +10,7 @@ impl<T> From<T> for Unclipped<T> {
     }
 }
 
-impl<'a, T: sum_tree::Dimension<'a, ChunkSummary>> sum_tree::Dimension<'a, ChunkSummary>
+impl<'a, T: sum_tree.Dimension<'a, ChunkSummary>> sum_tree.Dimension<'a, ChunkSummary>
     for Unclipped<T>
 {
     fn add_summary(&mut self, summary: &'a ChunkSummary, _: &()) {
@@ -20,18 +20,18 @@ impl<'a, T: sum_tree::Dimension<'a, ChunkSummary>> sum_tree::Dimension<'a, Chunk
 
 impl<T: TextDimension> TextDimension for Unclipped<T> {
     fn from_text_summary(summary: &TextSummary) -> Self {
-        Unclipped(T::from_text_summary(summary))
+        Unclipped(T.from_text_summary(summary))
     }
 
     fn add_assign(&mut self, other: &Self) {
-        TextDimension::add_assign(&mut self.0, &other.0);
+        TextDimension.add_assign(&mut self.0, &other.0);
     }
 }
 
 impl<T: Add<T, Output = T>> Add<Unclipped<T>> for Unclipped<T> {
     type Output = Unclipped<T>;
 
-    fn add(self, rhs: Unclipped<T>) -> Self::Output {
+    fn add(self, rhs: Unclipped<T>) -> Self.Output {
         Unclipped(self.0 + rhs.0)
     }
 }
@@ -39,7 +39,7 @@ impl<T: Add<T, Output = T>> Add<Unclipped<T>> for Unclipped<T> {
 impl<T: Sub<T, Output = T>> Sub<Unclipped<T>> for Unclipped<T> {
     type Output = Unclipped<T>;
 
-    fn sub(self, rhs: Unclipped<T>) -> Self::Output {
+    fn sub(self, rhs: Unclipped<T>) -> Self.Output {
         Unclipped(self.0 - rhs.0)
     }
 }

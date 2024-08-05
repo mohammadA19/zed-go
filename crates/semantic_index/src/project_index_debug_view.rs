@@ -1,15 +1,15 @@
-use crate::ProjectIndex;
-use gpui::{
+use crate.ProjectIndex;
+use gpui.{
     canvas, div, list, uniform_list, AnyElement, AppContext, CursorStyle, EventEmitter,
     FocusHandle, FocusableView, IntoElement, ListOffset, ListState, Model, MouseMoveEvent, Render,
     UniformListScrollHandle, View,
 };
-use project::WorktreeId;
-use settings::Settings;
-use std::{path::Path, sync::Arc};
-use theme::ThemeSettings;
-use ui::prelude::*;
-use workspace::item::Item;
+use project.WorktreeId;
+use settings.Settings;
+use std.{path.Path, sync.Arc};
+use theme.ThemeSettings;
+use ui.prelude.*;
+use workspace.item.Item;
 
 pub struct ProjectIndexDebugView {
     index: Model<ProjectIndex>,
@@ -18,7 +18,7 @@ pub struct ProjectIndexDebugView {
     hovered_row_ix: Option<usize>,
     focus_handle: FocusHandle,
     list_scroll_handle: UniformListScrollHandle,
-    _subscription: gpui::Subscription,
+    _subscription: gpui.Subscription,
 }
 
 struct PathState {
@@ -35,8 +35,8 @@ enum Row {
 impl ProjectIndexDebugView {
     pub fn new(index: Model<ProjectIndex>, cx: &mut ViewContext<Self>) -> Self {
         let mut this = Self {
-            rows: Vec::new(),
-            list_scroll_handle: UniformListScrollHandle::new(),
+            rows: Vec.new(),
+            list_scroll_handle: UniformListScrollHandle.new(),
             selected_path: None,
             hovered_row_ix: None,
             focus_handle: cx.focus_handle(),
@@ -50,7 +50,7 @@ impl ProjectIndexDebugView {
     fn update_rows(&mut self, cx: &mut ViewContext<Self>) {
         let worktree_indices = self.index.read(cx).worktree_indices(cx);
         cx.spawn(|this, mut cx| async move {
-            let mut rows = Vec::new();
+            let mut rows = Vec.new();
 
             for index in worktree_indices {
                 let (root_path, worktree_id, worktree_paths) =
@@ -58,12 +58,12 @@ impl ProjectIndexDebugView {
                         let worktree = index.worktree.read(cx);
                         (worktree.abs_path(), worktree.id(), index.paths(cx))
                     })?;
-                rows.push(Row::Worktree(root_path));
+                rows.push(Row.Worktree(root_path));
                 rows.extend(
                     worktree_paths
                         .await?
                         .into_iter()
-                        .map(|path| Row::Entry(worktree_id, path)),
+                        .map(|path| Row.Entry(worktree_id, path)),
                 );
             }
 
@@ -103,15 +103,15 @@ impl ProjectIndexDebugView {
                     }
                     content[start..end].to_string().into()
                 })
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
             this.update(&mut cx, |this, cx| {
                 let view = cx.view().downgrade();
                 this.selected_path = Some(PathState {
                     path: file_path,
-                    list_state: ListState::new(
+                    list_state: ListState.new(
                         chunks.len(),
-                        gpui::ListAlignment::Top,
+                        gpui.ListAlignment.Top,
                         px(100.),
                         move |ix, cx| {
                             if let Some(view) = view.upgrade() {
@@ -131,7 +131,7 @@ impl ProjectIndexDebugView {
     }
 
     fn render_chunk(&mut self, ix: usize, cx: &mut ViewContext<Self>) -> AnyElement {
-        let buffer_font = ThemeSettings::get_global(cx).buffer_font.clone();
+        let buffer_font = ThemeSettings.get_global(cx).buffer_font.clone();
         let Some(state) = &self.selected_path else {
             return div().into_any();
         };
@@ -155,14 +155,14 @@ impl ProjectIndexDebugView {
                     .child(
                         h_flex()
                             .child(
-                                Button::new(("prev", ix), "prev")
+                                Button.new(("prev", ix), "prev")
                                     .disabled(ix == 0)
                                     .on_click(cx.listener(move |this, _, _| {
                                         this.scroll_to_chunk(ix.saturating_sub(1))
                                     })),
                             )
                             .child(
-                                Button::new(("next", ix), "next")
+                                Button.new(("next", ix), "next")
                                     .disabled(ix + 1 == state.chunks.len())
                                     .on_click(
                                         cx.listener(move |this, _, _| this.scroll_to_chunk(ix + 1)),
@@ -190,7 +190,7 @@ impl ProjectIndexDebugView {
 }
 
 impl Render for ProjectIndexDebugView {
-    fn render(&mut self, cx: &mut gpui::ViewContext<'_, Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut gpui.ViewContext<'_, Self>) -> impl IntoElement {
         if let Some(selected_path) = self.selected_path.as_ref() {
             v_flex()
                 .child(
@@ -204,7 +204,7 @@ impl Render for ProjectIndexDebugView {
                         )
                         .border_b_1()
                         .border_color(cx.theme().colors().border)
-                        .cursor(CursorStyle::PointingHand)
+                        .cursor(CursorStyle.PointingHand)
                         .on_click(cx.listener(|this, _, cx| {
                             this.selected_path.take();
                             cx.notify();
@@ -223,20 +223,20 @@ impl Render for ProjectIndexDebugView {
                         .iter()
                         .enumerate()
                         .map(|(ix, row)| match row {
-                            Row::Worktree(root_path) => div()
+                            Row.Worktree(root_path) => div()
                                 .id(ix)
-                                .child(Label::new(root_path.to_string_lossy().to_string())),
-                            Row::Entry(worktree_id, file_path) => div()
+                                .child(Label.new(root_path.to_string_lossy().to_string())),
+                            Row.Entry(worktree_id, file_path) => div()
                                 .id(ix)
                                 .pl_8()
-                                .child(Label::new(file_path.to_string_lossy().to_string()))
+                                .child(Label.new(file_path.to_string_lossy().to_string()))
                                 .on_mouse_move(cx.listener(move |this, _: &MouseMoveEvent, cx| {
                                     if this.hovered_row_ix != Some(ix) {
                                         this.hovered_row_ix = Some(ix);
                                         cx.notify();
                                     }
                                 }))
-                                .cursor(CursorStyle::PointingHand)
+                                .cursor(CursorStyle.PointingHand)
                                 .on_click(cx.listener({
                                     let worktree_id = *worktree_id;
                                     let file_path = file_path.clone();
@@ -279,18 +279,18 @@ impl Item for ProjectIndexDebugView {
 
     fn clone_on_split(
         &self,
-        _: Option<workspace::WorkspaceId>,
+        _: Option<workspace.WorkspaceId>,
         cx: &mut ViewContext<Self>,
     ) -> Option<View<Self>>
     where
         Self: Sized,
     {
-        Some(cx.new_view(|cx| Self::new(self.index.clone(), cx)))
+        Some(cx.new_view(|cx| Self.new(self.index.clone(), cx)))
     }
 }
 
 impl FocusableView for ProjectIndexDebugView {
-    fn focus_handle(&self, _: &AppContext) -> gpui::FocusHandle {
+    fn focus_handle(&self, _: &AppContext) -> gpui.FocusHandle {
         self.focus_handle.clone()
     }
 }

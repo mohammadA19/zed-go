@@ -1,16 +1,16 @@
-use std::cell::RefCell;
-use std::collections::HashSet;
-use std::sync::OnceLock;
+use std.cell.RefCell;
+use std.collections.HashSet;
+use std.sync.OnceLock;
 
-use html5ever::Attribute;
+use html5ever.Attribute;
 
 /// Returns a [`HashSet`] containing the HTML elements that are inline by default.
 ///
 /// [MDN: List of "inline" elements](https://yari-demos.prod.mdn.mozit.cloud/en-US/docs/Web/HTML/Inline_elements)
 fn inline_elements() -> &'static HashSet<&'static str> {
-    static INLINE_ELEMENTS: OnceLock<HashSet<&str>> = OnceLock::new();
+    static INLINE_ELEMENTS: OnceLock<HashSet<&str>> = OnceLock.new();
     &INLINE_ELEMENTS.get_or_init(|| {
-        HashSet::from_iter([
+        HashSet.from_iter([
             "a", "abbr", "acronym", "audio", "b", "bdi", "bdo", "big", "br", "button", "canvas",
             "cite", "code", "data", "datalist", "del", "dfn", "em", "embed", "i", "iframe", "img",
             "input", "ins", "kbd", "label", "map", "mark", "meter", "noscript", "object", "output",
@@ -60,7 +60,7 @@ impl HtmlElement {
                 attr.value
                     .split(' ')
                     .map(|class| class.trim().to_string())
-                    .collect::<Vec<_>>()
+                    .collect.<Vec<_>>()
             })
             .unwrap_or_default()
     }

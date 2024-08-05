@@ -1,21 +1,21 @@
 mod item;
 mod to_markdown;
 
-use futures::future::BoxFuture;
-pub use item::*;
-pub use to_markdown::convert_rustdoc_to_markdown;
+use futures.future.BoxFuture;
+pub use item.*;
+pub use to_markdown.convert_rustdoc_to_markdown;
 
-use std::path::PathBuf;
-use std::sync::Arc;
+use std.path.PathBuf;
+use std.sync.Arc;
 
-use anyhow::{bail, Context, Result};
-use async_trait::async_trait;
-use collections::{HashSet, VecDeque};
-use fs::Fs;
-use futures::{AsyncReadExt, FutureExt};
-use http_client::{AsyncBody, HttpClient, HttpClientWithUrl};
+use anyhow.{bail, Context, Result};
+use async_trait.async_trait;
+use collections.{HashSet, VecDeque};
+use fs.Fs;
+use futures.{AsyncReadExt, FutureExt};
+use http_client.{AsyncBody, HttpClient, HttpClientWithUrl};
 
-use crate::{IndexedDocsDatabase, IndexedDocsProvider, PackageName, ProviderId};
+use crate.{IndexedDocsDatabase, IndexedDocsProvider, PackageName, ProviderId};
 
 #[derive(Debug)]
 struct RustdocItemWithHistory {
@@ -45,11 +45,11 @@ impl LocalRustdocProvider {
 #[async_trait]
 impl IndexedDocsProvider for LocalRustdocProvider {
     fn id(&self) -> ProviderId {
-        Self::id()
+        Self.id()
     }
 
     fn database_path(&self) -> PathBuf {
-        paths::support_dir().join("docs/rust/rustdoc-db.1.mdb")
+        paths.support_dir().join("docs/rust/rustdoc-db.1.mdb")
     }
 
     async fn index(&self, package: PackageName, database: Arc<IndexedDocsDatabase>) -> Result<()> {
@@ -110,11 +110,11 @@ impl DocsDotRsProvider {
 #[async_trait]
 impl IndexedDocsProvider for DocsDotRsProvider {
     fn id(&self) -> ProviderId {
-        Self::id()
+        Self.id()
     }
 
     fn database_path(&self) -> PathBuf {
-        paths::support_dir().join("docs/rust/docs-rs-db.1.mdb")
+        paths.support_dir().join("docs/rust/docs-rs-db.1.mdb")
     }
 
     async fn index(&self, package: PackageName, database: Arc<IndexedDocsDatabase>) -> Result<()> {
@@ -135,12 +135,12 @@ impl IndexedDocsProvider for DocsDotRsProvider {
                     let mut response = http_client
                         .get(
                             &format!("https://docs.rs/{path}"),
-                            AsyncBody::default(),
+                            AsyncBody.default(),
                             true,
                         )
                         .await?;
 
-                    let mut body = Vec::new();
+                    let mut body = Vec.new();
                     response
                         .body_mut()
                         .read_to_end(&mut body)
@@ -148,14 +148,14 @@ impl IndexedDocsProvider for DocsDotRsProvider {
                         .context("error reading docs.rs response body")?;
 
                     if response.status().is_client_error() {
-                        let text = String::from_utf8_lossy(body.as_slice());
+                        let text = String.from_utf8_lossy(body.as_slice());
                         bail!(
                             "status error {}, response: {text:?}",
                             response.status().as_u16()
                         );
                     }
 
-                    Ok(Some(String::from_utf8(body)?))
+                    Ok(Some(String.from_utf8(body)?))
                 }
                 .boxed()
             }
@@ -182,12 +182,12 @@ async fn index_rustdoc(
         .insert(package.to_string(), crate_root_markdown)
         .await?;
 
-    let mut seen_items = HashSet::from_iter(items.clone());
+    let mut seen_items = HashSet.from_iter(items.clone());
     let mut items_to_visit: VecDeque<RustdocItemWithHistory> =
-        VecDeque::from_iter(items.into_iter().map(|item| RustdocItemWithHistory {
+        VecDeque.from_iter(items.into_iter().map(|item| RustdocItemWithHistory {
             item,
             #[cfg(debug_assertions)]
-            history: Vec::new(),
+            history: Vec.new(),
         }));
 
     while let Some(item_with_history) = items_to_visit.pop_front() {
@@ -214,7 +214,7 @@ async fn index_rustdoc(
         let (markdown, referenced_items) = convert_rustdoc_to_markdown(result.as_bytes())?;
 
         database
-            .insert(format!("{package}::{}", item.display()), markdown)
+            .insert(format!("{package}.{}", item.display()), markdown)
             .await?;
 
         let parent_item = item;
@@ -227,7 +227,7 @@ async fn index_rustdoc(
 
             item.path.extend(parent_item.path.clone());
             match parent_item.kind {
-                RustdocItemKind::Mod => {
+                RustdocItemKind.Mod => {
                     item.path.push(parent_item.name.clone());
                 }
                 _ => {}

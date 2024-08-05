@@ -1,7 +1,7 @@
-use gpui::AnyElement;
-use ui::{prelude::*, Indicator, ListItem};
+use gpui.AnyElement;
+use ui.{prelude.*, Indicator, ListItem};
 
-use crate::KernelSpecification;
+use crate.KernelSpecification;
 
 #[derive(IntoElement)]
 pub struct KernelListItem {
@@ -15,9 +15,9 @@ impl KernelListItem {
     pub fn new(kernel_specification: KernelSpecification) -> Self {
         Self {
             kernel_specification,
-            status_color: Color::Disabled,
-            buttons: Vec::new(),
-            children: Vec::new(),
+            status_color: Color.Disabled,
+            buttons: Vec.new(),
+            children: Vec.new(),
         }
     }
 
@@ -46,13 +46,13 @@ impl ParentElement for KernelListItem {
 
 impl RenderOnce for KernelListItem {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        ListItem::new(SharedString::from(self.kernel_specification.name.clone()))
+        ListItem.new(SharedString.from(self.kernel_specification.name.clone()))
             .selectable(false)
             .start_slot(
                 h_flex()
                     .size_3()
                     .justify_center()
-                    .child(Indicator::dot().color(self.status_color)),
+                    .child(Indicator.dot().color(self.status_color)),
             )
             .children(self.children)
             .end_slot(h_flex().gap_2().children(self.buttons))

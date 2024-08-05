@@ -1,10 +1,10 @@
-use crate::outputs::ExecutionView;
-use alacritty_terminal::{term::Config, vte::ansi::Processor};
-use gpui::{canvas, size, AnyElement};
-use std::mem;
-use terminal::ZedListener;
-use terminal_view::terminal_element::TerminalElement;
-use ui::{prelude::*, IntoElement, ViewContext};
+use crate.outputs.ExecutionView;
+use alacritty_terminal.{term.Config, vte.ansi.Processor};
+use gpui.{canvas, size, AnyElement};
+use std.mem;
+use terminal.ZedListener;
+use terminal_view.terminal_element.TerminalElement;
+use ui.{prelude.*, IntoElement, ViewContext};
 
 /// Implements the most basic of terminal output for use by Jupyter outputs
 /// whether:
@@ -16,10 +16,10 @@ use ui::{prelude::*, IntoElement, ViewContext};
 ///
 pub struct TerminalOutput {
     parser: Processor,
-    handler: alacritty_terminal::Term<ZedListener>,
+    handler: alacritty_terminal.Term<ZedListener>,
 }
 
-pub fn terminal_size(cx: &mut WindowContext) -> terminal::TerminalSize {
+pub fn terminal_size(cx: &mut WindowContext) -> terminal.TerminalSize {
     let text_style = cx.text_style();
     let text_system = cx.text_system();
 
@@ -36,11 +36,11 @@ pub fn terminal_size(cx: &mut WindowContext) -> terminal::TerminalSize {
     let num_lines = 200;
     let columns = 120;
 
-    // Reversed math from terminal::TerminalSize to get pixel width according to terminal width
+    // Reversed math from terminal.TerminalSize to get pixel width according to terminal width
     let width = columns as f32 * cell_width;
     let height = num_lines as f32 * cx.line_height();
 
-    terminal::TerminalSize {
+    terminal.TerminalSize {
         cell_width,
         line_height,
         size: size(width, height),
@@ -49,22 +49,22 @@ pub fn terminal_size(cx: &mut WindowContext) -> terminal::TerminalSize {
 
 impl TerminalOutput {
     pub fn new(cx: &mut WindowContext) -> Self {
-        let (events_tx, events_rx) = futures::channel::mpsc::unbounded();
-        let term = alacritty_terminal::Term::new(
-            Config::default(),
+        let (events_tx, events_rx) = futures.channel.mpsc.unbounded();
+        let term = alacritty_terminal.Term.new(
+            Config.default(),
             &terminal_size(cx),
-            terminal::ZedListener(events_tx.clone()),
+            terminal.ZedListener(events_tx.clone()),
         );
 
-        mem::forget(events_rx);
+        mem.forget(events_rx);
         Self {
-            parser: Processor::new(),
+            parser: Processor.new(),
             handler: term,
         }
     }
 
     pub fn from(text: &str, cx: &mut WindowContext) -> Self {
-        let mut output = Self::new(cx);
+        let mut output = Self.new(cx);
         output.append_text(text);
         output
     }
@@ -91,11 +91,11 @@ impl TerminalOutput {
             .handler
             .renderable_content()
             .display_iter
-            .map(|ic| terminal::IndexedCell {
+            .map(|ic| terminal.IndexedCell {
                 point: ic.point,
                 cell: ic.cell.clone(),
             });
-        let (cells, rects) = TerminalElement::layout_grid(grid, &text_style, text_system, None, cx);
+        let (cells, rects) = TerminalElement.layout_grid(grid, &text_style, text_system, None, cx);
 
         // lines are 0-indexed, so we must add 1 to get the number of lines
         let num_lines = cells.iter().map(|c| c.point.line).max().unwrap_or(0) + 1;
@@ -119,7 +119,7 @@ impl TerminalOutput {
                 for rect in rects {
                     rect.paint(
                         bounds.origin,
-                        &terminal::TerminalSize {
+                        &terminal.TerminalSize {
                             cell_width,
                             line_height,
                             size: bounds.size,
@@ -131,7 +131,7 @@ impl TerminalOutput {
                 for cell in cells {
                     cell.paint(
                         bounds.origin,
-                        &terminal::TerminalSize {
+                        &terminal.TerminalSize {
                             cell_width,
                             line_height,
                             size: bounds.size,

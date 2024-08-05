@@ -1,18 +1,18 @@
-use super::Project;
-use anyhow::Result;
-use client::Client;
-use collections::{HashMap, HashSet};
-use futures::{FutureExt, StreamExt};
-use gpui::{AppContext, AsyncAppContext, Context, Global, Model, ModelContext, Task, WeakModel};
-use postage::stream::Stream;
-use rpc::proto;
-use std::{sync::Arc, time::Duration};
-use util::{ResultExt, TryFutureExt};
+use super.Project;
+use anyhow.Result;
+use client.Client;
+use collections.{HashMap, HashSet};
+use futures.{FutureExt, StreamExt};
+use gpui.{AppContext, AsyncAppContext, Context, Global, Model, ModelContext, Task, WeakModel};
+use postage.stream.Stream;
+use rpc.proto;
+use std.{sync.Arc, time.Duration};
+use util.{ResultExt, TryFutureExt};
 
 impl Global for GlobalManager {}
 struct GlobalManager(Model<Manager>);
 
-pub const RECONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+pub const RECONNECT_TIMEOUT: Duration = Duration.from_secs(30);
 
 pub struct Manager {
     client: Arc<Client>,
@@ -24,14 +24,14 @@ pub fn init(client: Arc<Client>, cx: &mut AppContext) {
     let manager = cx.new_model(|_| Manager {
         client,
         maintain_connection: None,
-        projects: HashSet::default(),
+        projects: HashSet.default(),
     });
     cx.set_global(GlobalManager(manager));
 }
 
 impl Manager {
     pub fn global(cx: &AppContext) -> Model<Manager> {
-        cx.global::<GlobalManager>().0.clone()
+        cx.global.<GlobalManager>().0.clone()
     }
 
     pub fn maintain_project_connection(
@@ -65,15 +65,15 @@ impl Manager {
         if self.maintain_connection.is_none() {
             self.maintain_connection = Some(cx.spawn({
                 let client = self.client.clone();
-                move |_, cx| Self::maintain_connection(manager, client.clone(), cx).log_err()
+                move |_, cx| Self.maintain_connection(manager, client.clone(), cx).log_err()
             }));
         }
     }
 
     fn reconnected(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<()>> {
-        let mut projects = HashMap::default();
+        let mut projects = HashMap.default();
 
-        let request = self.client.request_envelope(proto::RejoinRemoteProjects {
+        let request = self.client.request_envelope(proto.RejoinRemoteProjects {
             rejoined_projects: self
                 .projects
                 .iter()
@@ -82,13 +82,13 @@ impl Manager {
                         let project = handle.read(cx);
                         let project_id = project.remote_id()?;
                         projects.insert(project_id, handle.clone());
-                        Some(proto::RejoinProject {
+                        Some(proto.RejoinProject {
                             id: project_id,
                             worktrees: project
                                 .worktrees(cx)
                                 .map(|worktree| {
                                     let worktree = worktree.read(cx);
-                                    proto::RejoinWorktree {
+                                    proto.RejoinWorktree {
                                         id: worktree.id().to_proto(),
                                         scan_id: worktree.completed_scan_id() as u64,
                                     }
@@ -142,7 +142,7 @@ impl Manager {
             let is_connected = client_status.borrow().is_connected();
             // Even if we're initially connected, any future change of the status means we momentarily disconnected.
             if !is_connected || client_status.next().await.is_some() {
-                log::info!("detected client disconnection");
+                log.info!("detected client disconnection");
 
                 // Wait for client to re-establish a connection to the server.
                 {
@@ -152,7 +152,7 @@ impl Manager {
                         let mut remaining_attempts = 3;
                         while remaining_attempts > 0 {
                             if client_status.borrow().is_connected() {
-                                log::info!("client reconnected, attempting to rejoin projects");
+                                log.info!("client reconnected, attempting to rejoin projects");
 
                                 let Some(this) = this.upgrade() else { break };
                                 match this.update(&mut cx, |this, cx| this.reconnected(cx)) {
@@ -169,7 +169,7 @@ impl Manager {
                                 return false;
                             }
 
-                            log::info!(
+                            log.info!(
                                 "waiting for client status change, remaining attempts {}",
                                 remaining_attempts
                             );
@@ -178,19 +178,19 @@ impl Manager {
                         false
                     }
                     .fuse();
-                    futures::pin_mut!(client_reconnection);
+                    futures.pin_mut!(client_reconnection);
 
-                    futures::select_biased! {
+                    futures.select_biased! {
                         reconnected = client_reconnection => {
                             if reconnected {
-                                log::info!("successfully reconnected");
+                                log.info!("successfully reconnected");
                                 // If we successfully joined the room, go back around the loop
                                 // waiting for future connection status changes.
                                 continue;
                             }
                         }
                         _ = reconnection_timeout => {
-                            log::info!("rejoin project reconnection timeout expired");
+                            log.info!("rejoin project reconnection timeout expired");
                         }
                     }
                 }
@@ -203,7 +203,7 @@ impl Manager {
         // or an error occurred while trying to re-join the room. Either way
         // we leave the room and return an error.
         if let Some(this) = this.upgrade() {
-            log::info!("reconnection failed, disconnecting projects");
+            log.info!("reconnection failed, disconnecting projects");
             let _ = this.update(&mut cx, |this, cx| this.connection_lost(cx))?;
         }
 

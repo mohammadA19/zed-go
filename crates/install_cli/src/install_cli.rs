@@ -1,27 +1,27 @@
-use anyhow::{anyhow, Result};
-use gpui::{actions, AsyncAppContext};
-use std::path::{Path, PathBuf};
-use util::ResultExt;
+use anyhow.{anyhow, Result};
+use gpui.{actions, AsyncAppContext};
+use std.path.{Path, PathBuf};
+use util.ResultExt;
 
 actions!(cli, [Install, RegisterZedScheme]);
 
 pub async fn install_cli(cx: &AsyncAppContext) -> Result<PathBuf> {
     let cli_path = cx.update(|cx| cx.path_for_auxiliary_executable("cli"))??;
-    let link_path = Path::new("/usr/local/bin/zed");
+    let link_path = Path.new("/usr/local/bin/zed");
     let bin_dir_path = link_path.parent().unwrap();
 
     // Don't re-create symlink if it points to the same CLI binary.
-    if smol::fs::read_link(link_path).await.ok().as_ref() == Some(&cli_path) {
+    if smol.fs.read_link(link_path).await.ok().as_ref() == Some(&cli_path) {
         return Ok(link_path.into());
     }
 
     // If the symlink is not there or is outdated, first try replacing it
     // without escalating.
-    smol::fs::remove_file(link_path).await.log_err();
+    smol.fs.remove_file(link_path).await.log_err();
     // todo("windows")
     #[cfg(not(windows))]
     {
-        if smol::fs::unix::symlink(&cli_path, link_path)
+        if smol.fs.unix.symlink(&cli_path, link_path)
             .await
             .log_err()
             .is_some()
@@ -32,7 +32,7 @@ pub async fn install_cli(cx: &AsyncAppContext) -> Result<PathBuf> {
 
     // The symlink could not be created, so use osascript with admin privileges
     // to create it.
-    let status = smol::process::Command::new("/usr/bin/osascript")
+    let status = smol.process.Command.new("/usr/bin/osascript")
         .args([
             "-e",
             &format!(
@@ -45,8 +45,8 @@ pub async fn install_cli(cx: &AsyncAppContext) -> Result<PathBuf> {
                 link_path.to_string_lossy(),
             ),
         ])
-        .stdout(smol::process::Stdio::inherit())
-        .stderr(smol::process::Stdio::inherit())
+        .stdout(smol.process.Stdio.inherit())
+        .stderr(smol.process.Stdio.inherit())
         .output()
         .await?
         .status;

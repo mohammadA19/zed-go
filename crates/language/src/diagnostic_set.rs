@@ -1,13 +1,13 @@
-use crate::{range_to_lsp, Diagnostic};
-use collections::HashMap;
-use lsp::LanguageServerId;
-use std::{
-    cmp::{Ordering, Reverse},
+use crate.{range_to_lsp, Diagnostic};
+use collections.HashMap;
+use lsp.LanguageServerId;
+use std.{
+    cmp.{Ordering, Reverse},
     iter,
-    ops::Range,
+    ops.Range,
 };
-use sum_tree::{self, Bias, SumTree};
-use text::{Anchor, FromAnchor, PointUtf16, ToOffset};
+use sum_tree.{self, Bias, SumTree};
+use text.{Anchor, FromAnchor, PointUtf16, ToOffset};
 
 /// A set of diagnostics associated with a given buffer, provided
 /// by a single language server.
@@ -23,7 +23,7 @@ pub struct DiagnosticSet {
 /// A single diagnostic in a set. Generic over its range type, because
 /// the diagnostics are stored internally as [`Anchor`]s, but can be
 /// resolved to different coordinates types like [`usize`] byte offsets or
-/// [`Point`](gpui::Point)s.
+/// [`Point`](gpui.Point)s.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DiagnosticEntry<T> {
     /// The range of the buffer where the diagnostic applies.
@@ -54,23 +54,23 @@ pub struct Summary {
 impl DiagnosticEntry<PointUtf16> {
     /// Returns a raw LSP diagnostic ssed to provide diagnostic context to LSP
     /// codeAction request
-    pub fn to_lsp_diagnostic_stub(&self) -> lsp::Diagnostic {
+    pub fn to_lsp_diagnostic_stub(&self) -> lsp.Diagnostic {
         let code = self
             .diagnostic
             .code
             .clone()
-            .map(lsp::NumberOrString::String);
+            .map(lsp.NumberOrString.String);
 
         let range = range_to_lsp(self.range.clone());
 
-        lsp::Diagnostic {
+        lsp.Diagnostic {
             code,
             range,
             severity: Some(self.diagnostic.severity),
             source: self.diagnostic.source.clone(),
             message: self.diagnostic.message.clone(),
             data: self.diagnostic.data.clone(),
-            ..Default::default()
+            ..Default.default()
         }
     }
 }
@@ -78,24 +78,24 @@ impl DiagnosticEntry<PointUtf16> {
 impl DiagnosticSet {
     /// Constructs a [DiagnosticSet] from a sequence of entries, ordered by
     /// their position in the buffer.
-    pub fn from_sorted_entries<I>(iter: I, buffer: &text::BufferSnapshot) -> Self
+    pub fn from_sorted_entries<I>(iter: I, buffer: &text.BufferSnapshot) -> Self
     where
         I: IntoIterator<Item = DiagnosticEntry<Anchor>>,
     {
         Self {
-            diagnostics: SumTree::from_iter(iter, buffer),
+            diagnostics: SumTree.from_iter(iter, buffer),
         }
     }
 
     /// Constructs a [DiagnosticSet] from a sequence of entries in an arbitrary order.
-    pub fn new<I>(iter: I, buffer: &text::BufferSnapshot) -> Self
+    pub fn new<I>(iter: I, buffer: &text.BufferSnapshot) -> Self
     where
         I: IntoIterator<Item = DiagnosticEntry<PointUtf16>>,
     {
-        let mut entries = iter.into_iter().collect::<Vec<_>>();
+        let mut entries = iter.into_iter().collect.<Vec<_>>();
         entries.sort_unstable_by_key(|entry| (entry.range.start, Reverse(entry.range.end)));
         Self {
-            diagnostics: SumTree::from_iter(
+            diagnostics: SumTree.from_iter(
                 entries.into_iter().map(|entry| DiagnosticEntry {
                     range: buffer.anchor_before(entry.range.start)
                         ..buffer.anchor_before(entry.range.end),
@@ -121,7 +121,7 @@ impl DiagnosticSet {
     pub fn range<'a, T, O>(
         &'a self,
         range: Range<T>,
-        buffer: &'a text::BufferSnapshot,
+        buffer: &'a text.BufferSnapshot,
         inclusive: bool,
         reversed: bool,
     ) -> impl 'a + Iterator<Item = DiagnosticEntry<O>>
@@ -129,16 +129,16 @@ impl DiagnosticSet {
         T: 'a + ToOffset,
         O: FromAnchor,
     {
-        let end_bias = if inclusive { Bias::Right } else { Bias::Left };
+        let end_bias = if inclusive { Bias.Right } else { Bias.Left };
         let range = buffer.anchor_before(range.start)..buffer.anchor_at(range.end, end_bias);
-        let mut cursor = self.diagnostics.filter::<_, ()>({
+        let mut cursor = self.diagnostics.filter.<_, ()>({
             move |summary: &Summary| {
                 let start_cmp = range.start.cmp(&summary.max_end, buffer);
                 let end_cmp = range.end.cmp(&summary.min_start, buffer);
                 if inclusive {
-                    start_cmp <= Ordering::Equal && end_cmp >= Ordering::Equal
+                    start_cmp <= Ordering.Equal && end_cmp >= Ordering.Equal
                 } else {
-                    start_cmp == Ordering::Less && end_cmp == Ordering::Greater
+                    start_cmp == Ordering.Less && end_cmp == Ordering.Greater
                 }
             }
         });
@@ -148,7 +148,7 @@ impl DiagnosticSet {
         } else {
             cursor.next(buffer);
         }
-        iter::from_fn({
+        iter.from_fn({
             move || {
                 if let Some(diagnostic) = cursor.item() {
                     if reversed {
@@ -169,13 +169,13 @@ impl DiagnosticSet {
         &self,
         language_server_id: LanguageServerId,
         output: &mut Vec<(LanguageServerId, DiagnosticGroup<Anchor>)>,
-        buffer: &text::BufferSnapshot,
+        buffer: &text.BufferSnapshot,
     ) {
-        let mut groups = HashMap::default();
+        let mut groups = HashMap.default();
         for entry in self.diagnostics.iter() {
             groups
                 .entry(entry.diagnostic.group_id)
-                .or_insert(Vec::new())
+                .or_insert(Vec.new())
                 .push(entry.clone());
         }
 
@@ -209,7 +209,7 @@ impl DiagnosticSet {
     pub fn group<'a, O: FromAnchor>(
         &'a self,
         group_id: usize,
-        buffer: &'a text::BufferSnapshot,
+        buffer: &'a text.BufferSnapshot,
     ) -> impl 'a + Iterator<Item = DiagnosticEntry<O>> {
         self.iter()
             .filter(move |entry| entry.diagnostic.group_id == group_id)
@@ -217,10 +217,10 @@ impl DiagnosticSet {
     }
 }
 
-impl sum_tree::Item for DiagnosticEntry<Anchor> {
+impl sum_tree.Item for DiagnosticEntry<Anchor> {
     type Summary = Summary;
 
-    fn summary(&self) -> Self::Summary {
+    fn summary(&self) -> Self.Summary {
         Summary {
             start: self.range.start,
             end: self.range.end,
@@ -233,10 +233,10 @@ impl sum_tree::Item for DiagnosticEntry<Anchor> {
 
 impl DiagnosticEntry<Anchor> {
     /// Converts the [DiagnosticEntry] to a different buffer coordinate type.
-    pub fn resolve<O: FromAnchor>(&self, buffer: &text::BufferSnapshot) -> DiagnosticEntry<O> {
+    pub fn resolve<O: FromAnchor>(&self, buffer: &text.BufferSnapshot) -> DiagnosticEntry<O> {
         DiagnosticEntry {
-            range: O::from_anchor(&self.range.start, buffer)
-                ..O::from_anchor(&self.range.end, buffer),
+            range: O.from_anchor(&self.range.start, buffer)
+                ..O.from_anchor(&self.range.end, buffer),
             diagnostic: self.diagnostic.clone(),
         }
     }
@@ -245,19 +245,19 @@ impl DiagnosticEntry<Anchor> {
 impl Default for Summary {
     fn default() -> Self {
         Self {
-            start: Anchor::MIN,
-            end: Anchor::MAX,
-            min_start: Anchor::MAX,
-            max_end: Anchor::MIN,
+            start: Anchor.MIN,
+            end: Anchor.MAX,
+            min_start: Anchor.MAX,
+            max_end: Anchor.MIN,
             count: 0,
         }
     }
 }
 
-impl sum_tree::Summary for Summary {
-    type Context = text::BufferSnapshot;
+impl sum_tree.Summary for Summary {
+    type Context = text.BufferSnapshot;
 
-    fn add_summary(&mut self, other: &Self, buffer: &Self::Context) {
+    fn add_summary(&mut self, other: &Self, buffer: &Self.Context) {
         if other.min_start.cmp(&self.min_start, buffer).is_lt() {
             self.min_start = other.min_start;
         }

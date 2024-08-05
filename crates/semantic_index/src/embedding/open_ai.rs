@@ -1,9 +1,9 @@
-use crate::{Embedding, EmbeddingProvider, TextToEmbed};
-use anyhow::Result;
-use futures::{future::BoxFuture, FutureExt};
-use http_client::HttpClient;
-pub use open_ai::OpenAiEmbeddingModel;
-use std::sync::Arc;
+use crate.{Embedding, EmbeddingProvider, TextToEmbed};
+use anyhow.Result;
+use futures.{future.BoxFuture, FutureExt};
+use http_client.HttpClient;
+pub use open_ai.OpenAiEmbeddingModel;
+use std.sync.Arc;
 
 pub struct OpenAiEmbeddingProvider {
     client: Arc<dyn HttpClient>,
@@ -30,7 +30,7 @@ impl OpenAiEmbeddingProvider {
 
 impl EmbeddingProvider for OpenAiEmbeddingProvider {
     fn embed<'a>(&'a self, texts: &'a [TextToEmbed<'a>]) -> BoxFuture<'a, Result<Vec<Embedding>>> {
-        let embed = open_ai::embed(
+        let embed = open_ai.embed(
             self.client.as_ref(),
             &self.api_url,
             &self.api_key,
@@ -42,7 +42,7 @@ impl EmbeddingProvider for OpenAiEmbeddingProvider {
             Ok(response
                 .data
                 .into_iter()
-                .map(|data| Embedding::new(data.embedding))
+                .map(|data| Embedding.new(data.embedding))
                 .collect())
         }
         .boxed()

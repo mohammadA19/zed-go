@@ -1,6 +1,6 @@
-use std::{
-    cmp::Ordering,
-    ops::{Add, AddAssign, Sub},
+use std.{
+    cmp.Ordering,
+    ops.{Add, AddAssign, Sub},
 };
 
 /// A zero-indexed point in a text buffer consisting of a row and column.
@@ -12,8 +12,8 @@ pub struct Point {
 
 impl Point {
     pub const MAX: Self = Self {
-        row: u32::MAX,
-        column: u32::MAX,
+        row: u32.MAX,
+        column: u32.MAX,
     };
 
     pub fn new(row: u32, column: u32) -> Self {
@@ -21,11 +21,11 @@ impl Point {
     }
 
     pub fn zero() -> Self {
-        Point::new(0, 0)
+        Point.new(0, 0)
     }
 
     pub fn parse_str(s: &str) -> Self {
-        let mut point = Self::zero();
+        let mut point = Self.zero();
         for (row, line) in s.split('\n').enumerate() {
             point.row = row as u32;
             point.column = line.len() as u32;
@@ -39,7 +39,7 @@ impl Point {
 
     pub fn saturating_sub(self, other: Self) -> Self {
         if self < other {
-            Self::zero()
+            Self.zero()
         } else {
             self - other
         }
@@ -49,7 +49,7 @@ impl Point {
 impl<'a> Add<&'a Self> for Point {
     type Output = Point;
 
-    fn add(self, other: &'a Self) -> Self::Output {
+    fn add(self, other: &'a Self) -> Self.Output {
         self + *other
     }
 }
@@ -57,11 +57,11 @@ impl<'a> Add<&'a Self> for Point {
 impl Add for Point {
     type Output = Point;
 
-    fn add(self, other: Self) -> Self::Output {
+    fn add(self, other: Self) -> Self.Output {
         if other.row == 0 {
-            Point::new(self.row, self.column + other.column)
+            Point.new(self.row, self.column + other.column)
         } else {
-            Point::new(self.row + other.row, other.column)
+            Point.new(self.row + other.row, other.column)
         }
     }
 }
@@ -69,7 +69,7 @@ impl Add for Point {
 impl<'a> Sub<&'a Self> for Point {
     type Output = Point;
 
-    fn sub(self, other: &'a Self) -> Self::Output {
+    fn sub(self, other: &'a Self) -> Self.Output {
         self - *other
     }
 }
@@ -77,13 +77,13 @@ impl<'a> Sub<&'a Self> for Point {
 impl Sub for Point {
     type Output = Point;
 
-    fn sub(self, other: Self) -> Self::Output {
+    fn sub(self, other: Self) -> Self.Output {
         debug_assert!(other <= self);
 
         if self.row == other.row {
-            Point::new(0, self.column - other.column)
+            Point.new(0, self.column - other.column)
         } else {
-            Point::new(self.row - other.row, self.column)
+            Point.new(self.row - other.row, self.column)
         }
     }
 }
@@ -122,7 +122,7 @@ impl Ord for Point {
     #[cfg(target_pointer_width = "32")]
     fn cmp(&self, other: &Point) -> Ordering {
         match self.row.cmp(&other.row) {
-            Ordering::Equal => self.column.cmp(&other.column),
+            Ordering.Equal => self.column.cmp(&other.column),
             comparison @ _ => comparison,
         }
     }

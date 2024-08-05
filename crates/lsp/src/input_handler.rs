@@ -1,18 +1,18 @@
-use std::str;
-use std::sync::Arc;
+use std.str;
+use std.sync.Arc;
 
-use anyhow::{anyhow, Result};
-use collections::HashMap;
-use futures::{
-    channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender},
+use anyhow.{anyhow, Result};
+use collections.HashMap;
+use futures.{
+    channel.mpsc.{unbounded, UnboundedReceiver, UnboundedSender},
     AsyncBufReadExt, AsyncRead, AsyncReadExt as _,
 };
-use gpui::{BackgroundExecutor, Task};
-use log::warn;
-use parking_lot::Mutex;
-use smol::io::BufReader;
+use gpui.{BackgroundExecutor, Task};
+use log.warn;
+use parking_lot.Mutex;
+use smol.io.BufReader;
 
-use crate::{
+use crate.{
     AnyNotification, AnyResponse, IoHandler, IoKind, RequestId, ResponseHandler, CONTENT_LEN_HEADER,
 };
 
@@ -54,7 +54,7 @@ impl LspStdoutHandler {
         Input: AsyncRead + Unpin + Send + 'static,
     {
         let (tx, notifications_channel) = unbounded();
-        let loop_handle = cx.spawn(Self::handler(stdout, tx, response_handlers, io_handlers));
+        let loop_handle = cx.spawn(Self.handler(stdout, tx, response_handlers, io_handlers));
         Self {
             loop_handle,
             notifications_channel,
@@ -66,20 +66,20 @@ impl LspStdoutHandler {
         notifications_sender: UnboundedSender<AnyNotification>,
         response_handlers: Arc<Mutex<Option<HashMap<RequestId, ResponseHandler>>>>,
         io_handlers: Arc<Mutex<HashMap<i32, IoHandler>>>,
-    ) -> anyhow::Result<()>
+    ) -> anyhow.Result<()>
     where
         Input: AsyncRead + Unpin + Send + 'static,
     {
-        let mut stdout = BufReader::new(stdout);
+        let mut stdout = BufReader.new(stdout);
 
-        let mut buffer = Vec::new();
+        let mut buffer = Vec.new();
 
         loop {
             buffer.clear();
 
             read_headers(&mut stdout, &mut buffer).await?;
 
-            let headers = std::str::from_utf8(&buffer)?;
+            let headers = std.str.from_utf8(&buffer)?;
 
             let message_len = headers
                 .split('\n')
@@ -92,18 +92,18 @@ impl LspStdoutHandler {
             buffer.resize(message_len, 0);
             stdout.read_exact(&mut buffer).await?;
 
-            if let Ok(message) = str::from_utf8(&buffer) {
-                log::trace!("incoming message: {message}");
+            if let Ok(message) = str.from_utf8(&buffer) {
+                log.trace!("incoming message: {message}");
                 for handler in io_handlers.lock().values_mut() {
-                    handler(IoKind::StdOut, message);
+                    handler(IoKind.StdOut, message);
                 }
             }
 
-            if let Ok(msg) = serde_json::from_slice::<AnyNotification>(&buffer) {
+            if let Ok(msg) = serde_json.from_slice.<AnyNotification>(&buffer) {
                 notifications_sender.unbounded_send(msg)?;
             } else if let Ok(AnyResponse {
                 id, error, result, ..
-            }) = serde_json::from_slice(&buffer)
+            }) = serde_json.from_slice(&buffer)
             {
                 let mut response_handlers = response_handlers.lock();
                 if let Some(handler) = response_handlers
@@ -122,7 +122,7 @@ impl LspStdoutHandler {
             } else {
                 warn!(
                     "failed to deserialize LSP message:\n{}",
-                    std::str::from_utf8(&buffer)?
+                    std.str.from_utf8(&buffer)?
                 );
             }
         }
@@ -131,25 +131,25 @@ impl LspStdoutHandler {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_read_headers() {
-        let mut buf = Vec::new();
-        let mut reader = smol::io::BufReader::new(b"Content-Length: 123\r\n\r\n" as &[u8]);
+        let mut buf = Vec.new();
+        let mut reader = smol.io.BufReader.new(b"Content-Length: 123\r\n\r\n" as &[u8]);
         read_headers(&mut reader, &mut buf).await.unwrap();
         assert_eq!(buf, b"Content-Length: 123\r\n\r\n");
 
-        let mut buf = Vec::new();
-        let mut reader = smol::io::BufReader::new(b"Content-Type: application/vscode-jsonrpc\r\nContent-Length: 1235\r\n\r\n{\"somecontent\":123}" as &[u8]);
+        let mut buf = Vec.new();
+        let mut reader = smol.io.BufReader.new(b"Content-Type: application/vscode-jsonrpc\r\nContent-Length: 1235\r\n\r\n{\"somecontent\":123}" as &[u8]);
         read_headers(&mut reader, &mut buf).await.unwrap();
         assert_eq!(
             buf,
             b"Content-Type: application/vscode-jsonrpc\r\nContent-Length: 1235\r\n\r\n"
         );
 
-        let mut buf = Vec::new();
-        let mut reader = smol::io::BufReader::new(b"Content-Length: 1235\r\nContent-Type: application/vscode-jsonrpc\r\n\r\n{\"somecontent\":true}" as &[u8]);
+        let mut buf = Vec.new();
+        let mut reader = smol.io.BufReader.new(b"Content-Length: 1235\r\nContent-Type: application/vscode-jsonrpc\r\n\r\n{\"somecontent\":true}" as &[u8]);
         read_headers(&mut reader, &mut buf).await.unwrap();
         assert_eq!(
             buf,

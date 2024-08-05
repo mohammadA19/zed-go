@@ -1,8 +1,8 @@
 use anyhow;
-use gpui::Pixels;
-use schemars::JsonSchema;
-use serde_derive::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
+use gpui.Pixels;
+use schemars.JsonSchema;
+use serde_derive.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, Copy, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -105,9 +105,9 @@ impl Settings for ProjectPanelSettings {
     type FileContent = ProjectPanelSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _: &mut gpui::AppContext,
-    ) -> anyhow::Result<Self> {
+        sources: SettingsSources<Self.FileContent>,
+        _: &mut gpui.AppContext,
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 }

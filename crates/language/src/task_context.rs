@@ -1,12 +1,12 @@
-use std::{ops::Range, sync::Arc};
+use std.{ops.Range, sync.Arc};
 
-use crate::{Location, Runnable};
+use crate.{Location, Runnable};
 
-use anyhow::Result;
-use collections::HashMap;
-use gpui::AppContext;
-use task::{TaskTemplates, TaskVariables};
-use text::BufferId;
+use anyhow.Result;
+use collections.HashMap;
+use gpui.AppContext;
+use task.{TaskTemplates, TaskVariables};
+use text.BufferId;
 
 pub struct RunnableRange {
     pub buffer_id: BufferId,
@@ -27,13 +27,13 @@ pub trait ContextProvider: Send + Sync {
         _location: &Location,
         _cx: &mut AppContext,
     ) -> Result<TaskVariables> {
-        Ok(TaskVariables::default())
+        Ok(TaskVariables.default())
     }
 
     /// Provides all tasks, associated with the current language.
     fn associated_tasks(
         &self,
-        _: Option<Arc<dyn crate::File>>,
+        _: Option<Arc<dyn crate.File>>,
         _cx: &AppContext,
     ) -> Option<TaskTemplates> {
         None

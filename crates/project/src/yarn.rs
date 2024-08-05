@@ -5,27 +5,27 @@
 //! Long story short, before we attempt to resolve a path as a "real" path, we try to treat is as a yarn path;
 //! for .zip handling, we unpack the contents into the temp directory (yes, this is bad, against the spirit of Yarn and what-not)
 
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-    sync::Arc,
+use std.{
+    ffi.OsStr,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
 
-use anyhow::Result;
-use collections::HashMap;
-use fs::Fs;
-use gpui::{AppContext, Context, Model, ModelContext, Task};
-use util::ResultExt;
+use anyhow.Result;
+use collections.HashMap;
+use fs.Fs;
+use gpui.{AppContext, Context, Model, ModelContext, Task};
+use util.ResultExt;
 
 pub(crate) struct YarnPathStore {
-    temp_dirs: HashMap<Arc<Path>, tempfile::TempDir>,
+    temp_dirs: HashMap<Arc<Path>, tempfile.TempDir>,
     fs: Arc<dyn Fs>,
 }
 
 /// Returns `None` when passed path is a malformed virtual path or it's not a virtual path at all.
 fn resolve_virtual(path: &Path) -> Option<Arc<Path>> {
     let components: Vec<_> = path.components().collect();
-    let mut non_virtual_path = PathBuf::new();
+    let mut non_virtual_path = PathBuf.new();
 
     let mut i = 0;
     let mut is_virtual = false;
@@ -37,7 +37,7 @@ fn resolve_virtual(path: &Path) -> Option<Arc<Path>> {
                     .get(i + 2)?
                     .as_os_str()
                     .to_str()?
-                    .parse::<usize>()
+                    .parse.<usize>()
                     .ok()?;
 
                 // Apply dirname operation pop_count times
@@ -53,13 +53,13 @@ fn resolve_virtual(path: &Path) -> Option<Arc<Path>> {
         i += 1;
     }
 
-    is_virtual.then(|| Arc::from(non_virtual_path))
+    is_virtual.then(|| Arc.from(non_virtual_path))
 }
 
 impl YarnPathStore {
     pub(crate) fn new(fs: Arc<dyn Fs>, cx: &mut AppContext) -> Model<Self> {
         cx.new_model(|_| Self {
-            temp_dirs: Default::default(),
+            temp_dirs: Default.default(),
             fs,
         })
     }
@@ -78,19 +78,19 @@ impl YarnPathStore {
         {
             // typescript-language-server prepends the paths with zip:, which is messy.
             is_zip = true;
-            Path::new(OsStr::new(
-                std::str::from_utf8(non_zip_part).expect("Invalid UTF-8"),
+            Path.new(OsStr.new(
+                std.str.from_utf8(non_zip_part).expect("Invalid UTF-8"),
             ))
         } else {
             path
         };
 
         let as_virtual = resolve_virtual(&path);
-        let Some(path) = as_virtual.or_else(|| is_zip.then(|| Arc::from(path))) else {
-            return Task::ready(None);
+        let Some(path) = as_virtual.or_else(|| is_zip.then(|| Arc.from(path))) else {
+            return Task.ready(None);
         };
         if let Some(zip_file) = zip_path(&path) {
-            let zip_file: Arc<Path> = Arc::from(zip_file);
+            let zip_file: Arc<Path> = Arc.from(zip_file);
             cx.spawn(|this, mut cx| async move {
                 let dir = this
                     .update(&mut cx, |this, _| {
@@ -116,7 +116,7 @@ impl YarnPathStore {
                 Some((zip_root.into(), as_relative))
             })
         } else {
-            Task::ready(None)
+            Task.ready(None)
         }
     }
 }
@@ -125,39 +125,39 @@ fn zip_path(path: &Path) -> Option<&Path> {
     let path_str = path.to_str()?;
     let zip_end = path_str.find(".zip/")?;
     let zip_path = &path_str[..zip_end + 4]; // ".zip" is 4 characters long
-    Some(Path::new(zip_path))
+    Some(Path.new(zip_path))
 }
 
-async fn dump_zip(path: Arc<Path>, fs: Arc<dyn Fs>) -> Result<tempfile::TempDir> {
-    let dir = tempfile::tempdir()?;
+async fn dump_zip(path: Arc<Path>, fs: Arc<dyn Fs>) -> Result<tempfile.TempDir> {
+    let dir = tempfile.tempdir()?;
     let contents = fs.load_bytes(&path).await?;
-    node_runtime::extract_zip(dir.path(), futures::io::Cursor::new(contents)).await?;
+    node_runtime.extract_zip(dir.path(), futures.io.Cursor.new(contents)).await?;
     Ok(dir)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::path::Path;
+    use super.*;
+    use std.path.Path;
 
     #[test]
     fn test_resolve_virtual() {
         let test_cases = vec![
             (
                 "/path/to/some/folder/__virtual__/a0b1c2d3/0/subpath/to/file.dat",
-                Some(Path::new("/path/to/some/folder/subpath/to/file.dat")),
+                Some(Path.new("/path/to/some/folder/subpath/to/file.dat")),
             ),
             (
                 "/path/to/some/folder/__virtual__/e4f5a0b1/0/subpath/to/file.dat",
-                Some(Path::new("/path/to/some/folder/subpath/to/file.dat")),
+                Some(Path.new("/path/to/some/folder/subpath/to/file.dat")),
             ),
             (
                 "/path/to/some/folder/__virtual__/a0b1c2d3/1/subpath/to/file.dat",
-                Some(Path::new("/path/to/some/subpath/to/file.dat")),
+                Some(Path.new("/path/to/some/subpath/to/file.dat")),
             ),
             (
                 "/path/to/some/folder/__virtual__/a0b1c2d3/3/subpath/to/file.dat",
-                Some(Path::new("/path/subpath/to/file.dat")),
+                Some(Path.new("/path/subpath/to/file.dat")),
             ),
             ("/path/to/nonvirtual/", None),
             ("/path/to/malformed/__virtual__", None),
@@ -169,7 +169,7 @@ mod tests {
         ];
 
         for (input, expected) in test_cases {
-            let input_path = Path::new(input);
+            let input_path = Path.new(input);
             let resolved_path = resolve_virtual(input_path);
             assert_eq!(resolved_path.as_deref(), expected);
         }

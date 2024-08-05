@@ -1,6 +1,6 @@
-use gpui::HighlightStyle;
-use std::sync::Arc;
-use theme::SyntaxTheme;
+use gpui.HighlightStyle;
+use std.sync.Arc;
+use theme.SyntaxTheme;
 
 #[derive(Clone, Debug)]
 pub struct HighlightMap(Arc<[HighlightId]>);
@@ -8,7 +8,7 @@ pub struct HighlightMap(Arc<[HighlightId]>);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HighlightId(pub u32);
 
-const DEFAULT_SYNTAX_HIGHLIGHT_ID: HighlightId = HighlightId(u32::MAX);
+const DEFAULT_SYNTAX_HIGHLIGHT_ID: HighlightId = HighlightId(u32.MAX);
 
 impl HighlightMap {
     pub(crate) fn new(capture_names: &[&str], theme: &SyntaxTheme) -> Self {
@@ -66,7 +66,7 @@ impl HighlightId {
 
 impl Default for HighlightMap {
     fn default() -> Self {
-        Self(Arc::new([]))
+        Self(Arc.new([]))
     }
 }
 
@@ -78,8 +78,8 @@ impl Default for HighlightId {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use gpui::rgba;
+    use super.*;
+    use gpui.rgba;
 
     #[test]
     fn test_highlight_map() {
@@ -103,7 +103,7 @@ mod tests {
             "variable.builtin.self",
         ];
 
-        let map = HighlightMap::new(capture_names, &theme);
+        let map = HighlightMap.new(capture_names, &theme);
         assert_eq!(map.get(0).name(&theme), Some("function"));
         assert_eq!(map.get(1).name(&theme), Some("function.async"));
         assert_eq!(map.get(2).name(&theme), Some("variable.builtin"));

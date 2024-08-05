@@ -1,21 +1,21 @@
-use crate::{
-    provider::{
-        anthropic::AnthropicLanguageModelProvider, cloud::CloudLanguageModelProvider,
-        copilot_chat::CopilotChatLanguageModelProvider, google::GoogleLanguageModelProvider,
-        ollama::OllamaLanguageModelProvider, open_ai::OpenAiLanguageModelProvider,
+use crate.{
+    provider.{
+        anthropic.AnthropicLanguageModelProvider, cloud.CloudLanguageModelProvider,
+        copilot_chat.CopilotChatLanguageModelProvider, google.GoogleLanguageModelProvider,
+        ollama.OllamaLanguageModelProvider, open_ai.OpenAiLanguageModelProvider,
     },
     LanguageModel, LanguageModelId, LanguageModelProvider, LanguageModelProviderId,
     LanguageModelProviderState,
 };
-use client::{Client, UserStore};
-use collections::BTreeMap;
-use gpui::{AppContext, EventEmitter, Global, Model, ModelContext};
-use std::sync::Arc;
-use ui::Context;
+use client.{Client, UserStore};
+use collections.BTreeMap;
+use gpui.{AppContext, EventEmitter, Global, Model, ModelContext};
+use std.sync.Arc;
+use ui.Context;
 
 pub fn init(user_store: Model<UserStore>, client: Arc<Client>, cx: &mut AppContext) {
     let registry = cx.new_model(|cx| {
-        let mut registry = LanguageModelRegistry::default();
+        let mut registry = LanguageModelRegistry.default();
         register_language_model_providers(&mut registry, user_store, client, cx);
         registry
     });
@@ -28,38 +28,38 @@ fn register_language_model_providers(
     client: Arc<Client>,
     cx: &mut ModelContext<LanguageModelRegistry>,
 ) {
-    use feature_flags::FeatureFlagAppExt;
+    use feature_flags.FeatureFlagAppExt;
 
     registry.register_provider(
-        AnthropicLanguageModelProvider::new(client.http_client(), cx),
+        AnthropicLanguageModelProvider.new(client.http_client(), cx),
         cx,
     );
     registry.register_provider(
-        OpenAiLanguageModelProvider::new(client.http_client(), cx),
+        OpenAiLanguageModelProvider.new(client.http_client(), cx),
         cx,
     );
     registry.register_provider(
-        OllamaLanguageModelProvider::new(client.http_client(), cx),
+        OllamaLanguageModelProvider.new(client.http_client(), cx),
         cx,
     );
     registry.register_provider(
-        GoogleLanguageModelProvider::new(client.http_client(), cx),
+        GoogleLanguageModelProvider.new(client.http_client(), cx),
         cx,
     );
-    registry.register_provider(CopilotChatLanguageModelProvider::new(cx), cx);
+    registry.register_provider(CopilotChatLanguageModelProvider.new(cx), cx);
 
-    cx.observe_flag::<feature_flags::LanguageModels, _>(move |enabled, cx| {
+    cx.observe_flag.<feature_flags.LanguageModels, _>(move |enabled, cx| {
         let user_store = user_store.clone();
         let client = client.clone();
-        LanguageModelRegistry::global(cx).update(cx, move |registry, cx| {
+        LanguageModelRegistry.global(cx).update(cx, move |registry, cx| {
             if enabled {
                 registry.register_provider(
-                    CloudLanguageModelProvider::new(user_store.clone(), client.clone(), cx),
+                    CloudLanguageModelProvider.new(user_store.clone(), client.clone(), cx),
                     cx,
                 );
             } else {
                 registry.unregister_provider(
-                    LanguageModelProviderId::from(crate::provider::cloud::PROVIDER_ID.to_string()),
+                    LanguageModelProviderId.from(crate.provider.cloud.PROVIDER_ID.to_string()),
                     cx,
                 );
             }
@@ -94,18 +94,18 @@ impl EventEmitter<Event> for LanguageModelRegistry {}
 
 impl LanguageModelRegistry {
     pub fn global(cx: &AppContext) -> Model<Self> {
-        cx.global::<GlobalLanguageModelRegistry>().0.clone()
+        cx.global.<GlobalLanguageModelRegistry>().0.clone()
     }
 
     pub fn read_global(cx: &AppContext) -> &Self {
-        cx.global::<GlobalLanguageModelRegistry>().0.read(cx)
+        cx.global.<GlobalLanguageModelRegistry>().0.read(cx)
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn test(cx: &mut AppContext) -> crate::provider::fake::FakeLanguageModelProvider {
-        let fake_provider = crate::provider::fake::FakeLanguageModelProvider;
+    pub fn test(cx: &mut AppContext) -> crate.provider.fake.FakeLanguageModelProvider {
+        let fake_provider = crate.provider.fake.FakeLanguageModelProvider;
         let registry = cx.new_model(|cx| {
-            let mut registry = Self::default();
+            let mut registry = Self.default();
             registry.register_provider(fake_provider.clone(), cx);
             let model = fake_provider.provided_models(cx)[0].clone();
             registry.set_active_model(Some(model), cx);
@@ -123,14 +123,14 @@ impl LanguageModelRegistry {
         let id = provider.id();
 
         let subscription = provider.subscribe(cx, |_, cx| {
-            cx.emit(Event::ProviderStateChanged);
+            cx.emit(Event.ProviderStateChanged);
         });
         if let Some(subscription) = subscription {
             subscription.detach();
         }
 
-        self.providers.insert(id.clone(), Arc::new(provider));
-        cx.emit(Event::AddedProvider(id));
+        self.providers.insert(id.clone(), Arc.new(provider));
+        cx.emit(Event.AddedProvider(id));
     }
 
     pub fn unregister_provider(
@@ -139,13 +139,13 @@ impl LanguageModelRegistry {
         cx: &mut ModelContext<Self>,
     ) {
         if self.providers.remove(&id).is_some() {
-            cx.emit(Event::RemovedProvider(id));
+            cx.emit(Event.RemovedProvider(id));
         }
     }
 
     pub fn providers(&self) -> Vec<Arc<dyn LanguageModelProvider>> {
-        let zed_provider_id = LanguageModelProviderId(crate::provider::cloud::PROVIDER_ID.into());
-        let mut providers = Vec::with_capacity(self.providers.len());
+        let zed_provider_id = LanguageModelProviderId(crate.provider.cloud.PROVIDER_ID.into());
+        let mut providers = Vec.with_capacity(self.providers.len());
         if let Some(provider) = self.providers.get(&zed_provider_id) {
             providers.push(provider.clone());
         }
@@ -195,7 +195,7 @@ impl LanguageModelRegistry {
             provider,
             model: None,
         });
-        cx.emit(Event::ActiveModelChanged);
+        cx.emit(Event.ActiveModelChanged);
     }
 
     pub fn set_active_model(
@@ -210,13 +210,13 @@ impl LanguageModelRegistry {
                     provider,
                     model: Some(model),
                 });
-                cx.emit(Event::ActiveModelChanged);
+                cx.emit(Event.ActiveModelChanged);
             } else {
-                log::warn!("Active model's provider not found in registry");
+                log.warn!("Active model's provider not found in registry");
             }
         } else {
             self.active_model = None;
-            cx.emit(Event::ActiveModelChanged);
+            cx.emit(Event.ActiveModelChanged);
         }
     }
 
@@ -231,12 +231,12 @@ impl LanguageModelRegistry {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::provider::fake::FakeLanguageModelProvider;
+    use super.*;
+    use crate.provider.fake.FakeLanguageModelProvider;
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_register_providers(cx: &mut AppContext) {
-        let registry = cx.new_model(|_| LanguageModelRegistry::default());
+        let registry = cx.new_model(|_| LanguageModelRegistry.default());
 
         registry.update(cx, |registry, cx| {
             registry.register_provider(FakeLanguageModelProvider, cx);
@@ -244,10 +244,10 @@ mod tests {
 
         let providers = registry.read(cx).providers();
         assert_eq!(providers.len(), 1);
-        assert_eq!(providers[0].id(), crate::provider::fake::provider_id());
+        assert_eq!(providers[0].id(), crate.provider.fake.provider_id());
 
         registry.update(cx, |registry, cx| {
-            registry.unregister_provider(crate::provider::fake::provider_id(), cx);
+            registry.unregister_provider(crate.provider.fake.provider_id(), cx);
         });
 
         let providers = registry.read(cx).providers();

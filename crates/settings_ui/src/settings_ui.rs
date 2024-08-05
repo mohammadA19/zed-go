@@ -83,7 +83,7 @@ impl Item for SettingsPage {
     type Event = ItemEvent;
 
     fn tab_icon(&self, _cx: &WindowContext) -> Option<Icon> {
-        Some(Icon::new(IconName::Settings))
+        Some(Icon.new(IconName.Settings))
     }
 
     fn tab_content_text(&self, _cx: &WindowContext) -> Option<SharedString> {
@@ -94,7 +94,7 @@ impl Item for SettingsPage {
         false
     }
 
-    fn to_item_events(event: &Self::Event, mut f: impl FnMut(ItemEvent)) {
+    fn to_item_events(event: &Self.Event, mut f: impl FnMut(ItemEvent)) {
         f(*event)
     }
 }
@@ -105,19 +105,19 @@ impl Render for SettingsPage {
             .p_4()
             .size_full()
             .gap_4()
-            .child(Label::new("Settings").size(LabelSize::Large))
+            .child(Label.new("Settings").size(LabelSize.Large))
             .child(
-                v_flex().gap_1().child(Label::new("Appearance")).child(
+                v_flex().gap_1().child(Label.new("Appearance")).child(
                     v_flex()
                         .elevation_2(cx)
-                        .child(AppearanceSettingsControls::new()),
+                        .child(AppearanceSettingsControls.new()),
                 ),
             )
             .child(
-                v_flex().gap_1().child(Label::new("Editor")).child(
+                v_flex().gap_1().child(Label.new("Editor")).child(
                     v_flex()
                         .elevation_2(cx)
-                        .child(EditorSettingsControls::new()),
+                        .child(EditorSettingsControls.new()),
                 ),
             )
     }

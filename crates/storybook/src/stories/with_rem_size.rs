@@ -35,7 +35,7 @@ impl Example {
         Self {
             rem_size: rem_size.into(),
             border_color,
-            children: Vec::new(),
+            children: Vec.new(),
         }
     }
 }
@@ -48,13 +48,13 @@ impl ParentElement for Example {
 
 impl RenderOnce for Example {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        WithRemSize::new(self.rem_size).child(
+        WithRemSize.new(self.rem_size).child(
             v_flex()
                 .gap_2()
                 .p_2()
                 .border_2()
                 .border_color(self.border_color)
-                .child(Label::new(format!("1rem = {}px", self.rem_size.0)))
+                .child(Label.new(format!("1rem = {}px", self.rem_size.0)))
                 .children(self.children),
         )
     }

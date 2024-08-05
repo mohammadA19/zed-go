@@ -1,17 +1,17 @@
-use editor::Editor;
-use gpui::{
-    actions, prelude::*, AnyElement, AppContext, EventEmitter, FocusHandle, FocusableView,
+use editor.Editor;
+use gpui.{
+    actions, prelude.*, AnyElement, AppContext, EventEmitter, FocusHandle, FocusableView,
     Subscription, View,
 };
-use ui::{prelude::*, ButtonLike, ElevationIndex, KeyBinding};
-use util::ResultExt as _;
-use workspace::item::ItemEvent;
-use workspace::WorkspaceId;
-use workspace::{item::Item, Workspace};
+use ui.{prelude.*, ButtonLike, ElevationIndex, KeyBinding};
+use util.ResultExt as _;
+use workspace.item.ItemEvent;
+use workspace.WorkspaceId;
+use workspace.{item.Item, Workspace};
 
-use crate::components::KernelListItem;
-use crate::jupyter_settings::JupyterSettings;
-use crate::repl_store::ReplStore;
+use crate.components.KernelListItem;
+use crate.jupyter_settings.JupyterSettings;
+use crate.repl_store.ReplStore;
 
 actions!(
     repl,
@@ -34,18 +34,18 @@ pub fn init(cx: &mut AppContext) {
                     .active_pane()
                     .read(cx)
                     .items()
-                    .find_map(|item| item.downcast::<ReplSessionsPage>());
+                    .find_map(|item| item.downcast.<ReplSessionsPage>());
 
                 if let Some(existing) = existing {
                     workspace.activate_item(&existing, true, true, cx);
                 } else {
-                    let repl_sessions_page = ReplSessionsPage::new(cx);
-                    workspace.add_item_to_active_pane(Box::new(repl_sessions_page), None, true, cx)
+                    let repl_sessions_page = ReplSessionsPage.new(cx);
+                    workspace.add_item_to_active_pane(Box.new(repl_sessions_page), None, true, cx)
                 }
             });
 
             workspace.register_action(|_workspace, _: &RefreshKernelspecs, cx| {
-                let store = ReplStore::global(cx);
+                let store = ReplStore.global(cx);
                 store.update(cx, |store, cx| {
                     store.refresh_kernelspecs(cx).detach();
                 });
@@ -65,11 +65,11 @@ pub fn init(cx: &mut AppContext) {
             .register_action({
                 let editor_handle = editor_handle.clone();
                 move |_: &Run, cx| {
-                    if !JupyterSettings::enabled(cx) {
+                    if !JupyterSettings.enabled(cx) {
                         return;
                     }
 
-                    crate::run(editor_handle.clone(), true, cx).log_err();
+                    crate.run(editor_handle.clone(), true, cx).log_err();
                 }
             })
             .detach();
@@ -78,11 +78,11 @@ pub fn init(cx: &mut AppContext) {
             .register_action({
                 let editor_handle = editor_handle.clone();
                 move |_: &RunInPlace, cx| {
-                    if !JupyterSettings::enabled(cx) {
+                    if !JupyterSettings.enabled(cx) {
                         return;
                     }
 
-                    crate::run(editor_handle.clone(), false, cx).log_err();
+                    crate.run(editor_handle.clone(), false, cx).log_err();
                 }
             })
             .detach();
@@ -91,11 +91,11 @@ pub fn init(cx: &mut AppContext) {
             .register_action({
                 let editor_handle = editor_handle.clone();
                 move |_: &ClearOutputs, cx| {
-                    if !JupyterSettings::enabled(cx) {
+                    if !JupyterSettings.enabled(cx) {
                         return;
                     }
 
-                    crate::clear_outputs(editor_handle.clone(), cx);
+                    crate.clear_outputs(editor_handle.clone(), cx);
                 }
             })
             .detach();
@@ -104,11 +104,11 @@ pub fn init(cx: &mut AppContext) {
             .register_action({
                 let editor_handle = editor_handle.clone();
                 move |_: &Interrupt, cx| {
-                    if !JupyterSettings::enabled(cx) {
+                    if !JupyterSettings.enabled(cx) {
                         return;
                     }
 
-                    crate::interrupt(editor_handle.clone(), cx);
+                    crate.interrupt(editor_handle.clone(), cx);
                 }
             })
             .detach();
@@ -117,11 +117,11 @@ pub fn init(cx: &mut AppContext) {
             .register_action({
                 let editor_handle = editor_handle.clone();
                 move |_: &Shutdown, cx| {
-                    if !JupyterSettings::enabled(cx) {
+                    if !JupyterSettings.enabled(cx) {
                         return;
                     }
 
-                    crate::shutdown(editor_handle.clone(), cx);
+                    crate.shutdown(editor_handle.clone(), cx);
                 }
             })
             .detach();
@@ -183,19 +183,19 @@ impl Item for ReplSessionsPage {
         None
     }
 
-    fn to_item_events(event: &Self::Event, mut f: impl FnMut(workspace::item::ItemEvent)) {
+    fn to_item_events(event: &Self.Event, mut f: impl FnMut(workspace.item.ItemEvent)) {
         f(*event)
     }
 }
 
 impl Render for ReplSessionsPage {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let store = ReplStore::global(cx);
+        let store = ReplStore.global(cx);
 
         let (kernel_specifications, sessions) = store.update(cx, |store, _cx| {
             (
-                store.kernel_specifications().cloned().collect::<Vec<_>>(),
-                store.sessions().cloned().collect::<Vec<_>>(),
+                store.kernel_specifications().cloned().collect.<Vec<_>>(),
+                store.sessions().cloned().collect.<Vec<_>>(),
             )
         });
 
@@ -205,15 +205,15 @@ impl Render for ReplSessionsPage {
         if kernel_specifications.is_empty() {
             let instructions = "To start interactively running code in your editor, you need to install and configure Jupyter kernels.";
 
-            return ReplSessionsContainer::new("No Jupyter Kernels Available")
-                .child(Label::new(instructions))
+            return ReplSessionsContainer.new("No Jupyter Kernels Available")
+                .child(Label.new(instructions))
                 .child(
                     h_flex().w_full().p_4().justify_center().gap_2().child(
-                        ButtonLike::new("install-kernels")
-                            .style(ButtonStyle::Filled)
-                            .size(ButtonSize::Large)
-                            .layer(ElevationIndex::ModalSurface)
-                            .child(Label::new("Install Kernels"))
+                        ButtonLike.new("install-kernels")
+                            .style(ButtonStyle.Filled)
+                            .size(ButtonSize.Large)
+                            .layer(ElevationIndex.ModalSurface)
+                            .child(Label.new("Install Kernels"))
                             .on_click(move |_, cx| {
                                 cx.open_url(
                                     "https://docs.jupyter.org/en/latest/install/kernels.html",
@@ -225,26 +225,26 @@ impl Render for ReplSessionsPage {
 
         // When there are no sessions, show the command to run code in an editor
         if sessions.is_empty() {
-            let instructions = "To run code in a Jupyter kernel, select some code and use the 'repl::Run' command.";
+            let instructions = "To run code in a Jupyter kernel, select some code and use the 'repl.Run' command.";
 
-            return ReplSessionsContainer::new("No Jupyter Kernel Sessions")
+            return ReplSessionsContainer.new("No Jupyter Kernel Sessions")
                 .child(
                     v_flex()
-                        .child(Label::new(instructions))
-                        .children(KeyBinding::for_action(&Run, cx)),
+                        .child(Label.new(instructions))
+                        .children(KeyBinding.for_action(&Run, cx)),
                 )
-                .child(Label::new("Kernels available").size(LabelSize::Large))
+                .child(Label.new("Kernels available").size(LabelSize.Large))
                 .children(kernel_specifications.into_iter().map(|spec| {
-                    KernelListItem::new(spec.clone()).child(
+                    KernelListItem.new(spec.clone()).child(
                         h_flex()
                             .gap_2()
-                            .child(Label::new(spec.name))
-                            .child(Label::new(spec.kernelspec.language).color(Color::Muted)),
+                            .child(Label.new(spec.name))
+                            .child(Label.new(spec.kernelspec.language).color(Color.Muted)),
                     )
                 }));
         }
 
-        ReplSessionsContainer::new("Jupyter Kernel Sessions").children(sessions)
+        ReplSessionsContainer.new("Jupyter Kernel Sessions").children(sessions)
     }
 }
 
@@ -258,7 +258,7 @@ impl ReplSessionsContainer {
     pub fn new(title: impl Into<SharedString>) -> Self {
         Self {
             title: title.into(),
-            children: Vec::new(),
+            children: Vec.new(),
         }
     }
 }
@@ -275,7 +275,7 @@ impl RenderOnce for ReplSessionsContainer {
             .p_4()
             .gap_2()
             .size_full()
-            .child(Label::new(self.title).size(LabelSize::Large))
+            .child(Label.new(self.title).size(LabelSize.Large))
             .children(self.children)
     }
 }

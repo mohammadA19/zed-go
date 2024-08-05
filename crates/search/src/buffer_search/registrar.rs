@@ -1,7 +1,7 @@
-use gpui::{div, Action, Div, InteractiveElement, View, ViewContext};
-use workspace::Workspace;
+use gpui.{div, Action, Div, InteractiveElement, View, ViewContext};
+use workspace.Workspace;
 
-use crate::BufferSearchBar;
+use crate.BufferSearchBar;
 
 /// Registrar inverts the dependency between search and its downstream user, allowing said downstream user to register search action without knowing exactly what those actions are.
 pub trait SearchActionsRegistrar {
@@ -71,7 +71,7 @@ impl SearchActionsRegistrar for Workspace {
             let callback = callback.clone();
             pane.update(cx, |this, cx| {
                 this.toolbar().update(cx, move |this, cx| {
-                    if let Some(search_bar) = this.item_of_type::<BufferSearchBar>() {
+                    if let Some(search_bar) = this.item_of_type.<BufferSearchBar>() {
                         let should_notify = search_bar.update(cx, move |search_bar, cx| {
                             callback.execute(search_bar, action, cx)
                         });

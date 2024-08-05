@@ -1,7 +1,7 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use serde::{Deserialize, Serialize};
-use strum::EnumIter;
+use serde.{Deserialize, Serialize};
+use strum.EnumIter;
 
 #[derive(
     Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Serialize, Deserialize, EnumIter,
@@ -23,16 +23,16 @@ pub enum RustdocItemKind {
 impl RustdocItemKind {
     pub(crate) const fn class(&self) -> &'static str {
         match self {
-            Self::Mod => "mod",
-            Self::Macro => "macro",
-            Self::Struct => "struct",
-            Self::Enum => "enum",
-            Self::Constant => "constant",
-            Self::Trait => "trait",
-            Self::Function => "fn",
-            Self::TypeAlias => "type",
-            Self::AttributeMacro => "attr",
-            Self::DeriveMacro => "derive",
+            Self.Mod => "mod",
+            Self.Macro => "macro",
+            Self.Struct => "struct",
+            Self.Enum => "enum",
+            Self.Constant => "constant",
+            Self.Trait => "trait",
+            Self.Function => "fn",
+            Self.TypeAlias => "type",
+            Self.AttributeMacro => "attr",
+            Self.DeriveMacro => "derive",
         }
     }
 }
@@ -51,7 +51,7 @@ impl RustdocItem {
         let mut path_segments = self.path.clone();
         path_segments.push(self.name.clone());
 
-        path_segments.join("::")
+        path_segments.join(".")
     }
 
     pub fn url_path(&self) -> String {
@@ -59,19 +59,19 @@ impl RustdocItem {
         let mut path_components = self.path.clone();
 
         match self.kind {
-            RustdocItemKind::Mod => {
+            RustdocItemKind.Mod => {
                 path_components.push(name.clone());
                 path_components.push("index.html".into());
             }
-            RustdocItemKind::Macro
-            | RustdocItemKind::Struct
-            | RustdocItemKind::Enum
-            | RustdocItemKind::Constant
-            | RustdocItemKind::Trait
-            | RustdocItemKind::Function
-            | RustdocItemKind::TypeAlias
-            | RustdocItemKind::AttributeMacro
-            | RustdocItemKind::DeriveMacro => {
+            RustdocItemKind.Macro
+            | RustdocItemKind.Struct
+            | RustdocItemKind.Enum
+            | RustdocItemKind.Constant
+            | RustdocItemKind.Trait
+            | RustdocItemKind.Function
+            | RustdocItemKind.TypeAlias
+            | RustdocItemKind.AttributeMacro
+            | RustdocItemKind.DeriveMacro => {
                 path_components
                     .push(format!("{kind}.{name}.html", kind = self.kind.class()).into());
             }
