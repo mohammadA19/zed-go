@@ -2,12 +2,12 @@
 //!
 //! This module uses the [ashpd] crate
 
-use ashpd::desktop::settings::{ColorScheme, Settings};
-use calloop::channel::Channel;
-use calloop::{EventSource, Poll, PostAction, Readiness, Token, TokenFactory};
-use smol::stream::StreamExt;
+use ashpd.desktop.settings.{ColorScheme, Settings};
+use calloop.channel.Channel;
+use calloop.{EventSource, Poll, PostAction, Readiness, Token, TokenFactory};
+use smol.stream.StreamExt;
 
-use crate::{BackgroundExecutor, WindowAppearance};
+use crate.{BackgroundExecutor, WindowAppearance};
 
 pub enum Event {
     WindowAppearance(WindowAppearance),
@@ -21,30 +21,30 @@ pub struct XDPEventSource {
 
 impl XDPEventSource {
     pub fn new(executor: &BackgroundExecutor) -> Self {
-        let (sender, channel) = calloop::channel::channel();
+        let (sender, channel) = calloop.channel.channel();
 
         let background = executor.clone();
 
         executor
             .spawn(async move {
-                let settings = Settings::new().await?;
+                let settings = Settings.new().await?;
 
                 if let Ok(initial_appearance) = settings.color_scheme().await {
-                    sender.send(Event::WindowAppearance(WindowAppearance::from_native(
+                    sender.send(Event.WindowAppearance(WindowAppearance.from_native(
                         initial_appearance,
                     )))?;
                 }
                 if let Ok(initial_theme) = settings
-                    .read::<String>("org.gnome.desktop.interface", "cursor-theme")
+                    .read.<String>("org.gnome.desktop.interface", "cursor-theme")
                     .await
                 {
-                    sender.send(Event::CursorTheme(initial_theme))?;
+                    sender.send(Event.CursorTheme(initial_theme))?;
                 }
                 if let Ok(initial_size) = settings
-                    .read::<u32>("org.gnome.desktop.interface", "cursor-size")
+                    .read.<u32>("org.gnome.desktop.interface", "cursor-size")
                     .await
                 {
-                    sender.send(Event::CursorSize(initial_size))?;
+                    sender.send(Event.CursorSize(initial_size))?;
                 }
 
                 if let Ok(mut cursor_theme_changed) = settings
@@ -59,15 +59,15 @@ impl XDPEventSource {
                         .spawn(async move {
                             while let Some(theme) = cursor_theme_changed.next().await {
                                 let theme = theme?;
-                                sender.send(Event::CursorTheme(theme))?;
+                                sender.send(Event.CursorTheme(theme))?;
                             }
-                            anyhow::Ok(())
+                            anyhow.Ok(())
                         })
                         .detach();
                 }
 
                 if let Ok(mut cursor_size_changed) = settings
-                    .receive_setting_changed_with_args::<u32>(
+                    .receive_setting_changed_with_args.<u32>(
                         "org.gnome.desktop.interface",
                         "cursor-size",
                     )
@@ -78,21 +78,21 @@ impl XDPEventSource {
                         .spawn(async move {
                             while let Some(size) = cursor_size_changed.next().await {
                                 let size = size?;
-                                sender.send(Event::CursorSize(size))?;
+                                sender.send(Event.CursorSize(size))?;
                             }
-                            anyhow::Ok(())
+                            anyhow.Ok(())
                         })
                         .detach();
                 }
 
                 let mut appearance_changed = settings.receive_color_scheme_changed().await?;
                 while let Some(scheme) = appearance_changed.next().await {
-                    sender.send(Event::WindowAppearance(WindowAppearance::from_native(
+                    sender.send(Event.WindowAppearance(WindowAppearance.from_native(
                         scheme,
                     )))?;
                 }
 
-                anyhow::Ok(())
+                anyhow.Ok(())
             })
             .detach();
 
@@ -104,31 +104,31 @@ impl EventSource for XDPEventSource {
     type Event = Event;
     type Metadata = ();
     type Ret = ();
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
 
     fn process_events<F>(
         &mut self,
         readiness: Readiness,
         token: Token,
         mut callback: F,
-    ) -> Result<PostAction, Self::Error>
+    ) -> Result<PostAction, Self.Error>
     where
-        F: FnMut(Self::Event, &mut Self::Metadata) -> Self::Ret,
+        F: FnMut(Self.Event, &mut Self.Metadata) -> Self.Ret,
     {
         self.channel.process_events(readiness, token, |evt, _| {
-            if let calloop::channel::Event::Msg(msg) = evt {
+            if let calloop.channel.Event.Msg(msg) = evt {
                 (callback)(msg, &mut ())
             }
         })?;
 
-        Ok(PostAction::Continue)
+        Ok(PostAction.Continue)
     }
 
     fn register(
         &mut self,
         poll: &mut Poll,
         token_factory: &mut TokenFactory,
-    ) -> calloop::Result<()> {
+    ) -> calloop.Result<()> {
         self.channel.register(poll, token_factory)?;
 
         Ok(())
@@ -138,13 +138,13 @@ impl EventSource for XDPEventSource {
         &mut self,
         poll: &mut Poll,
         token_factory: &mut TokenFactory,
-    ) -> calloop::Result<()> {
+    ) -> calloop.Result<()> {
         self.channel.reregister(poll, token_factory)?;
 
         Ok(())
     }
 
-    fn unregister(&mut self, poll: &mut Poll) -> calloop::Result<()> {
+    fn unregister(&mut self, poll: &mut Poll) -> calloop.Result<()> {
         self.channel.unregister(poll)?;
 
         Ok(())
@@ -154,14 +154,14 @@ impl EventSource for XDPEventSource {
 impl WindowAppearance {
     fn from_native(cs: ColorScheme) -> WindowAppearance {
         match cs {
-            ColorScheme::PreferDark => WindowAppearance::Dark,
-            ColorScheme::PreferLight => WindowAppearance::Light,
-            ColorScheme::NoPreference => WindowAppearance::Light,
+            ColorScheme.PreferDark => WindowAppearance.Dark,
+            ColorScheme.PreferLight => WindowAppearance.Light,
+            ColorScheme.NoPreference => WindowAppearance.Light,
         }
     }
 
     #[cfg_attr(target_os = "linux", allow(dead_code))]
     fn set_native(&mut self, cs: ColorScheme) {
-        *self = Self::from_native(cs);
+        *self = Self.from_native(cs);
     }
 }

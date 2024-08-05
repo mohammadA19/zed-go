@@ -1,49 +1,49 @@
-use std::{
-    borrow::Cow,
-    ops::{Deref, DerefMut, Range},
-    sync::Arc,
+use std.{
+    borrow.Cow,
+    ops.{Deref, DerefMut, Range},
+    sync.Arc,
 };
 
-use anyhow::Result;
-use serde_json::json;
+use anyhow.Result;
+use serde_json.json;
 
-use crate::{Editor, ToPoint};
-use collections::HashSet;
-use futures::Future;
-use gpui::{View, ViewContext, VisualTestContext};
-use indoc::indoc;
-use language::{
+use crate.{Editor, ToPoint};
+use collections.HashSet;
+use futures.Future;
+use gpui.{View, ViewContext, VisualTestContext};
+use indoc.indoc;
+use language.{
     point_to_lsp, FakeLspAdapter, Language, LanguageConfig, LanguageMatcher, LanguageQueries,
 };
-use lsp::{notification, request};
-use multi_buffer::ToPointUtf16;
-use project::Project;
-use smol::stream::StreamExt;
-use workspace::{AppState, Workspace, WorkspaceHandle};
+use lsp.{notification, request};
+use multi_buffer.ToPointUtf16;
+use project.Project;
+use smol.stream.StreamExt;
+use workspace.{AppState, Workspace, WorkspaceHandle};
 
-use super::editor_test_context::{AssertionContextManager, EditorTestContext};
+use super.editor_test_context.{AssertionContextManager, EditorTestContext};
 
 pub struct EditorLspTestContext {
     pub cx: EditorTestContext,
-    pub lsp: lsp::FakeLanguageServer,
+    pub lsp: lsp.FakeLanguageServer,
     pub workspace: View<Workspace>,
-    pub buffer_lsp_url: lsp::Url,
+    pub buffer_lsp_url: lsp.Url,
 }
 
 impl EditorLspTestContext {
     pub async fn new(
         language: Language,
-        capabilities: lsp::ServerCapabilities,
-        cx: &mut gpui::TestAppContext,
+        capabilities: lsp.ServerCapabilities,
+        cx: &mut gpui.TestAppContext,
     ) -> EditorLspTestContext {
-        let app_state = cx.update(AppState::test);
+        let app_state = cx.update(AppState.test);
 
         cx.update(|cx| {
-            assets::Assets.load_test_fonts(cx);
-            language::init(cx);
-            crate::init(cx);
-            workspace::init(app_state.clone(), cx);
-            Project::init_settings(cx);
+            assets.Assets.load_test_fonts(cx);
+            language.init(cx);
+            crate.init(cx);
+            workspace.init(app_state.clone(), cx);
+            Project.init_settings(cx);
         });
 
         let file_name = format!(
@@ -54,17 +54,17 @@ impl EditorLspTestContext {
                 .expect("language must have a path suffix for EditorLspTestContext")
         );
 
-        let project = Project::test(app_state.fs.clone(), [], cx).await;
+        let project = Project.test(app_state.fs.clone(), [], cx).await;
 
         let language_registry = project.read_with(cx, |project, _| project.languages().clone());
         let mut fake_servers = language_registry.register_fake_lsp_adapter(
             language.name().as_ref(),
             FakeLspAdapter {
                 capabilities,
-                ..Default::default()
+                ..Default.default()
             },
         );
-        language_registry.add(Arc::new(language));
+        language_registry.add(Arc.new(language));
 
         app_state
             .fs
@@ -72,11 +72,11 @@ impl EditorLspTestContext {
             .insert_tree("/root", json!({ "dir": { file_name.clone(): "" }}))
             .await;
 
-        let window = cx.add_window(|cx| Workspace::test_new(project.clone(), cx));
+        let window = cx.add_window(|cx| Workspace.test_new(project.clone(), cx));
 
         let workspace = window.root_view(cx).unwrap();
 
-        let mut cx = VisualTestContext::from_window(*window.deref(), cx);
+        let mut cx = VisualTestContext.from_window(*window.deref(), cx);
         project
             .update(&mut cx, |project, cx| {
                 project.find_or_create_worktree("/root", true, cx)
@@ -93,7 +93,7 @@ impl EditorLspTestContext {
             .await
             .expect("Could not open test file");
         let editor = cx.update(|cx| {
-            item.act_as::<Editor>(cx)
+            item.act_as.<Editor>(cx)
                 .expect("Opened test file wasn't an editor")
         });
         editor.update(&mut cx, |editor, cx| editor.focus(cx));
@@ -104,31 +104,31 @@ impl EditorLspTestContext {
                 cx,
                 window: window.into(),
                 editor,
-                assertion_cx: AssertionContextManager::new(),
+                assertion_cx: AssertionContextManager.new(),
             },
             lsp,
             workspace,
-            buffer_lsp_url: lsp::Url::from_file_path(format!("/root/dir/{file_name}")).unwrap(),
+            buffer_lsp_url: lsp.Url.from_file_path(format!("/root/dir/{file_name}")).unwrap(),
         }
     }
 
     pub async fn new_rust(
-        capabilities: lsp::ServerCapabilities,
-        cx: &mut gpui::TestAppContext,
+        capabilities: lsp.ServerCapabilities,
+        cx: &mut gpui.TestAppContext,
     ) -> EditorLspTestContext {
-        let language = Language::new(
+        let language = Language.new(
             LanguageConfig {
                 name: "Rust".into(),
                 matcher: LanguageMatcher {
                     path_suffixes: vec!["rs".to_string()],
-                    ..Default::default()
+                    ..Default.default()
                 },
-                ..Default::default()
+                ..Default.default()
             },
-            Some(tree_sitter_rust::language()),
+            Some(tree_sitter_rust.language()),
         )
         .with_queries(LanguageQueries {
-            indents: Some(Cow::from(indoc! {r#"
+            indents: Some(Cow.from(indoc! {r#"
                 [
                     ((where_clause) _ @end)
                     (field_expression)
@@ -143,57 +143,57 @@ impl EditorLspTestContext {
                 (_ "<" ">" @end) @indent
                 (_ "{" "}" @end) @indent
                 (_ "(" ")" @end) @indent"#})),
-            brackets: Some(Cow::from(indoc! {r#"
+            brackets: Some(Cow.from(indoc! {r#"
                 ("(" @open ")" @close)
                 ("[" @open "]" @close)
                 ("{" @open "}" @close)
                 ("<" @open ">" @close)
                 ("\"" @open "\"" @close)
                 (closure_parameters "|" @open "|" @close)"#})),
-            ..Default::default()
+            ..Default.default()
         })
         .expect("Could not parse queries");
 
-        Self::new(language, capabilities, cx).await
+        Self.new(language, capabilities, cx).await
     }
 
     pub async fn new_typescript(
-        capabilities: lsp::ServerCapabilities,
-        cx: &mut gpui::TestAppContext,
+        capabilities: lsp.ServerCapabilities,
+        cx: &mut gpui.TestAppContext,
     ) -> EditorLspTestContext {
-        let mut word_characters: HashSet<char> = Default::default();
+        let mut word_characters: HashSet<char> = Default.default();
         word_characters.insert('$');
         word_characters.insert('#');
-        let language = Language::new(
+        let language = Language.new(
             LanguageConfig {
                 name: "Typescript".into(),
                 matcher: LanguageMatcher {
                     path_suffixes: vec!["ts".to_string()],
-                    ..Default::default()
+                    ..Default.default()
                 },
-                brackets: language::BracketPairConfig {
-                    pairs: vec![language::BracketPair {
+                brackets: language.BracketPairConfig {
+                    pairs: vec![language.BracketPair {
                         start: "{".to_string(),
                         end: "}".to_string(),
                         close: true,
                         surround: true,
                         newline: true,
                     }],
-                    disabled_scopes_by_bracket_ix: Default::default(),
+                    disabled_scopes_by_bracket_ix: Default.default(),
                 },
                 word_characters,
-                ..Default::default()
+                ..Default.default()
             },
-            Some(tree_sitter_typescript::language_typescript()),
+            Some(tree_sitter_typescript.language_typescript()),
         )
         .with_queries(LanguageQueries {
-            brackets: Some(Cow::from(indoc! {r#"
+            brackets: Some(Cow.from(indoc! {r#"
                 ("(" @open ")" @close)
                 ("[" @open "]" @close)
                 ("{" @open "}" @close)
                 ("<" @open ">" @close)
                 ("\"" @open "\"" @close)"#})),
-            indents: Some(Cow::from(indoc! {r#"
+            indents: Some(Cow.from(indoc! {r#"
                 [
                     (call_expression)
                     (assignment_expression)
@@ -210,36 +210,36 @@ impl EditorLspTestContext {
                 (_ "{" "}" @end) @indent
                 (_ "(" ")" @end) @indent
                 "#})),
-            ..Default::default()
+            ..Default.default()
         })
         .expect("Could not parse queries");
 
-        Self::new(language, capabilities, cx).await
+        Self.new(language, capabilities, cx).await
     }
 
-    pub async fn new_html(cx: &mut gpui::TestAppContext) -> Self {
-        let language = Language::new(
+    pub async fn new_html(cx: &mut gpui.TestAppContext) -> Self {
+        let language = Language.new(
             LanguageConfig {
                 name: "HTML".into(),
                 matcher: LanguageMatcher {
                     path_suffixes: vec!["html".into()],
-                    ..Default::default()
+                    ..Default.default()
                 },
                 block_comment: Some(("<!-- ".into(), " -->".into())),
-                ..Default::default()
+                ..Default.default()
             },
-            Some(tree_sitter_html::language()),
+            Some(tree_sitter_html.language()),
         );
-        Self::new(language, Default::default(), cx).await
+        Self.new(language, Default.default(), cx).await
     }
 
     // Constructs lsp range using a marked string with '[', ']' range delimiters
-    pub fn lsp_range(&mut self, marked_text: &str) -> lsp::Range {
+    pub fn lsp_range(&mut self, marked_text: &str) -> lsp.Range {
         let ranges = self.ranges(marked_text);
         self.to_lsp_range(ranges[0].clone())
     }
 
-    pub fn to_lsp_range(&mut self, range: Range<usize>) -> lsp::Range {
+    pub fn to_lsp_range(&mut self, range: Range<usize>) -> lsp.Range {
         let snapshot = self.update_editor(|editor, cx| editor.snapshot(cx));
         let start_point = range.start.to_point(&snapshot.buffer_snapshot);
         let end_point = range.end.to_point(&snapshot.buffer_snapshot);
@@ -261,11 +261,11 @@ impl EditorLspTestContext {
                     .to_point_utf16(&buffer.read(cx)),
             );
 
-            lsp::Range { start, end }
+            lsp.Range { start, end }
         })
     }
 
-    pub fn to_lsp(&mut self, offset: usize) -> lsp::Position {
+    pub fn to_lsp(&mut self, offset: usize) -> lsp.Position {
         let snapshot = self.update_editor(|editor, cx| editor.snapshot(cx));
         let point = offset.to_point(&snapshot.buffer_snapshot);
 
@@ -291,35 +291,35 @@ impl EditorLspTestContext {
     pub fn handle_request<T, F, Fut>(
         &self,
         mut handler: F,
-    ) -> futures::channel::mpsc::UnboundedReceiver<()>
+    ) -> futures.channel.mpsc.UnboundedReceiver<()>
     where
-        T: 'static + request::Request,
-        T::Params: 'static + Send,
-        F: 'static + Send + FnMut(lsp::Url, T::Params, gpui::AsyncAppContext) -> Fut,
-        Fut: 'static + Send + Future<Output = Result<T::Result>>,
+        T: 'static + request.Request,
+        T.Params: 'static + Send,
+        F: 'static + Send + FnMut(lsp.Url, T.Params, gpui.AsyncAppContext) -> Fut,
+        Fut: 'static + Send + Future<Output = Result<T.Result>>,
     {
         let url = self.buffer_lsp_url.clone();
-        self.lsp.handle_request::<T, _, _>(move |params, cx| {
+        self.lsp.handle_request.<T, _, _>(move |params, cx| {
             let url = url.clone();
             handler(url, params, cx)
         })
     }
 
-    pub fn notify<T: notification::Notification>(&self, params: T::Params) {
-        self.lsp.notify::<T>(params);
+    pub fn notify<T: notification.Notification>(&self, params: T.Params) {
+        self.lsp.notify.<T>(params);
     }
 }
 
 impl Deref for EditorLspTestContext {
     type Target = EditorTestContext;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.cx
     }
 }
 
 impl DerefMut for EditorLspTestContext {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+    fn deref_mut(&mut self) -> &mut Self.Target {
         &mut self.cx
     }
 }

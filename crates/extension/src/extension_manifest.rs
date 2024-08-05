@@ -1,14 +1,14 @@
-use anyhow::{anyhow, Context, Result};
-use collections::{BTreeMap, HashMap};
-use fs::Fs;
-use language::LanguageServerName;
-use semantic_version::SemanticVersion;
-use serde::{Deserialize, Serialize};
-use std::{
-    ffi::OsStr,
+use anyhow.{anyhow, Context, Result};
+use collections.{BTreeMap, HashMap};
+use fs.Fs;
+use language.LanguageServerName;
+use semantic_version.SemanticVersion;
+use serde.{Deserialize, Serialize};
+use std.{
+    ffi.OsStr,
     fmt,
-    path::{Path, PathBuf},
-    sync::Arc,
+    path.{Path, PathBuf},
+    sync.Arc,
 };
 
 /// This is the old version of the extension manifest, from when it was `extension.json`.
@@ -36,8 +36,8 @@ pub struct OldExtensionManifest {
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Serialize, Deserialize)]
 pub struct SchemaVersion(pub i32);
 
-impl fmt::Display for SchemaVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Display for SchemaVersion {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{}", self.0)
     }
 }
@@ -46,7 +46,7 @@ impl SchemaVersion {
     pub const ZERO: Self = Self(0);
 
     pub fn is_v0(&self) -> bool {
-        self == &Self::ZERO
+        self == &Self.ZERO
     }
 }
 
@@ -113,7 +113,7 @@ pub struct LanguageServerManifestEntry {
     #[serde(default)]
     pub language_ids: HashMap<String, String>,
     #[serde(default)]
-    pub code_action_kinds: Option<Vec<lsp::CodeActionKind>>,
+    pub code_action_kinds: Option<Vec<lsp.CodeActionKind>>,
 }
 
 impl LanguageServerManifestEntry {
@@ -148,7 +148,7 @@ impl ExtensionManifest {
     pub async fn load(fs: Arc<dyn Fs>, extension_dir: &Path) -> Result<Self> {
         let extension_name = extension_dir
             .file_name()
-            .and_then(OsStr::to_str)
+            .and_then(OsStr.to_str)
             .ok_or_else(|| anyhow!("invalid extension name"))?;
 
         let mut extension_manifest_path = extension_dir.join("extension.json");
@@ -157,7 +157,7 @@ impl ExtensionManifest {
                 .load(&extension_manifest_path)
                 .await
                 .with_context(|| format!("failed to load {extension_name} extension.json"))?;
-            let manifest_json = serde_json::from_str::<OldExtensionManifest>(&manifest_content)
+            let manifest_json = serde_json.from_str.<OldExtensionManifest>(&manifest_content)
                 .with_context(|| {
                     format!("invalid extension.json for extension {extension_name}")
                 })?;
@@ -169,7 +169,7 @@ impl ExtensionManifest {
                 .load(&extension_manifest_path)
                 .await
                 .with_context(|| format!("failed to load {extension_name} extension.toml"))?;
-            toml::from_str(&manifest_content)
+            toml.from_str(&manifest_content)
                 .with_context(|| format!("invalid extension.json for extension {extension_name}"))
         }
     }
@@ -186,16 +186,16 @@ fn manifest_from_old_manifest(
         description: manifest_json.description,
         repository: manifest_json.repository,
         authors: manifest_json.authors,
-        schema_version: SchemaVersion::ZERO,
-        lib: Default::default(),
+        schema_version: SchemaVersion.ZERO,
+        lib: Default.default(),
         themes: {
-            let mut themes = manifest_json.themes.into_values().collect::<Vec<_>>();
+            let mut themes = manifest_json.themes.into_values().collect.<Vec<_>>();
             themes.sort();
             themes.dedup();
             themes
         },
         languages: {
-            let mut languages = manifest_json.languages.into_values().collect::<Vec<_>>();
+            let mut languages = manifest_json.languages.into_values().collect.<Vec<_>>();
             languages.sort();
             languages.dedup();
             languages
@@ -203,11 +203,11 @@ fn manifest_from_old_manifest(
         grammars: manifest_json
             .grammars
             .into_keys()
-            .map(|grammar_name| (grammar_name, Default::default()))
+            .map(|grammar_name| (grammar_name, Default.default()))
             .collect(),
-        language_servers: Default::default(),
-        slash_commands: BTreeMap::default(),
-        indexed_docs_providers: BTreeMap::default(),
+        language_servers: Default.default(),
+        slash_commands: BTreeMap.default(),
+        indexed_docs_providers: BTreeMap.default(),
         snippets: None,
     }
 }

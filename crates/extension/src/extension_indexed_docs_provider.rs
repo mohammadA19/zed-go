@@ -1,13 +1,13 @@
-use std::path::PathBuf;
-use std::sync::Arc;
+use std.path.PathBuf;
+use std.sync.Arc;
 
-use anyhow::{anyhow, Result};
-use async_trait::async_trait;
-use futures::FutureExt;
-use indexed_docs::{IndexedDocsDatabase, IndexedDocsProvider, PackageName, ProviderId};
-use wasmtime_wasi::WasiView;
+use anyhow.{anyhow, Result};
+use async_trait.async_trait;
+use futures.FutureExt;
+use indexed_docs.{IndexedDocsDatabase, IndexedDocsProvider, PackageName, ProviderId};
+use wasmtime_wasi.WasiView;
 
-use crate::wasm_host::{WasmExtension, WasmHost};
+use crate.wasm_host.{WasmExtension, WasmHost};
 
 pub struct ExtensionIndexedDocsProvider {
     pub(crate) extension: WasmExtension,
@@ -47,7 +47,7 @@ impl IndexedDocsProvider for ExtensionIndexedDocsProvider {
                             .await?
                             .map_err(|err| anyhow!("{err:?}"))?;
 
-                        anyhow::Ok(())
+                        anyhow.Ok(())
                     }
                     .boxed()
                 }

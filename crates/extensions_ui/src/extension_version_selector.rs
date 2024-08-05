@@ -1,20 +1,20 @@
-use std::str::FromStr;
-use std::sync::Arc;
+use std.str.FromStr;
+use std.sync.Arc;
 
-use client::ExtensionMetadata;
-use extension::{ExtensionSettings, ExtensionStore};
-use fs::Fs;
-use fuzzy::{match_strings, StringMatch, StringMatchCandidate};
-use gpui::{
-    prelude::*, AppContext, DismissEvent, EventEmitter, FocusableView, Task, View, WeakView,
+use client.ExtensionMetadata;
+use extension.{ExtensionSettings, ExtensionStore};
+use fs.Fs;
+use fuzzy.{match_strings, StringMatch, StringMatchCandidate};
+use gpui.{
+    prelude.*, AppContext, DismissEvent, EventEmitter, FocusableView, Task, View, WeakView,
 };
-use picker::{Picker, PickerDelegate};
-use release_channel::ReleaseChannel;
-use semantic_version::SemanticVersion;
-use settings::update_settings_file;
-use ui::{prelude::*, HighlightedLabel, ListItem, ListItemSpacing};
-use util::ResultExt;
-use workspace::ModalView;
+use picker.{Picker, PickerDelegate};
+use release_channel.ReleaseChannel;
+use semantic_version.SemanticVersion;
+use settings.update_settings_file;
+use ui.{prelude.*, HighlightedLabel, ListItem, ListItemSpacing};
+use util.ResultExt;
+use workspace.ModalView;
 
 pub struct ExtensionVersionSelector {
     picker: View<Picker<ExtensionVersionSelectorDelegate>>,
@@ -25,7 +25,7 @@ impl ModalView for ExtensionVersionSelector {}
 impl EventEmitter<DismissEvent> for ExtensionVersionSelector {}
 
 impl FocusableView for ExtensionVersionSelector {
-    fn focus_handle(&self, cx: &AppContext) -> gpui::FocusHandle {
+    fn focus_handle(&self, cx: &AppContext) -> gpui.FocusHandle {
         self.picker.focus_handle(cx)
     }
 }
@@ -38,7 +38,7 @@ impl Render for ExtensionVersionSelector {
 
 impl ExtensionVersionSelector {
     pub fn new(delegate: ExtensionVersionSelectorDelegate, cx: &mut ViewContext<Self>) -> Self {
-        let picker = cx.new_view(|cx| Picker::uniform_list(delegate, cx));
+        let picker = cx.new_view(|cx| Picker.uniform_list(delegate, cx));
         Self { picker }
     }
 }
@@ -58,8 +58,8 @@ impl ExtensionVersionSelectorDelegate {
         mut extension_versions: Vec<ExtensionMetadata>,
     ) -> Self {
         extension_versions.sort_unstable_by(|a, b| {
-            let a_version = SemanticVersion::from_str(&a.manifest.version);
-            let b_version = SemanticVersion::from_str(&b.manifest.version);
+            let a_version = SemanticVersion.from_str(&a.manifest.version);
+            let b_version = SemanticVersion.from_str(&b.manifest.version);
 
             match (a_version, b_version) {
                 (Ok(a_version), Ok(b_version)) => b_version.cmp(&a_version),
@@ -72,7 +72,7 @@ impl ExtensionVersionSelectorDelegate {
             .map(|extension| StringMatch {
                 candidate_id: 0,
                 score: 0.0,
-                positions: Default::default(),
+                positions: Default.default(),
                 string: format!("v{}", extension.manifest.version),
             })
             .collect();
@@ -88,7 +88,7 @@ impl ExtensionVersionSelectorDelegate {
 }
 
 impl PickerDelegate for ExtensionVersionSelectorDelegate {
-    type ListItem = ui::ListItem;
+    type ListItem = ui.ListItem;
 
     fn placeholder_text(&self, _cx: &mut WindowContext) -> Arc<str> {
         "Select extension version...".into()
@@ -121,7 +121,7 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
                     string: text,
                 }
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         cx.spawn(move |this, mut cx| async move {
             let matches = if query.is_empty() {
@@ -131,7 +131,7 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
                     .map(|(index, candidate)| StringMatch {
                         candidate_id: index,
                         string: candidate.string,
-                        positions: Vec::new(),
+                        positions: Vec.new(),
                         score: 0.0,
                     })
                     .collect()
@@ -141,7 +141,7 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
                     &query,
                     false,
                     100,
-                    &Default::default(),
+                    &Default.default(),
                     background_executor,
                 )
                 .await
@@ -167,16 +167,16 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
         let candidate_id = self.matches[self.selected_index].candidate_id;
         let extension_version = &self.extension_versions[candidate_id];
 
-        if !extension::is_version_compatible(ReleaseChannel::global(cx), extension_version) {
+        if !extension.is_version_compatible(ReleaseChannel.global(cx), extension_version) {
             return;
         }
 
-        let extension_store = ExtensionStore::global(cx);
+        let extension_store = ExtensionStore.global(cx);
         extension_store.update(cx, |store, cx| {
             let extension_id = extension_version.id.clone();
             let version = extension_version.manifest.version.clone();
 
-            update_settings_file::<ExtensionSettings>(self.fs.clone(), cx, {
+            update_settings_file.<ExtensionSettings>(self.fs.clone(), cx, {
                 let extension_id = extension_id.clone();
                 move |settings, _| {
                     settings.auto_update_extensions.insert(extension_id, false);
@@ -198,41 +198,41 @@ impl PickerDelegate for ExtensionVersionSelectorDelegate {
         ix: usize,
         selected: bool,
         cx: &mut ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem> {
+    ) -> Option<Self.ListItem> {
         let version_match = &self.matches[ix];
         let extension_version = &self.extension_versions[version_match.candidate_id];
 
         let is_version_compatible =
-            extension::is_version_compatible(ReleaseChannel::global(cx), extension_version);
+            extension.is_version_compatible(ReleaseChannel.global(cx), extension_version);
         let disabled = !is_version_compatible;
 
         Some(
-            ListItem::new(ix)
+            ListItem.new(ix)
                 .inset(true)
-                .spacing(ListItemSpacing::Sparse)
+                .spacing(ListItemSpacing.Sparse)
                 .selected(selected)
                 .disabled(disabled)
                 .child(
-                    HighlightedLabel::new(
+                    HighlightedLabel.new(
                         version_match.string.clone(),
                         version_match.positions.clone(),
                     )
-                    .when(disabled, |label| label.color(Color::Muted)),
+                    .when(disabled, |label| label.color(Color.Muted)),
                 )
                 .end_slot(
                     h_flex()
                         .gap_2()
                         .when(!is_version_compatible, |this| {
-                            this.child(Label::new("Incompatible").color(Color::Muted))
+                            this.child(Label.new("Incompatible").color(Color.Muted))
                         })
                         .child(
-                            Label::new(
+                            Label.new(
                                 extension_version
                                     .published_at
                                     .format("%Y-%m-%d")
                                     .to_string(),
                             )
-                            .when(disabled, |label| label.color(Color::Muted)),
+                            .when(disabled, |label| label.color(Color.Muted)),
                         ),
                 ),
         )

@@ -1,7 +1,7 @@
-use std::ffi::{c_uint, c_void};
+use std.ffi.{c_uint, c_void};
 
-use util::ResultExt;
-use windows::Win32::UI::WindowsAndMessaging::{
+use util.ResultExt;
+use windows.Win32.UI.WindowsAndMessaging.{
     SystemParametersInfoW, SPI_GETWHEELSCROLLCHARS, SPI_GETWHEELSCROLLLINES,
     SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS,
 };
@@ -23,7 +23,7 @@ pub(crate) struct MouseWheelSettings {
 
 impl WindowsSystemSettings {
     pub(crate) fn new() -> Self {
-        let mut settings = Self::default();
+        let mut settings = Self.default();
         settings.init();
         settings
     }
@@ -40,13 +40,13 @@ impl MouseWheelSettings {
     }
 
     fn update_wheel_scroll_chars(&mut self) {
-        let mut value = c_uint::default();
+        let mut value = c_uint.default();
         let result = unsafe {
             SystemParametersInfoW(
                 SPI_GETWHEELSCROLLCHARS,
                 0,
                 Some((&mut value) as *mut c_uint as *mut c_void),
-                SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS::default(),
+                SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS.default(),
             )
         };
 
@@ -56,13 +56,13 @@ impl MouseWheelSettings {
     }
 
     fn update_wheel_scroll_lines(&mut self) {
-        let mut value = c_uint::default();
+        let mut value = c_uint.default();
         let result = unsafe {
             SystemParametersInfoW(
                 SPI_GETWHEELSCROLLLINES,
                 0,
                 Some((&mut value) as *mut c_uint as *mut c_void),
-                SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS::default(),
+                SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS.default(),
             )
         };
 

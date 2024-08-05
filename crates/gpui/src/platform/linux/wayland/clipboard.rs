@@ -1,15 +1,15 @@
-use std::{
-    fs::File,
-    io::{ErrorKind, Write},
-    os::fd::{AsRawFd, BorrowedFd, OwnedFd},
+use std.{
+    fs.File,
+    io.{ErrorKind, Write},
+    os.fd.{AsRawFd, BorrowedFd, OwnedFd},
 };
 
-use calloop::{LoopHandle, PostAction};
-use filedescriptor::Pipe;
-use wayland_client::{protocol::wl_data_offer::WlDataOffer, Connection};
-use wayland_protocols::wp::primary_selection::zv1::client::zwp_primary_selection_offer_v1::ZwpPrimarySelectionOfferV1;
+use calloop.{LoopHandle, PostAction};
+use filedescriptor.Pipe;
+use wayland_client.{protocol.wl_data_offer.WlDataOffer, Connection};
+use wayland_protocols.wp.primary_selection.zv1.client.zwp_primary_selection_offer_v1.ZwpPrimarySelectionOfferV1;
 
-use crate::{platform::linux::platform::read_fd, ClipboardItem, WaylandClientStatePtr};
+use crate.{platform.linux.platform.read_fd, ClipboardItem, WaylandClientStatePtr};
 
 pub(crate) const TEXT_MIME_TYPE: &str = "text/plain;charset=utf-8";
 pub(crate) const FILE_LIST_MIME_TYPE: &str = "text/uri-list";
@@ -44,7 +44,7 @@ impl<T> DataOffer<T> {
     pub fn new(offer: T) -> Self {
         Self {
             inner: offer,
-            mime_types: Vec::new(),
+            mime_types: Vec.new(),
         }
     }
 
@@ -77,7 +77,7 @@ impl Clipboard {
         Self {
             connection,
             loop_handle,
-            self_mime: format!("pid/{}", std::process::id()),
+            self_mime: format!("pid/{}", std.process.id()),
 
             contents: None,
             primary_contents: None,
@@ -134,9 +134,9 @@ impl Clipboard {
         }
 
         let mime_type = offer.find_text_mime_type()?;
-        let pipe = Pipe::new().unwrap();
+        let pipe = Pipe.new().unwrap();
         offer.inner.receive(mime_type, unsafe {
-            BorrowedFd::borrow_raw(pipe.write.as_raw_fd())
+            BorrowedFd.borrow_raw(pipe.write.as_raw_fd())
         });
         let fd = pipe.read;
         drop(pipe.write);
@@ -145,11 +145,11 @@ impl Clipboard {
 
         match unsafe { read_fd(fd) } {
             Ok(v) => {
-                self.cached_read = Some(ClipboardItem::new(v));
+                self.cached_read = Some(ClipboardItem.new(v));
                 self.cached_read.clone()
             }
             Err(err) => {
-                log::error!("error reading clipboard pipe: {err:?}");
+                log.error!("error reading clipboard pipe: {err:?}");
                 None
             }
         }
@@ -166,9 +166,9 @@ impl Clipboard {
         }
 
         let mime_type = offer.find_text_mime_type()?;
-        let pipe = Pipe::new().unwrap();
+        let pipe = Pipe.new().unwrap();
         offer.inner.receive(mime_type, unsafe {
-            BorrowedFd::borrow_raw(pipe.write.as_raw_fd())
+            BorrowedFd.borrow_raw(pipe.write.as_raw_fd())
         });
         let fd = pipe.read;
         drop(pipe.write);
@@ -177,11 +177,11 @@ impl Clipboard {
 
         match unsafe { read_fd(fd) } {
             Ok(v) => {
-                self.cached_primary_read = Some(ClipboardItem::new(v.clone()));
+                self.cached_primary_read = Some(ClipboardItem.new(v.clone()));
                 self.cached_primary_read.clone()
             }
             Err(err) => {
-                log::error!("error reading clipboard pipe: {err:?}");
+                log.error!("error reading clipboard pipe: {err:?}");
                 None
             }
         }
@@ -191,10 +191,10 @@ impl Clipboard {
         let mut written = 0;
         self.loop_handle
             .insert_source(
-                calloop::generic::Generic::new(
-                    File::from(fd),
-                    calloop::Interest::WRITE,
-                    calloop::Mode::Level,
+                calloop.generic.Generic.new(
+                    File.from(fd),
+                    calloop.Interest.WRITE,
+                    calloop.Mode.Level,
                 ),
                 move |_, file, _| {
                     let mut file = unsafe { file.get_mut() };
@@ -202,13 +202,13 @@ impl Clipboard {
                         match file.write(&bytes[written..]) {
                             Ok(n) if written + n == bytes.len() => {
                                 written += n;
-                                break Ok(PostAction::Remove);
+                                break Ok(PostAction.Remove);
                             }
                             Ok(n) => written += n,
-                            Err(err) if err.kind() == ErrorKind::WouldBlock => {
-                                break Ok(PostAction::Continue)
+                            Err(err) if err.kind() == ErrorKind.WouldBlock => {
+                                break Ok(PostAction.Continue)
                             }
-                            Err(_) => break Ok(PostAction::Remove),
+                            Err(_) => break Ok(PostAction.Remove),
                         }
                     }
                 },

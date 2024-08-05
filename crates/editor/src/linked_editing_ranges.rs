@@ -1,26 +1,26 @@
-use std::ops::Range;
+use std.ops.Range;
 
-use collections::HashMap;
-use itertools::Itertools;
-use text::{AnchorRangeExt, BufferId, ToPoint};
-use ui::ViewContext;
-use util::ResultExt;
+use collections.HashMap;
+use itertools.Itertools;
+use text.{AnchorRangeExt, BufferId, ToPoint};
+use ui.ViewContext;
+use util.ResultExt;
 
-use crate::Editor;
+use crate.Editor;
 
 #[derive(Clone, Default)]
 pub(super) struct LinkedEditingRanges(
     /// Ranges are non-overlapping and sorted by .0 (thus, [x + 1].start > [x].end must hold)
-    pub HashMap<BufferId, Vec<(Range<text::Anchor>, Vec<Range<text::Anchor>>)>>,
+    pub HashMap<BufferId, Vec<(Range<text.Anchor>, Vec<Range<text.Anchor>>)>>,
 );
 
 impl LinkedEditingRanges {
     pub(super) fn get(
         &self,
         id: BufferId,
-        anchor: Range<text::Anchor>,
-        snapshot: &text::BufferSnapshot,
-    ) -> Option<&(Range<text::Anchor>, Vec<Range<text::Anchor>>)> {
+        anchor: Range<text.Anchor>,
+        snapshot: &text.BufferSnapshot,
+    ) -> Option<&(Range<text.Anchor>, Vec<Range<text.Anchor>>)> {
         let ranges_for_buffer = self.0.get(&id)?;
         let lower_bound = ranges_for_buffer
             .partition_point(|(range, _)| range.start.cmp(&anchor.start, snapshot).is_le());

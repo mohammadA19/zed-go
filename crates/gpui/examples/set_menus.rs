@@ -1,4 +1,4 @@
-use gpui::*;
+use gpui.*;
 
 struct SetMenus;
 
@@ -17,17 +17,17 @@ impl Render for SetMenus {
 }
 
 fn main() {
-    App::new().run(|cx: &mut AppContext| {
+    App.new().run(|cx: &mut AppContext| {
         // Bring the menu bar to the foreground (so you can see the menu bar)
         cx.activate(true);
-        // Register the `quit` function so it can be referenced by the `MenuItem::action` in the menu bar
+        // Register the `quit` function so it can be referenced by the `MenuItem.action` in the menu bar
         cx.on_action(quit);
         // Add menu items
         cx.set_menus(vec![Menu {
             name: "set_menus".into(),
-            items: vec![MenuItem::action("Quit", Quit)],
+            items: vec![MenuItem.action("Quit", Quit)],
         }]);
-        cx.open_window(WindowOptions::default(), |cx| {
+        cx.open_window(WindowOptions.default(), |cx| {
             cx.new_view(|_cx| SetMenus {})
         })
         .unwrap();

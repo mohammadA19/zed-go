@@ -1,7 +1,7 @@
-use anyhow::{anyhow, Result};
-use futures::{io::BufReader, stream::BoxStream, AsyncBufReadExt, AsyncReadExt, Stream, StreamExt};
-use http_client::HttpClient;
-use serde::{Deserialize, Serialize};
+use anyhow.{anyhow, Result};
+use futures.{io.BufReader, stream.BoxStream, AsyncBufReadExt, AsyncReadExt, Stream, StreamExt};
+use http_client.HttpClient;
+use serde.{Deserialize, Serialize};
 
 pub const API_URL: &str = "https://generativelanguage.googleapis.com";
 
@@ -17,17 +17,17 @@ pub async fn stream_generate_content(
     );
     request.model.clear();
 
-    let request = serde_json::to_string(&request)?;
+    let request = serde_json.to_string(&request)?;
     let mut response = client.post_json(&uri, request.into()).await?;
     if response.status().is_success() {
-        let reader = BufReader::new(response.into_body());
+        let reader = BufReader.new(response.into_body());
         Ok(reader
             .lines()
             .filter_map(|line| async move {
                 match line {
                     Ok(line) => {
                         if let Some(line) = line.strip_prefix("data: ") {
-                            match serde_json::from_str(line) {
+                            match serde_json.from_str(line) {
                                 Ok(response) => Some(Ok(response)),
                                 Err(error) => Some(Err(anyhow!(error))),
                             }
@@ -40,7 +40,7 @@ pub async fn stream_generate_content(
             })
             .boxed())
     } else {
-        let mut text = String::new();
+        let mut text = String.new();
         response.body_mut().read_to_string(&mut text).await?;
         Err(anyhow!(
             "error during streamGenerateContent, status code: {:?}, body: {}",
@@ -60,12 +60,12 @@ pub async fn count_tokens(
         "{}/v1beta/models/gemini-pro:countTokens?key={}",
         api_url, api_key
     );
-    let request = serde_json::to_string(&request)?;
+    let request = serde_json.to_string(&request)?;
     let mut response = client.post_json(&uri, request.into()).await?;
-    let mut text = String::new();
+    let mut text = String.new();
     response.body_mut().read_to_string(&mut text).await?;
     if response.status().is_success() {
-        Ok(serde_json::from_str::<CountTokensResponse>(&text)?)
+        Ok(serde_json.from_str.<CountTokensResponse>(&text)?)
     } else {
         Err(anyhow!(
             "error during countTokens, status code: {:?}, body: {}",
@@ -92,7 +92,7 @@ pub enum Task {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GenerateContentRequest {
-    #[serde(default, skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String.is_empty")]
     pub model: String,
     pub contents: Vec<Content>,
     pub generation_config: Option<GenerationConfig>,
@@ -268,8 +268,8 @@ pub struct CountTokensResponse {
     pub total_tokens: usize,
 }
 
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, strum::EnumIter)]
+#[cfg_attr(feature = "schemars", derive(schemars.JsonSchema))]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, strum.EnumIter)]
 pub enum Model {
     #[serde(rename = "gemini-1.5-pro")]
     Gemini15Pro,
@@ -282,31 +282,31 @@ pub enum Model {
 impl Model {
     pub fn id(&self) -> &str {
         match self {
-            Model::Gemini15Pro => "gemini-1.5-pro",
-            Model::Gemini15Flash => "gemini-1.5-flash",
-            Model::Custom { name, .. } => name,
+            Model.Gemini15Pro => "gemini-1.5-pro",
+            Model.Gemini15Flash => "gemini-1.5-flash",
+            Model.Custom { name, .. } => name,
         }
     }
 
     pub fn display_name(&self) -> &str {
         match self {
-            Model::Gemini15Pro => "Gemini 1.5 Pro",
-            Model::Gemini15Flash => "Gemini 1.5 Flash",
-            Model::Custom { name, .. } => name,
+            Model.Gemini15Pro => "Gemini 1.5 Pro",
+            Model.Gemini15Flash => "Gemini 1.5 Flash",
+            Model.Custom { name, .. } => name,
         }
     }
 
     pub fn max_token_count(&self) -> usize {
         match self {
-            Model::Gemini15Pro => 2_000_000,
-            Model::Gemini15Flash => 1_000_000,
-            Model::Custom { max_tokens, .. } => *max_tokens,
+            Model.Gemini15Pro => 2_000_000,
+            Model.Gemini15Flash => 1_000_000,
+            Model.Custom { max_tokens, .. } => *max_tokens,
         }
     }
 }
 
-impl std::fmt::Display for Model {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Display for Model {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         write!(f, "{}", self.id())
     }
 }
@@ -319,7 +319,7 @@ pub fn extract_text_from_events(
             Ok(event) => event.candidates.and_then(|candidates| {
                 candidates.into_iter().next().and_then(|candidate| {
                     candidate.content.parts.into_iter().next().and_then(|part| {
-                        if let Part::TextPart(TextPart { text }) = part {
+                        if let Part.TextPart(TextPart { text }) = part {
                             Some(Ok(text))
                         } else {
                             None

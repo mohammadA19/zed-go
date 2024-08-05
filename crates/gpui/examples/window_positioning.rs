@@ -1,4 +1,4 @@
-use gpui::*;
+use gpui.*;
 
 struct WindowContent {
     text: SharedString,
@@ -46,14 +46,14 @@ impl Render for WindowContent {
 fn build_window_options(display_id: DisplayId, bounds: Bounds<Pixels>) -> WindowOptions {
     WindowOptions {
         // Set the bounds of the window in screen coordinates
-        window_bounds: Some(WindowBounds::Windowed(bounds)),
+        window_bounds: Some(WindowBounds.Windowed(bounds)),
         // Specify the display_id to ensure the window is created on the correct screen
         display_id: Some(display_id),
         titlebar: None,
-        window_background: WindowBackgroundAppearance::Transparent,
+        window_background: WindowBackgroundAppearance.Transparent,
         focus: false,
         show: true,
-        kind: WindowKind::PopUp,
+        kind: WindowKind.PopUp,
         is_movable: false,
         app_id: None,
         window_min_size: None,
@@ -62,7 +62,7 @@ fn build_window_options(display_id: DisplayId, bounds: Bounds<Pixels>) -> Window
 }
 
 fn main() {
-    App::new().run(|cx: &mut AppContext| {
+    App.new().run(|cx: &mut AppContext| {
         // Create several new windows, positioned in the top right corner of each screen
         let size = Size {
             width: px(350.),
@@ -79,7 +79,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Top Left {:?}", screen.id()).into(),
-                    bg: gpui::red(),
+                    bg: gpui.red(),
                     bounds,
                 })
             })
@@ -94,7 +94,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Top Right {:?}", screen.id()).into(),
-                    bg: gpui::red(),
+                    bg: gpui.red(),
                     bounds,
                 })
             })
@@ -109,7 +109,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Bottom Left {:?}", screen.id()).into(),
-                    bg: gpui::blue(),
+                    bg: gpui.blue(),
                     bounds,
                 })
             })
@@ -124,7 +124,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Bottom Right {:?}", screen.id()).into(),
-                    bg: gpui::blue(),
+                    bg: gpui.blue(),
                     bounds,
                 })
             })
@@ -138,7 +138,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Top Center {:?}", screen.id()).into(),
-                    bg: gpui::black(),
+                    bg: gpui.black(),
                     bounds,
                 })
             })
@@ -152,7 +152,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Left Center {:?}", screen.id()).into(),
-                    bg: gpui::black(),
+                    bg: gpui.black(),
                     bounds,
                 })
             })
@@ -169,7 +169,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Center {:?}", screen.id()).into(),
-                    bg: gpui::black(),
+                    bg: gpui.black(),
                     bounds,
                 })
             })
@@ -186,7 +186,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Right Center {:?}", screen.id()).into(),
-                    bg: gpui::black(),
+                    bg: gpui.black(),
                     bounds,
                 })
             })
@@ -203,7 +203,7 @@ fn main() {
             cx.open_window(build_window_options(screen.id(), bounds), |cx| {
                 cx.new_view(|_| WindowContent {
                     text: format!("Bottom Center {:?}", screen.id()).into(),
-                    bg: gpui::black(),
+                    bg: gpui.black(),
                     bounds,
                 })
             })

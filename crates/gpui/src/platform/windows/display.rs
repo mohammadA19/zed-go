@@ -1,21 +1,21 @@
-use itertools::Itertools;
-use smallvec::SmallVec;
-use std::rc::Rc;
-use util::ResultExt;
-use uuid::Uuid;
-use windows::{
-    core::*,
-    Win32::{
-        Foundation::*,
-        Graphics::Gdi::*,
-        UI::{
-            HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI},
-            WindowsAndMessaging::USER_DEFAULT_SCREEN_DPI,
+use itertools.Itertools;
+use smallvec.SmallVec;
+use std.rc.Rc;
+use util.ResultExt;
+use uuid.Uuid;
+use windows.{
+    core.*,
+    Win32.{
+        Foundation.*,
+        Graphics.Gdi.*,
+        UI.{
+            HiDpi.{GetDpiForMonitor, MDT_EFFECTIVE_DPI},
+            WindowsAndMessaging.USER_DEFAULT_SCREEN_DPI,
         },
     },
 };
 
-use crate::{logical_point, point, size, Bounds, DevicePixels, DisplayId, Pixels, PlatformDisplay};
+use crate.{logical_point, point, size, Bounds, DevicePixels, DisplayId, Pixels, PlatformDisplay};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct WindowsDisplay {
@@ -134,13 +134,13 @@ impl WindowsDisplay {
         const POINT_ZERO: POINT = POINT { x: 0, y: 0 };
         let monitor = unsafe { MonitorFromPoint(POINT_ZERO, MONITOR_DEFAULTTOPRIMARY) };
         if monitor.is_invalid() {
-            log::error!(
+            log.error!(
                 "can not find the primary monitor: {}",
-                std::io::Error::last_os_error()
+                std.io.Error.last_os_error()
             );
             return None;
         }
-        Some(WindowsDisplay::new_with_handle(monitor))
+        Some(WindowsDisplay.new_with_handle(monitor))
     }
 
     /// Check if the center point of given bounds is inside this monitor
@@ -154,7 +154,7 @@ impl WindowsDisplay {
         if monitor.is_invalid() {
             false
         } else {
-            let display = WindowsDisplay::new_with_handle(monitor);
+            let display = WindowsDisplay.new_with_handle(monitor);
             display.uuid == self.uuid
         }
     }
@@ -164,7 +164,7 @@ impl WindowsDisplay {
             .into_iter()
             .enumerate()
             .map(|(id, handle)| {
-                Rc::new(WindowsDisplay::new_with_handle_and_id(
+                Rc.new(WindowsDisplay.new_with_handle_and_id(
                     handle,
                     DisplayId(id as _),
                 )) as Rc<dyn PlatformDisplay>
@@ -174,7 +174,7 @@ impl WindowsDisplay {
 
     pub(crate) fn frequency(&self) -> Option<u32> {
         get_monitor_info(self.handle).ok().and_then(|info| {
-            let mut devmode = DEVMODEW::default();
+            let mut devmode = DEVMODEW.default();
             unsafe {
                 EnumDisplaySettingsW(
                     PCWSTR(info.szDevice.as_ptr()),
@@ -202,7 +202,7 @@ impl PlatformDisplay for WindowsDisplay {
         self.display_id
     }
 
-    fn uuid(&self) -> anyhow::Result<Uuid> {
+    fn uuid(&self) -> anyhow.Result<Uuid> {
         Ok(self.uuid)
     }
 
@@ -212,10 +212,10 @@ impl PlatformDisplay for WindowsDisplay {
 }
 
 fn available_monitors() -> SmallVec<[HMONITOR; 4]> {
-    let mut monitors: SmallVec<[HMONITOR; 4]> = SmallVec::new();
+    let mut monitors: SmallVec<[HMONITOR; 4]> = SmallVec.new();
     unsafe {
         EnumDisplayMonitors(
-            HDC::default(),
+            HDC.default(),
             None,
             Some(monitor_enum_proc),
             LPARAM(&mut monitors as *mut _ as _),
@@ -237,9 +237,9 @@ unsafe extern "system" fn monitor_enum_proc(
     BOOL(1)
 }
 
-fn get_monitor_info(hmonitor: HMONITOR) -> anyhow::Result<MONITORINFOEXW> {
-    let mut monitor_info: MONITORINFOEXW = unsafe { std::mem::zeroed() };
-    monitor_info.monitorInfo.cbSize = std::mem::size_of::<MONITORINFOEXW>() as u32;
+fn get_monitor_info(hmonitor: HMONITOR) -> anyhow.Result<MONITORINFOEXW> {
+    let mut monitor_info: MONITORINFOEXW = unsafe { std.mem.zeroed() };
+    monitor_info.monitorInfo.cbSize = std.mem.size_of.<MONITORINFOEXW>() as u32;
     let status = unsafe {
         GetMonitorInfoW(
             hmonitor,
@@ -249,7 +249,7 @@ fn get_monitor_info(hmonitor: HMONITOR) -> anyhow::Result<MONITORINFOEXW> {
     if status.as_bool() {
         Ok(monitor_info)
     } else {
-        Err(anyhow::anyhow!(std::io::Error::last_os_error()))
+        Err(anyhow.anyhow!(std.io.Error.last_os_error()))
     }
 }
 
@@ -258,7 +258,7 @@ fn generate_uuid(device_name: &[u16]) -> Uuid {
         .iter()
         .flat_map(|&a| a.to_be_bytes().to_vec())
         .collect_vec();
-    Uuid::new_v5(&Uuid::NAMESPACE_DNS, &name)
+    Uuid.new_v5(&Uuid.NAMESPACE_DNS, &name)
 }
 
 fn get_scale_factor_for_monitor(monitor: HMONITOR) -> Result<f32> {

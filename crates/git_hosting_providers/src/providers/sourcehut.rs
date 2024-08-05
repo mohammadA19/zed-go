@@ -1,6 +1,6 @@
-use url::Url;
+use url.Url;
 
-use git::{BuildCommitPermalinkParams, BuildPermalinkParams, GitHostingProvider, ParsedGitRemote};
+use git.{BuildCommitPermalinkParams, BuildPermalinkParams, GitHostingProvider, ParsedGitRemote};
 
 pub struct Sourcehut;
 
@@ -10,7 +10,7 @@ impl GitHostingProvider for Sourcehut {
     }
 
     fn base_url(&self) -> Url {
-        Url::parse("https://git.sr.ht").unwrap()
+        Url.parse("https://git.sr.ht").unwrap()
     }
 
     fn supports_avatars(&self) -> bool {
@@ -78,7 +78,7 @@ impl GitHostingProvider for Sourcehut {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_build_sourcehut_permalink_from_ssh_url() {

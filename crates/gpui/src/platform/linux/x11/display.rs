@@ -1,8 +1,8 @@
-use anyhow::Result;
-use uuid::Uuid;
-use x11rb::{connection::Connection as _, xcb_ffi::XCBConnection};
+use anyhow.Result;
+use uuid.Uuid;
+use x11rb.{connection.Connection as _, xcb_ffi.XCBConnection};
 
-use crate::{px, Bounds, DisplayId, Pixels, PlatformDisplay, Size};
+use crate.{px, Bounds, DisplayId, Pixels, PlatformDisplay, Size};
 
 #[derive(Debug)]
 pub(crate) struct X11Display {
@@ -21,13 +21,13 @@ impl X11Display {
         Some(Self {
             x_screen_index,
             bounds: Bounds {
-                origin: Default::default(),
+                origin: Default.default(),
                 size: Size {
                     width: px(screen.width_in_pixels as f32 / scale_factor),
                     height: px(screen.height_in_pixels as f32 / scale_factor),
                 },
             },
-            uuid: Uuid::from_bytes([0; 16]),
+            uuid: Uuid.from_bytes([0; 16]),
         })
     }
 }

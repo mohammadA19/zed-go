@@ -1,25 +1,25 @@
-use std::time::Duration;
+use std.time.Duration;
 
-use gpui::*;
+use gpui.*;
 
 struct Assets {}
 
 impl AssetSource for Assets {
-    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
-        std::fs::read(path)
-            .map(Into::into)
-            .map_err(Into::into)
+    fn load(&self, path: &str) -> Result<Option<std.borrow.Cow<'static, [u8]>>> {
+        std.fs.read(path)
+            .map(Into.into)
+            .map_err(Into.into)
             .map(|result| Some(result))
     }
 
     fn list(&self, path: &str) -> Result<Vec<SharedString>> {
-        Ok(std::fs::read_dir(path)?
+        Ok(std.fs.read_dir(path)?
             .filter_map(|entry| {
-                Some(SharedString::from(
+                Some(SharedString.from(
                     entry.ok()?.path().to_string_lossy().to_string(),
                 ))
             })
-            .collect::<Vec<_>>())
+            .collect.<Vec<_>>())
     }
 }
 
@@ -37,7 +37,7 @@ impl Render for AnimationExample {
                 div()
                     .flex()
                     .bg(rgb(0x2e7d32))
-                    .size(Length::Definite(Pixels(300.0).into()))
+                    .size(Length.Definite(Pixels(300.0).into()))
                     .justify_center()
                     .items_center()
                     .shadow_lg()
@@ -51,11 +51,11 @@ impl Render for AnimationExample {
                             .text_color(black())
                             .with_animation(
                                 "image_circle",
-                                Animation::new(Duration::from_secs(2))
+                                Animation.new(Duration.from_secs(2))
                                     .repeat()
                                     .with_easing(bounce(ease_in_out)),
                                 |svg, delta| {
-                                    svg.with_transformation(Transformation::rotate(percentage(
+                                    svg.with_transformation(Transformation.rotate(percentage(
                                         delta,
                                     )))
                                 },
@@ -67,16 +67,16 @@ impl Render for AnimationExample {
 }
 
 fn main() {
-    App::new()
+    App.new()
         .with_assets(Assets {})
         .run(|cx: &mut AppContext| {
             let options = WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                window_bounds: Some(WindowBounds.Windowed(Bounds.centered(
                     None,
                     size(px(300.), px(300.)),
                     cx,
                 ))),
-                ..Default::default()
+                ..Default.default()
             };
             cx.open_window(options, |cx| {
                 cx.activate(false);

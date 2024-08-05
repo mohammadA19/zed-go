@@ -1,18 +1,18 @@
-use crate::{
+use crate.{
     dispatch_get_main_queue,
-    dispatch_sys::{
+    dispatch_sys.{
         _dispatch_source_type_data_add, dispatch_resume, dispatch_set_context,
         dispatch_source_cancel, dispatch_source_create, dispatch_source_merge_data,
         dispatch_source_set_event_handler_f, dispatch_source_t, dispatch_suspend,
     },
 };
-use anyhow::Result;
-use core_graphics::display::CGDirectDisplayID;
-use std::ffi::c_void;
-use util::ResultExt;
+use anyhow.Result;
+use core_graphics.display.CGDirectDisplayID;
+use std.ffi.c_void;
+use util.ResultExt;
 
 pub struct DisplayLink {
-    display_link: sys::DisplayLink,
+    display_link: sys.DisplayLink,
     frame_requests: dispatch_source_t,
 }
 
@@ -23,9 +23,9 @@ impl DisplayLink {
         callback: unsafe extern "C" fn(*mut c_void),
     ) -> Result<DisplayLink> {
         unsafe extern "C" fn display_link_callback(
-            _display_link_out: *mut sys::CVDisplayLink,
-            _current_time: *const sys::CVTimeStamp,
-            _output_time: *const sys::CVTimeStamp,
+            _display_link_out: *mut sys.CVDisplayLink,
+            _current_time: *const sys.CVTimeStamp,
+            _output_time: *const sys.CVTimeStamp,
             _flags_in: i64,
             _flags_out: *mut i64,
             frame_requests: *mut c_void,
@@ -43,14 +43,14 @@ impl DisplayLink {
                 dispatch_get_main_queue(),
             );
             dispatch_set_context(
-                crate::dispatch_sys::dispatch_object_t {
+                crate.dispatch_sys.dispatch_object_t {
                     _ds: frame_requests,
                 },
                 data,
             );
             dispatch_source_set_event_handler_f(frame_requests, Some(callback));
 
-            let display_link = sys::DisplayLink::new(
+            let display_link = sys.DisplayLink.new(
                 display_id,
                 display_link_callback,
                 frame_requests as *mut c_void,
@@ -65,7 +65,7 @@ impl DisplayLink {
 
     pub fn start(&mut self) -> Result<()> {
         unsafe {
-            dispatch_resume(crate::dispatch_sys::dispatch_object_t {
+            dispatch_resume(crate.dispatch_sys.dispatch_object_t {
                 _ds: self.frame_requests,
             });
             self.display_link.start()?;
@@ -75,7 +75,7 @@ impl DisplayLink {
 
     pub fn stop(&mut self) -> Result<()> {
         unsafe {
-            dispatch_suspend(crate::dispatch_sys::dispatch_object_t {
+            dispatch_suspend(crate.dispatch_sys.dispatch_object_t {
                 _ds: self.frame_requests,
             });
             self.display_link.stop()?;
@@ -99,12 +99,12 @@ mod sys {
     //! Apple docs: [CVDisplayLink](https://developer.apple.com/documentation/corevideo/cvdisplaylinkoutputcallback?language=objc)
     #![allow(dead_code, non_upper_case_globals)]
 
-    use anyhow::Result;
-    use core_graphics::display::CGDirectDisplayID;
-    use foreign_types::{foreign_type, ForeignType};
-    use std::{
-        ffi::c_void,
-        fmt::{self, Debug, Formatter},
+    use anyhow.Result;
+    use core_graphics.display.CGDirectDisplayID;
+    use foreign_types.{foreign_type, ForeignType};
+    use std.{
+        ffi.c_void,
+        fmt.{self, Debug, Formatter},
     };
 
     #[derive(Debug)]
@@ -119,7 +119,7 @@ mod sys {
     }
 
     impl Debug for DisplayLink {
-        fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
+        fn fmt(&self, formatter: &mut Formatter) -> fmt.Result {
             formatter
                 .debug_tuple("DisplayLink")
                 .field(&self.as_ptr())
@@ -201,7 +201,7 @@ mod sys {
 
     #[link(name = "CoreFoundation", kind = "framework")]
     #[link(name = "CoreVideo", kind = "framework")]
-    #[allow(improper_ctypes, unknown_lints, clippy::duplicated_attributes)]
+    #[allow(improper_ctypes, unknown_lints, clippy.duplicated_attributes)]
     extern "C" {
         pub fn CVDisplayLinkCreateWithActiveCGDisplays(
             display_link_out: *mut *mut CVDisplayLink,
@@ -231,15 +231,15 @@ mod sys {
             let mut display_link: *mut CVDisplayLink = 0 as _;
 
             let code = CVDisplayLinkCreateWithActiveCGDisplays(&mut display_link);
-            anyhow::ensure!(code == 0, "could not create display link, code: {}", code);
+            anyhow.ensure!(code == 0, "could not create display link, code: {}", code);
 
-            let mut display_link = DisplayLink::from_ptr(display_link);
+            let mut display_link = DisplayLink.from_ptr(display_link);
 
             let code = CVDisplayLinkSetOutputCallback(&mut display_link, callback, user_info);
-            anyhow::ensure!(code == 0, "could not set output callback, code: {}", code);
+            anyhow.ensure!(code == 0, "could not set output callback, code: {}", code);
 
             let code = CVDisplayLinkSetCurrentCGDisplay(&mut display_link, display_id);
-            anyhow::ensure!(
+            anyhow.ensure!(
                 code == 0,
                 "could not assign display to display link, code: {}",
                 code
@@ -253,14 +253,14 @@ mod sys {
         /// Apple docs: [CVDisplayLinkStart](https://developer.apple.com/documentation/corevideo/1457193-cvdisplaylinkstart?language=objc)
         pub unsafe fn start(&mut self) -> Result<()> {
             let code = CVDisplayLinkStart(self);
-            anyhow::ensure!(code == 0, "could not start display link, code: {}", code);
+            anyhow.ensure!(code == 0, "could not start display link, code: {}", code);
             Ok(())
         }
 
         /// Apple docs: [CVDisplayLinkStop](https://developer.apple.com/documentation/corevideo/1457281-cvdisplaylinkstop?language=objc)
         pub unsafe fn stop(&mut self) -> Result<()> {
             let code = CVDisplayLinkStop(self);
-            anyhow::ensure!(code == 0, "could not stop display link, code: {}", code);
+            anyhow.ensure!(code == 0, "could not stop display link, code: {}", code);
             Ok(())
         }
     }

@@ -1,5 +1,5 @@
-use gpui::*;
-use prelude::FluentBuilder;
+use gpui.*;
+use prelude.FluentBuilder;
 
 struct WindowShadow {}
 
@@ -24,14 +24,14 @@ impl Render for WindowShadow {
             .id("window-backdrop")
             .bg(transparent_black())
             .map(|div| match decorations {
-                Decorations::Server => div,
-                Decorations::Client { tiling, .. } => div
-                    .bg(gpui::transparent_black())
+                Decorations.Server => div,
+                Decorations.Client { tiling, .. } => div
+                    .bg(gpui.transparent_black())
                     .child(
                         canvas(
                             |_bounds, cx| {
                                 cx.insert_hitbox(
-                                    Bounds::new(
+                                    Bounds.new(
                                         point(px(0.0), px(0.0)),
                                         cx.window_bounds().get_bounds().size,
                                     ),
@@ -46,17 +46,17 @@ impl Render for WindowShadow {
                                 };
                                 cx.set_cursor_style(
                                     match edge {
-                                        ResizeEdge::Top | ResizeEdge::Bottom => {
-                                            CursorStyle::ResizeUpDown
+                                        ResizeEdge.Top | ResizeEdge.Bottom => {
+                                            CursorStyle.ResizeUpDown
                                         }
-                                        ResizeEdge::Left | ResizeEdge::Right => {
-                                            CursorStyle::ResizeLeftRight
+                                        ResizeEdge.Left | ResizeEdge.Right => {
+                                            CursorStyle.ResizeLeftRight
                                         }
-                                        ResizeEdge::TopLeft | ResizeEdge::BottomRight => {
-                                            CursorStyle::ResizeUpLeftDownRight
+                                        ResizeEdge.TopLeft | ResizeEdge.BottomRight => {
+                                            CursorStyle.ResizeUpLeftDownRight
                                         }
-                                        ResizeEdge::TopRight | ResizeEdge::BottomLeft => {
-                                            CursorStyle::ResizeUpRightDownLeft
+                                        ResizeEdge.TopRight | ResizeEdge.BottomLeft => {
+                                            CursorStyle.ResizeUpRightDownLeft
                                         }
                                     },
                                     &hitbox,
@@ -75,7 +75,7 @@ impl Render for WindowShadow {
                     .when(!tiling.left, |div| div.pl(shadow_size))
                     .when(!tiling.right, |div| div.pr(shadow_size))
                     .on_mouse_move(|_e, cx| cx.refresh())
-                    .on_mouse_down(MouseButton::Left, move |e, cx| {
+                    .on_mouse_down(MouseButton.Left, move |e, cx| {
                         let size = cx.window_bounds().get_bounds().size;
                         let pos = e.position;
 
@@ -88,10 +88,10 @@ impl Render for WindowShadow {
             .size_full()
             .child(
                 div()
-                    .cursor(CursorStyle::Arrow)
+                    .cursor(CursorStyle.Arrow)
                     .map(|div| match decorations {
-                        Decorations::Server => div,
-                        Decorations::Client { tiling } => div
+                        Decorations.Server => div,
+                        Decorations.Client { tiling } => div
                             .border_color(grey)
                             .when(!(tiling.top || tiling.right), |div| {
                                 div.rounded_tr(rounding)
@@ -102,7 +102,7 @@ impl Render for WindowShadow {
                             .when(!tiling.left, |div| div.border_l(border_size))
                             .when(!tiling.right, |div| div.border_r(border_size))
                             .when(!tiling.is_tiled(), |div| {
-                                div.shadow(smallvec::smallvec![gpui::BoxShadow {
+                                div.shadow(smallvec.smallvec![gpui.BoxShadow {
                                     color: Hsla {
                                         h: 0.,
                                         s: 0.,
@@ -118,7 +118,7 @@ impl Render for WindowShadow {
                     .on_mouse_move(|_e, cx| {
                         cx.stop_propagation();
                     })
-                    .bg(gpui::rgb(0xCCCCFF))
+                    .bg(gpui.rgb(0xCCCCFF))
                     .size_full()
                     .flex()
                     .flex_col()
@@ -128,7 +128,7 @@ impl Render for WindowShadow {
                             div()
                                 .flex()
                                 .bg(white())
-                                .size(Length::Definite(Pixels(300.0).into()))
+                                .size(Length.Definite(Pixels(300.0).into()))
                                 .justify_center()
                                 .items_center()
                                 .shadow_lg()
@@ -142,7 +142,7 @@ impl Render for WindowShadow {
                                         .w(px(200.0))
                                         .h(px(100.0))
                                         .bg(green())
-                                        .shadow(smallvec::smallvec![gpui::BoxShadow {
+                                        .shadow(smallvec.smallvec![gpui.BoxShadow {
                                             color: Hsla {
                                                 h: 0.,
                                                 s: 0.,
@@ -154,13 +154,13 @@ impl Render for WindowShadow {
                                             offset: point(px(0.0), px(0.0)),
                                         }])
                                         .map(|div| match decorations {
-                                            Decorations::Server => div,
-                                            Decorations::Client { .. } => div
-                                                .on_mouse_down(MouseButton::Left, |_e, cx| {
+                                            Decorations.Server => div,
+                                            Decorations.Client { .. } => div
+                                                .on_mouse_down(MouseButton.Left, |_e, cx| {
                                                     cx.start_window_move();
                                                 })
                                                 .on_click(|e, cx| {
-                                                    if e.down.button == MouseButton::Right {
+                                                    if e.down.button == MouseButton.Right {
                                                         cx.show_window_menu(e.up.position);
                                                     }
                                                 })
@@ -176,21 +176,21 @@ impl Render for WindowShadow {
 
 fn resize_edge(pos: Point<Pixels>, shadow_size: Pixels, size: Size<Pixels>) -> Option<ResizeEdge> {
     let edge = if pos.y < shadow_size && pos.x < shadow_size {
-        ResizeEdge::TopLeft
+        ResizeEdge.TopLeft
     } else if pos.y < shadow_size && pos.x > size.width - shadow_size {
-        ResizeEdge::TopRight
+        ResizeEdge.TopRight
     } else if pos.y < shadow_size {
-        ResizeEdge::Top
+        ResizeEdge.Top
     } else if pos.y > size.height - shadow_size && pos.x < shadow_size {
-        ResizeEdge::BottomLeft
+        ResizeEdge.BottomLeft
     } else if pos.y > size.height - shadow_size && pos.x > size.width - shadow_size {
-        ResizeEdge::BottomRight
+        ResizeEdge.BottomRight
     } else if pos.y > size.height - shadow_size {
-        ResizeEdge::Bottom
+        ResizeEdge.Bottom
     } else if pos.x < shadow_size {
-        ResizeEdge::Left
+        ResizeEdge.Left
     } else if pos.x > size.width - shadow_size {
-        ResizeEdge::Right
+        ResizeEdge.Right
     } else {
         return None;
     };
@@ -198,14 +198,14 @@ fn resize_edge(pos: Point<Pixels>, shadow_size: Pixels, size: Size<Pixels>) -> O
 }
 
 fn main() {
-    App::new().run(|cx: &mut AppContext| {
-        let bounds = Bounds::centered(None, size(px(600.0), px(600.0)), cx);
+    App.new().run(|cx: &mut AppContext| {
+        let bounds = Bounds.centered(None, size(px(600.0), px(600.0)), cx);
         cx.open_window(
             WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                window_background: WindowBackgroundAppearance::Opaque,
-                window_decorations: Some(WindowDecorations::Client),
-                ..Default::default()
+                window_bounds: Some(WindowBounds.Windowed(bounds)),
+                window_background: WindowBackgroundAppearance.Opaque,
+                window_decorations: Some(WindowDecorations.Client),
+                ..Default.default()
             },
             |cx| {
                 cx.new_view(|cx| {

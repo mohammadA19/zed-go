@@ -3,9 +3,9 @@
 /// Provides access to Zed settings.
 pub mod settings;
 
-use core::fmt;
+use core.fmt;
 
-use wit::*;
+use wit.*;
 
 pub use serde_json;
 
@@ -13,19 +13,19 @@ pub use serde_json;
 //
 // We explicitly enumerate the symbols we want to re-export, as there are some
 // that we may want to shadow to provide a cleaner Rust API.
-pub use wit::{
+pub use wit.{
     download_file, make_file_executable,
-    zed::extension::github::{
+    zed.extension.github.{
         github_release_by_tag_name, latest_github_release, GithubRelease, GithubReleaseAsset,
         GithubReleaseOptions,
     },
-    zed::extension::http_client::{fetch, HttpRequest, HttpResponse},
-    zed::extension::nodejs::{
+    zed.extension.http_client.{fetch, HttpRequest, HttpResponse},
+    zed.extension.nodejs.{
         node_binary_path, npm_install_package, npm_package_installed_version,
         npm_package_latest_version,
     },
-    zed::extension::platform::{current_platform, Architecture, Os},
-    zed::extension::slash_command::{
+    zed.extension.platform.{current_platform, Architecture, Os},
+    zed.extension.slash_command.{
         SlashCommand, SlashCommandArgumentCompletion, SlashCommandOutput, SlashCommandOutputSection,
     },
     CodeLabel, CodeLabelSpan, CodeLabelSpanLiteral, Command, DownloadedFileType, EnvVars,
@@ -37,25 +37,25 @@ pub use wit::{
 // These are symbols that need to be public for the purposes of implementing
 // the extension host, but aren't relevant to extension authors.
 #[doc(hidden)]
-pub use wit::Guest;
+pub use wit.Guest;
 
 /// Constructs for interacting with language servers over the
 /// Language Server Protocol (LSP).
 pub mod lsp {
-    pub use crate::wit::zed::extension::lsp::{
+    pub use crate.wit.zed.extension.lsp.{
         Completion, CompletionKind, InsertTextFormat, Symbol, SymbolKind,
     };
 }
 
 /// A result returned from a Zed extension.
-pub type Result<T, E = String> = core::result::Result<T, E>;
+pub type Result<T, E = String> = core.result.Result<T, E>;
 
 /// Updates the installation status for the given language server.
 pub fn set_language_server_installation_status(
     language_server_id: &LanguageServerId,
     status: &LanguageServerInstallationStatus,
 ) {
-    wit::set_language_server_installation_status(&language_server_id.0, status)
+    wit.set_language_server_installation_status(&language_server_id.0, status)
 }
 
 /// A Zed extension.
@@ -80,7 +80,7 @@ pub trait Extension: Send + Sync {
         &mut self,
         _language_server_id: &LanguageServerId,
         _worktree: &Worktree,
-    ) -> Result<Option<serde_json::Value>> {
+    ) -> Result<Option<serde_json.Value>> {
         Ok(None)
     }
 
@@ -89,7 +89,7 @@ pub trait Extension: Send + Sync {
         &mut self,
         _language_server_id: &LanguageServerId,
         _worktree: &Worktree,
-    ) -> Result<Option<serde_json::Value>> {
+    ) -> Result<Option<serde_json.Value>> {
         Ok(None)
     }
 
@@ -117,7 +117,7 @@ pub trait Extension: Send + Sync {
         _command: SlashCommand,
         _query: String,
     ) -> Result<Vec<SlashCommandArgumentCompletion>, String> {
-        Ok(Vec::new())
+        Ok(Vec.new())
     }
 
     /// Returns the output from running the provided slash command.
@@ -148,9 +148,9 @@ macro_rules! register_extension {
     ($extension_type:ty) => {
         #[export_name = "init-extension"]
         pub extern "C" fn __init_extension() {
-            std::env::set_current_dir(std::env::var("PWD").unwrap()).unwrap();
-            zed_extension_api::register_extension(|| {
-                Box::new(<$extension_type as zed_extension_api::Extension>::new())
+            std.env.set_current_dir(std.env.var("PWD").unwrap()).unwrap();
+            zed_extension_api.register_extension(|| {
+                Box.new(<$extension_type as zed_extension_api.Extension>.new())
             });
         }
     };
@@ -173,23 +173,23 @@ static mut EXTENSION: Option<Box<dyn Extension>> = None;
 pub static ZED_API_VERSION: [u8; 6] = *include_bytes!(concat!(env!("OUT_DIR"), "/version_bytes"));
 
 mod wit {
-    #![allow(clippy::too_many_arguments)]
+    #![allow(clippy.too_many_arguments)]
 
-    wit_bindgen::generate!({
+    wit_bindgen.generate!({
         skip: ["init-extension"],
         path: "./wit/since_v0.0.7",
     });
 }
 
-wit::export!(Component);
+wit.export!(Component);
 
 struct Component;
 
-impl wit::Guest for Component {
+impl wit.Guest for Component {
     fn language_server_command(
         language_server_id: String,
-        worktree: &wit::Worktree,
-    ) -> Result<wit::Command> {
+        worktree: &wit.Worktree,
+    ) -> Result<wit.Command> {
         let language_server_id = LanguageServerId(language_server_id);
         extension().language_server_command(&language_server_id, worktree)
     }
@@ -201,7 +201,7 @@ impl wit::Guest for Component {
         let language_server_id = LanguageServerId(language_server_id);
         Ok(extension()
             .language_server_initialization_options(&language_server_id, worktree)?
-            .and_then(|value| serde_json::to_string(&value).ok()))
+            .and_then(|value| serde_json.to_string(&value).ok()))
     }
 
     fn language_server_workspace_configuration(
@@ -211,7 +211,7 @@ impl wit::Guest for Component {
         let language_server_id = LanguageServerId(language_server_id);
         Ok(extension()
             .language_server_workspace_configuration(&language_server_id, worktree)?
-            .and_then(|value| serde_json::to_string(&value).ok()))
+            .and_then(|value| serde_json.to_string(&value).ok()))
     }
 
     fn labels_for_completions(
@@ -219,7 +219,7 @@ impl wit::Guest for Component {
         completions: Vec<Completion>,
     ) -> Result<Vec<Option<CodeLabel>>, String> {
         let language_server_id = LanguageServerId(language_server_id);
-        let mut labels = Vec::new();
+        let mut labels = Vec.new();
         for (ix, completion) in completions.into_iter().enumerate() {
             let label = extension().label_for_completion(&language_server_id, completion);
             if let Some(label) = label {
@@ -235,7 +235,7 @@ impl wit::Guest for Component {
         symbols: Vec<Symbol>,
     ) -> Result<Vec<Option<CodeLabel>>, String> {
         let language_server_id = LanguageServerId(language_server_id);
-        let mut labels = Vec::new();
+        let mut labels = Vec.new();
         for (ix, symbol) in symbols.into_iter().enumerate() {
             let label = extension().label_for_symbol(&language_server_id, symbol);
             if let Some(label) = label {
@@ -280,29 +280,29 @@ impl AsRef<str> for LanguageServerId {
     }
 }
 
-impl fmt::Display for LanguageServerId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Display for LanguageServerId {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{}", self.0)
     }
 }
 
 impl CodeLabelSpan {
-    /// Returns a [`CodeLabelSpan::CodeRange`].
-    pub fn code_range(range: impl Into<wit::Range>) -> Self {
-        Self::CodeRange(range.into())
+    /// Returns a [`CodeLabelSpan.CodeRange`].
+    pub fn code_range(range: impl Into<wit.Range>) -> Self {
+        Self.CodeRange(range.into())
     }
 
-    /// Returns a [`CodeLabelSpan::Literal`].
+    /// Returns a [`CodeLabelSpan.Literal`].
     pub fn literal(text: impl Into<String>, highlight_name: Option<String>) -> Self {
-        Self::Literal(CodeLabelSpanLiteral {
+        Self.Literal(CodeLabelSpanLiteral {
             text: text.into(),
             highlight_name,
         })
     }
 }
 
-impl From<std::ops::Range<u32>> for wit::Range {
-    fn from(value: std::ops::Range<u32>) -> Self {
+impl From<std.ops.Range<u32>> for wit.Range {
+    fn from(value: std.ops.Range<u32>) -> Self {
         Self {
             start: value.start,
             end: value.end,
@@ -310,8 +310,8 @@ impl From<std::ops::Range<u32>> for wit::Range {
     }
 }
 
-impl From<std::ops::Range<usize>> for wit::Range {
-    fn from(value: std::ops::Range<usize>) -> Self {
+impl From<std.ops.Range<usize>> for wit.Range {
+    fn from(value: std.ops.Range<usize>) -> Self {
         Self {
             start: value.start as u32,
             end: value.end as u32,

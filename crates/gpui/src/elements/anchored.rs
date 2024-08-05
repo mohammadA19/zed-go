@@ -1,7 +1,7 @@
-use smallvec::SmallVec;
-use taffy::style::{Display, Position};
+use smallvec.SmallVec;
+use taffy.style.{Display, Position};
 
-use crate::{
+use crate.{
     point, AnyElement, Bounds, Element, GlobalElementId, IntoElement, LayoutId, ParentElement,
     Pixels, Point, Size, Style, WindowContext,
 };
@@ -25,11 +25,11 @@ pub struct Anchored {
 /// Its children should have no margin to avoid measurement issues.
 pub fn anchored() -> Anchored {
     Anchored {
-        children: SmallVec::new(),
-        anchor_corner: AnchorCorner::TopLeft,
-        fit_mode: AnchoredFitMode::SwitchAnchor,
+        children: SmallVec.new(),
+        anchor_corner: AnchorCorner.TopLeft,
+        fit_mode: AnchoredFitMode.SwitchAnchor,
         anchor_position: None,
-        position_mode: AnchoredPositionMode::Window,
+        position_mode: AnchoredPositionMode.Window,
     }
 }
 
@@ -48,7 +48,7 @@ impl Anchored {
     }
 
     /// Sets the position mode for this anchored element. Local will have this
-    /// interpret its [`Anchored::position`] as relative to the parent element.
+    /// interpret its [`Anchored.position`] as relative to the parent element.
     /// While Window will have it interpret the position as relative to the window.
     pub fn position_mode(mut self, mode: AnchoredPositionMode) -> Self {
         self.position_mode = mode;
@@ -57,7 +57,7 @@ impl Anchored {
 
     /// Snap to window edge instead of switching anchor corner when an overflow would occur.
     pub fn snap_to_window(mut self) -> Self {
-        self.fit_mode = AnchoredFitMode::SnapToWindow;
+        self.fit_mode = AnchoredFitMode.SnapToWindow;
         self
     }
 }
@@ -72,7 +72,7 @@ impl Element for Anchored {
     type RequestLayoutState = AnchoredState;
     type PrepaintState = ();
 
-    fn id(&self) -> Option<crate::ElementId> {
+    fn id(&self) -> Option<crate.ElementId> {
         None
     }
 
@@ -80,17 +80,17 @@ impl Element for Anchored {
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (crate::LayoutId, Self::RequestLayoutState) {
+    ) -> (crate.LayoutId, Self.RequestLayoutState) {
         let child_layout_ids = self
             .children
             .iter_mut()
             .map(|child| child.request_layout(cx))
-            .collect::<SmallVec<_>>();
+            .collect.<SmallVec<_>>();
 
         let anchored_style = Style {
-            position: Position::Absolute,
-            display: Display::Flex,
-            ..Style::default()
+            position: Position.Absolute,
+            display: Display.Flex,
+            ..Style.default()
         };
 
         let layout_id = cx.request_layout(anchored_style, child_layout_ids.iter().copied());
@@ -102,15 +102,15 @@ impl Element for Anchored {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        request_layout: &mut Self::RequestLayoutState,
+        request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) {
         if request_layout.child_layout_ids.is_empty() {
             return;
         }
 
-        let mut child_min = point(Pixels::MAX, Pixels::MAX);
-        let mut child_max = Point::default();
+        let mut child_min = point(Pixels.MAX, Pixels.MAX);
+        let mut child_max = Point.default();
         for child_layout_id in &request_layout.child_layout_ids {
             let child_bounds = cx.layout_bounds(*child_layout_id);
             child_min = child_min.min(&child_bounds.origin);
@@ -126,26 +126,26 @@ impl Element for Anchored {
         );
 
         let limits = Bounds {
-            origin: Point::default(),
+            origin: Point.default(),
             size: cx.viewport_size(),
         };
 
-        if self.fit_mode == AnchoredFitMode::SwitchAnchor {
+        if self.fit_mode == AnchoredFitMode.SwitchAnchor {
             let mut anchor_corner = self.anchor_corner;
 
             if desired.left() < limits.left() || desired.right() > limits.right() {
                 let switched = anchor_corner
-                    .switch_axis(Axis::Horizontal)
+                    .switch_axis(Axis.Horizontal)
                     .get_bounds(origin, size);
                 if !(switched.left() < limits.left() || switched.right() > limits.right()) {
-                    anchor_corner = anchor_corner.switch_axis(Axis::Horizontal);
+                    anchor_corner = anchor_corner.switch_axis(Axis.Horizontal);
                     desired = switched
                 }
             }
 
             if desired.top() < limits.top() || desired.bottom() > limits.bottom() {
                 let switched = anchor_corner
-                    .switch_axis(Axis::Vertical)
+                    .switch_axis(Axis.Vertical)
                     .get_bounds(origin, size);
                 if !(switched.top() < limits.top() || switched.bottom() > limits.bottom()) {
                     desired = switched;
@@ -184,9 +184,9 @@ impl Element for Anchored {
     fn paint(
         &mut self,
         _id: Option<&GlobalElementId>,
-        _bounds: crate::Bounds<crate::Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
-        _prepaint: &mut Self::PrepaintState,
+        _bounds: crate.Bounds<crate.Pixels>,
+        _request_layout: &mut Self.RequestLayoutState,
+        _prepaint: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         for child in &mut self.children {
@@ -198,7 +198,7 @@ impl Element for Anchored {
 impl IntoElement for Anchored {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -235,12 +235,12 @@ impl AnchoredPositionMode {
         bounds: Bounds<Pixels>,
     ) -> (Point<Pixels>, Bounds<Pixels>) {
         match self {
-            AnchoredPositionMode::Window => {
+            AnchoredPositionMode.Window => {
                 let anchor_position = anchor_position.unwrap_or(bounds.origin);
                 let bounds = anchor_corner.get_bounds(anchor_position, size);
                 (anchor_position, bounds)
             }
-            AnchoredPositionMode::Local => {
+            AnchoredPositionMode.Local => {
                 let anchor_position = anchor_position.unwrap_or_default();
                 let bounds = anchor_corner.get_bounds(bounds.origin + anchor_position, size);
                 (anchor_position, bounds)
@@ -265,16 +265,16 @@ pub enum AnchorCorner {
 impl AnchorCorner {
     fn get_bounds(&self, origin: Point<Pixels>, size: Size<Pixels>) -> Bounds<Pixels> {
         let origin = match self {
-            Self::TopLeft => origin,
-            Self::TopRight => Point {
+            Self.TopLeft => origin,
+            Self.TopRight => Point {
                 x: origin.x - size.width,
                 y: origin.y,
             },
-            Self::BottomLeft => Point {
+            Self.BottomLeft => Point {
                 x: origin.x,
                 y: origin.y - size.height,
             },
-            Self::BottomRight => Point {
+            Self.BottomRight => Point {
                 x: origin.x - size.width,
                 y: origin.y - size.height,
             },
@@ -286,26 +286,26 @@ impl AnchorCorner {
     /// Get the point corresponding to this anchor corner in `bounds`.
     pub fn corner(&self, bounds: Bounds<Pixels>) -> Point<Pixels> {
         match self {
-            Self::TopLeft => bounds.origin,
-            Self::TopRight => bounds.upper_right(),
-            Self::BottomLeft => bounds.lower_left(),
-            Self::BottomRight => bounds.lower_right(),
+            Self.TopLeft => bounds.origin,
+            Self.TopRight => bounds.upper_right(),
+            Self.BottomLeft => bounds.lower_left(),
+            Self.BottomRight => bounds.lower_right(),
         }
     }
 
     fn switch_axis(self, axis: Axis) -> Self {
         match axis {
-            Axis::Vertical => match self {
-                AnchorCorner::TopLeft => AnchorCorner::BottomLeft,
-                AnchorCorner::TopRight => AnchorCorner::BottomRight,
-                AnchorCorner::BottomLeft => AnchorCorner::TopLeft,
-                AnchorCorner::BottomRight => AnchorCorner::TopRight,
+            Axis.Vertical => match self {
+                AnchorCorner.TopLeft => AnchorCorner.BottomLeft,
+                AnchorCorner.TopRight => AnchorCorner.BottomRight,
+                AnchorCorner.BottomLeft => AnchorCorner.TopLeft,
+                AnchorCorner.BottomRight => AnchorCorner.TopRight,
             },
-            Axis::Horizontal => match self {
-                AnchorCorner::TopLeft => AnchorCorner::TopRight,
-                AnchorCorner::TopRight => AnchorCorner::TopLeft,
-                AnchorCorner::BottomLeft => AnchorCorner::BottomRight,
-                AnchorCorner::BottomRight => AnchorCorner::BottomLeft,
+            Axis.Horizontal => match self {
+                AnchorCorner.TopLeft => AnchorCorner.TopRight,
+                AnchorCorner.TopRight => AnchorCorner.TopLeft,
+                AnchorCorner.BottomLeft => AnchorCorner.BottomRight,
+                AnchorCorner.BottomRight => AnchorCorner.BottomLeft,
             },
         }
     }

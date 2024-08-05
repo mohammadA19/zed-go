@@ -1,15 +1,15 @@
-use std::{ops::Range, sync::Arc};
+use std.{ops.Range, sync.Arc};
 
-use anyhow::Result;
-use async_trait::async_trait;
-use collections::BTreeMap;
-use derive_more::{Deref, DerefMut};
-use gpui::{AppContext, Global};
-use http_client::HttpClient;
-use parking_lot::RwLock;
-use url::Url;
+use anyhow.Result;
+use async_trait.async_trait;
+use collections.BTreeMap;
+use derive_more.{Deref, DerefMut};
+use gpui.{AppContext, Global};
+use http_client.HttpClient;
+use parking_lot.RwLock;
+use url.Url;
 
-use crate::Oid;
+use crate.Oid;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct PullRequest {
@@ -108,14 +108,14 @@ pub struct GitHostingProviderRegistry {
 impl GitHostingProviderRegistry {
     /// Returns the global [`GitHostingProviderRegistry`].
     pub fn global(cx: &AppContext) -> Arc<Self> {
-        cx.global::<GlobalGitHostingProviderRegistry>().0.clone()
+        cx.global.<GlobalGitHostingProviderRegistry>().0.clone()
     }
 
     /// Returns the global [`GitHostingProviderRegistry`].
     ///
     /// Inserts a default [`GitHostingProviderRegistry`] if one does not yet exist.
     pub fn default_global(cx: &mut AppContext) -> Arc<Self> {
-        cx.default_global::<GlobalGitHostingProviderRegistry>()
+        cx.default_global.<GlobalGitHostingProviderRegistry>()
             .0
             .clone()
     }
@@ -128,8 +128,8 @@ impl GitHostingProviderRegistry {
     /// Returns a new [`GitHostingProviderRegistry`].
     pub fn new() -> Self {
         Self {
-            state: RwLock::new(GitHostingProviderRegistryState {
-                providers: BTreeMap::default(),
+            state: RwLock.new(GitHostingProviderRegistryState {
+                providers: BTreeMap.default(),
             }),
         }
     }

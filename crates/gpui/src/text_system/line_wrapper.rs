@@ -1,6 +1,6 @@
-use crate::{px, FontId, FontRun, Pixels, PlatformTextSystem};
-use collections::HashMap;
-use std::{iter, sync::Arc};
+use crate.{px, FontId, FontRun, Pixels, PlatformTextSystem};
+use collections.HashMap;
+use std.{iter, sync.Arc};
 
 /// The GPUI line wrapper, used to wrap lines of text to a given width.
 pub struct LineWrapper {
@@ -25,7 +25,7 @@ impl LineWrapper {
             font_id,
             font_size,
             cached_ascii_char_widths: [None; 128],
-            cached_other_char_widths: HashMap::default(),
+            cached_other_char_widths: HashMap.default(),
         }
     }
 
@@ -43,13 +43,13 @@ impl LineWrapper {
         let mut last_wrap_ix = 0;
         let mut prev_c = '\0';
         let mut char_indices = line.char_indices();
-        iter::from_fn(move || {
+        iter.from_fn(move || {
             for (ix, c) in char_indices.by_ref() {
                 if c == '\n' {
                     continue;
                 }
 
-                if Self::is_word_char(c) {
+                if Self.is_word_char(c) {
                     if prev_c == ' ' && c != ' ' && first_non_whitespace_ix.is_some() {
                         last_candidate_ix = ix;
                         last_candidate_width = width;
@@ -72,7 +72,7 @@ impl LineWrapper {
                     if let (None, Some(first_non_whitespace_ix)) = (indent, first_non_whitespace_ix)
                     {
                         indent = Some(
-                            Self::MAX_INDENT.min((first_non_whitespace_ix - last_wrap_ix) as u32),
+                            Self.MAX_INDENT.min((first_non_whitespace_ix - last_wrap_ix) as u32),
                         );
                     }
 
@@ -89,7 +89,7 @@ impl LineWrapper {
                         width += self.width_for_char(' ') * indent as f32;
                     }
 
-                    return Some(Boundary::new(last_wrap_ix, indent.unwrap_or(0)));
+                    return Some(Boundary.new(last_wrap_ix, indent.unwrap_or(0)));
                 }
                 prev_c = c;
             }
@@ -175,18 +175,18 @@ impl Boundary {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{font, TestAppContext, TestDispatcher};
+    use super.*;
+    use crate.{font, TestAppContext, TestDispatcher};
     #[cfg(target_os = "macos")]
-    use crate::{TextRun, WindowTextSystem, WrapBoundary};
-    use rand::prelude::*;
+    use crate.{TextRun, WindowTextSystem, WrapBoundary};
+    use rand.prelude.*;
 
     #[test]
     fn test_wrap_line() {
-        let dispatcher = TestDispatcher::new(StdRng::seed_from_u64(0));
-        let cx = TestAppContext::new(dispatcher, None);
+        let dispatcher = TestDispatcher.new(StdRng.seed_from_u64(0));
+        let cx = TestAppContext.new(dispatcher, None);
         cx.text_system()
-            .add_fonts(vec![std::fs::read(
+            .add_fonts(vec![std.fs.read(
                 "../../assets/fonts/plex-mono/ZedPlexMono-Regular.ttf",
             )
             .unwrap()
@@ -197,56 +197,56 @@ mod tests {
         cx.update(|cx| {
             let text_system = cx.text_system().clone();
             let mut wrapper =
-                LineWrapper::new(id, px(16.), text_system.platform_text_system.clone());
+                LineWrapper.new(id, px(16.), text_system.platform_text_system.clone());
             assert_eq!(
                 wrapper
                     .wrap_line("aa bbb cccc ddddd eeee", px(72.))
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
                 &[
-                    Boundary::new(7, 0),
-                    Boundary::new(12, 0),
-                    Boundary::new(18, 0)
+                    Boundary.new(7, 0),
+                    Boundary.new(12, 0),
+                    Boundary.new(18, 0)
                 ],
             );
             assert_eq!(
                 wrapper
                     .wrap_line("aaa aaaaaaaaaaaaaaaaaa", px(72.0))
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
                 &[
-                    Boundary::new(4, 0),
-                    Boundary::new(11, 0),
-                    Boundary::new(18, 0)
+                    Boundary.new(4, 0),
+                    Boundary.new(11, 0),
+                    Boundary.new(18, 0)
                 ],
             );
             assert_eq!(
                 wrapper
                     .wrap_line("     aaaaaaa", px(72.))
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
                 &[
-                    Boundary::new(7, 5),
-                    Boundary::new(9, 5),
-                    Boundary::new(11, 5),
+                    Boundary.new(7, 5),
+                    Boundary.new(9, 5),
+                    Boundary.new(11, 5),
                 ]
             );
             assert_eq!(
                 wrapper
                     .wrap_line("                            ", px(72.))
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
                 &[
-                    Boundary::new(7, 0),
-                    Boundary::new(14, 0),
-                    Boundary::new(21, 0)
+                    Boundary.new(7, 0),
+                    Boundary.new(14, 0),
+                    Boundary.new(21, 0)
                 ]
             );
             assert_eq!(
                 wrapper
                     .wrap_line("          aaaaaaaaaaaaaa", px(72.))
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
                 &[
-                    Boundary::new(7, 0),
-                    Boundary::new(14, 3),
-                    Boundary::new(18, 3),
-                    Boundary::new(22, 3),
+                    Boundary.new(7, 0),
+                    Boundary.new(14, 3),
+                    Boundary.new(18, 3),
+                    Boundary.new(22, 3),
                 ]
             );
         });
@@ -257,13 +257,13 @@ mod tests {
         #[track_caller]
         fn assert_word(word: &str) {
             for c in word.chars() {
-                assert!(LineWrapper::is_word_char(c), "assertion failed for '{}'", c);
+                assert!(LineWrapper.is_word_char(c), "assertion failed for '{}'", c);
             }
         }
 
         #[track_caller]
         fn assert_not_word(word: &str) {
-            let found = word.chars().any(|c| !LineWrapper::is_word_char(c));
+            let found = word.chars().any(|c| !LineWrapper.is_word_char(c));
             assert!(found, "assertion failed for '{}'", word);
         }
 
@@ -311,24 +311,24 @@ mod tests {
 
     // These seem to vary wildly based on the the text system.
     #[cfg(target_os = "macos")]
-    #[crate::test]
+    #[crate.test]
     fn test_wrap_shaped_line(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let text_system = WindowTextSystem::new(cx.text_system().clone());
+            let text_system = WindowTextSystem.new(cx.text_system().clone());
 
             let normal = TextRun {
                 len: 0,
                 font: font("Helvetica"),
-                color: Default::default(),
-                underline: Default::default(),
+                color: Default.default(),
+                underline: Default.default(),
                 strikethrough: None,
                 background_color: None,
             };
             let bold = TextRun {
                 len: 0,
                 font: font("Helvetica").bold(),
-                color: Default::default(),
-                underline: Default::default(),
+                color: Default.default(),
+                underline: Default.default(),
                 strikethrough: None,
                 background_color: None,
             };

@@ -1,16 +1,16 @@
-use crate::{
+use crate.{
     AnyView, AnyWindowHandle, AppCell, AppContext, BackgroundExecutor, BorrowAppContext, Context,
     DismissEvent, FocusableView, ForegroundExecutor, Global, Model, ModelContext, PromptLevel,
     Render, Reservation, Result, Task, View, ViewContext, VisualContext, WindowContext,
     WindowHandle,
 };
-use anyhow::{anyhow, Context as _};
-use derive_more::{Deref, DerefMut};
-use futures::channel::oneshot;
-use std::{future::Future, rc::Weak};
+use anyhow.{anyhow, Context as _};
+use derive_more.{Deref, DerefMut};
+use futures.channel.oneshot;
+use std.{future.Future, rc.Weak};
 
 /// An async-friendly version of [AppContext] with a static lifetime so it can be held across `await` points in async code.
-/// You're provided with an instance when calling [AppContext::spawn], and you can also create one with [AppContext::to_async].
+/// You're provided with an instance when calling [AppContext.spawn], and you can also create one with [AppContext.to_async].
 /// Internally, this holds a weak reference to an `AppContext`, so its methods are fallible to protect against cases where the [AppContext] is dropped.
 #[derive(Clone)]
 pub struct AsyncAppContext {
@@ -25,7 +25,7 @@ impl Context for AsyncAppContext {
     fn new_model<T: 'static>(
         &mut self,
         build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
-    ) -> Self::Result<Model<T>> {
+    ) -> Self.Result<Model<T>> {
         let app = self
             .app
             .upgrade()
@@ -60,7 +60,7 @@ impl Context for AsyncAppContext {
         &mut self,
         handle: &Model<T>,
         update: impl FnOnce(&mut T, &mut ModelContext<'_, T>) -> R,
-    ) -> Self::Result<R> {
+    ) -> Self.Result<R> {
         let app = self
             .app
             .upgrade()
@@ -73,7 +73,7 @@ impl Context for AsyncAppContext {
         &self,
         handle: &Model<T>,
         callback: impl FnOnce(&T, &AppContext) -> R,
-    ) -> Self::Result<R>
+    ) -> Self.Result<R>
     where
         T: 'static,
     {
@@ -140,7 +140,7 @@ impl AsyncAppContext {
     /// Open a window with the given options based on the root view returned by the given function.
     pub fn open_window<V>(
         &self,
-        options: crate::WindowOptions,
+        options: crate.WindowOptions,
         build_root_view: impl FnOnce(&mut WindowContext) -> View<V>,
     ) -> Result<WindowHandle<V>>
     where
@@ -171,7 +171,7 @@ impl AsyncAppContext {
             .upgrade()
             .ok_or_else(|| anyhow!("app was released"))?;
         let app = app.borrow_mut();
-        Ok(app.has_global::<G>())
+        Ok(app.has_global.<G>())
     }
 
     /// Reads the global state of the specified type, passing it to the given callback.
@@ -189,7 +189,7 @@ impl AsyncAppContext {
 
     /// Reads the global state of the specified type, passing it to the given callback.
     ///
-    /// Similar to [`AsyncAppContext::read_global`], but returns an error instead of panicking
+    /// Similar to [`AsyncAppContext.read_global`], but returns an error instead of panicking
     /// if no state of the specified type has been assigned.
     ///
     /// Returns an error if no state of the specified type has been assigned the `AppContext` has been dropped.
@@ -202,7 +202,7 @@ impl AsyncAppContext {
         Some(read(app.try_global()?, &app))
     }
 
-    /// A convenience method for [AppContext::update_global]
+    /// A convenience method for [AppContext.update_global]
     /// for updating the global state of the specified type.
     pub fn update_global<G: Global, R>(
         &mut self,
@@ -237,12 +237,12 @@ impl AsyncWindowContext {
         self.window
     }
 
-    /// A convenience method for [`AppContext::update_window`].
+    /// A convenience method for [`AppContext.update_window`].
     pub fn update<R>(&mut self, update: impl FnOnce(&mut WindowContext) -> R) -> Result<R> {
         self.app.update_window(self.window, |_, cx| update(cx))
     }
 
-    /// A convenience method for [`AppContext::update_window`].
+    /// A convenience method for [`AppContext.update_window`].
     pub fn update_root<R>(
         &mut self,
         update: impl FnOnce(AnyView, &mut WindowContext) -> R,
@@ -250,12 +250,12 @@ impl AsyncWindowContext {
         self.app.update_window(self.window, update)
     }
 
-    /// A convenience method for [`WindowContext::on_next_frame`].
+    /// A convenience method for [`WindowContext.on_next_frame`].
     pub fn on_next_frame(&mut self, f: impl FnOnce(&mut WindowContext) + 'static) {
         self.window.update(self, |_, cx| cx.on_next_frame(f)).ok();
     }
 
-    /// A convenience method for [`AppContext::global`].
+    /// A convenience method for [`AppContext.global`].
     pub fn read_global<G: Global, R>(
         &mut self,
         read: impl FnOnce(&G, &WindowContext) -> R,
@@ -263,7 +263,7 @@ impl AsyncWindowContext {
         self.window.update(self, |_, cx| read(cx.global(), cx))
     }
 
-    /// A convenience method for [`AppContext::update_global`].
+    /// A convenience method for [`AppContext.update_global`].
     /// for updating the global state of the specified type.
     pub fn update_global<G, R>(
         &mut self,
@@ -294,10 +294,10 @@ impl AsyncWindowContext {
         message: &str,
         detail: Option<&str>,
         answers: &[&str],
-    ) -> oneshot::Receiver<usize> {
+    ) -> oneshot.Receiver<usize> {
         self.window
             .update(self, |_, cx| cx.prompt(level, message, detail, answers))
-            .unwrap_or_else(|_| oneshot::channel().1)
+            .unwrap_or_else(|_| oneshot.channel().1)
     }
 }
 
@@ -322,7 +322,7 @@ impl Context for AsyncWindowContext {
         &mut self,
         reservation: Reservation<T>,
         build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
-    ) -> Self::Result<Model<T>> {
+    ) -> Self.Result<Model<T>> {
         self.window
             .update(self, |_, cx| cx.insert_model(reservation, build_model))
     }
@@ -340,7 +340,7 @@ impl Context for AsyncWindowContext {
         &self,
         handle: &Model<T>,
         read: impl FnOnce(&T, &AppContext) -> R,
-    ) -> Self::Result<R>
+    ) -> Self.Result<R>
     where
         T: 'static,
     {
@@ -370,7 +370,7 @@ impl VisualContext for AsyncWindowContext {
     fn new_view<V>(
         &mut self,
         build_view_state: impl FnOnce(&mut ViewContext<'_, V>) -> V,
-    ) -> Self::Result<View<V>>
+    ) -> Self.Result<View<V>>
     where
         V: 'static + Render,
     {
@@ -382,7 +382,7 @@ impl VisualContext for AsyncWindowContext {
         &mut self,
         view: &View<V>,
         update: impl FnOnce(&mut V, &mut ViewContext<'_, V>) -> R,
-    ) -> Self::Result<R> {
+    ) -> Self.Result<R> {
         self.window
             .update(self, |_, cx| cx.update_view(view, update))
     }
@@ -390,7 +390,7 @@ impl VisualContext for AsyncWindowContext {
     fn replace_root_view<V>(
         &mut self,
         build_view: impl FnOnce(&mut ViewContext<'_, V>) -> V,
-    ) -> Self::Result<View<V>>
+    ) -> Self.Result<View<V>>
     where
         V: 'static + Render,
     {
@@ -398,7 +398,7 @@ impl VisualContext for AsyncWindowContext {
             .update(self, |_, cx| cx.replace_root_view(build_view))
     }
 
-    fn focus_view<V>(&mut self, view: &View<V>) -> Self::Result<()>
+    fn focus_view<V>(&mut self, view: &View<V>) -> Self.Result<()>
     where
         V: FocusableView,
     {
@@ -407,9 +407,9 @@ impl VisualContext for AsyncWindowContext {
         })
     }
 
-    fn dismiss_view<V>(&mut self, view: &View<V>) -> Self::Result<()>
+    fn dismiss_view<V>(&mut self, view: &View<V>) -> Self.Result<()>
     where
-        V: crate::ManagedView,
+        V: crate.ManagedView,
     {
         self.window
             .update(self, |_, cx| view.update(cx, |_, cx| cx.emit(DismissEvent)))

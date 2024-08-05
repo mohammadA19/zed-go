@@ -1,14 +1,14 @@
-use crate::{
-    matcher::{Match, MatchCandidate, Matcher},
+use crate.{
+    matcher.{Match, MatchCandidate, Matcher},
     CharBag,
 };
-use gpui::BackgroundExecutor;
-use std::{
-    borrow::Cow,
-    cmp::{self, Ordering},
+use gpui.BackgroundExecutor;
+use std.{
+    borrow.Cow,
+    cmp.{self, Ordering},
     iter,
-    ops::Range,
-    sync::atomic::AtomicBool,
+    ops.Range,
+    sync.atomic.AtomicBool,
 };
 
 #[derive(Clone, Debug)]
@@ -32,7 +32,7 @@ impl StringMatchCandidate {
     pub fn new(id: usize, string: String) -> Self {
         Self {
             id,
-            char_bag: CharBag::from(string.as_str()),
+            char_bag: CharBag.from(string.as_str()),
             string,
         }
     }
@@ -59,7 +59,7 @@ pub struct StringMatch {
 impl StringMatch {
     pub fn ranges(&self) -> impl '_ + Iterator<Item = Range<usize>> {
         let mut positions = self.positions.iter().peekable();
-        iter::from_fn(move || {
+        iter.from_fn(move || {
             if let Some(start) = positions.next().copied() {
                 let mut end = start + self.char_len_at_index(start);
                 while let Some(next_start) = positions.peek() {
@@ -100,7 +100,7 @@ impl Ord for StringMatch {
     fn cmp(&self, other: &Self) -> Ordering {
         self.score
             .partial_cmp(&other.score)
-            .unwrap_or(Ordering::Equal)
+            .unwrap_or(Ordering.Equal)
             .then_with(|| self.candidate_id.cmp(&other.candidate_id))
     }
 }
@@ -114,7 +114,7 @@ pub async fn match_strings(
     executor: BackgroundExecutor,
 ) -> Vec<StringMatch> {
     if candidates.is_empty() || max_results == 0 {
-        return Default::default();
+        return Default.default();
     }
 
     if query.is_empty() {
@@ -123,33 +123,33 @@ pub async fn match_strings(
             .map(|candidate| StringMatch {
                 candidate_id: candidate.id,
                 score: 0.,
-                positions: Default::default(),
+                positions: Default.default(),
                 string: candidate.string.clone(),
             })
             .collect();
     }
 
-    let lowercase_query = query.to_lowercase().chars().collect::<Vec<_>>();
-    let query = query.chars().collect::<Vec<_>>();
+    let lowercase_query = query.to_lowercase().chars().collect.<Vec<_>>();
+    let query = query.chars().collect.<Vec<_>>();
 
     let lowercase_query = &lowercase_query;
     let query = &query;
-    let query_char_bag = CharBag::from(&lowercase_query[..]);
+    let query_char_bag = CharBag.from(&lowercase_query[..]);
 
     let num_cpus = executor.num_cpus().min(candidates.len());
     let segment_size = (candidates.len() + num_cpus - 1) / num_cpus;
     let mut segment_results = (0..num_cpus)
-        .map(|_| Vec::with_capacity(max_results.min(candidates.len())))
-        .collect::<Vec<_>>();
+        .map(|_| Vec.with_capacity(max_results.min(candidates.len())))
+        .collect.<Vec<_>>();
 
     executor
         .scoped(|scope| {
             for (segment_idx, results) in segment_results.iter_mut().enumerate() {
                 let cancel_flag = &cancel_flag;
                 scope.spawn(async move {
-                    let segment_start = cmp::min(segment_idx * segment_size, candidates.len());
-                    let segment_end = cmp::min(segment_start + segment_size, candidates.len());
-                    let mut matcher = Matcher::new(
+                    let segment_start = cmp.min(segment_idx * segment_size, candidates.len());
+                    let segment_end = cmp.min(segment_start + segment_size, candidates.len());
+                    let mut matcher = Matcher.new(
                         query,
                         lowercase_query,
                         query_char_bag,
@@ -166,7 +166,7 @@ pub async fn match_strings(
                         |candidate, score| StringMatch {
                             candidate_id: candidate.id,
                             score,
-                            positions: Vec::new(),
+                            positions: Vec.new(),
                             string: candidate.string.to_string(),
                         },
                     );
@@ -175,12 +175,12 @@ pub async fn match_strings(
         })
         .await;
 
-    let mut results = Vec::new();
+    let mut results = Vec.new();
     for segment_result in segment_results {
         if results.is_empty() {
             results = segment_result;
         } else {
-            util::extend_sorted(&mut results, segment_result, max_results, |a, b| b.cmp(a));
+            util.extend_sorted(&mut results, segment_result, max_results, |a, b| b.cmp(a));
         }
     }
     results

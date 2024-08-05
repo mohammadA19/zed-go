@@ -1,10 +1,10 @@
-use crate::{
+use crate.{
     black, fill, point, px, size, Bounds, Hsla, LineLayout, Pixels, Point, Result, SharedString,
     StrikethroughStyle, UnderlineStyle, WindowContext, WrapBoundary, WrappedLineLayout,
 };
-use derive_more::{Deref, DerefMut};
-use smallvec::SmallVec;
-use std::sync::Arc;
+use derive_more.{Deref, DerefMut};
+use smallvec.SmallVec;
+use std.sync.Arc;
 
 /// Set the text decoration for a run of text.
 #[derive(Debug, Clone)]
@@ -38,7 +38,7 @@ pub struct ShapedLine {
 
 impl ShapedLine {
     /// The length of the line in utf-8 bytes.
-    #[allow(clippy::len_without_is_empty)]
+    #[allow(clippy.len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.layout.len
     }
@@ -76,7 +76,7 @@ pub struct WrappedLine {
 
 impl WrappedLine {
     /// The length of the underlying, unwrapped layout, in utf-8 bytes.
-    #[allow(clippy::len_without_is_empty)]
+    #[allow(clippy.len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.layout.len()
     }
@@ -109,7 +109,7 @@ fn paint_line(
     wrap_boundaries: &[WrapBoundary],
     cx: &mut WindowContext,
 ) -> Result<()> {
-    let line_bounds = Bounds::new(
+    let line_bounds = Bounds.new(
         origin,
         size(
             layout.width,
@@ -128,7 +128,7 @@ fn paint_line(
         let mut current_background: Option<(Point<Pixels>, Hsla)> = None;
         let text_system = cx.text_system().clone();
         let mut glyph_origin = origin;
-        let mut prev_glyph_position = Point::default();
+        let mut prev_glyph_position = Point.default();
         for (run_ix, run) in layout.runs.iter().enumerate() {
             let max_glyph_size = text_system.bounding_box(run.font_id, layout.font_size).size;
 

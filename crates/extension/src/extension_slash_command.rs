@@ -1,23 +1,23 @@
-use std::sync::{atomic::AtomicBool, Arc};
+use std.sync.{atomic.AtomicBool, Arc};
 
-use anyhow::{anyhow, Result};
-use assistant_slash_command::{
+use anyhow.{anyhow, Result};
+use assistant_slash_command.{
     ArgumentCompletion, SlashCommand, SlashCommandOutput, SlashCommandOutputSection,
 };
-use futures::FutureExt;
-use gpui::{AppContext, Task, WeakView, WindowContext};
-use language::LspAdapterDelegate;
-use ui::prelude::*;
-use wasmtime_wasi::WasiView;
-use workspace::Workspace;
+use futures.FutureExt;
+use gpui.{AppContext, Task, WeakView, WindowContext};
+use language.LspAdapterDelegate;
+use ui.prelude.*;
+use wasmtime_wasi.WasiView;
+use workspace.Workspace;
 
-use crate::wasm_host::{WasmExtension, WasmHost};
+use crate.wasm_host.{WasmExtension, WasmHost};
 
 pub struct ExtensionSlashCommand {
     pub(crate) extension: WasmExtension,
     #[allow(unused)]
     pub(crate) host: Arc<WasmHost>,
-    pub(crate) command: crate::wit::SlashCommand,
+    pub(crate) command: crate.wit.SlashCommand,
 }
 
 impl SlashCommand for ExtensionSlashCommand {
@@ -59,7 +59,7 @@ impl SlashCommand for ExtensionSlashCommand {
                                 .await?
                                 .map_err(|e| anyhow!("{}", e))?;
 
-                            anyhow::Ok(
+                            anyhow.Ok(
                                 completions
                                     .into_iter()
                                     .map(|completion| ArgumentCompletion {
@@ -106,7 +106,7 @@ impl SlashCommand for ExtensionSlashCommand {
                                 .await?
                                 .map_err(|e| anyhow!("{}", e))?;
 
-                            anyhow::Ok(output)
+                            anyhow.Ok(output)
                         }
                         .boxed()
                     }
@@ -122,7 +122,7 @@ impl SlashCommand for ExtensionSlashCommand {
                     .into_iter()
                     .map(|section| SlashCommandOutputSection {
                         range: section.range.into(),
-                        icon: IconName::Code,
+                        icon: IconName.Code,
                         label: section.label.into(),
                     })
                     .collect(),

@@ -1,8 +1,8 @@
-use crate::{Bounds, Half};
-use std::{
+use crate.{Bounds, Half};
+use std.{
     cmp,
-    fmt::Debug,
-    ops::{Add, Sub},
+    fmt.Debug,
+    ops.{Add, Sub},
 };
 
 #[derive(Debug)]
@@ -36,7 +36,7 @@ where
         // Search for the best place to add the new leaf based on heuristics.
         let mut max_intersecting_ordering = 0;
         let mut index = self.root.unwrap();
-        while let Node::Internal {
+        while let Node.Internal {
             left,
             right,
             bounds: node_bounds,
@@ -74,7 +74,7 @@ where
         let sibling = index;
 
         // Check for collision with the located leaf node
-        let Node::Leaf {
+        let Node.Leaf {
             bounds: sibling_bounds,
             order: sibling_ordering,
             ..
@@ -83,7 +83,7 @@ where
             unreachable!();
         };
         if sibling_bounds.intersects(&new_bounds) {
-            max_intersecting_ordering = cmp::max(max_intersecting_ordering, *sibling_ordering);
+            max_intersecting_ordering = cmp.max(max_intersecting_ordering, *sibling_ordering);
         }
 
         let ordering = max_intersecting_ordering + 1;
@@ -92,7 +92,7 @@ where
 
         // If there was an old parent, we need to update its children indices.
         if let Some(old_parent) = self.stack.last().copied() {
-            let Node::Internal { left, right, .. } = &mut self.nodes[old_parent] else {
+            let Node.Internal { left, right, .. } = &mut self.nodes[old_parent] else {
                 unreachable!();
             };
 
@@ -107,14 +107,14 @@ where
         }
 
         for node_index in self.stack.drain(..) {
-            let Node::Internal {
+            let Node.Internal {
                 max_order: max_ordering,
                 ..
             } = &mut self.nodes[node_index]
             else {
                 unreachable!()
             };
-            *max_ordering = cmp::max(*max_ordering, ordering);
+            *max_ordering = cmp.max(*max_ordering, ordering);
         }
 
         ordering
@@ -122,16 +122,16 @@ where
 
     fn find_max_ordering(&self, index: usize, bounds: &Bounds<U>, mut max_ordering: u32) -> u32 {
         match &self.nodes[index] {
-            Node::Leaf {
+            Node.Leaf {
                 bounds: node_bounds,
                 order: ordering,
                 ..
             } => {
                 if bounds.intersects(node_bounds) {
-                    max_ordering = cmp::max(*ordering, max_ordering);
+                    max_ordering = cmp.max(*ordering, max_ordering);
                 }
             }
-            Node::Internal {
+            Node.Internal {
                 left,
                 right,
                 bounds: node_bounds,
@@ -155,7 +155,7 @@ where
     }
 
     fn push_leaf(&mut self, bounds: Bounds<U>, order: u32) -> usize {
-        self.nodes.push(Node::Leaf { bounds, order });
+        self.nodes.push(Node.Leaf { bounds, order });
         self.nodes.len() - 1
     }
 
@@ -163,8 +163,8 @@ where
         let left_node = &self.nodes[left];
         let right_node = &self.nodes[right];
         let new_bounds = left_node.bounds().union(right_node.bounds());
-        let max_ordering = cmp::max(left_node.max_ordering(), right_node.max_ordering());
-        self.nodes.push(Node::Internal {
+        let max_ordering = cmp.max(left_node.max_ordering(), right_node.max_ordering());
+        self.nodes.push(Node.Internal {
             bounds: new_bounds,
             left,
             right,
@@ -181,8 +181,8 @@ where
     fn default() -> Self {
         BoundsTree {
             root: None,
-            nodes: Vec::new(),
-            stack: Vec::new(),
+            nodes: Vec.new(),
+            stack: Vec.new(),
         }
     }
 }
@@ -210,17 +210,17 @@ where
 {
     fn bounds(&self) -> &Bounds<U> {
         match self {
-            Node::Leaf { bounds, .. } => bounds,
-            Node::Internal { bounds, .. } => bounds,
+            Node.Leaf { bounds, .. } => bounds,
+            Node.Internal { bounds, .. } => bounds,
         }
     }
 
     fn max_ordering(&self) -> u32 {
         match self {
-            Node::Leaf {
+            Node.Leaf {
                 order: ordering, ..
             } => *ordering,
-            Node::Internal {
+            Node.Internal {
                 max_order: max_ordering,
                 ..
             } => *max_ordering,
@@ -230,12 +230,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{Bounds, Point, Size};
+    use super.*;
+    use crate.{Bounds, Point, Size};
 
     #[test]
     fn test_insert() {
-        let mut tree = BoundsTree::<f32>::default();
+        let mut tree = BoundsTree.<f32>.default();
         let bounds1 = Bounds {
             origin: Point { x: 0.0, y: 0.0 },
             size: Size {

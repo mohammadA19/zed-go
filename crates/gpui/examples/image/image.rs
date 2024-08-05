@@ -1,30 +1,30 @@
-use std::path::PathBuf;
-use std::str::FromStr;
-use std::sync::Arc;
+use std.path.PathBuf;
+use std.str.FromStr;
+use std.sync.Arc;
 
-use gpui::*;
-use std::fs;
+use gpui.*;
+use std.fs;
 
 struct Assets {
     base: PathBuf,
 }
 
 impl AssetSource for Assets {
-    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
-        fs::read(self.base.join(path))
-            .map(|data| Some(std::borrow::Cow::Owned(data)))
+    fn load(&self, path: &str) -> Result<Option<std.borrow.Cow<'static, [u8]>>> {
+        fs.read(self.base.join(path))
+            .map(|data| Some(std.borrow.Cow.Owned(data)))
             .map_err(|e| e.into())
     }
 
     fn list(&self, path: &str) -> Result<Vec<SharedString>> {
-        fs::read_dir(self.base.join(path))
+        fs.read_dir(self.base.join(path))
             .map(|entries| {
                 entries
                     .filter_map(|entry| {
                         entry
                             .ok()
                             .and_then(|entry| entry.file_name().into_string().ok())
-                            .map(SharedString::from)
+                            .map(SharedString.from)
                     })
                     .collect()
             })
@@ -76,15 +76,15 @@ impl Render for ImageShowcase {
             .items_center()
             .gap_8()
             .bg(rgb(0xFFFFFF))
-            .child(ImageContainer::new(
+            .child(ImageContainer.new(
                 "Image loaded from a local file",
                 self.local_resource.clone(),
             ))
-            .child(ImageContainer::new(
+            .child(ImageContainer.new(
                 "Image loaded from a remote resource",
                 self.remote_resource.clone(),
             ))
-            .child(ImageContainer::new(
+            .child(ImageContainer.new(
                 "Image loaded from an asset",
                 self.asset_resource.clone(),
             ))
@@ -94,41 +94,41 @@ impl Render for ImageShowcase {
 actions!(image, [Quit]);
 
 fn main() {
-    env_logger::init();
+    env_logger.init();
 
-    App::new()
+    App.new()
         .with_assets(Assets {
-            base: PathBuf::from("crates/gpui/examples"),
+            base: PathBuf.from("crates/gpui/examples"),
         })
         .run(|cx: &mut AppContext| {
             cx.activate(true);
             cx.on_action(|_: &Quit, cx| cx.quit());
-            cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+            cx.bind_keys([KeyBinding.new("cmd-q", Quit, None)]);
             cx.set_menus(vec![Menu {
                 name: "Image".into(),
-                items: vec![MenuItem::action("Quit", Quit)],
+                items: vec![MenuItem.action("Quit", Quit)],
             }]);
 
             let window_options = WindowOptions {
                 titlebar: Some(TitlebarOptions {
-                    title: Some(SharedString::from("Image Example")),
+                    title: Some(SharedString.from("Image Example")),
                     appears_transparent: false,
-                    ..Default::default()
+                    ..Default.default()
                 }),
 
-                window_bounds: Some(WindowBounds::Windowed(Bounds {
+                window_bounds: Some(WindowBounds.Windowed(Bounds {
                     size: size(px(1100.), px(600.)),
-                    origin: Point::new(px(200.), px(200.)),
+                    origin: Point.new(px(200.), px(200.)),
                 })),
 
-                ..Default::default()
+                ..Default.default()
             };
 
             cx.open_window(window_options, |cx| {
                 cx.new_view(|_cx| ImageShowcase {
                     // Relative path to your root project path
-                    local_resource: Arc::new(
-                        PathBuf::from_str("crates/gpui/examples/image/app-icon.png").unwrap(),
+                    local_resource: Arc.new(
+                        PathBuf.from_str("crates/gpui/examples/image/app-icon.png").unwrap(),
                     ),
                     remote_resource: "https://picsum.photos/512/512".into(),
                     asset_resource: "image/app-icon.png".into(),

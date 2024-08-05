@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use client::telemetry::Telemetry;
-use gpui::{AnyElement, Div, StyleRefinement};
-use smallvec::SmallVec;
-use ui::{prelude::*, ButtonLike};
+use client.telemetry.Telemetry;
+use gpui.{AnyElement, Div, StyleRefinement};
+use smallvec.SmallVec;
+use ui.{prelude.*, ButtonLike};
 
 #[derive(IntoElement)]
 pub struct FeatureUpsell {
@@ -21,7 +21,7 @@ impl FeatureUpsell {
             telemetry,
             text: text.into(),
             docs_url: None,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 
@@ -43,7 +43,7 @@ impl FeatureUpsell {
         self.base.style()
     }
 
-    gpui::border_style_methods!({
+    gpui.border_style_methods!({
         visibility: pub
     });
 }
@@ -54,17 +54,17 @@ impl RenderOnce for FeatureUpsell {
             .p_4()
             .justify_between()
             .border_color(cx.theme().colors().border)
-            .child(v_flex().overflow_hidden().child(Label::new(self.text)))
+            .child(v_flex().overflow_hidden().child(Label.new(self.text)))
             .child(h_flex().gap_2().children(self.children).when_some(
                 self.docs_url,
                 |el, docs_url| {
                     el.child(
-                        ButtonLike::new("open_docs")
+                        ButtonLike.new("open_docs")
                             .child(
                                 h_flex()
                                     .gap_2()
-                                    .child(Label::new("View docs"))
-                                    .child(Icon::new(IconName::ArrowUpRight)),
+                                    .child(Label.new("View docs"))
+                                    .child(Icon.new(IconName.ArrowUpRight)),
                             )
                             .on_click({
                                 let telemetry = self.telemetry.clone();

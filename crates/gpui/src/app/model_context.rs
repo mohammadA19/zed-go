@@ -1,15 +1,15 @@
-use crate::{
+use crate.{
     AnyView, AnyWindowHandle, AppContext, AsyncAppContext, Context, Effect, Entity, EntityId,
     EventEmitter, Model, Reservation, Subscription, Task, View, WeakModel, WindowContext,
     WindowHandle,
 };
-use anyhow::Result;
-use derive_more::{Deref, DerefMut};
-use futures::FutureExt;
-use std::{
-    any::{Any, TypeId},
-    borrow::{Borrow, BorrowMut},
-    future::Future,
+use anyhow.Result;
+use derive_more.{Deref, DerefMut};
+use futures.FutureExt;
+use std.{
+    any.{Any, TypeId},
+    borrow.{Borrow, BorrowMut},
+    future.Future,
 };
 
 /// The app context, with specialized behavior for the given model.
@@ -43,8 +43,8 @@ impl<'a, T: 'static> ModelContext<'a, T> {
         self.model_state.clone()
     }
 
-    /// Arranges for the given function to be called whenever [`ModelContext::notify`] or
-    /// [`ViewContext::notify`](crate::ViewContext::notify) is called with the given model or view.
+    /// Arranges for the given function to be called whenever [`ModelContext.notify`] or
+    /// [`ViewContext.notify`](crate.ViewContext.notify) is called with the given model or view.
     pub fn observe<W, E>(
         &mut self,
         entity: &E,
@@ -99,7 +99,7 @@ impl<'a, T: 'static> ModelContext<'a, T> {
     {
         let (subscription, activate) = self.app.release_listeners.insert(
             self.model_state.entity_id,
-            Box::new(move |this, cx| {
+            Box.new(move |this, cx| {
                 let this = this.downcast_mut().expect("invalid entity type");
                 on_release(this, cx);
             }),
@@ -123,7 +123,7 @@ impl<'a, T: 'static> ModelContext<'a, T> {
         let this = self.weak_model();
         let (subscription, activate) = self.app.release_listeners.insert(
             entity_id,
-            Box::new(move |entity, cx| {
+            Box.new(move |entity, cx| {
                 let entity = entity.downcast_mut().expect("invalid entity type");
                 if let Some(this) = this.upgrade() {
                     this.update(cx, |this, cx| on_release(this, entity, cx));
@@ -144,15 +144,15 @@ impl<'a, T: 'static> ModelContext<'a, T> {
     {
         let handle = self.weak_model();
         let (subscription, activate) = self.global_observers.insert(
-            TypeId::of::<G>(),
-            Box::new(move |cx| handle.update(cx, |view, cx| f(view, cx)).is_ok()),
+            TypeId.of.<G>(),
+            Box.new(move |cx| handle.update(cx, |view, cx| f(view, cx)).is_ok()),
         );
         self.defer(move |_| activate());
         subscription
     }
 
     /// Arrange for the given function to be invoked whenever the application is quit.
-    /// The future returned from this callback will be polled for up to [crate::SHUTDOWN_TIMEOUT] until the app fully quits.
+    /// The future returned from this callback will be polled for up to [crate.SHUTDOWN_TIMEOUT] until the app fully quits.
     pub fn on_app_quit<Fut>(
         &mut self,
         mut on_quit: impl FnMut(&mut T, &mut ModelContext<T>) -> Fut + 'static,
@@ -164,7 +164,7 @@ impl<'a, T: 'static> ModelContext<'a, T> {
         let handle = self.weak_model();
         let (subscription, activate) = self.app.quit_observers.insert(
             (),
-            Box::new(move |cx| {
+            Box.new(move |cx| {
                 let future = handle.update(cx, |entity, cx| on_quit(entity, cx)).ok();
                 async move {
                     if let Some(future) = future {
@@ -185,7 +185,7 @@ impl<'a, T: 'static> ModelContext<'a, T> {
             .pending_notifications
             .insert(self.model_state.entity_id)
         {
-            self.app.pending_effects.push_back(Effect::Notify {
+            self.app.pending_effects.push_back(Effect.Notify {
                 emitter: self.model_state.entity_id,
             });
         }
@@ -212,10 +212,10 @@ impl<'a, T> ModelContext<'a, T> {
         T: EventEmitter<Evt>,
         Evt: 'static,
     {
-        self.app.pending_effects.push_back(Effect::Emit {
+        self.app.pending_effects.push_back(Effect.Emit {
             emitter: self.model_state.entity_id,
-            event_type: TypeId::of::<Evt>(),
-            event: Box::new(event),
+            event_type: TypeId.of.<Evt>(),
+            event: Box.new(event),
         });
     }
 }
@@ -238,7 +238,7 @@ impl<'a, T> Context for ModelContext<'a, T> {
         &mut self,
         reservation: Reservation<U>,
         build_model: impl FnOnce(&mut ModelContext<'_, U>) -> U,
-    ) -> Self::Result<Model<U>> {
+    ) -> Self.Result<Model<U>> {
         self.app.insert_model(reservation, build_model)
     }
 
@@ -254,7 +254,7 @@ impl<'a, T> Context for ModelContext<'a, T> {
         &self,
         handle: &Model<U>,
         read: impl FnOnce(&U, &AppContext) -> R,
-    ) -> Self::Result<R>
+    ) -> Self.Result<R>
     where
         U: 'static,
     {

@@ -1,8 +1,8 @@
-use std::time::{Duration, Instant};
+use std.time.{Duration, Instant};
 
-use crate::{AnyElement, Element, ElementId, GlobalElementId, IntoElement};
+use crate.{AnyElement, Element, ElementId, GlobalElementId, IntoElement};
 
-pub use easing::*;
+pub use easing.*;
 
 /// An animation that can be applied to an element.
 pub struct Animation {
@@ -22,7 +22,7 @@ impl Animation {
         Self {
             duration,
             oneshot: true,
-            easing: Box::new(linear),
+            easing: Box.new(linear),
         }
     }
 
@@ -36,7 +36,7 @@ impl Animation {
     /// The easing function will take a time delta between 0 and 1 and return a new delta
     /// between 0 and 1
     pub fn with_easing(mut self, easing: impl Fn(f32) -> f32 + 'static) -> Self {
-        self.easing = Box::new(easing);
+        self.easing = Box.new(easing);
         self
     }
 }
@@ -56,7 +56,7 @@ pub trait AnimationExt {
         AnimationElement {
             id: id.into(),
             element: Some(self),
-            animator: Box::new(animator),
+            animator: Box.new(animator),
             animation,
         }
     }
@@ -84,7 +84,7 @@ impl<E> AnimationElement<E> {
 impl<E: IntoElement + 'static> IntoElement for AnimationElement<E> {
     type Element = AnimationElement<E>;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -104,11 +104,11 @@ impl<E: IntoElement + 'static> Element for AnimationElement<E> {
     fn request_layout(
         &mut self,
         global_id: Option<&GlobalElementId>,
-        cx: &mut crate::WindowContext,
-    ) -> (crate::LayoutId, Self::RequestLayoutState) {
+        cx: &mut crate.WindowContext,
+    ) -> (crate.LayoutId, Self.RequestLayoutState) {
         cx.with_element_state(global_id.unwrap(), |state, cx| {
             let state = state.unwrap_or_else(|| AnimationState {
-                start: Instant::now(),
+                start: Instant.now(),
             });
             let mut delta =
                 state.start.elapsed().as_secs_f32() / self.animation.duration.as_secs_f32();
@@ -150,20 +150,20 @@ impl<E: IntoElement + 'static> Element for AnimationElement<E> {
     fn prepaint(
         &mut self,
         _id: Option<&GlobalElementId>,
-        _bounds: crate::Bounds<crate::Pixels>,
-        element: &mut Self::RequestLayoutState,
-        cx: &mut crate::WindowContext,
-    ) -> Self::PrepaintState {
+        _bounds: crate.Bounds<crate.Pixels>,
+        element: &mut Self.RequestLayoutState,
+        cx: &mut crate.WindowContext,
+    ) -> Self.PrepaintState {
         element.prepaint(cx);
     }
 
     fn paint(
         &mut self,
         _id: Option<&GlobalElementId>,
-        _bounds: crate::Bounds<crate::Pixels>,
-        element: &mut Self::RequestLayoutState,
-        _: &mut Self::PrepaintState,
-        cx: &mut crate::WindowContext,
+        _bounds: crate.Bounds<crate.Pixels>,
+        element: &mut Self.RequestLayoutState,
+        _: &mut Self.PrepaintState,
+        cx: &mut crate.WindowContext,
     ) {
         element.paint(cx);
     }

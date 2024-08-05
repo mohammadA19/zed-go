@@ -1,16 +1,16 @@
-use editor::{Editor, ToPoint};
-use gpui::{AppContext, Subscription, View, WeakView};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
-use std::fmt::Write;
-use text::{Point, Selection};
-use ui::{
+use editor.{Editor, ToPoint};
+use gpui.{AppContext, Subscription, View, WeakView};
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
+use std.fmt.Write;
+use text.{Point, Selection};
+use ui.{
     div, Button, ButtonCommon, Clickable, FluentBuilder, IntoElement, LabelSize, ParentElement,
     Render, Tooltip, ViewContext,
 };
-use util::paths::FILE_ROW_COLUMN_DELIMITER;
-use workspace::{item::ItemHandle, StatusItemView, Workspace};
+use util.paths.FILE_ROW_COLUMN_DELIMITER;
+use workspace.{item.ItemHandle, StatusItemView, Workspace};
 
 #[derive(Copy, Clone, Default, PartialOrd, PartialEq)]
 struct SelectionStats {
@@ -30,7 +30,7 @@ impl CursorPosition {
     pub fn new(workspace: &Workspace) -> Self {
         Self {
             position: None,
-            selected_count: Default::default(),
+            selected_count: Default.default(),
             workspace: workspace.weak_handle(),
             _observe_active_editor: None,
         }
@@ -40,10 +40,10 @@ impl CursorPosition {
         let editor = editor.read(cx);
         let buffer = editor.buffer().read(cx).snapshot(cx);
 
-        self.selected_count = Default::default();
+        self.selected_count = Default.default();
         self.selected_count.selections = editor.selections.count();
         let mut last_selection: Option<Selection<usize>> = None;
-        for selection in editor.selections.all::<usize>(cx) {
+        for selection in editor.selections.all.<usize>(cx) {
             self.selected_count.characters += selection.end - selection.start;
             if last_selection
                 .as_ref()
@@ -52,7 +52,7 @@ impl CursorPosition {
                 last_selection = Some(selection);
             }
         }
-        for selection in editor.selections.all::<Point>(cx) {
+        for selection in editor.selections.all.<Point>(cx) {
             if selection.end != selection.start {
                 self.selected_count.lines += (selection.end.row - selection.start.row) as usize;
                 if selection.end.column != 0 {
@@ -69,7 +69,7 @@ impl CursorPosition {
         if self.selected_count
             <= (SelectionStats {
                 selections: 1,
-                ..Default::default()
+                ..Default.default()
             })
         {
             // Do not write out anything if we have just one empty selection.
@@ -80,8 +80,8 @@ impl CursorPosition {
             characters,
             selections,
         } = self.selected_count;
-        let format = LineIndicatorFormat::get(None, cx);
-        let is_short_format = format == &LineIndicatorFormat::Short;
+        let format = LineIndicatorFormat.get(None, cx);
+        let is_short_format = format == &LineIndicatorFormat.Short;
         let lines = (lines > 1).then_some((lines, "line"));
         let selections = (selections > 1).then_some((selections, "selection"));
         let characters = (characters > 0).then_some((characters, "character"));
@@ -119,25 +119,25 @@ impl Render for CursorPosition {
             self.write_position(&mut text, cx);
 
             el.child(
-                Button::new("go-to-line-column", text)
-                    .label_size(LabelSize::Small)
+                Button.new("go-to-line-column", text)
+                    .label_size(LabelSize.Small)
                     .on_click(cx.listener(|this, _, cx| {
                         if let Some(workspace) = this.workspace.upgrade() {
                             workspace.update(cx, |workspace, cx| {
                                 if let Some(editor) = workspace
                                     .active_item(cx)
-                                    .and_then(|item| item.act_as::<Editor>(cx))
+                                    .and_then(|item| item.act_as.<Editor>(cx))
                                 {
                                     workspace
-                                        .toggle_modal(cx, |cx| crate::GoToLine::new(editor, cx))
+                                        .toggle_modal(cx, |cx| crate.GoToLine.new(editor, cx))
                                 }
                             });
                         }
                     }))
                     .tooltip(|cx| {
-                        Tooltip::for_action(
+                        Tooltip.for_action(
                             "Go to Line/Column",
-                            &editor::actions::ToggleGoToLine,
+                            &editor.actions.ToggleGoToLine,
                             cx,
                         )
                     }),
@@ -152,8 +152,8 @@ impl StatusItemView for CursorPosition {
         active_pane_item: Option<&dyn ItemHandle>,
         cx: &mut ViewContext<Self>,
     ) {
-        if let Some(editor) = active_pane_item.and_then(|item| item.act_as::<Editor>(cx)) {
-            self._observe_active_editor = Some(cx.observe(&editor, Self::update_position));
+        if let Some(editor) = active_pane_item.and_then(|item| item.act_as.<Editor>(cx)) {
+            self._observe_active_editor = Some(cx.observe(&editor, Self.update_position));
             self.update_position(editor, cx);
         } else {
             self.position = None;
@@ -186,13 +186,13 @@ impl Settings for LineIndicatorFormat {
     type FileContent = Option<LineIndicatorFormatContent>;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
+        sources: SettingsSources<Self.FileContent>,
         _: &mut AppContext,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow.Result<Self> {
         let format = [sources.release_channel, sources.user]
             .into_iter()
             .find_map(|value| value.copied().flatten())
-            .unwrap_or(sources.default.ok_or_else(Self::missing_default)?);
+            .unwrap_or(sources.default.ok_or_else(Self.missing_default)?);
 
         Ok(format.0)
     }

@@ -1,13 +1,13 @@
-use anyhow::Result;
-use db::sqlez::bindable::{Bind, Column, StaticColumnCount};
-use db::sqlez::statement::Statement;
-use std::path::PathBuf;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use anyhow.Result;
+use db.sqlez.bindable.{Bind, Column, StaticColumnCount};
+use db.sqlez.statement.Statement;
+use std.path.PathBuf;
+use std.time.{Duration, SystemTime, UNIX_EPOCH};
 
-use db::sqlez_macros::sql;
-use db::{define_connection, query};
+use db.sqlez_macros.sql;
+use db.{define_connection, query};
 
-use workspace::{ItemId, WorkspaceDb, WorkspaceId};
+use workspace.{ItemId, WorkspaceDb, WorkspaceId};
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub(crate) struct SerializedEditor {
@@ -41,8 +41,8 @@ impl Bind for SerializedEditor {
                 statement.bind(&nanos, start_index)?
             }
             None => {
-                let start_index = statement.bind::<Option<i64>>(&None, start_index)?;
-                statement.bind::<Option<i32>>(&None, start_index)?
+                let start_index = statement.bind.<Option<i64>>(&None, start_index)?;
+                statement.bind.<Option<i32>>(&None, start_index)?
             }
         };
         Ok(start_index)
@@ -51,19 +51,19 @@ impl Bind for SerializedEditor {
 
 impl Column for SerializedEditor {
     fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
-        let (path, start_index): (Option<PathBuf>, i32) = Column::column(statement, start_index)?;
+        let (path, start_index): (Option<PathBuf>, i32) = Column.column(statement, start_index)?;
         let (contents, start_index): (Option<String>, i32) =
-            Column::column(statement, start_index)?;
+            Column.column(statement, start_index)?;
         let (language, start_index): (Option<String>, i32) =
-            Column::column(statement, start_index)?;
+            Column.column(statement, start_index)?;
         let (mtime_seconds, start_index): (Option<i64>, i32) =
-            Column::column(statement, start_index)?;
+            Column.column(statement, start_index)?;
         let (mtime_nanos, start_index): (Option<i32>, i32) =
-            Column::column(statement, start_index)?;
+            Column.column(statement, start_index)?;
 
         let mtime = mtime_seconds
             .zip(mtime_nanos)
-            .map(|(seconds, nanos)| UNIX_EPOCH + Duration::new(seconds as u64, nanos as u32));
+            .map(|(seconds, nanos)| UNIX_EPOCH + Duration.new(seconds as u64, nanos as u32));
 
         let editor = Self {
             path,
@@ -198,7 +198,7 @@ impl EditorDb {
         let placeholders = alive_items
             .iter()
             .map(|_| "?")
-            .collect::<Vec<&str>>()
+            .collect.<Vec<&str>>()
             .join(", ");
 
         let query = format!(
@@ -206,7 +206,7 @@ impl EditorDb {
         );
 
         self.write(move |conn| {
-            let mut statement = Statement::prepare(conn, query)?;
+            let mut statement = Statement.prepare(conn, query)?;
             let mut next_index = statement.bind(&workspace, 1)?;
             for id in alive_items {
                 next_index = statement.bind(&id, next_index)?;
@@ -219,15 +219,15 @@ impl EditorDb {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
     use gpui;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_save_and_get_serialized_editor() {
-        let workspace_id = workspace::WORKSPACE_DB.next_id().await.unwrap();
+        let workspace_id = workspace.WORKSPACE_DB.next_id().await.unwrap();
 
         let serialized_editor = SerializedEditor {
-            path: Some(PathBuf::from("testing.txt")),
+            path: Some(PathBuf.from("testing.txt")),
             contents: None,
             language: None,
             mtime: None,
@@ -245,7 +245,7 @@ mod tests {
 
         // Now update contents and language
         let serialized_editor = SerializedEditor {
-            path: Some(PathBuf::from("testing.txt")),
+            path: Some(PathBuf.from("testing.txt")),
             contents: Some("Test".to_owned()),
             language: Some("Go".to_owned()),
             mtime: None,
@@ -280,7 +280,7 @@ mod tests {
         assert_eq!(have, serialized_editor);
 
         // Storing and retrieving mtime
-        let now = SystemTime::now();
+        let now = SystemTime.now();
         let serialized_editor = SerializedEditor {
             path: None,
             contents: None,

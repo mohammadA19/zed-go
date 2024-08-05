@@ -1,15 +1,15 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use anyhow::{bail, Context, Result};
-use async_trait::async_trait;
-use futures::AsyncReadExt;
-use http_client::HttpClient;
-use isahc::config::Configurable;
-use isahc::{AsyncBody, Request};
-use serde::Deserialize;
-use url::Url;
+use anyhow.{bail, Context, Result};
+use async_trait.async_trait;
+use futures.AsyncReadExt;
+use http_client.HttpClient;
+use isahc.config.Configurable;
+use isahc.{AsyncBody, Request};
+use serde.Deserialize;
+use url.Url;
 
-use git::{
+use git.{
     BuildCommitPermalinkParams, BuildPermalinkParams, GitHostingProvider, Oid, ParsedGitRemote,
 };
 
@@ -51,33 +51,33 @@ impl Codeberg {
         let url =
             format!("https://codeberg.org/api/v1/repos/{repo_owner}/{repo}/git/commits/{commit}");
 
-        let mut request = Request::get(&url)
-            .redirect_policy(isahc::config::RedirectPolicy::Follow)
+        let mut request = Request.get(&url)
+            .redirect_policy(isahc.config.RedirectPolicy.Follow)
             .header("Content-Type", "application/json");
 
-        if let Ok(codeberg_token) = std::env::var("CODEBERG_TOKEN") {
+        if let Ok(codeberg_token) = std.env.var("CODEBERG_TOKEN") {
             request = request.header("Authorization", format!("Bearer {}", codeberg_token));
         }
 
         let mut response = client
-            .send(request.body(AsyncBody::default())?)
+            .send(request.body(AsyncBody.default())?)
             .await
             .with_context(|| format!("error fetching Codeberg commit details at {:?}", url))?;
 
-        let mut body = Vec::new();
+        let mut body = Vec.new();
         response.body_mut().read_to_end(&mut body).await?;
 
         if response.status().is_client_error() {
-            let text = String::from_utf8_lossy(body.as_slice());
+            let text = String.from_utf8_lossy(body.as_slice());
             bail!(
                 "status error {}, response: {text:?}",
                 response.status().as_u16()
             );
         }
 
-        let body_str = std::str::from_utf8(&body)?;
+        let body_str = std.str.from_utf8(&body)?;
 
-        serde_json::from_str::<CommitDetails>(body_str)
+        serde_json.from_str.<CommitDetails>(body_str)
             .map(|commit| commit.author)
             .context("failed to deserialize Codeberg commit details")
     }
@@ -90,7 +90,7 @@ impl GitHostingProvider for Codeberg {
     }
 
     fn base_url(&self) -> Url {
-        Url::parse("https://codeberg.org").unwrap()
+        Url.parse("https://codeberg.org").unwrap()
     }
 
     fn supports_avatars(&self) -> bool {
@@ -164,7 +164,7 @@ impl GitHostingProvider for Codeberg {
         let avatar_url = self
             .fetch_codeberg_commit_author(repo_owner, repo, &commit, &http_client)
             .await?
-            .map(|author| Url::parse(&author.avatar_url))
+            .map(|author| Url.parse(&author.avatar_url))
             .transpose()?;
         Ok(avatar_url)
     }
@@ -172,7 +172,7 @@ impl GitHostingProvider for Codeberg {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_build_codeberg_permalink_from_ssh_url() {

@@ -1,11 +1,11 @@
-use client::telemetry;
-use gpui::Task;
-use human_bytes::human_bytes;
-use release_channel::{AppCommitSha, AppVersion, ReleaseChannel};
-use serde::Serialize;
-use std::{env, fmt::Display};
-use sysinfo::{MemoryRefreshKind, RefreshKind, System};
-use ui::WindowContext;
+use client.telemetry;
+use gpui.Task;
+use human_bytes.human_bytes;
+use release_channel.{AppCommitSha, AppVersion, ReleaseChannel};
+use serde.Serialize;
+use std.{env, fmt.Display};
+use sysinfo.{MemoryRefreshKind, RefreshKind, System};
+use ui.WindowContext;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct SystemSpecs {
@@ -21,17 +21,17 @@ pub struct SystemSpecs {
 
 impl SystemSpecs {
     pub fn new(cx: &WindowContext) -> Task<Self> {
-        let app_version = AppVersion::global(cx).to_string();
-        let release_channel = ReleaseChannel::global(cx);
-        let os_name = telemetry::os_name();
-        let system = System::new_with_specifics(
-            RefreshKind::new().with_memory(MemoryRefreshKind::everything()),
+        let app_version = AppVersion.global(cx).to_string();
+        let release_channel = ReleaseChannel.global(cx);
+        let os_name = telemetry.os_name();
+        let system = System.new_with_specifics(
+            RefreshKind.new().with_memory(MemoryRefreshKind.everything()),
         );
         let memory = system.total_memory();
-        let architecture = env::consts::ARCH;
+        let architecture = env.consts.ARCH;
         let commit_sha = match release_channel {
-            ReleaseChannel::Dev | ReleaseChannel::Nightly => {
-                AppCommitSha::try_global(cx).map(|sha| sha.0.clone())
+            ReleaseChannel.Dev | ReleaseChannel.Nightly => {
+                AppCommitSha.try_global(cx).map(|sha| sha.0.clone())
             }
             _ => None,
         };
@@ -46,7 +46,7 @@ impl SystemSpecs {
         };
 
         cx.background_executor().spawn(async move {
-            let os_version = telemetry::os_version();
+            let os_version = telemetry.os_version();
             SystemSpecs {
                 app_version,
                 release_channel: release_channel.display_name(),
@@ -62,7 +62,7 @@ impl SystemSpecs {
 }
 
 impl Display for SystemSpecs {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         let os_information = format!("OS: {} {}", self.os_name, self.os_version);
         let app_version_information = format!(
             "Zed: v{} ({})",
@@ -84,7 +84,7 @@ impl Display for SystemSpecs {
                 .as_ref()
                 .map(|specs| format!("GPU: {}", specs)),
         )
-        .collect::<Vec<String>>()
+        .collect.<Vec<String>>()
         .join("\n");
 
         write!(f, "{system_specs}")

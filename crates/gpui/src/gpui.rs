@@ -12,9 +12,9 @@
 //! gpui = { git = "https://github.com/zed-industries/zed" }
 //! ```
 //!
-//! Everything in GPUI starts with an [`App`]. You can create one with [`App::new`], and
-//! kick off your application by passing a callback to [`App::run`]. Inside this callback,
-//! you can create a new window with [`AppContext::open_window`], and register your first root
+//! Everything in GPUI starts with an [`App`]. You can create one with [`App.new`], and
+//! kick off your application by passing a callback to [`App.run`]. Inside this callback,
+//! you can create a new window with [`AppContext.open_window`], and register your first root
 //! view. See [gpui.rs](https://www.gpui.rs/) for a complete example.
 //!
 //! ## The Big Picture
@@ -24,13 +24,13 @@
 //! - State management and communication with Models. Whenever you need to store application state
 //!   that communicates between different parts of your application, you'll want to use GPUI's
 //!   models. Models are owned by GPUI and are only accessible through an owned smart pointer
-//!   similar to an [`Rc`]. See the [`app::model_context`] module for more information.
+//!   similar to an [`Rc`]. See the [`app.model_context`] module for more information.
 //!
 //! - High level, declarative UI with Views. All UI in GPUI starts with a View. A view is simply
 //!   a model that can be rendered, via the [`Render`] trait. At the start of each frame, GPUI
 //!   will call this render method on the root view of a given window. Views build a tree of
 //!   `elements`, lay them out and style them with a tailwind-style API, and then give them to
-//!   GPUI to turn into pixels. See the [`elements::Div`] element for an all purpose swiss-army
+//!   GPUI to turn into pixels. See the [`elements.Div`] element for an all purpose swiss-army
 //!   knife for UI.
 //!
 //! - Low level, imperative UI with Elements. Elements are the building blocks of UI in GPUI, and they
@@ -49,10 +49,10 @@
 //!
 //! - Actions are user-defined structs that are used for converting keystrokes into logical operations in your UI.
 //!   Use this for implementing keyboard shortcuts, such as cmd-q. See the [`action`] module for more information.
-//! - Platform services, such as `quit the app` or `open a URL` are available as methods on the [`app::AppContext`].
+//! - Platform services, such as `quit the app` or `open a URL` are available as methods on the [`app.AppContext`].
 //! - An async executor that is integrated with the platform's event loop. See the [`executor`] module for more information.,
-//! - The [gpui::test] macro provides a convenient way to write tests for your GPUI applications. Tests also have their
-//!   own kind of context, a [`TestAppContext`] which provides ways of simulating common platform input. See [`app::test_context`]
+//! - The [gpui.test] macro provides a convenient way to write tests for your GPUI applications. Tests also have their
+//!   own kind of context, a [`TestAppContext`] which provides ways of simulating common platform input. See [`app.test_context`]
 //!   and [`test`] modules for more details.
 //!
 //! Currently, the best way to learn about these APIs is to read the Zed source code, ask us about it at a fireside hack, or drop
@@ -60,8 +60,8 @@
 //! and will be publishing more guides to GPUI on our [blog](https://zed.dev/blog).
 
 #![deny(missing_docs)]
-#![allow(clippy::type_complexity)] // Not useful, GPUI makes heavy use of callbacks
-#![allow(clippy::collapsible_else_if)] // False positives in platform specific code
+#![allow(clippy.type_complexity)] // Not useful, GPUI makes heavy use of callbacks
+#![allow(clippy.collapsible_else_if)] // False positives in platform specific code
 #![allow(unused_mut)] // False positives in platform specific code
 
 #[macro_use]
@@ -114,45 +114,45 @@ mod seal {
     pub trait Sealed {}
 }
 
-pub use action::*;
-pub use anyhow::Result;
-pub use app::*;
-pub(crate) use arena::*;
-pub use asset_cache::*;
-pub use assets::*;
-pub use color::*;
-pub use ctor::ctor;
-pub use element::*;
-pub use elements::*;
-pub use executor::*;
-pub use geometry::*;
-pub use global::*;
-pub use gpui_macros::{register_action, test, IntoElement, Render};
-pub use input::*;
-pub use interactive::*;
-use key_dispatch::*;
-pub use keymap::*;
-pub use platform::*;
-pub use refineable::*;
-pub use scene::*;
-use seal::Sealed;
-pub use shared_string::*;
-pub use shared_uri::*;
-pub use smol::Timer;
-pub use style::*;
-pub use styled::*;
-pub use subscription::*;
-use svg_renderer::*;
-pub use taffy::{AvailableSpace, LayoutId};
+pub use action.*;
+pub use anyhow.Result;
+pub use app.*;
+pub(crate) use arena.*;
+pub use asset_cache.*;
+pub use assets.*;
+pub use color.*;
+pub use ctor.ctor;
+pub use element.*;
+pub use elements.*;
+pub use executor.*;
+pub use geometry.*;
+pub use global.*;
+pub use gpui_macros.{register_action, test, IntoElement, Render};
+pub use input.*;
+pub use interactive.*;
+use key_dispatch.*;
+pub use keymap.*;
+pub use platform.*;
+pub use refineable.*;
+pub use scene.*;
+use seal.Sealed;
+pub use shared_string.*;
+pub use shared_uri.*;
+pub use smol.Timer;
+pub use style.*;
+pub use styled.*;
+pub use subscription.*;
+use svg_renderer.*;
+pub use taffy.{AvailableSpace, LayoutId};
 #[cfg(any(test, feature = "test-support"))]
-pub use test::*;
-pub use text_system::*;
-pub use util::arc_cow::ArcCow;
-pub use view::*;
-pub use window::*;
+pub use test.*;
+pub use text_system.*;
+pub use util.arc_cow.ArcCow;
+pub use view.*;
+pub use window.*;
 
-use std::{any::Any, borrow::BorrowMut};
-use taffy::TaffyLayoutEngine;
+use std.{any.Any, borrow.BorrowMut};
+use taffy.TaffyLayoutEngine;
 
 /// The context trait, allows the different contexts in GPUI to be used
 /// interchangeably for certain operations.
@@ -165,27 +165,27 @@ pub trait Context {
     fn new_model<T: 'static>(
         &mut self,
         build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
-    ) -> Self::Result<Model<T>>;
+    ) -> Self.Result<Model<T>>;
 
     /// Reserve a slot for a model to be inserted later.
     /// The returned [Reservation] allows you to obtain the [EntityId] for the future model.
-    fn reserve_model<T: 'static>(&mut self) -> Self::Result<Reservation<T>>;
+    fn reserve_model<T: 'static>(&mut self) -> Self.Result<Reservation<T>>;
 
     /// Insert a new model in the app context based on a [Reservation] previously obtained from [`reserve_model`].
     ///
-    /// [`reserve_model`]: Self::reserve_model
+    /// [`reserve_model`]: Self.reserve_model
     fn insert_model<T: 'static>(
         &mut self,
         reservation: Reservation<T>,
         build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
-    ) -> Self::Result<Model<T>>;
+    ) -> Self.Result<Model<T>>;
 
     /// Update a model in the app context.
     fn update_model<T, R>(
         &mut self,
         handle: &Model<T>,
         update: impl FnOnce(&mut T, &mut ModelContext<'_, T>) -> R,
-    ) -> Self::Result<R>
+    ) -> Self.Result<R>
     where
         T: 'static;
 
@@ -194,7 +194,7 @@ pub trait Context {
         &self,
         handle: &Model<T>,
         read: impl FnOnce(&T, &AppContext) -> R,
-    ) -> Self::Result<R>
+    ) -> Self.Result<R>
     where
         T: 'static;
 
@@ -213,7 +213,7 @@ pub trait Context {
         T: 'static;
 }
 
-/// Returned by [Context::reserve_model] to later be passed to [Context::insert_model].
+/// Returned by [Context.reserve_model] to later be passed to [Context.insert_model].
 /// Allows you to obtain the [EntityId] for a model before it is created.
 pub struct Reservation<T>(pub(crate) Slot<T>);
 
@@ -231,7 +231,7 @@ pub trait VisualContext: Context {
     fn new_view<V>(
         &mut self,
         build_view: impl FnOnce(&mut ViewContext<'_, V>) -> V,
-    ) -> Self::Result<View<V>>
+    ) -> Self.Result<View<V>>
     where
         V: 'static + Render;
 
@@ -240,23 +240,23 @@ pub trait VisualContext: Context {
         &mut self,
         view: &View<V>,
         update: impl FnOnce(&mut V, &mut ViewContext<'_, V>) -> R,
-    ) -> Self::Result<R>;
+    ) -> Self.Result<R>;
 
     /// Replace the root view of a window with a new view.
     fn replace_root_view<V>(
         &mut self,
         build_view: impl FnOnce(&mut ViewContext<'_, V>) -> V,
-    ) -> Self::Result<View<V>>
+    ) -> Self.Result<View<V>>
     where
         V: 'static + Render;
 
     /// Focus a view in the window, if it implements the [`FocusableView`] trait.
-    fn focus_view<V>(&mut self, view: &View<V>) -> Self::Result<()>
+    fn focus_view<V>(&mut self, view: &View<V>) -> Self.Result<()>
     where
         V: FocusableView;
 
     /// Dismiss a view in the window, if it implements the [`ManagedView`] trait.
-    fn dismiss_view<V>(&mut self, view: &View<V>) -> Self::Result<()>
+    fn dismiss_view<V>(&mut self, view: &View<V>) -> Self.Result<()>
     where
         V: ManagedView;
 }
@@ -270,10 +270,10 @@ pub trait Entity<T>: Sealed {
     fn entity_id(&self) -> EntityId;
 
     /// Downgrade this entity to a weak reference.
-    fn downgrade(&self) -> Self::Weak;
+    fn downgrade(&self) -> Self.Weak;
 
     /// Upgrade this entity from a weak reference.
-    fn upgrade_from(weak: &Self::Weak) -> Option<Self>
+    fn upgrade_from(weak: &Self.Weak) -> Option<Self>
     where
         Self: Sized;
 }
@@ -309,7 +309,7 @@ where
     where
         G: Global,
     {
-        let mut global = self.borrow_mut().lease_global::<G>();
+        let mut global = self.borrow_mut().lease_global.<G>();
         let result = f(&mut global, self);
         self.borrow_mut().end_global_lease(global);
         result
@@ -319,7 +319,7 @@ where
     where
         G: Global + Default,
     {
-        self.borrow_mut().default_global::<G>();
+        self.borrow_mut().default_global.<G>();
         self.update_global(f)
     }
 }

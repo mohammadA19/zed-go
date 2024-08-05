@@ -1,14 +1,14 @@
-use crate::{px, size, Bounds, DisplayId, Pixels, PlatformDisplay};
-use anyhow::Result;
-use cocoa::{
-    appkit::NSScreen,
-    base::{id, nil},
-    foundation::{NSDictionary, NSString},
+use crate.{px, size, Bounds, DisplayId, Pixels, PlatformDisplay};
+use anyhow.Result;
+use cocoa.{
+    appkit.NSScreen,
+    base.{id, nil},
+    foundation.{NSDictionary, NSString},
 };
-use core_foundation::uuid::{CFUUIDGetUUIDBytes, CFUUIDRef};
-use core_graphics::display::{CGDirectDisplayID, CGDisplayBounds, CGGetActiveDisplayList};
-use objc::{msg_send, sel, sel_impl};
-use uuid::Uuid;
+use core_foundation.uuid.{CFUUIDGetUUIDBytes, CFUUIDRef};
+use core_graphics.display.{CGDirectDisplayID, CGDisplayBounds, CGGetActiveDisplayList};
+use objc.{msg_send, sel, sel_impl};
+use uuid.Uuid;
 
 #[derive(Debug)]
 pub(crate) struct MacDisplay(pub(crate) CGDirectDisplayID);
@@ -18,7 +18,7 @@ unsafe impl Send for MacDisplay {}
 impl MacDisplay {
     /// Get the screen with the given [`DisplayId`].
     pub fn find_by_id(id: DisplayId) -> Option<Self> {
-        Self::all().find(|screen| screen.id() == id)
+        Self.all().find(|screen| screen.id() == id)
     }
 
     /// Get the primary screen - the one with the menu bar, and whose bottom left
@@ -32,10 +32,10 @@ impl MacDisplay {
         //
         // https://chromium.googlesource.com/chromium/src/+/66.0.3359.158/ui/display/mac/screen_mac.mm#56
         unsafe {
-            let screens = NSScreen::screens(nil);
-            let screen = cocoa::foundation::NSArray::objectAtIndex(screens, 0);
-            let device_description = NSScreen::deviceDescription(screen);
-            let screen_number_key: id = NSString::alloc(nil).init_str("NSScreenNumber");
+            let screens = NSScreen.screens(nil);
+            let screen = cocoa.foundation.NSArray.objectAtIndex(screens, 0);
+            let device_description = NSScreen.deviceDescription(screen);
+            let screen_number_key: id = NSString.alloc(nil).init_str("NSScreenNumber");
             let screen_number = device_description.objectForKey_(screen_number_key);
             let screen_number: CGDirectDisplayID = msg_send![screen_number, unsignedIntegerValue];
             Self(screen_number)
@@ -46,7 +46,7 @@ impl MacDisplay {
     pub fn all() -> impl Iterator<Item = Self> {
         unsafe {
             // We're assuming there aren't more than 32 displays connected to the system.
-            let mut displays = Vec::with_capacity(32);
+            let mut displays = Vec.with_capacity(32);
             let mut display_count = 0;
             let result = CGGetActiveDisplayList(
                 displays.capacity() as u32,
@@ -76,13 +76,13 @@ impl PlatformDisplay for MacDisplay {
 
     fn uuid(&self) -> Result<Uuid> {
         let cfuuid = unsafe { CGDisplayCreateUUIDFromDisplayID(self.0 as CGDirectDisplayID) };
-        anyhow::ensure!(
+        anyhow.ensure!(
             !cfuuid.is_null(),
             "AppKit returned a null from CGDisplayCreateUUIDFromDisplayID"
         );
 
         let bytes = unsafe { CFUUIDGetUUIDBytes(cfuuid) };
-        Ok(Uuid::from_bytes([
+        Ok(Uuid.from_bytes([
             bytes.byte0,
             bytes.byte1,
             bytes.byte2,
@@ -109,7 +109,7 @@ impl PlatformDisplay for MacDisplay {
             let bounds = CGDisplayBounds(self.0);
 
             Bounds {
-                origin: Default::default(),
+                origin: Default.default(),
                 size: size(px(bounds.size.width as f32), px(bounds.size.height as f32)),
             }
         }

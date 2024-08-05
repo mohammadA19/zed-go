@@ -1,23 +1,23 @@
-use futures::channel::oneshot;
-use fuzzy::StringMatchCandidate;
-use picker::{Picker, PickerDelegate};
-use project::{compare_paths, DirectoryLister};
-use std::{
-    path::{Path, PathBuf},
-    sync::{
-        atomic::{self, AtomicBool},
+use futures.channel.oneshot;
+use fuzzy.StringMatchCandidate;
+use picker.{Picker, PickerDelegate};
+use project.{compare_paths, DirectoryLister};
+use std.{
+    path.{Path, PathBuf},
+    sync.{
+        atomic.{self, AtomicBool},
         Arc,
     },
 };
-use ui::{prelude::*, LabelLike, ListItemSpacing};
-use ui::{ListItem, ViewContext};
-use util::maybe;
-use workspace::Workspace;
+use ui.{prelude.*, LabelLike, ListItemSpacing};
+use ui.{ListItem, ViewContext};
+use util.maybe;
+use workspace.Workspace;
 
 pub(crate) struct OpenPathPrompt;
 
 pub struct OpenPathDelegate {
-    tx: Option<oneshot::Sender<Option<Vec<PathBuf>>>>,
+    tx: Option<oneshot.Sender<Option<Vec<PathBuf>>>>,
     lister: DirectoryLister,
     selected_index: usize,
     directory_state: Option<DirectoryState>,
@@ -34,9 +34,9 @@ struct DirectoryState {
 
 impl OpenPathPrompt {
     pub(crate) fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
-        workspace.set_prompt_for_open_path(Box::new(|workspace, lister, cx| {
-            let (tx, rx) = futures::channel::oneshot::channel();
-            Self::prompt_for_open_path(workspace, lister, tx, cx);
+        workspace.set_prompt_for_open_path(Box.new(|workspace, lister, cx| {
+            let (tx, rx) = futures.channel.oneshot.channel();
+            Self.prompt_for_open_path(workspace, lister, tx, cx);
             rx
         }));
     }
@@ -44,7 +44,7 @@ impl OpenPathPrompt {
     fn prompt_for_open_path(
         workspace: &mut Workspace,
         lister: DirectoryLister,
-        tx: oneshot::Sender<Option<Vec<PathBuf>>>,
+        tx: oneshot.Sender<Option<Vec<PathBuf>>>,
         cx: &mut ViewContext<Workspace>,
     ) {
         workspace.toggle_modal(cx, |cx| {
@@ -53,12 +53,12 @@ impl OpenPathPrompt {
                 lister: lister.clone(),
                 selected_index: 0,
                 directory_state: None,
-                matches: Vec::new(),
-                cancel_flag: Arc::new(AtomicBool::new(false)),
+                matches: Vec.new(),
+                cancel_flag: Arc.new(AtomicBool.new(false)),
                 should_dismiss: true,
             };
 
-            let picker = Picker::uniform_list(delegate, cx).width(rems(34.));
+            let picker = Picker.uniform_list(delegate, cx).width(rems(34.));
             let query = lister.default_query(cx);
             picker.set_query(query, cx);
             picker
@@ -67,7 +67,7 @@ impl OpenPathPrompt {
 }
 
 impl PickerDelegate for OpenPathDelegate {
-    type ListItem = ui::ListItem;
+    type ListItem = ui.ListItem;
 
     fn match_count(&self) -> usize {
         self.matches.len()
@@ -86,12 +86,12 @@ impl PickerDelegate for OpenPathDelegate {
         &mut self,
         query: String,
         cx: &mut ViewContext<Picker<Self>>,
-    ) -> gpui::Task<()> {
+    ) -> gpui.Task<()> {
         let lister = self.lister.clone();
         let (mut dir, suffix) = if let Some(index) = query.rfind('/') {
             (query[..index].to_string(), query[index + 1..].to_string())
         } else {
-            (query, String::new())
+            (query, String.new())
         };
         if dir == "" {
             dir = "/".to_string();
@@ -106,14 +106,14 @@ impl PickerDelegate for OpenPathDelegate {
         } else {
             Some(lister.list_directory(dir.clone(), cx))
         };
-        self.cancel_flag.store(true, atomic::Ordering::Relaxed);
-        self.cancel_flag = Arc::new(AtomicBool::new(false));
+        self.cancel_flag.store(true, atomic.Ordering.Relaxed);
+        self.cancel_flag = Arc.new(AtomicBool.new(false));
         let cancel_flag = self.cancel_flag.clone();
 
         cx.spawn(|this, mut cx| async move {
             if let Some(query) = query {
                 let paths = query.await;
-                if cancel_flag.load(atomic::Ordering::Relaxed) {
+                if cancel_flag.load(atomic.Ordering.Relaxed) {
                     return;
                 }
 
@@ -125,9 +125,9 @@ impl PickerDelegate for OpenPathDelegate {
                                 .iter()
                                 .enumerate()
                                 .map(|(ix, path)| {
-                                    StringMatchCandidate::new(ix, path.to_string_lossy().into())
+                                    StringMatchCandidate.new(ix, path.to_string_lossy().into())
                                 })
-                                .collect::<Vec<_>>();
+                                .collect.<Vec<_>>();
 
                             DirectoryState {
                                 match_candidates,
@@ -180,7 +180,7 @@ impl PickerDelegate for OpenPathDelegate {
                 return;
             }
 
-            let matches = fuzzy::match_strings(
+            let matches = fuzzy.match_strings(
                 &match_candidates.as_slice(),
                 &suffix,
                 false,
@@ -189,7 +189,7 @@ impl PickerDelegate for OpenPathDelegate {
                 cx.background_executor().clone(),
             )
             .await;
-            if cancel_flag.load(atomic::Ordering::Relaxed) {
+            if cancel_flag.load(atomic.Ordering.Relaxed) {
                 return;
             }
 
@@ -236,11 +236,11 @@ impl PickerDelegate for OpenPathDelegate {
         let Some(candidate) = directory_state.match_candidates.get(*m) else {
             return;
         };
-        let result = Path::new(&directory_state.path).join(&candidate.string);
+        let result = Path.new(&directory_state.path).join(&candidate.string);
         if let Some(tx) = self.tx.take() {
             tx.send(Some(vec![result])).ok();
         }
-        cx.emit(gpui::DismissEvent);
+        cx.emit(gpui.DismissEvent);
     }
 
     fn should_dismiss(&self) -> bool {
@@ -251,7 +251,7 @@ impl PickerDelegate for OpenPathDelegate {
         if let Some(tx) = self.tx.take() {
             tx.send(None).ok();
         }
-        cx.emit(gpui::DismissEvent)
+        cx.emit(gpui.DismissEvent)
     }
 
     fn render_match(
@@ -259,17 +259,17 @@ impl PickerDelegate for OpenPathDelegate {
         ix: usize,
         selected: bool,
         _: &mut ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem> {
+    ) -> Option<Self.ListItem> {
         let m = self.matches.get(ix)?;
         let directory_state = self.directory_state.as_ref()?;
         let candidate = directory_state.match_candidates.get(*m)?;
 
         Some(
-            ListItem::new(ix)
-                .spacing(ListItemSpacing::Sparse)
+            ListItem.new(ix)
+                .spacing(ListItemSpacing.Sparse)
                 .inset(true)
                 .selected(selected)
-                .child(LabelLike::new().child(candidate.string.clone())),
+                .child(LabelLike.new().child(candidate.string.clone())),
         )
     }
 
@@ -282,6 +282,6 @@ impl PickerDelegate for OpenPathDelegate {
     }
 
     fn placeholder_text(&self, _cx: &mut WindowContext) -> Arc<str> {
-        Arc::from("[directory/]filename.ext")
+        Arc.from("[directory/]filename.ext")
     }
 }

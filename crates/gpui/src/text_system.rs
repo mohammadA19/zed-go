@@ -4,32 +4,32 @@ mod line;
 mod line_layout;
 mod line_wrapper;
 
-pub use font_fallbacks::*;
-pub use font_features::*;
-pub use line::*;
-pub use line_layout::*;
-pub use line_wrapper::*;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+pub use font_fallbacks.*;
+pub use font_features.*;
+pub use line.*;
+pub use line_layout.*;
+pub use line_wrapper.*;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
 
-use crate::{
+use crate.{
     px, Bounds, DevicePixels, Hsla, Pixels, PlatformTextSystem, Point, Result, SharedString, Size,
     StrikethroughStyle, UnderlineStyle,
 };
-use anyhow::anyhow;
-use collections::{BTreeSet, FxHashMap};
-use core::fmt;
-use derive_more::Deref;
-use itertools::Itertools;
-use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
-use smallvec::{smallvec, SmallVec};
-use std::{
-    borrow::Cow,
+use anyhow.anyhow;
+use collections.{BTreeSet, FxHashMap};
+use core.fmt;
+use derive_more.Deref;
+use itertools.Itertools;
+use parking_lot.{Mutex, RwLock, RwLockUpgradableReadGuard};
+use smallvec.{smallvec, SmallVec};
+use std.{
+    borrow.Cow,
     cmp,
-    fmt::{Debug, Display, Formatter},
-    hash::{Hash, Hasher},
-    ops::{Deref, DerefMut, Range},
-    sync::Arc,
+    fmt.{Debug, Display, Formatter},
+    hash.{Hash, Hasher},
+    ops.{Deref, DerefMut, Range},
+    sync.Arc,
 };
 
 /// An opaque identifier for a specific font.
@@ -58,11 +58,11 @@ impl TextSystem {
     pub(crate) fn new(platform_text_system: Arc<dyn PlatformTextSystem>) -> Self {
         TextSystem {
             platform_text_system,
-            font_metrics: RwLock::default(),
-            raster_bounds: RwLock::default(),
-            font_ids_by_font: RwLock::default(),
-            wrapper_pool: Mutex::default(),
-            font_runs_pool: Mutex::default(),
+            font_metrics: RwLock.default(),
+            raster_bounds: RwLock.default(),
+            font_ids_by_font: RwLock.default(),
+            wrapper_pool: Mutex.default(),
+            font_runs_pool: Mutex.default(),
             fallback_font_stack: smallvec![
                 // TODO: Remove this when Linux have implemented setting fallbacks.
                 font("Zed Plex Mono"),
@@ -244,7 +244,7 @@ impl TextSystem {
         if let Some(metrics) = lock.get(&font_id) {
             read(metrics)
         } else {
-            let mut lock = RwLockUpgradableReadGuard::upgrade(lock);
+            let mut lock = RwLockUpgradableReadGuard.upgrade(lock);
             let metrics = lock
                 .entry(font_id)
                 .or_insert_with(|| self.platform_text_system.font_metrics(font_id));
@@ -260,7 +260,7 @@ impl TextSystem {
             .entry(FontIdWithSize { font_id, font_size })
             .or_default();
         let wrapper = wrappers.pop().unwrap_or_else(|| {
-            LineWrapper::new(font_id, font_size, self.platform_text_system.clone())
+            LineWrapper.new(font_id, font_size, self.platform_text_system.clone())
         });
 
         LineWrapperHandle {
@@ -275,7 +275,7 @@ impl TextSystem {
         if let Some(bounds) = raster_bounds.get(params) {
             Ok(*bounds)
         } else {
-            let mut raster_bounds = RwLockUpgradableReadGuard::upgrade(raster_bounds);
+            let mut raster_bounds = RwLockUpgradableReadGuard.upgrade(raster_bounds);
             let bounds = self.platform_text_system.glyph_raster_bounds(params)?;
             raster_bounds.insert(params.clone(), bounds);
             Ok(bounds)
@@ -303,7 +303,7 @@ pub struct WindowTextSystem {
 impl WindowTextSystem {
     pub(crate) fn new(text_system: Arc<TextSystem>) -> Self {
         Self {
-            line_layout_cache: LineLayoutCache::new(text_system.platform_text_system.clone()),
+            line_layout_cache: LineLayoutCache.new(text_system.platform_text_system.clone()),
             text_system,
         }
     }
@@ -325,7 +325,7 @@ impl WindowTextSystem {
     ///
     /// Note that this method can only shape a single line of text. It will panic
     /// if the text contains newlines. If you need to shape multiple lines of text,
-    /// use `TextLayout::shape_text` instead.
+    /// use `TextLayout.shape_text` instead.
     pub fn shape_line(
         &self,
         text: SharedString,
@@ -337,7 +337,7 @@ impl WindowTextSystem {
             "text argument should not contain newlines"
         );
 
-        let mut decoration_runs = SmallVec::<[DecorationRun; 32]>::new();
+        let mut decoration_runs = SmallVec.<[DecorationRun; 32]>.new();
         for run in runs {
             if let Some(last_run) = decoration_runs.last_mut() {
                 if last_run.color == run.color
@@ -380,21 +380,21 @@ impl WindowTextSystem {
         let mut runs = runs.iter().filter(|run| run.len > 0).cloned().peekable();
         let mut font_runs = self.font_runs_pool.lock().pop().unwrap_or_default();
 
-        let mut lines = SmallVec::new();
+        let mut lines = SmallVec.new();
         let mut line_start = 0;
 
         let mut process_line = |line_text: SharedString| {
             let line_end = line_start + line_text.len();
 
             let mut last_font: Option<Font> = None;
-            let mut decoration_runs = SmallVec::<[DecorationRun; 32]>::new();
+            let mut decoration_runs = SmallVec.<[DecorationRun; 32]>.new();
             let mut run_start = line_start;
             while run_start < line_end {
                 let Some(run) = runs.peek_mut() else {
                     break;
                 };
 
-                let run_len_within_line = cmp::min(line_end, run_start + run.len) - run_start;
+                let run_len_within_line = cmp.min(line_end, run_start + run.len) - run_start;
 
                 if last_font == Some(run.font.clone()) {
                     font_runs.last_mut().unwrap().len += run_len_within_line;
@@ -483,7 +483,7 @@ impl WindowTextSystem {
 
     /// Layout the given line of text, at the given font_size.
     /// Subsets of the line can be styled independently with the `runs` parameter.
-    /// Generally, you should prefer to use `TextLayout::shape_line` instead, which
+    /// Generally, you should prefer to use `TextLayout.shape_line` instead, which
     /// can be painted directly.
     pub fn layout_line(
         &self,
@@ -546,13 +546,13 @@ impl Drop for LineWrapperHandle {
 impl Deref for LineWrapperHandle {
     type Target = LineWrapper;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         self.wrapper.as_ref().unwrap()
     }
 }
 
 impl DerefMut for LineWrapperHandle {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+    fn deref_mut(&mut self) -> &mut Self.Target {
         self.wrapper.as_mut().unwrap()
     }
 }
@@ -565,13 +565,13 @@ pub struct FontWeight(pub f32);
 impl Default for FontWeight {
     #[inline]
     fn default() -> FontWeight {
-        FontWeight::NORMAL
+        FontWeight.NORMAL
     }
 }
 
 impl Hash for FontWeight {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_u32(u32::from_be_bytes(self.0.to_be_bytes()));
+        state.write_u32(u32.from_be_bytes(self.0.to_be_bytes()));
     }
 }
 
@@ -599,15 +599,15 @@ impl FontWeight {
 
     /// All of the font weights, in order from thinnest to thickest.
     pub const ALL: [FontWeight; 9] = [
-        Self::THIN,
-        Self::EXTRA_LIGHT,
-        Self::LIGHT,
-        Self::NORMAL,
-        Self::MEDIUM,
-        Self::SEMIBOLD,
-        Self::BOLD,
-        Self::EXTRA_BOLD,
-        Self::BLACK,
+        Self.THIN,
+        Self.EXTRA_LIGHT,
+        Self.LIGHT,
+        Self.NORMAL,
+        Self.MEDIUM,
+        Self.SEMIBOLD,
+        Self.BOLD,
+        Self.EXTRA_BOLD,
+        Self.BLACK,
     ];
 }
 
@@ -624,8 +624,8 @@ pub enum FontStyle {
 }
 
 impl Display for FontStyle {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        Debug::fmt(self, f)
+    fn fmt(&self, f: &mut Formatter) -> fmt.Result {
+        Debug.fmt(self, f)
     }
 }
 
@@ -646,7 +646,7 @@ pub struct TextRun {
     pub strikethrough: Option<StrikethroughStyle>,
 }
 
-/// An identifier for a specific glyph, as returned by [`TextSystem::layout_line`].
+/// An identifier for a specific glyph, as returned by [`TextSystem.layout_line`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(C)]
 pub struct GlyphId(pub(crate) u32);
@@ -698,9 +698,9 @@ pub struct Font {
 pub fn font(family: impl Into<SharedString>) -> Font {
     Font {
         family: family.into(),
-        features: FontFeatures::default(),
-        weight: FontWeight::default(),
-        style: FontStyle::default(),
+        features: FontFeatures.default(),
+        weight: FontWeight.default(),
+        style: FontStyle.default(),
         fallbacks: None,
     }
 }
@@ -708,13 +708,13 @@ pub fn font(family: impl Into<SharedString>) -> Font {
 impl Font {
     /// Set this Font to be bold
     pub fn bold(mut self) -> Self {
-        self.weight = FontWeight::BOLD;
+        self.weight = FontWeight.BOLD;
         self
     }
 
     /// Set this Font to be italic
     pub fn italic(mut self) -> Self {
-        self.style = FontStyle::Italic;
+        self.style = FontStyle.Italic;
         self
     }
 }

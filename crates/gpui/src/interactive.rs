@@ -1,9 +1,9 @@
-use crate::{
-    point, seal::Sealed, Empty, IntoElement, Keystroke, Modifiers, Pixels, Point, Render,
+use crate.{
+    point, seal.Sealed, Empty, IntoElement, Keystroke, Modifiers, Pixels, Point, Render,
     ViewContext,
 };
-use smallvec::SmallVec;
-use std::{any::Any, fmt::Debug, ops::Deref, path::PathBuf};
+use smallvec.SmallVec;
+use std.{any.Any, fmt.Debug, ops.Deref, path.PathBuf};
 
 /// An event from a platform input source.
 pub trait InputEvent: Sealed + 'static {
@@ -30,7 +30,7 @@ pub struct KeyDownEvent {
 impl Sealed for KeyDownEvent {}
 impl InputEvent for KeyDownEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::KeyDown(self)
+        PlatformInput.KeyDown(self)
     }
 }
 impl KeyEvent for KeyDownEvent {}
@@ -45,7 +45,7 @@ pub struct KeyUpEvent {
 impl Sealed for KeyUpEvent {}
 impl InputEvent for KeyUpEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::KeyUp(self)
+        PlatformInput.KeyUp(self)
     }
 }
 impl KeyEvent for KeyUpEvent {}
@@ -60,7 +60,7 @@ pub struct ModifiersChangedEvent {
 impl Sealed for ModifiersChangedEvent {}
 impl InputEvent for ModifiersChangedEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::ModifiersChanged(self)
+        PlatformInput.ModifiersChanged(self)
     }
 }
 impl KeyEvent for ModifiersChangedEvent {}
@@ -68,7 +68,7 @@ impl KeyEvent for ModifiersChangedEvent {}
 impl Deref for ModifiersChangedEvent {
     type Target = Modifiers;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.modifiers
     }
 }
@@ -108,7 +108,7 @@ pub struct MouseDownEvent {
 impl Sealed for MouseDownEvent {}
 impl InputEvent for MouseDownEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::MouseDown(self)
+        PlatformInput.MouseDown(self)
     }
 }
 impl MouseEvent for MouseDownEvent {}
@@ -132,7 +132,7 @@ pub struct MouseUpEvent {
 impl Sealed for MouseUpEvent {}
 impl InputEvent for MouseUpEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::MouseUp(self)
+        PlatformInput.MouseUp(self)
     }
 }
 impl MouseEvent for MouseUpEvent {}
@@ -167,18 +167,18 @@ impl MouseButton {
     /// Get all the mouse buttons in a list.
     pub fn all() -> Vec<Self> {
         vec![
-            MouseButton::Left,
-            MouseButton::Right,
-            MouseButton::Middle,
-            MouseButton::Navigate(NavigationDirection::Back),
-            MouseButton::Navigate(NavigationDirection::Forward),
+            MouseButton.Left,
+            MouseButton.Right,
+            MouseButton.Middle,
+            MouseButton.Navigate(NavigationDirection.Back),
+            MouseButton.Navigate(NavigationDirection.Forward),
         ]
     }
 }
 
 impl Default for MouseButton {
     fn default() -> Self {
-        Self::Left
+        Self.Left
     }
 }
 
@@ -194,7 +194,7 @@ pub enum NavigationDirection {
 
 impl Default for NavigationDirection {
     fn default() -> Self {
-        Self::Back
+        Self.Back
     }
 }
 
@@ -214,7 +214,7 @@ pub struct MouseMoveEvent {
 impl Sealed for MouseMoveEvent {}
 impl InputEvent for MouseMoveEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::MouseMove(self)
+        PlatformInput.MouseMove(self)
     }
 }
 impl MouseEvent for MouseMoveEvent {}
@@ -222,7 +222,7 @@ impl MouseEvent for MouseMoveEvent {}
 impl MouseMoveEvent {
     /// Returns true if the left mouse button is currently held down.
     pub fn dragging(&self) -> bool {
-        self.pressed_button == Some(MouseButton::Left)
+        self.pressed_button == Some(MouseButton.Left)
     }
 }
 
@@ -245,7 +245,7 @@ pub struct ScrollWheelEvent {
 impl Sealed for ScrollWheelEvent {}
 impl InputEvent for ScrollWheelEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::ScrollWheel(self)
+        PlatformInput.ScrollWheel(self)
     }
 }
 impl MouseEvent for ScrollWheelEvent {}
@@ -253,7 +253,7 @@ impl MouseEvent for ScrollWheelEvent {}
 impl Deref for ScrollWheelEvent {
     type Target = Modifiers;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.modifiers
     }
 }
@@ -269,7 +269,7 @@ pub enum ScrollDelta {
 
 impl Default for ScrollDelta {
     fn default() -> Self {
-        Self::Lines(Default::default())
+        Self.Lines(Default.default())
     }
 }
 
@@ -277,16 +277,16 @@ impl ScrollDelta {
     /// Returns true if this is a precise scroll delta in pixels.
     pub fn precise(&self) -> bool {
         match self {
-            ScrollDelta::Pixels(_) => true,
-            ScrollDelta::Lines(_) => false,
+            ScrollDelta.Pixels(_) => true,
+            ScrollDelta.Lines(_) => false,
         }
     }
 
     /// Converts this scroll event into exact pixels.
     pub fn pixel_delta(&self, line_height: Pixels) -> Point<Pixels> {
         match self {
-            ScrollDelta::Pixels(delta) => *delta,
-            ScrollDelta::Lines(delta) => point(line_height * delta.x, line_height * delta.y),
+            ScrollDelta.Pixels(delta) => *delta,
+            ScrollDelta.Lines(delta) => point(line_height * delta.x, line_height * delta.y),
         }
     }
 
@@ -296,7 +296,7 @@ impl ScrollDelta {
     /// (other) is used, effectively overriding the first delta.
     pub fn coalesce(self, other: ScrollDelta) -> ScrollDelta {
         match (self, other) {
-            (ScrollDelta::Pixels(a), ScrollDelta::Pixels(b)) => {
+            (ScrollDelta.Pixels(a), ScrollDelta.Pixels(b)) => {
                 let x = if a.x.signum() * b.x.signum() >= 0. {
                     a.x + b.x
                 } else {
@@ -309,10 +309,10 @@ impl ScrollDelta {
                     b.y
                 };
 
-                ScrollDelta::Pixels(point(x, y))
+                ScrollDelta.Pixels(point(x, y))
             }
 
-            (ScrollDelta::Lines(a), ScrollDelta::Lines(b)) => {
+            (ScrollDelta.Lines(a), ScrollDelta.Lines(b)) => {
                 let x = if a.x.signum() * b.x.signum() >= 0. {
                     a.x + b.x
                 } else {
@@ -325,7 +325,7 @@ impl ScrollDelta {
                     b.y
                 };
 
-                ScrollDelta::Lines(point(x, y))
+                ScrollDelta.Lines(point(x, y))
             }
 
             _ => other,
@@ -347,7 +347,7 @@ pub struct MouseExitEvent {
 impl Sealed for MouseExitEvent {}
 impl InputEvent for MouseExitEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::MouseExited(self)
+        PlatformInput.MouseExited(self)
     }
 }
 impl MouseEvent for MouseExitEvent {}
@@ -355,7 +355,7 @@ impl MouseEvent for MouseExitEvent {}
 impl Deref for MouseExitEvent {
     type Target = Modifiers;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.modifiers
     }
 }
@@ -405,7 +405,7 @@ pub enum FileDropEvent {
 impl Sealed for FileDropEvent {}
 impl InputEvent for FileDropEvent {
     fn to_platform_input(self) -> PlatformInput {
-        PlatformInput::FileDrop(self)
+        PlatformInput.FileDrop(self)
     }
 }
 impl MouseEvent for FileDropEvent {}
@@ -436,29 +436,29 @@ pub enum PlatformInput {
 impl PlatformInput {
     pub(crate) fn mouse_event(&self) -> Option<&dyn Any> {
         match self {
-            PlatformInput::KeyDown { .. } => None,
-            PlatformInput::KeyUp { .. } => None,
-            PlatformInput::ModifiersChanged { .. } => None,
-            PlatformInput::MouseDown(event) => Some(event),
-            PlatformInput::MouseUp(event) => Some(event),
-            PlatformInput::MouseMove(event) => Some(event),
-            PlatformInput::MouseExited(event) => Some(event),
-            PlatformInput::ScrollWheel(event) => Some(event),
-            PlatformInput::FileDrop(event) => Some(event),
+            PlatformInput.KeyDown { .. } => None,
+            PlatformInput.KeyUp { .. } => None,
+            PlatformInput.ModifiersChanged { .. } => None,
+            PlatformInput.MouseDown(event) => Some(event),
+            PlatformInput.MouseUp(event) => Some(event),
+            PlatformInput.MouseMove(event) => Some(event),
+            PlatformInput.MouseExited(event) => Some(event),
+            PlatformInput.ScrollWheel(event) => Some(event),
+            PlatformInput.FileDrop(event) => Some(event),
         }
     }
 
     pub(crate) fn keyboard_event(&self) -> Option<&dyn Any> {
         match self {
-            PlatformInput::KeyDown(event) => Some(event),
-            PlatformInput::KeyUp(event) => Some(event),
-            PlatformInput::ModifiersChanged(event) => Some(event),
-            PlatformInput::MouseDown(_) => None,
-            PlatformInput::MouseUp(_) => None,
-            PlatformInput::MouseMove(_) => None,
-            PlatformInput::MouseExited(_) => None,
-            PlatformInput::ScrollWheel(_) => None,
-            PlatformInput::FileDrop(_) => None,
+            PlatformInput.KeyDown(event) => Some(event),
+            PlatformInput.KeyUp(event) => Some(event),
+            PlatformInput.ModifiersChanged(event) => Some(event),
+            PlatformInput.MouseDown(_) => None,
+            PlatformInput.MouseUp(_) => None,
+            PlatformInput.MouseMove(_) => None,
+            PlatformInput.MouseExited(_) => None,
+            PlatformInput.ScrollWheel(_) => None,
+            PlatformInput.FileDrop(_) => None,
         }
     }
 }
@@ -466,7 +466,7 @@ impl PlatformInput {
 #[cfg(test)]
 mod test {
 
-    use crate::{
+    use crate.{
         self as gpui, div, FocusHandle, InteractiveElement, IntoElement, KeyBinding, Keystroke,
         ParentElement, Render, TestAppContext, VisualContext,
     };
@@ -480,7 +480,7 @@ mod test {
     actions!(test, [TestAction]);
 
     impl Render for TestView {
-        fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
+        fn render(&mut self, cx: &mut gpui.ViewContext<Self>) -> impl IntoElement {
             div().id("testview").child(
                 div()
                     .key_context("parent")
@@ -503,10 +503,10 @@ mod test {
         }
     }
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_on_events(cx: &mut TestAppContext) {
         let window = cx.update(|cx| {
-            cx.open_window(Default::default(), |cx| {
+            cx.open_window(Default.default(), |cx| {
                 cx.new_view(|cx| TestView {
                     saw_key_down: false,
                     saw_action: false,
@@ -517,15 +517,15 @@ mod test {
         });
 
         cx.update(|cx| {
-            cx.bind_keys(vec![KeyBinding::new("ctrl-g", TestAction, Some("parent"))]);
+            cx.bind_keys(vec![KeyBinding.new("ctrl-g", TestAction, Some("parent"))]);
         });
 
         window
             .update(cx, |test_view, cx| cx.focus(&test_view.focus_handle))
             .unwrap();
 
-        cx.dispatch_keystroke(*window, Keystroke::parse("a").unwrap());
-        cx.dispatch_keystroke(*window, Keystroke::parse("ctrl-g").unwrap());
+        cx.dispatch_keystroke(*window, Keystroke.parse("a").unwrap());
+        cx.dispatch_keystroke(*window, Keystroke.parse("ctrl-g").unwrap());
 
         window
             .update(cx, |test_view, _| {

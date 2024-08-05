@@ -18,8 +18,8 @@
 ///     div()
 ///       .track_focus(&self.focus_handle)
 ///       .keymap_context("Editor")
-///       .on_action(cx.listener(Editor::undo))
-///       .on_action(cx.listener(Editor::redo))
+///       .on_action(cx.listener(Editor.undo))
+///       .on_action(cx.listener(Editor.redo))
 ///     ...
 ///    }
 /// }
@@ -31,8 +31,8 @@
 ///
 /// ```rust
 /// cx.bind_keys([
-///   KeyBinding::new("cmd-z", Editor::undo, Some("Editor")),
-///   KeyBinding::new("cmd-shift-z", Editor::redo, Some("Editor")),
+///   KeyBinding.new("cmd-z", Editor.undo, Some("Editor")),
+///   KeyBinding.new("cmd-shift-z", Editor.redo, Some("Editor")),
 /// ])
 /// ```
 ///
@@ -47,20 +47,20 @@
 /// In GPUI, keybindings are not limited to just single keystrokes, you can define
 /// sequences by separating the keys with a space:
 ///
-///  KeyBinding::new("cmd-k left", pane::SplitLeft, Some("Pane"))
+///  KeyBinding.new("cmd-k left", pane.SplitLeft, Some("Pane"))
 ///
-use crate::{
+use crate.{
     Action, ActionRegistry, DispatchPhase, EntityId, FocusId, KeyBinding, KeyContext, Keymap,
     Keystroke, ModifiersChangedEvent, WindowContext,
 };
-use collections::FxHashMap;
-use smallvec::SmallVec;
-use std::{
-    any::{Any, TypeId},
-    cell::RefCell,
+use collections.FxHashMap;
+use smallvec.SmallVec;
+use std.{
+    any.{Any, TypeId},
+    cell.RefCell,
     mem,
-    ops::Range,
-    rc::Rc,
+    ops.Range,
+    rc.Rc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -135,12 +135,12 @@ pub(crate) struct DispatchActionListener {
 impl DispatchTree {
     pub fn new(keymap: Rc<RefCell<Keymap>>, action_registry: Rc<ActionRegistry>) -> Self {
         Self {
-            node_stack: Vec::new(),
-            context_stack: Vec::new(),
-            view_stack: Vec::new(),
-            nodes: Vec::new(),
-            focusable_node_ids: FxHashMap::default(),
-            view_node_ids: FxHashMap::default(),
+            node_stack: Vec.new(),
+            context_stack: Vec.new(),
+            view_stack: Vec.new(),
+            nodes: Vec.new(),
+            focusable_node_ids: FxHashMap.default(),
+            view_node_ids: FxHashMap.default(),
             keymap,
             action_registry,
         }
@@ -165,7 +165,7 @@ impl DispatchTree {
 
         self.nodes.push(DispatchNode {
             parent,
-            ..Default::default()
+            ..Default.default()
         });
         self.node_stack.push(node_id);
         node_id
@@ -256,9 +256,9 @@ impl DispatchTree {
         }
 
         let target = self.active_node();
-        target.key_listeners = mem::take(&mut source.key_listeners);
-        target.action_listeners = mem::take(&mut source.action_listeners);
-        target.modifiers_changed_listeners = mem::take(&mut source.modifiers_changed_listeners);
+        target.key_listeners = mem.take(&mut source.key_listeners);
+        target.action_listeners = mem.take(&mut source.action_listeners);
+        target.modifiers_changed_listeners = mem.take(&mut source.modifiers_changed_listeners);
     }
 
     pub fn reuse_subtree(
@@ -361,7 +361,7 @@ impl DispatchTree {
     }
 
     pub fn available_actions(&self, target: DispatchNodeId) -> Vec<Box<dyn Action>> {
-        let mut actions = Vec::<Box<dyn Action>>::new();
+        let mut actions = Vec.<Box<dyn Action>>.new();
         for node_id in self.dispatch_path(target) {
             let node = &self.nodes[node_id.0];
             for DispatchActionListener { action_type, .. } in &node.action_listeners {
@@ -446,15 +446,15 @@ impl DispatchTree {
         if pending {
             return DispatchResult {
                 pending: input,
-                ..Default::default()
+                ..Default.default()
             };
         } else if !bindings.is_empty() {
             return DispatchResult {
                 bindings,
-                ..Default::default()
+                ..Default.default()
             };
         } else if input.len() == 1 {
-            return DispatchResult::default();
+            return DispatchResult.default();
         }
         input.pop();
 
@@ -488,7 +488,7 @@ impl DispatchTree {
         mut input: SmallVec<[Keystroke; 1]>,
         dispatch_path: &SmallVec<[DispatchNodeId; 32]>,
     ) -> (SmallVec<[Keystroke; 1]>, SmallVec<[Replay; 1]>) {
-        let mut to_replay: SmallVec<[Replay; 1]> = Default::default();
+        let mut to_replay: SmallVec<[Replay; 1]> = Default.default();
         for last in (0..input.len()).rev() {
             let (bindings, _) = self.bindings_for_input(&input[0..=last], dispatch_path);
             if !bindings.is_empty() {
@@ -502,14 +502,14 @@ impl DispatchTree {
         if to_replay.is_empty() {
             to_replay.push(Replay {
                 keystroke: input.remove(0),
-                ..Default::default()
+                ..Default.default()
             });
         }
         (input, to_replay)
     }
 
     pub fn dispatch_path(&self, target: DispatchNodeId) -> SmallVec<[DispatchNodeId; 32]> {
-        let mut dispatch_path: SmallVec<[DispatchNodeId; 32]> = SmallVec::new();
+        let mut dispatch_path: SmallVec<[DispatchNodeId; 32]> = SmallVec.new();
         let mut current_node_id = Some(target);
         while let Some(node_id) = current_node_id {
             dispatch_path.push(node_id);
@@ -520,7 +520,7 @@ impl DispatchTree {
     }
 
     pub fn focus_path(&self, focus_id: FocusId) -> SmallVec<[FocusId; 8]> {
-        let mut focus_path: SmallVec<[FocusId; 8]> = SmallVec::new();
+        let mut focus_path: SmallVec<[FocusId; 8]> = SmallVec.new();
         let mut current_node_id = self.focusable_node_ids.get(&focus_id).copied();
         while let Some(node_id) = current_node_id {
             let node = self.node(node_id);
@@ -534,7 +534,7 @@ impl DispatchTree {
     }
 
     pub fn view_path(&self, view_id: EntityId) -> SmallVec<[EntityId; 8]> {
-        let mut view_path: SmallVec<[EntityId; 8]> = SmallVec::new();
+        let mut view_path: SmallVec<[EntityId; 8]> = SmallVec.new();
         let mut current_node_id = self.view_node_ids.get(&view_id).copied();
         while let Some(node_id) = current_node_id {
             let node = self.node(node_id);
@@ -572,67 +572,67 @@ impl DispatchTree {
 
 #[cfg(test)]
 mod tests {
-    use std::{cell::RefCell, rc::Rc};
+    use std.{cell.RefCell, rc.Rc};
 
-    use crate::{Action, ActionRegistry, DispatchTree, KeyBinding, KeyContext, Keymap};
+    use crate.{Action, ActionRegistry, DispatchTree, KeyBinding, KeyContext, Keymap};
 
     #[derive(PartialEq, Eq)]
     struct TestAction;
 
     impl Action for TestAction {
         fn name(&self) -> &'static str {
-            "test::TestAction"
+            "test.TestAction"
         }
 
         fn debug_name() -> &'static str
         where
-            Self: ::std::marker::Sized,
+            Self: .std.marker.Sized,
         {
-            "test::TestAction"
+            "test.TestAction"
         }
 
         fn partial_eq(&self, action: &dyn Action) -> bool {
             action
                 .as_any()
-                .downcast_ref::<Self>()
+                .downcast_ref.<Self>()
                 .map_or(false, |a| self == a)
         }
 
-        fn boxed_clone(&self) -> std::boxed::Box<dyn Action> {
-            Box::new(TestAction)
+        fn boxed_clone(&self) -> std.boxed.Box<dyn Action> {
+            Box.new(TestAction)
         }
 
-        fn as_any(&self) -> &dyn ::std::any::Any {
+        fn as_any(&self) -> &dyn .std.any.Any {
             self
         }
 
-        fn build(_value: serde_json::Value) -> anyhow::Result<Box<dyn Action>>
+        fn build(_value: serde_json.Value) -> anyhow.Result<Box<dyn Action>>
         where
             Self: Sized,
         {
-            Ok(Box::new(TestAction))
+            Ok(Box.new(TestAction))
         }
     }
 
     #[test]
     fn test_keybinding_for_action_bounds() {
-        let keymap = Keymap::new(vec![KeyBinding::new(
+        let keymap = Keymap.new(vec![KeyBinding.new(
             "cmd-n",
             TestAction,
             Some("ProjectPanel"),
         )]);
 
-        let mut registry = ActionRegistry::default();
+        let mut registry = ActionRegistry.default();
 
-        registry.load_action::<TestAction>();
+        registry.load_action.<TestAction>();
 
-        let keymap = Rc::new(RefCell::new(keymap));
+        let keymap = Rc.new(RefCell.new(keymap));
 
-        let tree = DispatchTree::new(keymap, Rc::new(registry));
+        let tree = DispatchTree.new(keymap, Rc.new(registry));
 
         let contexts = vec![
-            KeyContext::parse("Workspace").unwrap(),
-            KeyContext::parse("ProjectPanel").unwrap(),
+            KeyContext.parse("Workspace").unwrap(),
+            KeyContext.parse("ProjectPanel").unwrap(),
         ];
 
         let keybinding = tree.bindings_for_action(&TestAction, &contexts);

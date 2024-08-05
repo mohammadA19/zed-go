@@ -1,20 +1,20 @@
-use crate::{
+use crate.{
     ActiveTooltip, AnyTooltip, AnyView, Bounds, DispatchPhase, Element, ElementId, GlobalElementId,
     HighlightStyle, Hitbox, IntoElement, LayoutId, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     Pixels, Point, SharedString, Size, TextRun, TextStyle, WhiteSpace, WindowContext, WrappedLine,
     TOOLTIP_DELAY,
 };
-use anyhow::anyhow;
-use parking_lot::{Mutex, MutexGuard};
-use smallvec::SmallVec;
-use std::{
-    cell::{Cell, RefCell},
+use anyhow.anyhow;
+use parking_lot.{Mutex, MutexGuard};
+use smallvec.SmallVec;
+use std.{
+    cell.{Cell, RefCell},
     mem,
-    ops::Range,
-    rc::Rc,
-    sync::Arc,
+    ops.Range,
+    rc.Rc,
+    sync.Arc,
 };
-use util::ResultExt;
+use util.ResultExt;
 
 impl Element for &'static str {
     type RequestLayoutState = TextLayout;
@@ -28,9 +28,9 @@ impl Element for &'static str {
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
-        let mut state = TextLayout::default();
-        let layout_id = state.layout(SharedString::from(*self), None, cx);
+    ) -> (LayoutId, Self.RequestLayoutState) {
+        let mut state = TextLayout.default();
+        let layout_id = state.layout(SharedString.from(*self), None, cx);
         (layout_id, state)
     }
 
@@ -38,7 +38,7 @@ impl Element for &'static str {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        text_layout: &mut Self::RequestLayoutState,
+        text_layout: &mut Self.RequestLayoutState,
         _cx: &mut WindowContext,
     ) {
         text_layout.prepaint(bounds, self)
@@ -59,7 +59,7 @@ impl Element for &'static str {
 impl IntoElement for &'static str {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -67,7 +67,7 @@ impl IntoElement for &'static str {
 impl IntoElement for String {
     type Element = SharedString;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self.into()
     }
 }
@@ -86,8 +86,8 @@ impl Element for SharedString {
         _id: Option<&GlobalElementId>,
 
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
-        let mut state = TextLayout::default();
+    ) -> (LayoutId, Self.RequestLayoutState) {
+        let mut state = TextLayout.default();
         let layout_id = state.layout(self.clone(), None, cx);
         (layout_id, state)
     }
@@ -96,7 +96,7 @@ impl Element for SharedString {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        text_layout: &mut Self::RequestLayoutState,
+        text_layout: &mut Self.RequestLayoutState,
         _cx: &mut WindowContext,
     ) {
         text_layout.prepaint(bounds, self.as_ref())
@@ -106,8 +106,8 @@ impl Element for SharedString {
         &mut self,
         _id: Option<&GlobalElementId>,
         _bounds: Bounds<Pixels>,
-        text_layout: &mut Self::RequestLayoutState,
-        _: &mut Self::PrepaintState,
+        text_layout: &mut Self.RequestLayoutState,
+        _: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         text_layout.paint(self.as_ref(), cx)
@@ -117,7 +117,7 @@ impl Element for SharedString {
 impl IntoElement for SharedString {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -139,7 +139,7 @@ impl StyledText {
         StyledText {
             text: text.into(),
             runs: None,
-            layout: TextLayout::default(),
+            layout: TextLayout.default(),
         }
     }
 
@@ -155,7 +155,7 @@ impl StyledText {
         default_style: &TextStyle,
         highlights: impl IntoIterator<Item = (Range<usize>, HighlightStyle)>,
     ) -> Self {
-        let mut runs = Vec::new();
+        let mut runs = Vec.new();
         let mut ix = 0;
         for (range, highlight) in highlights {
             if ix < range.start {
@@ -197,7 +197,7 @@ impl Element for StyledText {
         _id: Option<&GlobalElementId>,
 
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         let layout_id = self.layout.layout(self.text.clone(), self.runs.take(), cx);
         (layout_id, ())
     }
@@ -206,7 +206,7 @@ impl Element for StyledText {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
+        _: &mut Self.RequestLayoutState,
         _cx: &mut WindowContext,
     ) {
         self.layout.prepaint(bounds, &self.text)
@@ -216,8 +216,8 @@ impl Element for StyledText {
         &mut self,
         _id: Option<&GlobalElementId>,
         _bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
-        _: &mut Self::PrepaintState,
+        _: &mut Self.RequestLayoutState,
+        _: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         self.layout.paint(&self.text, cx)
@@ -227,7 +227,7 @@ impl Element for StyledText {
 impl IntoElement for StyledText {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -267,13 +267,13 @@ impl TextLayout {
             vec![text_style.to_run(text.len())]
         };
 
-        let layout_id = cx.request_measured_layout(Default::default(), {
+        let layout_id = cx.request_measured_layout(Default.default(), {
             let element_state = self.clone();
 
             move |known_dimensions, available_space, cx| {
-                let wrap_width = if text_style.white_space == WhiteSpace::Normal {
+                let wrap_width = if text_style.white_space == WhiteSpace.Normal {
                     known_dimensions.width.or(match available_space.width {
-                        crate::AvailableSpace::Definite(x) => Some(x),
+                        crate.AvailableSpace.Definite(x) => Some(x),
                         _ => None,
                     })
                 } else {
@@ -299,16 +299,16 @@ impl TextLayout {
                     .log_err()
                 else {
                     element_state.lock().replace(TextLayoutInner {
-                        lines: Default::default(),
+                        lines: Default.default(),
                         line_height,
                         wrap_width,
-                        size: Some(Size::default()),
+                        size: Some(Size.default()),
                         bounds: None,
                     });
-                    return Size::default();
+                    return Size.default();
                 };
 
-                let mut size: Size<Pixels> = Size::default();
+                let mut size: Size<Pixels> = Size.default();
                 for line in &lines {
                     let line_size = line.size(line_height);
                     size.height += line_size.height;
@@ -442,7 +442,7 @@ impl TextLayout {
             .lines
             .iter()
             .map(|s| s.text.to_string())
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
             .join("\n")
     }
 }
@@ -481,7 +481,7 @@ impl InteractiveText {
             click_listener: None,
             hover_listener: None,
             tooltip_builder: None,
-            clickable_ranges: Vec::new(),
+            clickable_ranges: Vec.new(),
         }
     }
 
@@ -492,7 +492,7 @@ impl InteractiveText {
         ranges: Vec<Range<usize>>,
         listener: impl Fn(usize, &mut WindowContext<'_>) + 'static,
     ) -> Self {
-        self.click_listener = Some(Box::new(move |ranges, event, cx| {
+        self.click_listener = Some(Box.new(move |ranges, event, cx| {
             for (range_ix, range) in ranges.iter().enumerate() {
                 if range.contains(&event.mouse_down_index) && range.contains(&event.mouse_up_index)
                 {
@@ -510,7 +510,7 @@ impl InteractiveText {
         mut self,
         listener: impl Fn(Option<usize>, MouseMoveEvent, &mut WindowContext<'_>) + 'static,
     ) -> Self {
-        self.hover_listener = Some(Box::new(listener));
+        self.hover_listener = Some(Box.new(listener));
         self
     }
 
@@ -519,7 +519,7 @@ impl InteractiveText {
         mut self,
         builder: impl Fn(usize, &mut WindowContext<'_>) -> Option<AnyView> + 'static,
     ) -> Self {
-        self.tooltip_builder = Some(Rc::new(builder));
+        self.tooltip_builder = Some(Rc.new(builder));
         self
     }
 }
@@ -536,7 +536,7 @@ impl Element for InteractiveText {
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         self.text.request_layout(None, cx)
     }
 
@@ -544,10 +544,10 @@ impl Element for InteractiveText {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        state: &mut Self::RequestLayoutState,
+        state: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) -> Hitbox {
-        cx.with_optional_element_state::<InteractiveTextState, _>(
+        cx.with_optional_element_state.<InteractiveTextState, _>(
             global_id,
             |interactive_state, cx| {
                 let interactive_state = interactive_state
@@ -573,12 +573,12 @@ impl Element for InteractiveText {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
+        _: &mut Self.RequestLayoutState,
         hitbox: &mut Hitbox,
         cx: &mut WindowContext,
     ) {
         let text_layout = self.text.layout().clone();
-        cx.with_element_state::<InteractiveTextState, _>(
+        cx.with_element_state.<InteractiveTextState, _>(
             global_id.unwrap(),
             |interactive_state, cx| {
                 let mut interactive_state = interactive_state.unwrap_or_default();
@@ -590,7 +590,7 @@ impl Element for InteractiveText {
                             .iter()
                             .any(|range| range.contains(&ix))
                         {
-                            cx.set_cursor_style(crate::CursorStyle::PointingHand, hitbox)
+                            cx.set_cursor_style(crate.CursorStyle.PointingHand, hitbox)
                         }
                     }
 
@@ -598,9 +598,9 @@ impl Element for InteractiveText {
                     let mouse_down = interactive_state.mouse_down_index.clone();
                     if let Some(mouse_down_index) = mouse_down.get() {
                         let hitbox = hitbox.clone();
-                        let clickable_ranges = mem::take(&mut self.clickable_ranges);
+                        let clickable_ranges = mem.take(&mut self.clickable_ranges);
                         cx.on_mouse_event(move |event: &MouseUpEvent, phase, cx| {
-                            if phase == DispatchPhase::Bubble && hitbox.is_hovered(cx) {
+                            if phase == DispatchPhase.Bubble && hitbox.is_hovered(cx) {
                                 if let Some(mouse_up_index) =
                                     text_layout.index_for_position(event.position).ok()
                                 {
@@ -621,7 +621,7 @@ impl Element for InteractiveText {
                     } else {
                         let hitbox = hitbox.clone();
                         cx.on_mouse_event(move |event: &MouseDownEvent, phase, cx| {
-                            if phase == DispatchPhase::Bubble && hitbox.is_hovered(cx) {
+                            if phase == DispatchPhase.Bubble && hitbox.is_hovered(cx) {
                                 if let Some(mouse_down_index) =
                                     text_layout.index_for_position(event.position).ok()
                                 {
@@ -639,7 +639,7 @@ impl Element for InteractiveText {
                     let text_layout = text_layout.clone();
                     let hovered_index = interactive_state.hovered_index.clone();
                     move |event: &MouseMoveEvent, phase, cx| {
-                        if phase == DispatchPhase::Bubble && hitbox.is_hovered(cx) {
+                        if phase == DispatchPhase.Bubble && hitbox.is_hovered(cx) {
                             let current = hovered_index.get();
                             let updated = text_layout.index_for_position(event.position).ok();
                             if current != updated {
@@ -670,7 +670,7 @@ impl Element for InteractiveText {
                         }
                         let position = position.unwrap();
 
-                        if phase != DispatchPhase::Bubble {
+                        if phase != DispatchPhase.Bubble {
                             return;
                         }
 
@@ -722,7 +722,7 @@ impl Element for InteractiveText {
 impl IntoElement for InteractiveText {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }

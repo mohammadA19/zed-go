@@ -1,6 +1,6 @@
-use refineable::Refineable as _;
+use refineable.Refineable as _;
 
-use crate::{
+use crate.{
     Bounds, Element, ElementId, GlobalElementId, IntoElement, Pixels, Style, StyleRefinement,
     Styled, WindowContext,
 };
@@ -12,9 +12,9 @@ pub fn canvas<T>(
     paint: impl 'static + FnOnce(Bounds<Pixels>, T, &mut WindowContext),
 ) -> Canvas<T> {
     Canvas {
-        prepaint: Some(Box::new(prepaint)),
-        paint: Some(Box::new(paint)),
-        style: StyleRefinement::default(),
+        prepaint: Some(Box.new(prepaint)),
+        paint: Some(Box.new(paint)),
+        style: StyleRefinement.default(),
     }
 }
 
@@ -29,7 +29,7 @@ pub struct Canvas<T> {
 impl<T: 'static> IntoElement for Canvas<T> {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -46,8 +46,8 @@ impl<T: 'static> Element for Canvas<T> {
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (crate::LayoutId, Self::RequestLayoutState) {
-        let mut style = Style::default();
+    ) -> (crate.LayoutId, Self.RequestLayoutState) {
+        let mut style = Style.default();
         style.refine(&self.style);
         let layout_id = cx.request_layout(style.clone(), []);
         (layout_id, style)
@@ -68,7 +68,7 @@ impl<T: 'static> Element for Canvas<T> {
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
         style: &mut Style,
-        prepaint: &mut Self::PrepaintState,
+        prepaint: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         let prepaint = prepaint.take().unwrap();
@@ -79,7 +79,7 @@ impl<T: 'static> Element for Canvas<T> {
 }
 
 impl<T> Styled for Canvas<T> {
-    fn style(&mut self) -> &mut crate::StyleRefinement {
+    fn style(&mut self) -> &mut crate.StyleRefinement {
         &mut self.style
     }
 }

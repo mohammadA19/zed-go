@@ -1,22 +1,22 @@
-use std::{
-    collections::HashMap,
+use std.{
+    collections.HashMap,
     env, fs,
-    path::{Path, PathBuf},
-    process::Command,
-    sync::Arc,
+    path.{Path, PathBuf},
+    process.Command,
+    sync.Arc,
 };
 
-use ::fs::{copy_recursive, CopyOptions, Fs, RealFs};
-use ::http_client::HttpClientWithProxy;
-use anyhow::{anyhow, bail, Context, Result};
-use clap::Parser;
-use extension::{
-    extension_builder::{CompileExtensionOptions, ExtensionBuilder},
+use .fs.{copy_recursive, CopyOptions, Fs, RealFs};
+use .http_client.HttpClientWithProxy;
+use anyhow.{anyhow, bail, Context, Result};
+use clap.Parser;
+use extension.{
+    extension_builder.{CompileExtensionOptions, ExtensionBuilder},
     ExtensionManifest,
 };
-use language::LanguageConfig;
-use theme::ThemeRegistry;
-use tree_sitter::{Language, Query, WasmStore};
+use language.LanguageConfig;
+use theme.ThemeRegistry;
+use tree_sitter.{Language, Query, WasmStore};
 
 #[derive(Parser, Debug)]
 #[command(name = "zed-extension")]
@@ -32,14 +32,14 @@ struct Args {
     scratch_dir: PathBuf,
 }
 
-#[tokio::main]
+#[tokio.main]
 async fn main() -> Result<()> {
-    env_logger::init();
+    env_logger.init();
 
-    let args = Args::parse();
-    let fs = Arc::new(RealFs::default());
-    let engine = wasmtime::Engine::default();
-    let mut wasm_store = WasmStore::new(engine)?;
+    let args = Args.parse();
+    let fs = Arc.new(RealFs.default());
+    let engine = wasmtime.Engine.default();
+    let mut wasm_store = WasmStore.new(engine)?;
 
     let extension_path = args
         .source_dir
@@ -50,24 +50,24 @@ async fn main() -> Result<()> {
         .canonicalize()
         .context("failed to canonicalize scratch_dir")?;
     let output_dir = if args.output_dir.is_relative() {
-        env::current_dir()?.join(&args.output_dir)
+        env.current_dir()?.join(&args.output_dir)
     } else {
         args.output_dir
     };
 
-    log::info!("loading extension manifest");
-    let mut manifest = ExtensionManifest::load(fs.clone(), &extension_path).await?;
+    log.info!("loading extension manifest");
+    let mut manifest = ExtensionManifest.load(fs.clone(), &extension_path).await?;
 
-    log::info!("compiling extension");
+    log.info!("compiling extension");
 
     let user_agent = format!(
         "Zed Extension CLI/{} ({}; {})",
         env!("CARGO_PKG_VERSION"),
-        std::env::consts::OS,
-        std::env::consts::ARCH
+        std.env.consts.OS,
+        std.env.consts.ARCH
     );
-    let http_client = Arc::new(HttpClientWithProxy::new(Some(user_agent), None));
-    let builder = ExtensionBuilder::new(http_client, scratch_dir);
+    let http_client = Arc.new(HttpClientWithProxy.new(Some(user_agent), None));
+    let builder = ExtensionBuilder.new(http_client, scratch_dir);
     builder
         .compile_extension(
             &extension_path,
@@ -82,12 +82,12 @@ async fn main() -> Result<()> {
     test_themes(&manifest, &extension_path, fs.clone()).await?;
 
     let archive_dir = output_dir.join("archive");
-    fs::remove_dir_all(&archive_dir).ok();
+    fs.remove_dir_all(&archive_dir).ok();
     copy_extension_resources(&manifest, &extension_path, &archive_dir, fs.clone())
         .await
         .context("failed to copy extension resources")?;
 
-    let tar_output = Command::new("tar")
+    let tar_output = Command.new("tar")
         .current_dir(&output_dir)
         .args(&["-czvf", "archive.tar.gz", "-C", "archive", "."])
         .output()
@@ -95,11 +95,11 @@ async fn main() -> Result<()> {
     if !tar_output.status.success() {
         bail!(
             "failed to create archive.tar.gz: {}",
-            String::from_utf8_lossy(&tar_output.stderr)
+            String.from_utf8_lossy(&tar_output.stderr)
         );
     }
 
-    let manifest_json = serde_json::to_string(&rpc::ExtensionApiManifest {
+    let manifest_json = serde_json.to_string(&rpc.ExtensionApiManifest {
         name: manifest.name,
         version: manifest.version,
         description: manifest.description,
@@ -110,8 +110,8 @@ async fn main() -> Result<()> {
             .ok_or_else(|| anyhow!("missing repository in extension manifest"))?,
         wasm_api_version: manifest.lib.version.map(|version| version.to_string()),
     })?;
-    fs::remove_dir_all(&archive_dir)?;
-    fs::write(output_dir.join("manifest.json"), manifest_json.as_bytes())?;
+    fs.remove_dir_all(&archive_dir)?;
+    fs.write(output_dir.join("manifest.json"), manifest_json.as_bytes())?;
 
     Ok(())
 }
@@ -122,14 +122,14 @@ async fn copy_extension_resources(
     output_dir: &Path,
     fs: Arc<dyn Fs>,
 ) -> Result<()> {
-    fs::create_dir_all(&output_dir).context("failed to create output dir")?;
+    fs.create_dir_all(&output_dir).context("failed to create output dir")?;
 
-    let manifest_toml = toml::to_string(&manifest).context("failed to serialize manifest")?;
-    fs::write(output_dir.join("extension.toml"), &manifest_toml)
+    let manifest_toml = toml.to_string(&manifest).context("failed to serialize manifest")?;
+    fs.write(output_dir.join("extension.toml"), &manifest_toml)
         .context("failed to write extension.toml")?;
 
     if manifest.lib.kind.is_some() {
-        fs::copy(
+        fs.copy(
             extension_path.join("extension.wasm"),
             output_dir.join("extension.wasm"),
         )
@@ -139,11 +139,11 @@ async fn copy_extension_resources(
     if !manifest.grammars.is_empty() {
         let source_grammars_dir = extension_path.join("grammars");
         let output_grammars_dir = output_dir.join("grammars");
-        fs::create_dir_all(&output_grammars_dir)?;
+        fs.create_dir_all(&output_grammars_dir)?;
         for grammar_name in manifest.grammars.keys() {
-            let mut grammar_filename = PathBuf::from(grammar_name.as_ref());
+            let mut grammar_filename = PathBuf.from(grammar_name.as_ref());
             grammar_filename.set_extension("wasm");
-            fs::copy(
+            fs.copy(
                 &source_grammars_dir.join(&grammar_filename),
                 &output_grammars_dir.join(&grammar_filename),
             )
@@ -153,9 +153,9 @@ async fn copy_extension_resources(
 
     if !manifest.themes.is_empty() {
         let output_themes_dir = output_dir.join("themes");
-        fs::create_dir_all(&output_themes_dir)?;
+        fs.create_dir_all(&output_themes_dir)?;
         for theme_path in &manifest.themes {
-            fs::copy(
+            fs.copy(
                 extension_path.join(theme_path),
                 output_themes_dir.join(
                     theme_path
@@ -169,7 +169,7 @@ async fn copy_extension_resources(
 
     if !manifest.languages.is_empty() {
         let output_languages_dir = output_dir.join("languages");
-        fs::create_dir_all(&output_languages_dir)?;
+        fs.create_dir_all(&output_languages_dir)?;
         for language_path in &manifest.languages {
             copy_recursive(
                 fs.as_ref(),
@@ -199,16 +199,16 @@ fn test_grammars(
     extension_path: &Path,
     wasm_store: &mut WasmStore,
 ) -> Result<HashMap<String, Language>> {
-    let mut grammars = HashMap::default();
+    let mut grammars = HashMap.default();
     let grammars_dir = extension_path.join("grammars");
 
     for grammar_name in manifest.grammars.keys() {
         let mut grammar_path = grammars_dir.join(grammar_name.as_ref());
         grammar_path.set_extension("wasm");
 
-        let wasm = fs::read(&grammar_path)?;
+        let wasm = fs.read(&grammar_path)?;
         let language = wasm_store.load_language(grammar_name, &wasm)?;
-        log::info!("loaded grammar {grammar_name}");
+        log.info!("loaded grammar {grammar_name}");
         grammars.insert(grammar_name.to_string(), language);
     }
 
@@ -223,8 +223,8 @@ fn test_languages(
     for relative_language_dir in &manifest.languages {
         let language_dir = extension_path.join(relative_language_dir);
         let config_path = language_dir.join("config.toml");
-        let config_content = fs::read_to_string(&config_path)?;
-        let config: LanguageConfig = toml::from_str(&config_content)?;
+        let config_content = fs.read_to_string(&config_path)?;
+        let config: LanguageConfig = toml.from_str(&config_content)?;
         let grammar = if let Some(name) = &config.grammar {
             Some(
                 grammars
@@ -235,7 +235,7 @@ fn test_languages(
             None
         };
 
-        let query_entries = fs::read_dir(&language_dir)?;
+        let query_entries = fs.read_dir(&language_dir)?;
         for entry in query_entries {
             let entry = entry?;
             let query_path = entry.path();
@@ -248,12 +248,12 @@ fn test_languages(
                     )
                 })?;
 
-                let query_source = fs::read_to_string(&query_path)?;
-                let _query = Query::new(grammar, &query_source)?;
+                let query_source = fs.read_to_string(&query_path)?;
+                let _query = Query.new(grammar, &query_source)?;
             }
         }
 
-        log::info!("loaded language {}", config.name);
+        log.info!("loaded language {}", config.name);
     }
 
     Ok(())
@@ -266,8 +266,8 @@ async fn test_themes(
 ) -> Result<()> {
     for relative_theme_path in &manifest.themes {
         let theme_path = extension_path.join(relative_theme_path);
-        let theme_family = ThemeRegistry::read_user_theme(&theme_path, fs.clone()).await?;
-        log::info!("loaded theme family {}", theme_family.name);
+        let theme_family = ThemeRegistry.read_user_theme(&theme_path, fs.clone()).await?;
+        log.info!("loaded theme family {}", theme_family.name);
     }
 
     Ok(())

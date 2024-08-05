@@ -1,8 +1,8 @@
-use anyhow::{bail, Context};
-use serde::de::{self, Deserialize, Deserializer, Visitor};
-use std::{
+use anyhow.{bail, Context};
+use serde.de.{self, Deserialize, Deserializer, Visitor};
+use std.{
     fmt,
-    hash::{Hash, Hasher},
+    hash.{Hash, Hasher},
 };
 
 /// Convert an RGB hex color code number to a color type
@@ -35,9 +35,9 @@ pub struct Rgba {
     pub a: f32,
 }
 
-impl fmt::Debug for Rgba {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "rgba({:#010x})", u32::from(*self))
+impl fmt.Debug for Rgba {
+    fn fmt(&self, f: &mut fmt.Formatter) -> fmt.Result {
+        write!(f, "rgba({:#010x})", u32.from(*self))
     }
 }
 
@@ -74,17 +74,17 @@ struct RgbaVisitor;
 impl<'de> Visitor<'de> for RgbaVisitor {
     type Value = Rgba;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt.Formatter) -> fmt.Result {
         formatter.write_str("a string in the format #rrggbb or #rrggbbaa")
     }
 
-    fn visit_str<E: de::Error>(self, value: &str) -> Result<Rgba, E> {
-        Rgba::try_from(value).map_err(E::custom)
+    fn visit_str<E: de.Error>(self, value: &str) -> Result<Rgba, E> {
+        Rgba.try_from(value).map_err(E.custom)
     }
 }
 
 impl<'de> Deserialize<'de> for Rgba {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D.Error> {
         deserializer.deserialize_str(RgbaVisitor)
     }
 }
@@ -120,9 +120,9 @@ impl From<Hsla> for Rgba {
 }
 
 impl TryFrom<&'_ str> for Rgba {
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
 
-    fn try_from(value: &'_ str) -> Result<Self, Self::Error> {
+    fn try_from(value: &'_ str) -> Result<Self, Self.Error> {
         const RGB: usize = "rgb".len();
         const RGBA: usize = "rgba".len();
         const RRGGBB: usize = "rrggbb".len();
@@ -137,26 +137,26 @@ impl TryFrom<&'_ str> for Rgba {
 
         let (r, g, b, a) = match hex.len() {
             RGB | RGBA => {
-                let r = u8::from_str_radix(
+                let r = u8.from_str_radix(
                     hex.get(0..1).with_context(|| {
                         format!("{INVALID_UNICODE}: r component of #rgb/#rgba for value: '{value}'")
                     })?,
                     16,
                 )?;
-                let g = u8::from_str_radix(
+                let g = u8.from_str_radix(
                     hex.get(1..2).with_context(|| {
                         format!("{INVALID_UNICODE}: g component of #rgb/#rgba for value: '{value}'")
                     })?,
                     16,
                 )?;
-                let b = u8::from_str_radix(
+                let b = u8.from_str_radix(
                     hex.get(2..3).with_context(|| {
                         format!("{INVALID_UNICODE}: b component of #rgb/#rgba for value: '{value}'")
                     })?,
                     16,
                 )?;
                 let a = if hex.len() == RGBA {
-                    u8::from_str_radix(
+                    u8.from_str_radix(
                         hex.get(3..4).with_context(|| {
                             format!("{INVALID_UNICODE}: a component of #rgba for value: '{value}'")
                         })?,
@@ -175,7 +175,7 @@ impl TryFrom<&'_ str> for Rgba {
                 (duplicate(r), duplicate(g), duplicate(b), duplicate(a))
             }
             RRGGBB | RRGGBBAA => {
-                let r = u8::from_str_radix(
+                let r = u8.from_str_radix(
                     hex.get(0..2).with_context(|| {
                         format!(
                             "{}: r component of #rrggbb/#rrggbbaa for value: '{}'",
@@ -184,7 +184,7 @@ impl TryFrom<&'_ str> for Rgba {
                     })?,
                     16,
                 )?;
-                let g = u8::from_str_radix(
+                let g = u8.from_str_radix(
                     hex.get(2..4).with_context(|| {
                         format!(
                             "{INVALID_UNICODE}: g component of #rrggbb/#rrggbbaa for value: '{value}'"
@@ -192,7 +192,7 @@ impl TryFrom<&'_ str> for Rgba {
                     })?,
                     16,
                 )?;
-                let b = u8::from_str_radix(
+                let b = u8.from_str_radix(
                     hex.get(4..6).with_context(|| {
                         format!(
                             "{INVALID_UNICODE}: b component of #rrggbb/#rrggbbaa for value: '{value}'"
@@ -201,7 +201,7 @@ impl TryFrom<&'_ str> for Rgba {
                     16,
                 )?;
                 let a = if hex.len() == RRGGBBAA {
-                    u8::from_str_radix(
+                    u8.from_str_radix(
                         hex.get(6..8).with_context(|| {
                             format!(
                                 "{INVALID_UNICODE}: a component of #rrggbbaa for value: '{value}'"
@@ -254,13 +254,13 @@ impl PartialEq for Hsla {
 }
 
 impl PartialOrd for Hsla {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for Hsla {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         self.h
             .total_cmp(&other.h)
             .then(self.s.total_cmp(&other.s))
@@ -272,10 +272,10 @@ impl Eq for Hsla {}
 
 impl Hash for Hsla {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_u32(u32::from_be_bytes(self.h.to_be_bytes()));
-        state.write_u32(u32::from_be_bytes(self.s.to_be_bytes()));
-        state.write_u32(u32::from_be_bytes(self.l.to_be_bytes()));
-        state.write_u32(u32::from_be_bytes(self.a.to_be_bytes()));
+        state.write_u32(u32.from_be_bytes(self.h.to_be_bytes()));
+        state.write_u32(u32.from_be_bytes(self.s.to_be_bytes()));
+        state.write_u32(u32.from_be_bytes(self.l.to_be_bytes()));
+        state.write_u32(u32.from_be_bytes(self.a.to_be_bytes()));
     }
 }
 
@@ -439,10 +439,10 @@ impl Hsla {
         } else if alpha <= 0.0 {
             return self;
         } else {
-            let converted_self = Rgba::from(self);
-            let converted_other = Rgba::from(other);
+            let converted_self = Rgba.from(self);
+            let converted_other = Rgba.from(other);
             let blended_rgb = converted_self.blend(converted_other);
-            return Hsla::from(blended_rgb);
+            return Hsla.from(blended_rgb);
         }
     }
 
@@ -502,62 +502,62 @@ impl From<Rgba> for Hsla {
 }
 
 impl<'de> Deserialize<'de> for Hsla {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D.Error>
     where
         D: Deserializer<'de>,
     {
         // First, deserialize it into Rgba
-        let rgba = Rgba::deserialize(deserializer)?;
+        let rgba = Rgba.deserialize(deserializer)?;
 
         // Then, use the From<Rgba> for Hsla implementation to convert it
-        Ok(Hsla::from(rgba))
+        Ok(Hsla.from(rgba))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json.json;
 
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_deserialize_three_value_hex_to_rgba() {
-        let actual: Rgba = serde_json::from_value(json!("#f09")).unwrap();
+        let actual: Rgba = serde_json.from_value(json!("#f09")).unwrap();
 
         assert_eq!(actual, rgba(0xff0099ff))
     }
 
     #[test]
     fn test_deserialize_four_value_hex_to_rgba() {
-        let actual: Rgba = serde_json::from_value(json!("#f09f")).unwrap();
+        let actual: Rgba = serde_json.from_value(json!("#f09f")).unwrap();
 
         assert_eq!(actual, rgba(0xff0099ff))
     }
 
     #[test]
     fn test_deserialize_six_value_hex_to_rgba() {
-        let actual: Rgba = serde_json::from_value(json!("#ff0099")).unwrap();
+        let actual: Rgba = serde_json.from_value(json!("#ff0099")).unwrap();
 
         assert_eq!(actual, rgba(0xff0099ff))
     }
 
     #[test]
     fn test_deserialize_eight_value_hex_to_rgba() {
-        let actual: Rgba = serde_json::from_value(json!("#ff0099ff")).unwrap();
+        let actual: Rgba = serde_json.from_value(json!("#ff0099ff")).unwrap();
 
         assert_eq!(actual, rgba(0xff0099ff))
     }
 
     #[test]
     fn test_deserialize_eight_value_hex_with_padding_to_rgba() {
-        let actual: Rgba = serde_json::from_value(json!(" #f5f5f5ff   ")).unwrap();
+        let actual: Rgba = serde_json.from_value(json!(" #f5f5f5ff   ")).unwrap();
 
         assert_eq!(actual, rgba(0xf5f5f5ff))
     }
 
     #[test]
     fn test_deserialize_eight_value_hex_with_mixed_case_to_rgba() {
-        let actual: Rgba = serde_json::from_value(json!("#DeAdbEeF")).unwrap();
+        let actual: Rgba = serde_json.from_value(json!("#DeAdbEeF")).unwrap();
 
         assert_eq!(actual, rgba(0xdeadbeef))
     }

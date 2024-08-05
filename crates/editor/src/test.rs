@@ -1,41 +1,41 @@
 pub mod editor_lsp_test_context;
 pub mod editor_test_context;
 
-use crate::{
-    display_map::{DisplayMap, DisplaySnapshot, ToDisplayPoint},
+use crate.{
+    display_map.{DisplayMap, DisplaySnapshot, ToDisplayPoint},
     DisplayPoint, Editor, EditorMode, FoldPlaceholder, MultiBuffer,
 };
-use gpui::{Context, Font, FontFeatures, FontStyle, FontWeight, Model, Pixels, ViewContext};
-use project::Project;
-use util::test::{marked_text_offsets, marked_text_ranges};
+use gpui.{Context, Font, FontFeatures, FontStyle, FontWeight, Model, Pixels, ViewContext};
+use project.Project;
+use util.test.{marked_text_offsets, marked_text_ranges};
 
 #[cfg(test)]
-#[ctor::ctor]
+#[ctor.ctor]
 fn init_logger() {
-    if std::env::var("RUST_LOG").is_ok() {
-        env_logger::init();
+    if std.env.var("RUST_LOG").is_ok() {
+        env_logger.init();
     }
 }
 
 // Returns a snapshot from text containing '|' character markers with the markers removed, and DisplayPoints for each one.
 pub fn marked_display_snapshot(
     text: &str,
-    cx: &mut gpui::AppContext,
+    cx: &mut gpui.AppContext,
 ) -> (DisplaySnapshot, Vec<DisplayPoint>) {
     let (unmarked_text, markers) = marked_text_offsets(text);
 
     let font = Font {
         family: "Zed Plex Mono".into(),
-        features: FontFeatures::default(),
+        features: FontFeatures.default(),
         fallbacks: None,
-        weight: FontWeight::default(),
-        style: FontStyle::default(),
+        weight: FontWeight.default(),
+        style: FontStyle.default(),
     };
     let font_size: Pixels = 14usize.into();
 
-    let buffer = MultiBuffer::build_simple(&unmarked_text, cx);
+    let buffer = MultiBuffer.build_simple(&unmarked_text, cx);
     let display_map = cx.new_model(|cx| {
-        DisplayMap::new(
+        DisplayMap.new(
             buffer,
             font,
             font_size,
@@ -44,7 +44,7 @@ pub fn marked_display_snapshot(
             1,
             1,
             1,
-            FoldPlaceholder::test(),
+            FoldPlaceholder.test(),
             cx,
         )
     });
@@ -78,7 +78,7 @@ pub fn assert_text_with_selections(
 #[allow(dead_code)]
 #[cfg(any(test, feature = "test-support"))]
 pub(crate) fn build_editor(buffer: Model<MultiBuffer>, cx: &mut ViewContext<Editor>) -> Editor {
-    Editor::new(EditorMode::Full, buffer, None, true, cx)
+    Editor.new(EditorMode.Full, buffer, None, true, cx)
 }
 
 pub(crate) fn build_editor_with_project(
@@ -86,7 +86,7 @@ pub(crate) fn build_editor_with_project(
     buffer: Model<MultiBuffer>,
     cx: &mut ViewContext<Editor>,
 ) -> Editor {
-    Editor::new(EditorMode::Full, buffer, Some(project), true, cx)
+    Editor.new(EditorMode.Full, buffer, Some(project), true, cx)
 }
 
 #[cfg(any(test, feature = "test-support"))]
@@ -96,28 +96,28 @@ pub fn editor_hunks(
     cx: &mut ViewContext<'_, Editor>,
 ) -> Vec<(
     String,
-    git::diff::DiffHunkStatus,
-    std::ops::Range<crate::DisplayRow>,
+    git.diff.DiffHunkStatus,
+    std.ops.Range<crate.DisplayRow>,
 )> {
-    use multi_buffer::MultiBufferRow;
-    use text::Point;
+    use multi_buffer.MultiBufferRow;
+    use text.Point;
 
-    use crate::hunk_status;
+    use crate.hunk_status;
 
     snapshot
         .buffer_snapshot
-        .git_diff_hunks_in_range(MultiBufferRow::MIN..MultiBufferRow::MAX)
+        .git_diff_hunks_in_range(MultiBufferRow.MIN..MultiBufferRow.MAX)
         .map(|hunk| {
-            let display_range = Point::new(hunk.associated_range.start.0, 0)
+            let display_range = Point.new(hunk.associated_range.start.0, 0)
                 .to_display_point(snapshot)
                 .row()
-                ..Point::new(hunk.associated_range.end.0, 0)
+                ..Point.new(hunk.associated_range.end.0, 0)
                     .to_display_point(snapshot)
                     .row();
             let (_, buffer, _) = editor
                 .buffer()
                 .read(cx)
-                .excerpt_containing(Point::new(hunk.associated_range.start.0, 0), cx)
+                .excerpt_containing(Point.new(hunk.associated_range.start.0, 0), cx)
                 .expect("no excerpt for expanded buffer's hunk start");
             let diff_base = buffer
                 .read(cx)
@@ -137,8 +137,8 @@ pub fn expanded_hunks(
     cx: &mut ViewContext<'_, Editor>,
 ) -> Vec<(
     String,
-    git::diff::DiffHunkStatus,
-    std::ops::Range<crate::DisplayRow>,
+    git.diff.DiffHunkStatus,
+    std.ops.Range<crate.DisplayRow>,
 )> {
     editor
         .expanded_hunks
@@ -173,11 +173,11 @@ pub fn expanded_hunks(
 #[cfg(any(test, feature = "test-support"))]
 pub fn expanded_hunks_background_highlights(
     editor: &mut Editor,
-    cx: &mut gpui::WindowContext,
-) -> Vec<std::ops::RangeInclusive<crate::DisplayRow>> {
-    use crate::DisplayRow;
+    cx: &mut gpui.WindowContext,
+) -> Vec<std.ops.RangeInclusive<crate.DisplayRow>> {
+    use crate.DisplayRow;
 
-    let mut highlights = Vec::new();
+    let mut highlights = Vec.new();
 
     let mut range_start = 0;
     let mut previous_highlighted_row = None;

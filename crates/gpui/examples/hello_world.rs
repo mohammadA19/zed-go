@@ -1,4 +1,4 @@
-use gpui::*;
+use gpui.*;
 
 struct HelloWorld {
     text: SharedString,
@@ -9,7 +9,7 @@ impl Render for HelloWorld {
         div()
             .flex()
             .bg(rgb(0x2e7d32))
-            .size(Length::Definite(Pixels(300.0).into()))
+            .size(Length.Definite(Pixels(300.0).into()))
             .justify_center()
             .items_center()
             .shadow_lg()
@@ -22,12 +22,12 @@ impl Render for HelloWorld {
 }
 
 fn main() {
-    App::new().run(|cx: &mut AppContext| {
-        let bounds = Bounds::centered(None, size(px(300.0), px(300.0)), cx);
+    App.new().run(|cx: &mut AppContext| {
+        let bounds = Bounds.centered(None, size(px(300.0), px(300.0)), cx);
         cx.open_window(
             WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                ..Default::default()
+                window_bounds: Some(WindowBounds.Windowed(bounds)),
+                ..Default.default()
             },
             |cx| {
                 cx.new_view(|_cx| HelloWorld {

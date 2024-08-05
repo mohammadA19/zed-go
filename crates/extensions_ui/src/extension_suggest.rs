@@ -1,15 +1,15 @@
-use std::collections::HashMap;
-use std::path::Path;
-use std::sync::{Arc, OnceLock};
+use std.collections.HashMap;
+use std.path.Path;
+use std.sync.{Arc, OnceLock};
 
-use db::kvp::KEY_VALUE_STORE;
-use editor::Editor;
-use extension::ExtensionStore;
-use gpui::{Model, VisualContext};
-use language::Buffer;
-use ui::{SharedString, ViewContext};
-use workspace::{
-    notifications::{simple_message_notification, NotificationId},
+use db.kvp.KEY_VALUE_STORE;
+use editor.Editor;
+use extension.ExtensionStore;
+use gpui.{Model, VisualContext};
+use language.Buffer;
+use ui.{SharedString, ViewContext};
+use workspace.{
+    notifications.{simple_message_notification, NotificationId},
     Workspace,
 };
 
@@ -74,12 +74,12 @@ const SUGGESTIONS_BY_EXTENSION_ID: &[(&str, &[&str])] = &[
 ];
 
 fn suggested_extensions() -> &'static HashMap<&'static str, Arc<str>> {
-    static SUGGESTIONS_BY_PATH_SUFFIX: OnceLock<HashMap<&str, Arc<str>>> = OnceLock::new();
+    static SUGGESTIONS_BY_PATH_SUFFIX: OnceLock<HashMap<&str, Arc<str>>> = OnceLock.new();
     SUGGESTIONS_BY_PATH_SUFFIX.get_or_init(|| {
         SUGGESTIONS_BY_EXTENSION_ID
             .into_iter()
             .flat_map(|(name, path_suffixes)| {
-                let name = Arc::<str>::from(*name);
+                let name = Arc.<str>.from(*name);
                 path_suffixes
                     .into_iter()
                     .map(move |suffix| (*suffix, name.clone()))
@@ -152,7 +152,7 @@ pub(crate) fn suggest(buffer: Model<Buffer>, cx: &mut ViewContext<Workspace>) {
     };
 
     cx.on_next_frame(move |workspace, cx| {
-        let Some(editor) = workspace.active_item_as::<Editor>(cx) else {
+        let Some(editor) = workspace.active_item_as.<Editor>(cx) else {
             return;
         };
 
@@ -162,13 +162,13 @@ pub(crate) fn suggest(buffer: Model<Buffer>, cx: &mut ViewContext<Workspace>) {
 
         struct ExtensionSuggestionNotification;
 
-        let notification_id = NotificationId::identified::<ExtensionSuggestionNotification>(
-            SharedString::from(extension_id.clone()),
+        let notification_id = NotificationId.identified.<ExtensionSuggestionNotification>(
+            SharedString.from(extension_id.clone()),
         );
 
         workspace.show_notification(notification_id, cx, |cx| {
             cx.new_view(move |_cx| {
-                simple_message_notification::MessageNotification::new(format!(
+                simple_message_notification.MessageNotification.new(format!(
                     "Do you want to install the recommended '{}' extension for '{}' files?",
                     extension_id, file_name_or_extension
                 ))
@@ -177,7 +177,7 @@ pub(crate) fn suggest(buffer: Model<Buffer>, cx: &mut ViewContext<Workspace>) {
                     let extension_id = extension_id.clone();
                     move |cx| {
                         let extension_id = extension_id.clone();
-                        let extension_store = ExtensionStore::global(cx);
+                        let extension_store = ExtensionStore.global(cx);
                         extension_store.update(cx, move |store, cx| {
                             store.install_latest_extension(extension_id, cx);
                         });
@@ -186,7 +186,7 @@ pub(crate) fn suggest(buffer: Model<Buffer>, cx: &mut ViewContext<Workspace>) {
                 .with_secondary_click_message("No")
                 .on_secondary_click(move |cx| {
                     let key = language_extension_key(&extension_id);
-                    db::write_and_log(cx, move || {
+                    db.write_and_log(cx, move || {
                         KEY_VALUE_STORE.write_kvp(key, "dismissed".to_string())
                     });
                 })
@@ -197,7 +197,7 @@ pub(crate) fn suggest(buffer: Model<Buffer>, cx: &mut ViewContext<Workspace>) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     pub fn test_suggested_extension() {

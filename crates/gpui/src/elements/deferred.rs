@@ -1,4 +1,4 @@
-use crate::{
+use crate.{
     AnyElement, Bounds, Element, GlobalElementId, IntoElement, LayoutId, Pixels, WindowContext,
 };
 
@@ -31,7 +31,7 @@ impl Element for Deferred {
     type RequestLayoutState = ();
     type PrepaintState = ();
 
-    fn id(&self) -> Option<crate::ElementId> {
+    fn id(&self) -> Option<crate.ElementId> {
         None
     }
 
@@ -48,7 +48,7 @@ impl Element for Deferred {
         &mut self,
         _id: Option<&GlobalElementId>,
         _bounds: Bounds<Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
+        _request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) {
         let child = self.child.take().unwrap();
@@ -60,8 +60,8 @@ impl Element for Deferred {
         &mut self,
         _id: Option<&GlobalElementId>,
         _bounds: Bounds<Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
-        _prepaint: &mut Self::PrepaintState,
+        _request_layout: &mut Self.RequestLayoutState,
+        _prepaint: &mut Self.PrepaintState,
         _cx: &mut WindowContext,
     ) {
     }
@@ -70,7 +70,7 @@ impl Element for Deferred {
 impl IntoElement for Deferred {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }

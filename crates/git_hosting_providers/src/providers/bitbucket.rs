@@ -1,6 +1,6 @@
-use url::Url;
+use url.Url;
 
-use git::{BuildCommitPermalinkParams, BuildPermalinkParams, GitHostingProvider, ParsedGitRemote};
+use git.{BuildCommitPermalinkParams, BuildPermalinkParams, GitHostingProvider, ParsedGitRemote};
 
 pub struct Bitbucket;
 
@@ -10,7 +10,7 @@ impl GitHostingProvider for Bitbucket {
     }
 
     fn base_url(&self) -> Url {
-        Url::parse("https://bitbucket.org").unwrap()
+        Url.parse("https://bitbucket.org").unwrap()
     }
 
     fn supports_avatars(&self) -> bool {
@@ -75,16 +75,16 @@ impl GitHostingProvider for Bitbucket {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std.sync.Arc;
 
-    use git::{parse_git_remote_url, GitHostingProviderRegistry};
+    use git.{parse_git_remote_url, GitHostingProviderRegistry};
 
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_parse_git_remote_url_bitbucket_https_with_username() {
-        let provider_registry = Arc::new(GitHostingProviderRegistry::new());
-        provider_registry.register_hosting_provider(Arc::new(Bitbucket));
+        let provider_registry = Arc.new(GitHostingProviderRegistry.new());
+        provider_registry.register_hosting_provider(Arc.new(Bitbucket));
         let url = "https://thorstenballzed@bitbucket.org/thorstenzed/testingrepo.git";
         let (provider, parsed) = parse_git_remote_url(provider_registry, url).unwrap();
         assert_eq!(provider.name(), "Bitbucket");
@@ -94,8 +94,8 @@ mod tests {
 
     #[test]
     fn test_parse_git_remote_url_bitbucket_https_without_username() {
-        let provider_registry = Arc::new(GitHostingProviderRegistry::new());
-        provider_registry.register_hosting_provider(Arc::new(Bitbucket));
+        let provider_registry = Arc.new(GitHostingProviderRegistry.new());
+        provider_registry.register_hosting_provider(Arc.new(Bitbucket));
         let url = "https://bitbucket.org/thorstenzed/testingrepo.git";
         let (provider, parsed) = parse_git_remote_url(provider_registry, url).unwrap();
         assert_eq!(provider.name(), "Bitbucket");
@@ -105,8 +105,8 @@ mod tests {
 
     #[test]
     fn test_parse_git_remote_url_bitbucket_git() {
-        let provider_registry = Arc::new(GitHostingProviderRegistry::new());
-        provider_registry.register_hosting_provider(Arc::new(Bitbucket));
+        let provider_registry = Arc.new(GitHostingProviderRegistry.new());
+        provider_registry.register_hosting_provider(Arc.new(Bitbucket));
         let url = "git@bitbucket.org:thorstenzed/testingrepo.git";
         let (provider, parsed) = parse_git_remote_url(provider_registry, url).unwrap();
         assert_eq!(provider.name(), "Bitbucket");

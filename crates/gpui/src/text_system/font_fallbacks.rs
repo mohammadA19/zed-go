@@ -1,7 +1,7 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use schemars::JsonSchema;
-use serde_derive::{Deserialize, Serialize};
+use schemars.JsonSchema;
+use serde_derive.{Deserialize, Serialize};
 
 /// The fallback fonts that can be configured for a given font.
 /// Fallback fonts family names are stored here.
@@ -16,6 +16,6 @@ impl FontFallbacks {
 
     /// Create a font fallback from a list of strings
     pub fn from_fonts(fonts: Vec<String>) -> Self {
-        FontFallbacks(Arc::new(fonts))
+        FontFallbacks(Arc.new(fonts))
     }
 }

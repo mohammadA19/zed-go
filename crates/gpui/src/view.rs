@@ -1,17 +1,17 @@
-use crate::Empty;
-use crate::{
-    seal::Sealed, AnyElement, AnyModel, AnyWeakModel, AppContext, Bounds, ContentMask, Element,
+use crate.Empty;
+use crate.{
+    seal.Sealed, AnyElement, AnyModel, AnyWeakModel, AppContext, Bounds, ContentMask, Element,
     ElementId, Entity, EntityId, Flatten, FocusHandle, FocusableView, GlobalElementId, IntoElement,
     LayoutId, Model, PaintIndex, Pixels, PrepaintStateIndex, Render, Style, StyleRefinement,
     TextStyle, ViewContext, VisualContext, WeakModel, WindowContext,
 };
-use anyhow::{Context, Result};
-use refineable::Refineable;
-use std::{
-    any::{type_name, TypeId},
+use anyhow.{Context, Result};
+use refineable.Refineable;
+use std.{
+    any.{type_name, TypeId},
     fmt,
-    hash::{Hash, Hasher},
-    ops::Range,
+    hash.{Hash, Hasher},
+    ops.Range,
 };
 
 /// A view is a piece of state that can be presented on screen by implementing the [Render] trait.
@@ -43,13 +43,13 @@ impl<V: 'static> Entity<V> for View<V> {
         self.model.entity_id
     }
 
-    fn downgrade(&self) -> Self::Weak {
+    fn downgrade(&self) -> Self.Weak {
         WeakView {
             model: self.model.downgrade(),
         }
     }
 
-    fn upgrade_from(weak: &Self::Weak) -> Option<Self>
+    fn upgrade_from(weak: &Self.Weak) -> Option<Self>
     where
         Self: Sized,
     {
@@ -61,7 +61,7 @@ impl<V: 'static> Entity<V> for View<V> {
 impl<V: 'static> View<V> {
     /// Convert this strong view reference into a weak view reference.
     pub fn downgrade(&self) -> WeakView<V> {
-        Entity::downgrade(self)
+        Entity.downgrade(self)
     }
 
     /// Updates the view's state with the given function, which is passed a mutable reference and a context.
@@ -69,7 +69,7 @@ impl<V: 'static> View<V> {
         &self,
         cx: &mut C,
         f: impl FnOnce(&mut V, &mut ViewContext<'_, V>) -> R,
-    ) -> C::Result<R>
+    ) -> C.Result<R>
     where
         C: VisualContext,
     {
@@ -95,14 +95,14 @@ impl<V: Render> Element for View<V> {
     type PrepaintState = ();
 
     fn id(&self) -> Option<ElementId> {
-        Some(ElementId::View(self.entity_id()))
+        Some(ElementId.View(self.entity_id()))
     }
 
     fn request_layout(
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         let mut element = self.update(cx, |view, cx| view.render(cx).into_any_element());
         let layout_id = element.request_layout(cx);
         (layout_id, element)
@@ -112,7 +112,7 @@ impl<V: Render> Element for View<V> {
         &mut self,
         _id: Option<&GlobalElementId>,
         _: Bounds<Pixels>,
-        element: &mut Self::RequestLayoutState,
+        element: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) {
         cx.set_view_id(self.entity_id());
@@ -123,8 +123,8 @@ impl<V: Render> Element for View<V> {
         &mut self,
         _id: Option<&GlobalElementId>,
         _: Bounds<Pixels>,
-        element: &mut Self::RequestLayoutState,
-        _: &mut Self::PrepaintState,
+        element: &mut Self.RequestLayoutState,
+        _: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         element.paint(cx);
@@ -139,9 +139,9 @@ impl<V> Clone for View<V> {
     }
 }
 
-impl<T> std::fmt::Debug for View<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct(&format!("View<{}>", type_name::<T>()))
+impl<T> std.fmt.Debug for View<T> {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
+        f.debug_struct(&format!("View<{}>", type_name.<T>()))
             .field("entity_id", &self.model.entity_id)
             .finish_non_exhaustive()
     }
@@ -174,7 +174,7 @@ impl<V: 'static> WeakView<V> {
 
     /// Obtain a strong handle for the view if it hasn't been released.
     pub fn upgrade(&self) -> Option<View<V>> {
-        Entity::upgrade_from(self)
+        Entity.upgrade_from(self)
     }
 
     /// Updates this view's state if it hasn't been released.
@@ -186,7 +186,7 @@ impl<V: 'static> WeakView<V> {
     ) -> Result<R>
     where
         C: VisualContext,
-        Result<C::Result<R>>: Flatten<R>,
+        Result<C.Result<R>>: Flatten<R>,
     {
         let view = self.upgrade().context("error upgrading view")?;
         Ok(view.update(cx, f)).flatten()
@@ -231,8 +231,8 @@ pub struct AnyView {
 
 impl AnyView {
     /// Indicate that this view should be cached when using it as an element.
-    /// When using this method, the view's previous layout and paint will be recycled from the previous frame if [ViewContext::notify] has not been called since it was rendered.
-    /// The one exception is when [WindowContext::refresh] is called, in which case caching is ignored.
+    /// When using this method, the view's previous layout and paint will be recycled from the previous frame if [ViewContext.notify] has not been called since it was rendered.
+    /// The one exception is when [WindowContext.refresh] is called, in which case caching is ignored.
     pub fn cached(mut self, style: StyleRefinement) -> Self {
         self.cached_style = Some(style);
         self
@@ -274,7 +274,7 @@ impl<V: Render> From<View<V>> for AnyView {
     fn from(value: View<V>) -> Self {
         AnyView {
             model: value.model.into_any(),
-            render: any_view::render::<V>,
+            render: any_view.render.<V>,
             cached_style: None,
         }
     }
@@ -293,16 +293,16 @@ impl Element for AnyView {
     type PrepaintState = Option<AnyElement>;
 
     fn id(&self) -> Option<ElementId> {
-        Some(ElementId::View(self.entity_id()))
+        Some(ElementId.View(self.entity_id()))
     }
 
     fn request_layout(
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         if let Some(style) = self.cached_style.as_ref() {
-            let mut root_style = Style::default();
+            let mut root_style = Style.default();
             root_style.refine(style);
             let layout_id = cx.request_layout(root_style, None);
             (layout_id, None)
@@ -317,12 +317,12 @@ impl Element for AnyView {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        element: &mut Self::RequestLayoutState,
+        element: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) -> Option<AnyElement> {
         cx.set_view_id(self.entity_id());
         if self.cached_style.is_some() {
-            cx.with_element_state::<AnyViewState, _>(global_id.unwrap(), |element_state, cx| {
+            cx.with_element_state.<AnyViewState, _>(global_id.unwrap(), |element_state, cx| {
                 let content_mask = cx.content_mask();
                 let text_style = cx.text_style();
 
@@ -351,7 +351,7 @@ impl Element for AnyView {
                     Some(element),
                     AnyViewState {
                         prepaint_range: prepaint_start..prepaint_end,
-                        paint_range: PaintIndex::default()..PaintIndex::default(),
+                        paint_range: PaintIndex.default()..PaintIndex.default(),
                         cache_key: ViewCacheKey {
                             bounds,
                             content_mask,
@@ -371,12 +371,12 @@ impl Element for AnyView {
         &mut self,
         global_id: Option<&GlobalElementId>,
         _bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
-        element: &mut Self::PrepaintState,
+        _: &mut Self.RequestLayoutState,
+        element: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         if self.cached_style.is_some() {
-            cx.with_element_state::<AnyViewState, _>(global_id.unwrap(), |element_state, cx| {
+            cx.with_element_state.<AnyViewState, _>(global_id.unwrap(), |element_state, cx| {
                 let mut element_state = element_state.unwrap();
 
                 let paint_start = cx.paint_index();
@@ -401,7 +401,7 @@ impl Element for AnyView {
 impl<V: 'static + Render> IntoElement for View<V> {
     type Element = View<V>;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -409,7 +409,7 @@ impl<V: 'static + Render> IntoElement for View<V> {
 impl IntoElement for AnyView {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -436,7 +436,7 @@ impl<V: 'static + Render> From<WeakView<V>> for AnyWeakView {
     fn from(view: WeakView<V>) -> Self {
         Self {
             model: view.model.into(),
-            render: any_view::render::<V>,
+            render: any_view.render.<V>,
         }
     }
 }
@@ -447,8 +447,8 @@ impl PartialEq for AnyWeakView {
     }
 }
 
-impl std::fmt::Debug for AnyWeakView {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl std.fmt.Debug for AnyWeakView {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         f.debug_struct("AnyWeakView")
             .field("entity_id", &self.model.entity_id)
             .finish_non_exhaustive()
@@ -456,13 +456,13 @@ impl std::fmt::Debug for AnyWeakView {
 }
 
 mod any_view {
-    use crate::{AnyElement, AnyView, IntoElement, Render, WindowContext};
+    use crate.{AnyElement, AnyView, IntoElement, Render, WindowContext};
 
     pub(crate) fn render<V: 'static + Render>(
         view: &AnyView,
         cx: &mut WindowContext,
     ) -> AnyElement {
-        let view = view.clone().downcast::<V>().unwrap();
+        let view = view.clone().downcast.<V>().unwrap();
         view.update(cx, |view, cx| view.render(cx).into_any_element())
     }
 }

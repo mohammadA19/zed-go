@@ -1,7 +1,7 @@
-use std::ops::Range;
+use std.ops.Range;
 
-use gpui::*;
-use unicode_segmentation::*;
+use gpui.*;
+use unicode_segmentation.*;
 
 actions!(
     text_input,
@@ -295,7 +295,7 @@ impl ViewInputHandler for TextInput {
             return None;
         };
         let range = self.range_from_utf16(&range_utf16);
-        Some(Bounds::from_corners(
+        Some(Bounds.from_corners(
             point(
                 bounds.left() + last_layout.x_for_index(range.start),
                 bounds.top(),
@@ -321,7 +321,7 @@ struct PrepaintState {
 impl IntoElement for TextElement {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -339,8 +339,8 @@ impl Element for TextElement {
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
-        let mut style = Style::default();
+    ) -> (LayoutId, Self.RequestLayoutState) {
+        let mut style = Style.default();
         style.size.width = relative(1.).into();
         style.size.height = cx.line_height().into();
         (cx.request_layout(style, []), ())
@@ -350,9 +350,9 @@ impl Element for TextElement {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
+        _request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
-    ) -> Self::PrepaintState {
+    ) -> Self.PrepaintState {
         let input = self.input.read(cx);
         let content = input.content.clone();
         let selected_range = input.selected_range.clone();
@@ -411,17 +411,17 @@ impl Element for TextElement {
             (
                 None,
                 Some(fill(
-                    Bounds::new(
+                    Bounds.new(
                         point(bounds.left() + cursor_pos, bounds.top()),
                         size(px(2.), bounds.bottom() - bounds.top()),
                     ),
-                    gpui::blue(),
+                    gpui.blue(),
                 )),
             )
         } else {
             (
                 Some(fill(
-                    Bounds::from_corners(
+                    Bounds.from_corners(
                         point(
                             bounds.left() + line.x_for_index(selected_range.start),
                             bounds.top(),
@@ -447,14 +447,14 @@ impl Element for TextElement {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
-        prepaint: &mut Self::PrepaintState,
+        _request_layout: &mut Self.RequestLayoutState,
+        prepaint: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         let focus_handle = self.input.read(cx).focus_handle.clone();
         cx.handle_input(
             &focus_handle,
-            ElementInputHandler::new(bounds, self.input.clone()),
+            ElementInputHandler.new(bounds, self.input.clone()),
         );
         if let Some(selection) = prepaint.selection.take() {
             cx.paint_quad(selection)
@@ -478,21 +478,21 @@ impl Render for TextInput {
             .flex()
             .key_context("TextInput")
             .track_focus(&self.focus_handle)
-            .cursor(CursorStyle::IBeam)
-            .on_action(cx.listener(Self::backspace))
-            .on_action(cx.listener(Self::delete))
-            .on_action(cx.listener(Self::left))
-            .on_action(cx.listener(Self::right))
-            .on_action(cx.listener(Self::select_left))
-            .on_action(cx.listener(Self::select_right))
-            .on_action(cx.listener(Self::select_all))
-            .on_action(cx.listener(Self::home))
-            .on_action(cx.listener(Self::end))
-            .on_action(cx.listener(Self::show_character_palette))
-            .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
-            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up))
-            .on_mouse_move(cx.listener(Self::on_mouse_move))
+            .cursor(CursorStyle.IBeam)
+            .on_action(cx.listener(Self.backspace))
+            .on_action(cx.listener(Self.delete))
+            .on_action(cx.listener(Self.left))
+            .on_action(cx.listener(Self.right))
+            .on_action(cx.listener(Self.select_left))
+            .on_action(cx.listener(Self.select_right))
+            .on_action(cx.listener(Self.select_all))
+            .on_action(cx.listener(Self.home))
+            .on_action(cx.listener(Self.end))
+            .on_action(cx.listener(Self.show_character_palette))
+            .on_mouse_down(MouseButton.Left, cx.listener(Self.on_mouse_down))
+            .on_mouse_up(MouseButton.Left, cx.listener(Self.on_mouse_up))
+            .on_mouse_up_out(MouseButton.Left, cx.listener(Self.on_mouse_up))
+            .on_mouse_move(cx.listener(Self.on_mouse_move))
             .bg(rgb(0xeeeeee))
             .size_full()
             .line_height(px(30.))
@@ -559,7 +559,7 @@ impl Render for InputExample {
                                     .bg(yellow().blend(opaque_grey(0.5, 0.5)))
                                     .cursor_pointer()
                             })
-                            .on_mouse_up(MouseButton::Left, cx.listener(Self::on_reset_click)),
+                            .on_mouse_up(MouseButton.Left, cx.listener(Self.on_reset_click)),
                     ),
             )
             .child(self.text_input.clone())
@@ -578,25 +578,25 @@ impl Render for InputExample {
 }
 
 fn main() {
-    App::new().run(|cx: &mut AppContext| {
-        let bounds = Bounds::centered(None, size(px(300.0), px(300.0)), cx);
+    App.new().run(|cx: &mut AppContext| {
+        let bounds = Bounds.centered(None, size(px(300.0), px(300.0)), cx);
         cx.bind_keys([
-            KeyBinding::new("backspace", Backspace, None),
-            KeyBinding::new("delete", Delete, None),
-            KeyBinding::new("left", Left, None),
-            KeyBinding::new("right", Right, None),
-            KeyBinding::new("shift-left", SelectLeft, None),
-            KeyBinding::new("shift-right", SelectRight, None),
-            KeyBinding::new("cmd-a", SelectAll, None),
-            KeyBinding::new("home", Home, None),
-            KeyBinding::new("end", End, None),
-            KeyBinding::new("ctrl-cmd-space", ShowCharacterPalette, None),
+            KeyBinding.new("backspace", Backspace, None),
+            KeyBinding.new("delete", Delete, None),
+            KeyBinding.new("left", Left, None),
+            KeyBinding.new("right", Right, None),
+            KeyBinding.new("shift-left", SelectLeft, None),
+            KeyBinding.new("shift-right", SelectRight, None),
+            KeyBinding.new("cmd-a", SelectAll, None),
+            KeyBinding.new("home", Home, None),
+            KeyBinding.new("end", End, None),
+            KeyBinding.new("ctrl-cmd-space", ShowCharacterPalette, None),
         ]);
         let window = cx
             .open_window(
                 WindowOptions {
-                    window_bounds: Some(WindowBounds::Windowed(bounds)),
-                    ..Default::default()
+                    window_bounds: Some(WindowBounds.Windowed(bounds)),
+                    ..Default.default()
                 },
                 |cx| {
                     let text_input = cx.new_view(|cx| TextInput {

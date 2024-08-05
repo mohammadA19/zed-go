@@ -1,40 +1,40 @@
-use crate::{seal::Sealed, AppContext, Context, Entity, ModelContext};
-use anyhow::{anyhow, Result};
-use derive_more::{Deref, DerefMut};
-use parking_lot::{RwLock, RwLockUpgradableReadGuard};
-use slotmap::{KeyData, SecondaryMap, SlotMap};
-use std::{
-    any::{type_name, Any, TypeId},
-    fmt::{self, Display},
-    hash::{Hash, Hasher},
-    marker::PhantomData,
+use crate.{seal.Sealed, AppContext, Context, Entity, ModelContext};
+use anyhow.{anyhow, Result};
+use derive_more.{Deref, DerefMut};
+use parking_lot.{RwLock, RwLockUpgradableReadGuard};
+use slotmap.{KeyData, SecondaryMap, SlotMap};
+use std.{
+    any.{type_name, Any, TypeId},
+    fmt.{self, Display},
+    hash.{Hash, Hasher},
+    marker.PhantomData,
     mem,
-    num::NonZeroU64,
-    sync::{
-        atomic::{AtomicUsize, Ordering::SeqCst},
+    num.NonZeroU64,
+    sync.{
+        atomic.{AtomicUsize, Ordering.SeqCst},
         Arc, Weak,
     },
-    thread::panicking,
+    thread.panicking,
 };
 
 #[cfg(any(test, feature = "test-support"))]
-use collections::HashMap;
+use collections.HashMap;
 
-slotmap::new_key_type! {
+slotmap.new_key_type! {
     /// A unique identifier for a model or view across the application.
     pub struct EntityId;
 }
 
 impl From<u64> for EntityId {
     fn from(value: u64) -> Self {
-        Self(KeyData::from_ffi(value))
+        Self(KeyData.from_ffi(value))
     }
 }
 
 impl EntityId {
     /// Converts this entity id to a [NonZeroU64]
     pub fn as_non_zero_u64(self) -> NonZeroU64 {
-        NonZeroU64::new(self.0.as_ffi()).unwrap()
+        NonZeroU64.new(self.0.as_ffi()).unwrap()
     }
 
     /// Converts this entity id to a [u64]
@@ -44,7 +44,7 @@ impl EntityId {
 }
 
 impl Display for EntityId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{}", self.as_u64())
     }
 }
@@ -64,14 +64,14 @@ struct EntityRefCounts {
 impl EntityMap {
     pub fn new() -> Self {
         Self {
-            entities: SecondaryMap::new(),
-            ref_counts: Arc::new(RwLock::new(EntityRefCounts {
-                counts: SlotMap::with_key(),
-                dropped_entity_ids: Vec::new(),
+            entities: SecondaryMap.new(),
+            ref_counts: Arc.new(RwLock.new(EntityRefCounts {
+                counts: SlotMap.with_key(),
+                dropped_entity_ids: Vec.new(),
                 #[cfg(any(test, feature = "test-support"))]
                 leak_detector: LeakDetector {
                     next_handle_id: 0,
-                    entity_handles: HashMap::default(),
+                    entity_handles: HashMap.default(),
                 },
             })),
         }
@@ -80,7 +80,7 @@ impl EntityMap {
     /// Reserve a slot for an entity, which you can subsequently use with `insert`.
     pub fn reserve<T: 'static>(&self) -> Slot<T> {
         let id = self.ref_counts.write().counts.insert(1.into());
-        Slot(Model::new(id, Arc::downgrade(&self.ref_counts)))
+        Slot(Model.new(id, Arc.downgrade(&self.ref_counts)))
     }
 
     /// Insert an entity into a slot obtained by calling `reserve`.
@@ -89,7 +89,7 @@ impl EntityMap {
         T: 'static,
     {
         let model = slot.0;
-        self.entities.insert(model.entity_id, Box::new(entity));
+        self.entities.insert(model.entity_id, Box.new(entity));
         model
     }
 
@@ -100,7 +100,7 @@ impl EntityMap {
         let entity = Some(
             self.entities
                 .remove(model.entity_id)
-                .unwrap_or_else(|| double_lease_panic::<T>("update")),
+                .unwrap_or_else(|| double_lease_panic.<T>("update")),
         );
         Lease {
             model,
@@ -119,19 +119,19 @@ impl EntityMap {
         self.assert_valid_context(model);
         self.entities[model.entity_id]
             .downcast_ref()
-            .unwrap_or_else(|| double_lease_panic::<T>("read"))
+            .unwrap_or_else(|| double_lease_panic.<T>("read"))
     }
 
     fn assert_valid_context(&self, model: &AnyModel) {
         debug_assert!(
-            Weak::ptr_eq(&model.entity_map, &Arc::downgrade(&self.ref_counts)),
+            Weak.ptr_eq(&model.entity_map, &Arc.downgrade(&self.ref_counts)),
             "used a model with the wrong context"
         );
     }
 
     pub fn take_dropped(&mut self) -> Vec<(EntityId, Box<dyn Any>)> {
         let mut ref_counts = self.ref_counts.write();
-        let dropped_entity_ids = mem::take(&mut ref_counts.dropped_entity_ids);
+        let dropped_entity_ids = mem.take(&mut ref_counts.dropped_entity_ids);
 
         dropped_entity_ids
             .into_iter()
@@ -142,7 +142,7 @@ impl EntityMap {
                     0,
                     "dropped an entity that was referenced"
                 );
-                // If the EntityId was allocated with `Context::reserve`,
+                // If the EntityId was allocated with `Context.reserve`,
                 // the entity may not have been inserted.
                 Some((entity_id, self.entities.remove(entity_id)?))
             })
@@ -153,7 +153,7 @@ impl EntityMap {
 fn double_lease_panic<T>(operation: &str) -> ! {
     panic!(
         "cannot {operation} {} while it is already being updated",
-        std::any::type_name::<T>()
+        std.any.type_name.<T>()
     )
 }
 
@@ -163,16 +163,16 @@ pub(crate) struct Lease<'a, T> {
     entity_type: PhantomData<T>,
 }
 
-impl<'a, T: 'static> core::ops::Deref for Lease<'a, T> {
+impl<'a, T: 'static> core.ops.Deref for Lease<'a, T> {
     type Target = T;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         self.entity.as_ref().unwrap().downcast_ref().unwrap()
     }
 }
 
-impl<'a, T: 'static> core::ops::DerefMut for Lease<'a, T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+impl<'a, T: 'static> core.ops.DerefMut for Lease<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self.Target {
         self.entity.as_mut().unwrap().downcast_mut().unwrap()
     }
 }
@@ -180,7 +180,7 @@ impl<'a, T: 'static> core::ops::DerefMut for Lease<'a, T> {
 impl<'a, T> Drop for Lease<'a, T> {
     fn drop(&mut self) {
         if self.entity.is_some() && !panicking() {
-            panic!("Leases must be ended with EntityMap::end_lease")
+            panic!("Leases must be ended with EntityMap.end_lease")
         }
     }
 }
@@ -235,7 +235,7 @@ impl AnyModel {
     /// Converts this model handle into a strongly-typed model handle of the given type.
     /// If this model handle is not of the specified type, returns itself as an error variant.
     pub fn downcast<T: 'static>(self) -> Result<Model<T>, AnyModel> {
-        if TypeId::of::<T>() == self.entity_type {
+        if TypeId.of.<T>() == self.entity_type {
             Ok(Model {
                 any_model: self,
                 entity_type: PhantomData,
@@ -286,7 +286,7 @@ impl Drop for AnyModel {
             assert_ne!(prev_count, 0, "Detected over-release of a model.");
             if prev_count == 1 {
                 // We were the last reference to this entity, so we can remove it.
-                let mut entity_map = RwLockUpgradableReadGuard::upgrade(entity_map);
+                let mut entity_map = RwLockUpgradableReadGuard.upgrade(entity_map);
                 entity_map.dropped_entity_ids.push(self.entity_id);
             }
         }
@@ -321,8 +321,8 @@ impl PartialEq for AnyModel {
 
 impl Eq for AnyModel {}
 
-impl std::fmt::Debug for AnyModel {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl std.fmt.Debug for AnyModel {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         f.debug_struct("AnyModel")
             .field("entity_id", &self.entity_id.as_u64())
             .finish()
@@ -350,14 +350,14 @@ impl<T: 'static> Entity<T> for Model<T> {
         self.any_model.entity_id
     }
 
-    fn downgrade(&self) -> Self::Weak {
+    fn downgrade(&self) -> Self.Weak {
         WeakModel {
             any_model: self.any_model.downgrade(),
             entity_type: self.entity_type,
         }
     }
 
-    fn upgrade_from(weak: &Self::Weak) -> Option<Self>
+    fn upgrade_from(weak: &Self.Weak) -> Option<Self>
     where
         Self: Sized,
     {
@@ -374,7 +374,7 @@ impl<T: 'static> Model<T> {
         T: 'static,
     {
         Self {
-            any_model: AnyModel::new(id, TypeId::of::<T>(), entity_map),
+            any_model: AnyModel.new(id, TypeId.of.<T>(), entity_map),
             entity_type: PhantomData,
         }
     }
@@ -384,7 +384,7 @@ impl<T: 'static> Model<T> {
         // Delegate to the trait implementation to keep behavior in one place.
         // This method was included to improve method resolution in the presence of
         // the Model's deref
-        Entity::downgrade(self)
+        Entity.downgrade(self)
     }
 
     /// Convert this into a dynamically typed model.
@@ -402,7 +402,7 @@ impl<T: 'static> Model<T> {
         &self,
         cx: &C,
         f: impl FnOnce(&T, &AppContext) -> R,
-    ) -> C::Result<R> {
+    ) -> C.Result<R> {
         cx.read_model(self, f)
     }
 
@@ -415,7 +415,7 @@ impl<T: 'static> Model<T> {
         &self,
         cx: &mut C,
         update: impl FnOnce(&mut T, &mut ModelContext<'_, T>) -> R,
-    ) -> C::Result<R>
+    ) -> C.Result<R>
     where
         C: Context,
     {
@@ -432,13 +432,13 @@ impl<T> Clone for Model<T> {
     }
 }
 
-impl<T> std::fmt::Debug for Model<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<T> std.fmt.Debug for Model<T> {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(
             f,
             "Model {{ entity_id: {:?}, entity_type: {:?} }}",
             self.any_model.entity_id,
-            type_name::<T>()
+            type_name.<T>()
         )
     }
 }
@@ -583,7 +583,7 @@ impl<T: 'static> WeakModel<T> {
     /// Upgrade this weak model reference into a strong model reference
     pub fn upgrade(&self) -> Option<Model<T>> {
         // Delegate to the trait implementation to keep behavior in one place.
-        Model::upgrade_from(self)
+        Model.upgrade_from(self)
     }
 
     /// Updates the entity referenced by this model with the given function if
@@ -596,9 +596,9 @@ impl<T: 'static> WeakModel<T> {
     ) -> Result<R>
     where
         C: Context,
-        Result<C::Result<R>>: crate::Flatten<R>,
+        Result<C.Result<R>>: crate.Flatten<R>,
     {
-        crate::Flatten::flatten(
+        crate.Flatten.flatten(
             self.upgrade()
                 .ok_or_else(|| anyhow!("entity release"))
                 .map(|this| cx.update_model(&this, update)),
@@ -611,9 +611,9 @@ impl<T: 'static> WeakModel<T> {
     pub fn read_with<C, R>(&self, cx: &C, read: impl FnOnce(&T, &AppContext) -> R) -> Result<R>
     where
         C: Context,
-        Result<C::Result<R>>: crate::Flatten<R>,
+        Result<C.Result<R>>: crate.Flatten<R>,
     {
-        crate::Flatten::flatten(
+        crate.Flatten.flatten(
             self.upgrade()
                 .ok_or_else(|| anyhow!("entity release"))
                 .map(|this| cx.read_model(&this, read)),
@@ -642,9 +642,9 @@ impl<T> PartialEq<Model<T>> for WeakModel<T> {
 }
 
 #[cfg(any(test, feature = "test-support"))]
-lazy_static::lazy_static! {
+lazy_static.lazy_static! {
     static ref LEAK_BACKTRACE: bool =
-        std::env::var("LEAK_BACKTRACE").map_or(false, |b| !b.is_empty());
+        std.env.var("LEAK_BACKTRACE").map_or(false, |b| !b.is_empty());
 }
 
 #[cfg(any(test, feature = "test-support"))]
@@ -656,19 +656,19 @@ pub(crate) struct HandleId {
 #[cfg(any(test, feature = "test-support"))]
 pub(crate) struct LeakDetector {
     next_handle_id: u64,
-    entity_handles: HashMap<EntityId, HashMap<HandleId, Option<backtrace::Backtrace>>>,
+    entity_handles: HashMap<EntityId, HashMap<HandleId, Option<backtrace.Backtrace>>>,
 }
 
 #[cfg(any(test, feature = "test-support"))]
 impl LeakDetector {
     #[track_caller]
     pub fn handle_created(&mut self, entity_id: EntityId) -> HandleId {
-        let id = util::post_inc(&mut self.next_handle_id);
+        let id = util.post_inc(&mut self.next_handle_id);
         let handle_id = HandleId { id };
         let handles = self.entity_handles.entry(entity_id).or_default();
         handles.insert(
             handle_id,
-            LEAK_BACKTRACE.then(|| backtrace::Backtrace::new_unresolved()),
+            LEAK_BACKTRACE.then(|| backtrace.Backtrace.new_unresolved()),
         );
         handle_id
     }
@@ -696,7 +696,7 @@ impl LeakDetector {
 
 #[cfg(test)]
 mod test {
-    use crate::EntityMap;
+    use crate.EntityMap;
 
     struct TestEntity {
         pub i: i32,
@@ -705,12 +705,12 @@ mod test {
     #[test]
     fn test_entity_map_slot_assignment_before_cleanup() {
         // Tests that slots are not re-used before take_dropped.
-        let mut entity_map = EntityMap::new();
+        let mut entity_map = EntityMap.new();
 
-        let slot = entity_map.reserve::<TestEntity>();
+        let slot = entity_map.reserve.<TestEntity>();
         entity_map.insert(slot, TestEntity { i: 1 });
 
-        let slot = entity_map.reserve::<TestEntity>();
+        let slot = entity_map.reserve.<TestEntity>();
         entity_map.insert(slot, TestEntity { i: 2 });
 
         let dropped = entity_map.take_dropped();
@@ -719,8 +719,8 @@ mod test {
         assert_eq!(
             dropped
                 .into_iter()
-                .map(|(_, entity)| entity.downcast::<TestEntity>().unwrap().i)
-                .collect::<Vec<i32>>(),
+                .map(|(_, entity)| entity.downcast.<TestEntity>().unwrap().i)
+                .collect.<Vec<i32>>(),
             vec![1, 2],
         );
     }
@@ -728,9 +728,9 @@ mod test {
     #[test]
     fn test_entity_map_weak_upgrade_before_cleanup() {
         // Tests that weak handles are not upgraded before take_dropped
-        let mut entity_map = EntityMap::new();
+        let mut entity_map = EntityMap.new();
 
-        let slot = entity_map.reserve::<TestEntity>();
+        let slot = entity_map.reserve.<TestEntity>();
         let handle = entity_map.insert(slot, TestEntity { i: 1 });
         let weak = handle.downgrade();
         drop(handle);
@@ -744,8 +744,8 @@ mod test {
         assert_eq!(
             dropped
                 .into_iter()
-                .map(|(_, entity)| entity.downcast::<TestEntity>().unwrap().i)
-                .collect::<Vec<i32>>(),
+                .map(|(_, entity)| entity.downcast.<TestEntity>().unwrap().i)
+                .collect.<Vec<i32>>(),
             vec![1],
         );
     }

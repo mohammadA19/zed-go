@@ -1,13 +1,13 @@
 #[cfg(any(test, feature = "test-support"))]
-use std::time::Duration;
+use std.time.Duration;
 
 #[cfg(any(test, feature = "test-support"))]
-use futures::Future;
+use futures.Future;
 
 #[cfg(any(test, feature = "test-support"))]
-use smol::future::FutureExt;
+use smol.future.FutureExt;
 
-pub use util::*;
+pub use util.*;
 
 /// A helper trait for building complex objects with imperative conditionals in a fluent style.
 pub trait FluentBuilder {
@@ -48,7 +48,7 @@ where
     F: Future<Output = T>,
 {
     let timer = async {
-        smol::Timer::after(timeout).await;
+        smol.Timer.after(timeout).await;
         Err(())
     };
     let future = async move { Ok(f.await) };
@@ -56,19 +56,19 @@ where
 }
 
 #[cfg(any(test, feature = "test-support"))]
-pub struct CwdBacktrace<'a>(pub &'a backtrace::Backtrace);
+pub struct CwdBacktrace<'a>(pub &'a backtrace.Backtrace);
 
 #[cfg(any(test, feature = "test-support"))]
-impl<'a> std::fmt::Debug for CwdBacktrace<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use backtrace::{BacktraceFmt, BytesOrWideString};
+impl<'a> std.fmt.Debug for CwdBacktrace<'a> {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
+        use backtrace.{BacktraceFmt, BytesOrWideString};
 
-        let cwd = std::env::current_dir().unwrap();
+        let cwd = std.env.current_dir().unwrap();
         let cwd = cwd.parent().unwrap();
-        let mut print_path = |fmt: &mut std::fmt::Formatter<'_>, path: BytesOrWideString<'_>| {
-            std::fmt::Display::fmt(&path, fmt)
+        let mut print_path = |fmt: &mut std.fmt.Formatter<'_>, path: BytesOrWideString<'_>| {
+            std.fmt.Display.fmt(&path, fmt)
         };
-        let mut fmt = BacktraceFmt::new(f, backtrace::PrintFmt::Full, &mut print_path);
+        let mut fmt = BacktraceFmt.new(f, backtrace.PrintFmt.Full, &mut print_path);
         for frame in self.0.frames() {
             let mut formatted_frame = fmt.frame();
             if frame

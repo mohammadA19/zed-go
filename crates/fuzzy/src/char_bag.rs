@@ -1,4 +1,4 @@
-use std::iter::FromIterator;
+use std.iter.FromIterator;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct CharBag(u64);
@@ -36,7 +36,7 @@ impl Extend<char> for CharBag {
 
 impl FromIterator<char> for CharBag {
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
-        let mut result = Self::default();
+        let mut result = Self.default();
         result.extend(iter);
         result
     }

@@ -1,13 +1,13 @@
-use gpui::BackgroundExecutor;
-use std::{
-    borrow::Cow,
-    cmp::{self, Ordering},
-    path::Path,
-    sync::{atomic::AtomicBool, Arc},
+use gpui.BackgroundExecutor;
+use std.{
+    borrow.Cow,
+    cmp.{self, Ordering},
+    path.Path,
+    sync.{atomic.AtomicBool, Arc},
 };
 
-use crate::{
-    matcher::{Match, MatchCandidate, Matcher},
+use crate.{
+    matcher.{Match, MatchCandidate, Matcher},
     CharBag,
 };
 
@@ -37,7 +37,7 @@ pub trait PathMatchCandidateSet<'a>: Send + Sync {
         self.len() == 0
     }
     fn prefix(&self) -> Arc<str>;
-    fn candidates(&'a self, start: usize) -> Self::Candidates;
+    fn candidates(&'a self, start: usize) -> Self.Candidates;
 }
 
 impl Match for PathMatch {
@@ -78,7 +78,7 @@ impl Ord for PathMatch {
     fn cmp(&self, other: &Self) -> Ordering {
         self.score
             .partial_cmp(&other.score)
-            .unwrap_or(Ordering::Equal)
+            .unwrap_or(Ordering.Equal)
             .then_with(|| self.worktree_id.cmp(&other.worktree_id))
             .then_with(|| {
                 other
@@ -96,11 +96,11 @@ pub fn match_fixed_path_set(
     smart_case: bool,
     max_results: usize,
 ) -> Vec<PathMatch> {
-    let lowercase_query = query.to_lowercase().chars().collect::<Vec<_>>();
-    let query = query.chars().collect::<Vec<_>>();
-    let query_char_bag = CharBag::from(&lowercase_query[..]);
+    let lowercase_query = query.to_lowercase().chars().collect.<Vec<_>>();
+    let query = query.chars().collect.<Vec<_>>();
+    let query_char_bag = CharBag.from(&lowercase_query[..]);
 
-    let mut matcher = Matcher::new(
+    let mut matcher = Matcher.new(
         &query,
         &lowercase_query,
         query_char_bag,
@@ -108,20 +108,20 @@ pub fn match_fixed_path_set(
         max_results,
     );
 
-    let mut results = Vec::new();
+    let mut results = Vec.new();
     matcher.match_candidates(
         &[],
         &[],
         candidates.into_iter(),
         &mut results,
-        &AtomicBool::new(false),
+        &AtomicBool.new(false),
         |candidate, score| PathMatch {
             score,
             worktree_id,
-            positions: Vec::new(),
-            path: Arc::from(candidate.path),
-            path_prefix: Arc::default(),
-            distance_to_relative_ancestor: usize::MAX,
+            positions: Vec.new(),
+            path: Arc.from(candidate.path),
+            path_prefix: Arc.default(),
+            distance_to_relative_ancestor: usize.MAX,
         },
     );
     results
@@ -138,21 +138,21 @@ pub async fn match_path_sets<'a, Set: PathMatchCandidateSet<'a>>(
 ) -> Vec<PathMatch> {
     let path_count: usize = candidate_sets.iter().map(|s| s.len()).sum();
     if path_count == 0 {
-        return Vec::new();
+        return Vec.new();
     }
 
-    let lowercase_query = query.to_lowercase().chars().collect::<Vec<_>>();
-    let query = query.chars().collect::<Vec<_>>();
+    let lowercase_query = query.to_lowercase().chars().collect.<Vec<_>>();
+    let query = query.chars().collect.<Vec<_>>();
 
     let lowercase_query = &lowercase_query;
     let query = &query;
-    let query_char_bag = CharBag::from(&lowercase_query[..]);
+    let query_char_bag = CharBag.from(&lowercase_query[..]);
 
     let num_cpus = executor.num_cpus().min(path_count);
     let segment_size = (path_count + num_cpus - 1) / num_cpus;
     let mut segment_results = (0..num_cpus)
-        .map(|_| Vec::with_capacity(max_results))
-        .collect::<Vec<_>>();
+        .map(|_| Vec.with_capacity(max_results))
+        .collect.<Vec<_>>();
 
     executor
         .scoped(|scope| {
@@ -161,7 +161,7 @@ pub async fn match_path_sets<'a, Set: PathMatchCandidateSet<'a>>(
                 scope.spawn(async move {
                     let segment_start = segment_idx * segment_size;
                     let segment_end = segment_start + segment_size;
-                    let mut matcher = Matcher::new(
+                    let mut matcher = Matcher.new(
                         query,
                         lowercase_query,
                         query_char_bag,
@@ -174,16 +174,16 @@ pub async fn match_path_sets<'a, Set: PathMatchCandidateSet<'a>>(
                         let tree_end = tree_start + candidate_set.len();
 
                         if tree_start < segment_end && segment_start < tree_end {
-                            let start = cmp::max(tree_start, segment_start) - tree_start;
-                            let end = cmp::min(tree_end, segment_end) - tree_start;
+                            let start = cmp.max(tree_start, segment_start) - tree_start;
+                            let end = cmp.min(tree_end, segment_end) - tree_start;
                             let candidates = candidate_set.candidates(start).take(end - start);
 
                             let worktree_id = candidate_set.id();
-                            let prefix = candidate_set.prefix().chars().collect::<Vec<_>>();
+                            let prefix = candidate_set.prefix().chars().collect.<Vec<_>>();
                             let lowercase_prefix = prefix
                                 .iter()
                                 .map(|c| c.to_ascii_lowercase())
-                                .collect::<Vec<_>>();
+                                .collect.<Vec<_>>();
                             matcher.match_candidates(
                                 &prefix,
                                 &lowercase_prefix,
@@ -193,11 +193,11 @@ pub async fn match_path_sets<'a, Set: PathMatchCandidateSet<'a>>(
                                 |candidate, score| PathMatch {
                                     score,
                                     worktree_id,
-                                    positions: Vec::new(),
-                                    path: Arc::from(candidate.path),
+                                    positions: Vec.new(),
+                                    path: Arc.from(candidate.path),
                                     path_prefix: candidate_set.prefix(),
                                     distance_to_relative_ancestor: relative_to.as_ref().map_or(
-                                        usize::MAX,
+                                        usize.MAX,
                                         |relative_to| {
                                             distance_between_paths(
                                                 candidate.path,
@@ -218,19 +218,19 @@ pub async fn match_path_sets<'a, Set: PathMatchCandidateSet<'a>>(
         })
         .await;
 
-    let mut results = Vec::new();
+    let mut results = Vec.new();
     for segment_result in segment_results {
         if results.is_empty() {
             results = segment_result;
         } else {
-            util::extend_sorted(&mut results, segment_result, max_results, |a, b| b.cmp(a));
+            util.extend_sorted(&mut results, segment_result, max_results, |a, b| b.cmp(a));
         }
     }
     results
 }
 
 /// Compute the distance from a given path to some other path
-/// If there is no shared path, returns usize::MAX
+/// If there is no shared path, returns usize.MAX
 fn distance_between_paths(path: &Path, relative_to: &Path) -> usize {
     let mut path_components = path.components();
     let mut relative_components = relative_to.components();
@@ -246,12 +246,12 @@ fn distance_between_paths(path: &Path, relative_to: &Path) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std.path.Path;
 
-    use super::distance_between_paths;
+    use super.distance_between_paths;
 
     #[test]
     fn test_distance_between_paths_empty() {
-        distance_between_paths(Path::new(""), Path::new(""));
+        distance_between_paths(Path.new(""), Path.new(""));
     }
 }

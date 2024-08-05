@@ -1,10 +1,10 @@
-use anyhow::Result;
-use collections::HashMap;
-use gpui::AppContext;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
-use std::sync::Arc;
+use anyhow.Result;
+use collections.HashMap;
+use gpui.AppContext;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
+use std.sync.Arc;
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone, JsonSchema)]
 pub struct ExtensionSettings {
@@ -40,8 +40,8 @@ impl Settings for ExtensionSettings {
 
     type FileContent = Self;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _cx: &mut AppContext) -> Result<Self> {
-        SettingsSources::<Self::FileContent>::json_merge_with(
+    fn load(sources: SettingsSources<Self.FileContent>, _cx: &mut AppContext) -> Result<Self> {
+        SettingsSources.<Self.FileContent>.json_merge_with(
             [sources.default].into_iter().chain(sources.user),
         )
     }

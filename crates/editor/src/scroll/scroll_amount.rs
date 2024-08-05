@@ -1,5 +1,5 @@
-use serde::Deserialize;
-use ui::{px, Pixels};
+use serde.Deserialize;
+use ui.{px, Pixels};
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub enum ScrollAmount {
@@ -12,8 +12,8 @@ pub enum ScrollAmount {
 impl ScrollAmount {
     pub fn lines(&self, mut visible_line_count: f32) -> f32 {
         match self {
-            Self::Line(count) => *count,
-            Self::Page(count) => {
+            Self.Line(count) => *count,
+            Self.Page(count) => {
                 // for full pages subtract one to leave an anchor line
                 if count.abs() == 1.0 {
                     visible_line_count -= 1.0
@@ -25,8 +25,8 @@ impl ScrollAmount {
 
     pub fn pixels(&self, line_height: Pixels, height: Pixels) -> Pixels {
         match self {
-            ScrollAmount::Line(x) => px(line_height.0 * x),
-            ScrollAmount::Page(x) => px(height.0 * x),
+            ScrollAmount.Line(x) => px(line_height.0 * x),
+            ScrollAmount.Page(x) => px(height.0 * x),
         }
     }
 }

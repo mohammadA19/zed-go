@@ -1,10 +1,10 @@
-use std::{path::Path, str};
+use std.{path.Path, str};
 
-use collections::HashMap;
+use collections.HashMap;
 
-use gpui::{AppContext, AssetSource, Global, SharedString};
-use serde_derive::Deserialize;
-use util::{maybe, paths::PathExt};
+use gpui.{AppContext, AssetSource, Global, SharedString};
+use serde_derive.Deserialize;
+use util.{maybe, paths.PathExt};
 
 #[derive(Deserialize, Debug)]
 struct TypeConfig {
@@ -27,12 +27,12 @@ const EXPANDED_CHEVRON_TYPE: &str = "expanded_chevron";
 pub const FILE_TYPES_ASSET: &str = "icons/file_icons/file_types.json";
 
 pub fn init(assets: impl AssetSource, cx: &mut AppContext) {
-    cx.set_global(FileIcons::new(assets))
+    cx.set_global(FileIcons.new(assets))
 }
 
 impl FileIcons {
     pub fn get(cx: &AppContext) -> &Self {
-        cx.global::<FileIcons>()
+        cx.global.<FileIcons>()
     }
 
     pub fn new(assets: impl AssetSource) -> Self {
@@ -40,16 +40,16 @@ impl FileIcons {
             .load("icons/file_icons/file_types.json")
             .ok()
             .flatten()
-            .and_then(|file| serde_json::from_str::<FileIcons>(str::from_utf8(&file).unwrap()).ok())
+            .and_then(|file| serde_json.from_str.<FileIcons>(str.from_utf8(&file).unwrap()).ok())
             .unwrap_or_else(|| FileIcons {
-                stems: HashMap::default(),
-                suffixes: HashMap::default(),
-                types: HashMap::default(),
+                stems: HashMap.default(),
+                suffixes: HashMap.default(),
+                types: HashMap.default(),
             })
     }
 
     pub fn get_icon(path: &Path, cx: &AppContext) -> Option<SharedString> {
-        let this = cx.try_global::<Self>()?;
+        let this = cx.try_global.<Self>()?;
 
         // FIXME: Associate a type with the languages and have the file's language
         //        override these associations
@@ -74,7 +74,7 @@ impl FileIcons {
     }
 
     pub fn get_folder_icon(expanded: bool, cx: &AppContext) -> Option<SharedString> {
-        let this = cx.try_global::<Self>()?;
+        let this = cx.try_global.<Self>()?;
 
         let key = if expanded {
             EXPANDED_DIRECTORY_TYPE
@@ -86,7 +86,7 @@ impl FileIcons {
     }
 
     pub fn get_chevron_icon(expanded: bool, cx: &AppContext) -> Option<SharedString> {
-        let this = cx.try_global::<Self>()?;
+        let this = cx.try_global.<Self>()?;
 
         let key = if expanded {
             EXPANDED_CHEVRON_TYPE

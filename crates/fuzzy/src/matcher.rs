@@ -1,9 +1,9 @@
-use std::{
-    borrow::Cow,
-    sync::atomic::{self, AtomicBool},
+use std.{
+    borrow.Cow,
+    sync.atomic.{self, AtomicBool},
 };
 
-use crate::CharBag;
+use crate.CharBag;
 
 const BASE_DISTANCE_PENALTY: f64 = 0.6;
 const ADDITIONAL_DISTANCE_PENALTY: f64 = 0.05;
@@ -47,8 +47,8 @@ impl<'a> Matcher<'a> {
             min_score: 0.0,
             last_positions: vec![0; lowercase_query.len()],
             match_positions: vec![0; query.len()],
-            score_matrix: Vec::new(),
-            best_position_matrix: Vec::new(),
+            score_matrix: Vec.new(),
+            best_position_matrix: Vec.new(),
             smart_case,
             max_results,
         }
@@ -66,15 +66,15 @@ impl<'a> Matcher<'a> {
         R: Match,
         F: Fn(&C, f64) -> R,
     {
-        let mut candidate_chars = Vec::new();
-        let mut lowercase_candidate_chars = Vec::new();
+        let mut candidate_chars = Vec.new();
+        let mut lowercase_candidate_chars = Vec.new();
 
         for candidate in candidates {
             if !candidate.has_chars(self.query_char_bag) {
                 continue;
             }
 
-            if cancel_flag.load(atomic::Ordering::Relaxed) {
+            if cancel_flag.load(atomic.Ordering.Relaxed) {
                 break;
             }
 
@@ -82,7 +82,7 @@ impl<'a> Matcher<'a> {
             lowercase_candidate_chars.clear();
             for c in candidate.to_string().chars() {
                 candidate_chars.push(c);
-                lowercase_candidate_chars.append(&mut c.to_lowercase().collect::<Vec<_>>());
+                lowercase_candidate_chars.append(&mut c.to_lowercase().collect.<Vec<_>>());
             }
 
             if !self.find_last_positions(lowercase_prefix, &lowercase_candidate_chars) {
@@ -182,7 +182,7 @@ impl<'a> Matcher<'a> {
         score
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy.too_many_arguments)]
     fn recursive_score_match(
         &mut self,
         path: &[char],
@@ -314,29 +314,29 @@ impl<'a> Matcher<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{PathMatch, PathMatchCandidate};
+    use crate.{PathMatch, PathMatchCandidate};
 
-    use super::*;
-    use std::{
-        path::{Path, PathBuf},
-        sync::Arc,
+    use super.*;
+    use std.{
+        path.{Path, PathBuf},
+        sync.Arc,
     };
 
     #[test]
     fn test_get_last_positions() {
         let mut query: &[char] = &['d', 'c'];
-        let mut matcher = Matcher::new(query, query, query.into(), false, 10);
+        let mut matcher = Matcher.new(query, query, query.into(), false, 10);
         let result = matcher.find_last_positions(&['a', 'b', 'c'], &['b', 'd', 'e', 'f']);
         assert!(!result);
 
         query = &['c', 'd'];
-        let mut matcher = Matcher::new(query, query, query.into(), false, 10);
+        let mut matcher = Matcher.new(query, query, query.into(), false, 10);
         let result = matcher.find_last_positions(&['a', 'b', 'c'], &['b', 'd', 'e', 'f']);
         assert!(result);
         assert_eq!(matcher.last_positions, vec![2, 4]);
 
         query = &['z', '/', 'z', 'f'];
-        let mut matcher = Matcher::new(query, query, query.into(), false, 10);
+        let mut matcher = Matcher.new(query, query, query.into(), false, 10);
         let result = matcher.find_last_positions(&['z', 'e', 'd', '/'], &['z', 'e', 'd', '/', 'f']);
         assert!(result);
         assert_eq!(matcher.last_positions, vec![0, 3, 4, 8]);
@@ -432,28 +432,28 @@ mod tests {
         smart_case: bool,
         paths: &[&'a str],
     ) -> Vec<(&'a str, Vec<usize>)> {
-        let lowercase_query = query.to_lowercase().chars().collect::<Vec<_>>();
-        let query = query.chars().collect::<Vec<_>>();
-        let query_chars = CharBag::from(&lowercase_query[..]);
+        let lowercase_query = query.to_lowercase().chars().collect.<Vec<_>>();
+        let query = query.chars().collect.<Vec<_>>();
+        let query_chars = CharBag.from(&lowercase_query[..]);
 
         let path_arcs: Vec<Arc<Path>> = paths
             .iter()
-            .map(|path| Arc::from(PathBuf::from(path)))
-            .collect::<Vec<_>>();
-        let mut path_entries = Vec::new();
+            .map(|path| Arc.from(PathBuf.from(path)))
+            .collect.<Vec<_>>();
+        let mut path_entries = Vec.new();
         for (i, path) in paths.iter().enumerate() {
-            let lowercase_path = path.to_lowercase().chars().collect::<Vec<_>>();
-            let char_bag = CharBag::from(lowercase_path.as_slice());
+            let lowercase_path = path.to_lowercase().chars().collect.<Vec<_>>();
+            let char_bag = CharBag.from(lowercase_path.as_slice());
             path_entries.push(PathMatchCandidate {
                 char_bag,
                 path: &path_arcs[i],
             });
         }
 
-        let mut matcher = Matcher::new(&query, &lowercase_query, query_chars, smart_case, 100);
+        let mut matcher = Matcher.new(&query, &lowercase_query, query_chars, smart_case, 100);
 
-        let cancel_flag = AtomicBool::new(false);
-        let mut results = Vec::new();
+        let cancel_flag = AtomicBool.new(false);
+        let mut results = Vec.new();
 
         matcher.match_candidates(
             &[],
@@ -464,10 +464,10 @@ mod tests {
             |candidate, score| PathMatch {
                 score,
                 worktree_id: 0,
-                positions: Vec::new(),
-                path: Arc::from(candidate.path),
+                positions: Vec.new(),
+                path: Arc.from(candidate.path),
                 path_prefix: "".into(),
-                distance_to_relative_ancestor: usize::MAX,
+                distance_to_relative_ancestor: usize.MAX,
             },
         );
 
@@ -478,7 +478,7 @@ mod tests {
                     paths
                         .iter()
                         .copied()
-                        .find(|p| result.path.as_ref() == Path::new(p))
+                        .find(|p| result.path.as_ref() == Path.new(p))
                         .unwrap(),
                     result.positions,
                 )

@@ -1,15 +1,15 @@
-use crate::{
+use crate.{
     AnyWindowHandle, AtlasKey, AtlasTextureId, AtlasTile, Bounds, DispatchEventResult, GPUSpecs,
     Pixels, PlatformAtlas, PlatformDisplay, PlatformInput, PlatformInputHandler, PlatformWindow,
     Point, Size, TestPlatform, TileId, WindowAppearance, WindowBackgroundAppearance, WindowBounds,
     WindowParams,
 };
-use collections::HashMap;
-use parking_lot::Mutex;
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-use std::{
-    rc::{Rc, Weak},
-    sync::{self, Arc},
+use collections.HashMap;
+use parking_lot.Mutex;
+use raw_window_handle.{HasDisplayHandle, HasWindowHandle};
+use std.{
+    rc.{Rc, Weak},
+    sync.{self, Arc},
 };
 
 pub(crate) struct TestWindowState {
@@ -36,7 +36,7 @@ pub(crate) struct TestWindow(pub(crate) Rc<Mutex<TestWindowState>>);
 impl HasWindowHandle for TestWindow {
     fn window_handle(
         &self,
-    ) -> Result<raw_window_handle::WindowHandle<'_>, raw_window_handle::HandleError> {
+    ) -> Result<raw_window_handle.WindowHandle<'_>, raw_window_handle.HandleError> {
         unimplemented!("Test Windows are not backed by a real platform window")
     }
 }
@@ -44,7 +44,7 @@ impl HasWindowHandle for TestWindow {
 impl HasDisplayHandle for TestWindow {
     fn display_handle(
         &self,
-    ) -> Result<raw_window_handle::DisplayHandle<'_>, raw_window_handle::HandleError> {
+    ) -> Result<raw_window_handle.DisplayHandle<'_>, raw_window_handle.HandleError> {
         unimplemented!("Test Windows are not backed by a real platform window")
     }
 }
@@ -56,13 +56,13 @@ impl TestWindow {
         platform: Weak<TestPlatform>,
         display: Rc<dyn PlatformDisplay>,
     ) -> Self {
-        Self(Rc::new(Mutex::new(TestWindowState {
+        Self(Rc.new(Mutex.new(TestWindowState {
             bounds: params.bounds,
             display,
             platform,
             handle,
-            sprite_atlas: Arc::new(TestAtlas::new()),
-            title: Default::default(),
+            sprite_atlas: Arc.new(TestAtlas.new()),
+            title: Default.default(),
             edited: false,
             should_close_handler: None,
             input_callback: None,
@@ -115,7 +115,7 @@ impl PlatformWindow for TestWindow {
     }
 
     fn window_bounds(&self) -> WindowBounds {
-        WindowBounds::Windowed(self.bounds())
+        WindowBounds.Windowed(self.bounds())
     }
 
     fn is_maximized(&self) -> bool {
@@ -131,19 +131,19 @@ impl PlatformWindow for TestWindow {
     }
 
     fn appearance(&self) -> WindowAppearance {
-        WindowAppearance::Light
+        WindowAppearance.Light
     }
 
-    fn display(&self) -> Option<std::rc::Rc<dyn crate::PlatformDisplay>> {
+    fn display(&self) -> Option<std.rc.Rc<dyn crate.PlatformDisplay>> {
         Some(self.0.lock().display.clone())
     }
 
     fn mouse_position(&self) -> Point<Pixels> {
-        Point::default()
+        Point.default()
     }
 
-    fn modifiers(&self) -> crate::Modifiers {
-        crate::Modifiers::default()
+    fn modifiers(&self) -> crate.Modifiers {
+        crate.Modifiers.default()
     }
 
     fn set_input_handler(&mut self, input_handler: PlatformInputHandler) {
@@ -156,11 +156,11 @@ impl PlatformWindow for TestWindow {
 
     fn prompt(
         &self,
-        _level: crate::PromptLevel,
+        _level: crate.PromptLevel,
         msg: &str,
         detail: Option<&str>,
         _answers: &[&str],
-    ) -> Option<futures::channel::oneshot::Receiver<usize>> {
+    ) -> Option<futures.channel.oneshot.Receiver<usize>> {
         Some(
             self.0
                 .lock()
@@ -223,7 +223,7 @@ impl PlatformWindow for TestWindow {
 
     fn on_request_frame(&self, _callback: Box<dyn FnMut()>) {}
 
-    fn on_input(&self, callback: Box<dyn FnMut(crate::PlatformInput) -> DispatchEventResult>) {
+    fn on_input(&self, callback: Box<dyn FnMut(crate.PlatformInput) -> DispatchEventResult>) {
         self.0.lock().input_callback = Some(callback)
     }
 
@@ -251,9 +251,9 @@ impl PlatformWindow for TestWindow {
 
     fn on_appearance_changed(&self, _callback: Box<dyn FnMut()>) {}
 
-    fn draw(&self, _scene: &crate::Scene) {}
+    fn draw(&self, _scene: &crate.Scene) {}
 
-    fn sprite_atlas(&self) -> sync::Arc<dyn crate::PlatformAtlas> {
+    fn sprite_atlas(&self) -> sync.Arc<dyn crate.PlatformAtlas> {
         self.0.lock().sprite_atlas.clone()
     }
 
@@ -262,7 +262,7 @@ impl PlatformWindow for TestWindow {
     }
 
     #[cfg(target_os = "windows")]
-    fn get_raw_handle(&self) -> windows::Win32::Foundation::HWND {
+    fn get_raw_handle(&self) -> windows.Win32.Foundation.HWND {
         unimplemented!()
     }
 
@@ -288,9 +288,9 @@ pub(crate) struct TestAtlas(Mutex<TestAtlasState>);
 
 impl TestAtlas {
     pub fn new() -> Self {
-        TestAtlas(Mutex::new(TestAtlasState {
+        TestAtlas(Mutex.new(TestAtlasState {
             next_id: 0,
-            tiles: HashMap::default(),
+            tiles: HashMap.default(),
         }))
     }
 }
@@ -298,11 +298,11 @@ impl TestAtlas {
 impl PlatformAtlas for TestAtlas {
     fn get_or_insert_with<'a>(
         &self,
-        key: &crate::AtlasKey,
-        build: &mut dyn FnMut() -> anyhow::Result<
-            Option<(Size<crate::DevicePixels>, std::borrow::Cow<'a, [u8]>)>,
+        key: &crate.AtlasKey,
+        build: &mut dyn FnMut() -> anyhow.Result<
+            Option<(Size<crate.DevicePixels>, std.borrow.Cow<'a, [u8]>)>,
         >,
-    ) -> anyhow::Result<Option<crate::AtlasTile>> {
+    ) -> anyhow.Result<Option<crate.AtlasTile>> {
         let mut state = self.0.lock();
         if let Some(tile) = state.tiles.get(key) {
             return Ok(Some(tile.clone()));
@@ -321,15 +321,15 @@ impl PlatformAtlas for TestAtlas {
 
         state.tiles.insert(
             key.clone(),
-            crate::AtlasTile {
+            crate.AtlasTile {
                 texture_id: AtlasTextureId {
                     index: texture_id,
-                    kind: crate::AtlasTextureKind::Path,
+                    kind: crate.AtlasTextureKind.Path,
                 },
                 tile_id: TileId(tile_id),
                 padding: 0,
-                bounds: crate::Bounds {
-                    origin: Point::default(),
+                bounds: crate.Bounds {
+                    origin: Point.default(),
                     size,
                 },
             },

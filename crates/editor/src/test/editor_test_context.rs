@@ -1,55 +1,55 @@
-use crate::{
-    display_map::ToDisplayPoint, AnchorRangeExt, Autoscroll, DisplayPoint, Editor, MultiBuffer,
+use crate.{
+    display_map.ToDisplayPoint, AnchorRangeExt, Autoscroll, DisplayPoint, Editor, MultiBuffer,
     RowExt,
 };
-use collections::BTreeMap;
-use futures::Future;
-use gpui::{
+use collections.BTreeMap;
+use futures.Future;
+use gpui.{
     AnyWindowHandle, AppContext, Keystroke, ModelContext, Pixels, Point, View, ViewContext,
     VisualTestContext,
 };
-use indoc::indoc;
-use itertools::Itertools;
-use language::{Buffer, BufferSnapshot, LanguageRegistry};
-use multi_buffer::ExcerptRange;
-use parking_lot::RwLock;
-use project::{FakeFs, Project};
-use std::{
-    any::TypeId,
-    ops::{Deref, DerefMut, Range},
-    sync::{
-        atomic::{AtomicUsize, Ordering},
+use indoc.indoc;
+use itertools.Itertools;
+use language.{Buffer, BufferSnapshot, LanguageRegistry};
+use multi_buffer.ExcerptRange;
+use parking_lot.RwLock;
+use project.{FakeFs, Project};
+use std.{
+    any.TypeId,
+    ops.{Deref, DerefMut, Range},
+    sync.{
+        atomic.{AtomicUsize, Ordering},
         Arc,
     },
 };
 
-use ui::Context;
-use util::{
+use ui.Context;
+use util.{
     assert_set_eq,
-    test::{generate_marked_text, marked_text_ranges},
+    test.{generate_marked_text, marked_text_ranges},
 };
 
-use super::{build_editor, build_editor_with_project};
+use super.{build_editor, build_editor_with_project};
 
 pub struct EditorTestContext {
-    pub cx: gpui::VisualTestContext,
+    pub cx: gpui.VisualTestContext,
     pub window: AnyWindowHandle,
     pub editor: View<Editor>,
     pub assertion_cx: AssertionContextManager,
 }
 
 impl EditorTestContext {
-    pub async fn new(cx: &mut gpui::TestAppContext) -> EditorTestContext {
-        let fs = FakeFs::new(cx.executor());
+    pub async fn new(cx: &mut gpui.TestAppContext) -> EditorTestContext {
+        let fs = FakeFs.new(cx.executor());
         // fs.insert_file("/file", "".to_owned()).await;
         fs.insert_tree(
             "/root",
-            serde_json::json!({
+            serde_json.json!({
                 "file": "",
             }),
         )
         .await;
-        let project = Project::test(fs, ["/root".as_ref()], cx).await;
+        let project = Project.test(fs, ["/root".as_ref()], cx).await;
         let buffer = project
             .update(cx, |project, cx| {
                 project.open_local_buffer("/root/file", cx)
@@ -58,28 +58,28 @@ impl EditorTestContext {
             .unwrap();
         let editor = cx.add_window(|cx| {
             let editor =
-                build_editor_with_project(project, MultiBuffer::build_from_buffer(buffer, cx), cx);
+                build_editor_with_project(project, MultiBuffer.build_from_buffer(buffer, cx), cx);
             editor.focus(cx);
             editor
         });
         let editor_view = editor.root_view(cx).unwrap();
         Self {
-            cx: VisualTestContext::from_window(*editor.deref(), cx),
+            cx: VisualTestContext.from_window(*editor.deref(), cx),
             window: editor.into(),
             editor: editor_view,
-            assertion_cx: AssertionContextManager::new(),
+            assertion_cx: AssertionContextManager.new(),
         }
     }
 
     pub fn new_multibuffer<const COUNT: usize>(
-        cx: &mut gpui::TestAppContext,
+        cx: &mut gpui.TestAppContext,
         excerpts: [&str; COUNT],
     ) -> EditorTestContext {
-        let mut multibuffer = MultiBuffer::new(0, language::Capability::ReadWrite);
+        let mut multibuffer = MultiBuffer.new(0, language.Capability.ReadWrite);
         let buffer = cx.new_model(|cx| {
             for excerpt in excerpts.into_iter() {
                 let (text, ranges) = marked_text_ranges(excerpt, false);
-                let buffer = cx.new_model(|cx| Buffer::local(text, cx));
+                let buffer = cx.new_model(|cx| Buffer.local(text, cx));
                 multibuffer.push_excerpts(
                     buffer,
                     ranges.into_iter().map(|range| ExcerptRange {
@@ -100,10 +100,10 @@ impl EditorTestContext {
 
         let editor_view = editor.root_view(cx).unwrap();
         Self {
-            cx: VisualTestContext::from_window(*editor.deref(), cx),
+            cx: VisualTestContext.from_window(*editor.deref(), cx),
             window: editor.into(),
             editor: editor_view,
-            assertion_cx: AssertionContextManager::new(),
+            assertion_cx: AssertionContextManager.new(),
         }
     }
 
@@ -112,7 +112,7 @@ impl EditorTestContext {
         predicate: impl FnMut(&Editor, &AppContext) -> bool,
     ) -> impl Future<Output = ()> {
         self.editor
-            .condition::<crate::EditorEvent>(&self.cx, predicate)
+            .condition.<crate.EditorEvent>(&self.cx, predicate)
     }
 
     #[track_caller]
@@ -201,7 +201,7 @@ impl EditorTestContext {
     // unlike cx.simulate_keystrokes(), this does not run_until_parked
     // so you can use it to test detailed timing
     pub fn simulate_keystroke(&mut self, keystroke_text: &str) {
-        let keystroke = Keystroke::parse(keystroke_text).unwrap();
+        let keystroke = Keystroke.parse(keystroke_text).unwrap();
         self.cx.dispatch_keystroke(self.window, keystroke);
     }
 
@@ -244,19 +244,19 @@ impl EditorTestContext {
                 + line_height * (display_point.row().as_f32() - newest_point.row().as_f32());
             let x = pixel_position.x + snapshot.x_for_display_point(display_point, &details)
                 - snapshot.x_for_display_point(newest_point, &details);
-            Point::new(x, y)
+            Point.new(x, y)
         })
     }
 
     // Returns anchors for the current buffer using `«` and `»`
-    pub fn text_anchor_range(&mut self, marked_text: &str) -> Range<language::Anchor> {
+    pub fn text_anchor_range(&mut self, marked_text: &str) -> Range<language.Anchor> {
         let ranges = self.ranges(marked_text);
         let snapshot = self.buffer_snapshot();
         snapshot.anchor_before(ranges[0].start)..snapshot.anchor_after(ranges[0].end)
     }
 
     pub fn set_diff_base(&mut self, diff_base: Option<&str>) {
-        self.update_buffer(|buffer, cx| buffer.set_diff_base(diff_base.map(ToOwned::to_owned), cx));
+        self.update_buffer(|buffer, cx| buffer.set_diff_base(diff_base.map(ToOwned.to_owned), cx));
     }
 
     /// Change the editor's text and selections using a string containing
@@ -266,7 +266,7 @@ impl EditorTestContext {
     /// Returns a context handle so that assertion failures can print what
     /// editor state was needed to cause the failure.
     ///
-    /// See the `util::test::marked_text_ranges` function for more information.
+    /// See the `util.test.marked_text_ranges` function for more information.
     pub fn set_state(&mut self, marked_text: &str) -> ContextHandle {
         let state_context = self.add_assertion_context(format!(
             "Initial Editor State: \"{}\"",
@@ -275,7 +275,7 @@ impl EditorTestContext {
         let (unmarked_text, selection_ranges) = marked_text_ranges(marked_text, true);
         self.editor.update(&mut self.cx, |editor, cx| {
             editor.set_text(unmarked_text, cx);
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.select_ranges(selection_ranges)
             })
         });
@@ -291,7 +291,7 @@ impl EditorTestContext {
         let (unmarked_text, selection_ranges) = marked_text_ranges(marked_text, true);
         self.editor.update(&mut self.cx, |editor, cx| {
             assert_eq!(editor.text(cx), unmarked_text);
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.select_ranges(selection_ranges)
             })
         });
@@ -301,7 +301,7 @@ impl EditorTestContext {
     /// Make an assertion about the editor's text and the ranges and directions
     /// of its selections using a string containing embedded range markers.
     ///
-    /// See the `util::test::marked_text_ranges` function for more information.
+    /// See the `util.test.marked_text_ranges` function for more information.
     #[track_caller]
     pub fn assert_editor_state(&mut self, marked_text: &str) {
         let (unmarked_text, expected_selections) = marked_text_ranges(marked_text, true);
@@ -325,9 +325,9 @@ impl EditorTestContext {
             let snapshot = editor.snapshot(cx);
             editor
                 .background_highlights
-                .get(&TypeId::of::<Tag>())
+                .get(&TypeId.of.<Tag>())
                 .map(|h| h.1.clone())
-                .unwrap_or_else(|| Arc::default())
+                .unwrap_or_else(|| Arc.default())
                 .into_iter()
                 .map(|range| range.to_offset(&snapshot.buffer_snapshot))
                 .collect()
@@ -340,7 +340,7 @@ impl EditorTestContext {
         let expected_ranges = self.ranges(marked_text);
         let snapshot = self.update_editor(|editor, cx| editor.snapshot(cx));
         let actual_ranges: Vec<Range<usize>> = snapshot
-            .text_highlight_ranges::<Tag>()
+            .text_highlight_ranges.<Tag>()
             .map(|ranges| ranges.as_ref().clone().1)
             .unwrap_or_default()
             .into_iter()
@@ -360,7 +360,7 @@ impl EditorTestContext {
     fn editor_selections(&mut self) -> Vec<Range<usize>> {
         self.editor
             .update(&mut self.cx, |editor, cx| {
-                editor.selections.all::<usize>(cx)
+                editor.selections.all.<usize>(cx)
             })
             .into_iter()
             .map(|s| {
@@ -370,7 +370,7 @@ impl EditorTestContext {
                     s.start..s.end
                 }
             })
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
     }
 
     #[track_caller]
@@ -403,15 +403,15 @@ impl EditorTestContext {
 }
 
 impl Deref for EditorTestContext {
-    type Target = gpui::VisualTestContext;
+    type Target = gpui.VisualTestContext;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.cx
     }
 }
 
 impl DerefMut for EditorTestContext {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+    fn deref_mut(&mut self) -> &mut Self.Target {
         &mut self.cx
     }
 }
@@ -427,13 +427,13 @@ pub struct AssertionContextManager {
 impl AssertionContextManager {
     pub fn new() -> Self {
         Self {
-            id: Arc::new(AtomicUsize::new(0)),
-            contexts: Arc::new(RwLock::new(BTreeMap::new())),
+            id: Arc.new(AtomicUsize.new(0)),
+            contexts: Arc.new(RwLock.new(BTreeMap.new())),
         }
     }
 
     pub fn add_context(&self, context: String) -> ContextHandle {
-        let id = self.id.fetch_add(1, Ordering::Relaxed);
+        let id = self.id.fetch_add(1, Ordering.Relaxed);
         let mut contexts = self.contexts.write();
         contexts.insert(id, context);
         ContextHandle {

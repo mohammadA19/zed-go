@@ -1,12 +1,12 @@
-use crate::{size, DevicePixels, Result, SharedString, Size};
-use smallvec::SmallVec;
+use crate.{size, DevicePixels, Result, SharedString, Size};
+use smallvec.SmallVec;
 
-use image::{Delay, Frame};
-use std::{
-    borrow::Cow,
+use image.{Delay, Frame};
+use std.{
+    borrow.Cow,
     fmt,
-    hash::Hash,
-    sync::atomic::{AtomicUsize, Ordering::SeqCst},
+    hash.Hash,
+    sync.atomic.{AtomicUsize, Ordering.SeqCst},
 };
 
 /// A source of assets for this app to use.
@@ -48,7 +48,7 @@ pub struct ImageData {
 impl ImageData {
     /// Create a new image from the given data.
     pub fn new(data: impl Into<SmallVec<[Frame; 1]>>) -> Self {
-        static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+        static NEXT_ID: AtomicUsize = AtomicUsize.new(0);
 
         Self {
             id: ImageId(NEXT_ID.fetch_add(1, SeqCst)),
@@ -78,8 +78,8 @@ impl ImageData {
     }
 }
 
-impl fmt::Debug for ImageData {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Debug for ImageData {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         f.debug_struct("ImageData")
             .field("id", &self.id)
             .field("size", &self.size(0))

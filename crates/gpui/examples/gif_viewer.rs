@@ -1,7 +1,7 @@
-use gpui::{
-    div, img, prelude::*, App, AppContext, ImageSource, Render, ViewContext, WindowOptions,
+use gpui.{
+    div, img, prelude.*, App, AppContext, ImageSource, Render, ViewContext, WindowOptions,
 };
-use std::path::PathBuf;
+use std.path.PathBuf;
 
 struct GifViewer {
     gif_path: PathBuf,
@@ -16,18 +16,18 @@ impl GifViewer {
 impl Render for GifViewer {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div().size_full().child(
-            img(ImageSource::File(self.gif_path.clone().into()))
+            img(ImageSource.File(self.gif_path.clone().into()))
                 .size_full()
-                .object_fit(gpui::ObjectFit::Contain)
+                .object_fit(gpui.ObjectFit.Contain)
                 .id("gif"),
         )
     }
 }
 
 fn main() {
-    env_logger::init();
-    App::new().run(|cx: &mut AppContext| {
-        let cwd = std::env::current_dir().expect("Failed to get current working directory");
+    env_logger.init();
+    App.new().run(|cx: &mut AppContext| {
+        let cwd = std.env.current_dir().expect("Failed to get current working directory");
         let gif_path = cwd.join("crates/gpui/examples/image/black-cat-typing.gif");
 
         if !gif_path.exists() {
@@ -40,9 +40,9 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 focus: true,
-                ..Default::default()
+                ..Default.default()
             },
-            |cx| cx.new_view(|_cx| GifViewer::new(gif_path)),
+            |cx| cx.new_view(|_cx| GifViewer.new(gif_path)),
         )
         .unwrap();
         cx.activate(true);

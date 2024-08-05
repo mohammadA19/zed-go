@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
-use std::num::NonZeroU32;
+use serde.{Deserialize, Serialize};
+use std.num.NonZeroU32;
 
 /// The settings for a particular language.
 #[derive(Debug, Serialize, Deserialize)]
@@ -14,9 +14,9 @@ pub struct LspSettings {
     /// The settings for the language server binary.
     pub binary: Option<BinarySettings>,
     /// The initialization options to pass to the language server.
-    pub initialization_options: Option<serde_json::Value>,
+    pub initialization_options: Option<serde_json.Value>,
     /// The settings to pass to language server.
-    pub settings: Option<serde_json::Value>,
+    pub settings: Option<serde_json.Value>,
 }
 
 /// The settings for a language server binary.

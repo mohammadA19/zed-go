@@ -2,20 +2,20 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use crate::{PlatformDispatcher, TaskLabel};
-use async_task::Runnable;
-use objc::{
+use crate.{PlatformDispatcher, TaskLabel};
+use async_task.Runnable;
+use objc.{
     class, msg_send,
-    runtime::{BOOL, YES},
+    runtime.{BOOL, YES},
     sel, sel_impl,
 };
-use parking::{Parker, Unparker};
-use parking_lot::Mutex;
-use std::{
-    ffi::c_void,
-    ptr::{addr_of, NonNull},
-    sync::Arc,
-    time::Duration,
+use parking.{Parker, Unparker};
+use parking_lot.Mutex;
+use std.{
+    ffi.c_void,
+    ptr.{addr_of, NonNull},
+    sync.Arc,
+    time.Duration,
 };
 
 /// All items in the generated file are marked as pub, so we're gonna wrap it in a separate mod to prevent
@@ -24,7 +24,7 @@ pub(crate) mod dispatch_sys {
     include!(concat!(env!("OUT_DIR"), "/dispatch_sys.rs"));
 }
 
-use dispatch_sys::*;
+use dispatch_sys.*;
 pub(crate) fn dispatch_get_main_queue() -> dispatch_queue_t {
     unsafe { addr_of!(_dispatch_main_q) as *const _ as dispatch_queue_t }
 }
@@ -35,14 +35,14 @@ pub(crate) struct MacDispatcher {
 
 impl Default for MacDispatcher {
     fn default() -> Self {
-        Self::new()
+        Self.new()
     }
 }
 
 impl MacDispatcher {
     pub fn new() -> Self {
         MacDispatcher {
-            parker: Arc::new(Mutex::new(Parker::new())),
+            parker: Arc.new(Mutex.new(Parker.new())),
         }
     }
 }
@@ -102,6 +102,6 @@ impl PlatformDispatcher for MacDispatcher {
 }
 
 extern "C" fn trampoline(runnable: *mut c_void) {
-    let task = unsafe { Runnable::<()>::from_raw(NonNull::new_unchecked(runnable as *mut ())) };
+    let task = unsafe { Runnable.<()>.from_raw(NonNull.new_unchecked(runnable as *mut ())) };
     task.run();
 }

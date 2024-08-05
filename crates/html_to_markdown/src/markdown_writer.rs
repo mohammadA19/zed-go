@@ -1,22 +1,22 @@
-use std::cell::RefCell;
-use std::collections::VecDeque;
-use std::rc::Rc;
-use std::sync::OnceLock;
+use std.cell.RefCell;
+use std.collections.VecDeque;
+use std.rc.Rc;
+use std.sync.OnceLock;
 
-use anyhow::Result;
-use markup5ever_rcdom::{Handle, NodeData};
-use regex::Regex;
+use anyhow.Result;
+use markup5ever_rcdom.{Handle, NodeData};
+use regex.Regex;
 
-use crate::html_element::HtmlElement;
+use crate.html_element.HtmlElement;
 
 fn empty_line_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"^\s*$").unwrap())
+    static REGEX: OnceLock<Regex> = OnceLock.new();
+    REGEX.get_or_init(|| Regex.new(r"^\s*$").unwrap())
 }
 
 fn more_than_three_newlines_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"\n{3,}").unwrap())
+    static REGEX: OnceLock<Regex> = OnceLock.new();
+    REGEX.get_or_init(|| Regex.new(r"\n{3,}").unwrap())
 }
 
 pub enum StartTagOutcome {
@@ -34,8 +34,8 @@ pub struct MarkdownWriter {
 impl MarkdownWriter {
     pub fn new() -> Self {
         Self {
-            current_element_stack: VecDeque::new(),
-            markdown: String::new(),
+            current_element_stack: VecDeque.new(),
+            markdown: String.new(),
         }
     }
 
@@ -66,7 +66,7 @@ impl MarkdownWriter {
 
     pub fn run(mut self, root_node: &Handle, handlers: &mut Vec<TagHandler>) -> Result<String> {
         self.visit_node(&root_node, handlers)?;
-        Ok(Self::prettify_markdown(self.markdown))
+        Ok(Self.prettify_markdown(self.markdown))
     }
 
     fn prettify_markdown(markdown: String) -> String {
@@ -80,24 +80,24 @@ impl MarkdownWriter {
         let mut current_element = None;
 
         match node.data {
-            NodeData::Document
-            | NodeData::Doctype { .. }
-            | NodeData::ProcessingInstruction { .. }
-            | NodeData::Comment { .. } => {
+            NodeData.Document
+            | NodeData.Doctype { .. }
+            | NodeData.ProcessingInstruction { .. }
+            | NodeData.Comment { .. } => {
                 // Currently left unimplemented, as we're not interested in this data
                 // at this time.
             }
-            NodeData::Element {
+            NodeData.Element {
                 ref name,
                 ref attrs,
                 ..
             } => {
                 let tag_name = name.local.to_string();
                 if !tag_name.is_empty() {
-                    current_element = Some(HtmlElement::new(tag_name, attrs.clone()));
+                    current_element = Some(HtmlElement.new(tag_name, attrs.clone()));
                 }
             }
-            NodeData::Text { ref contents } => {
+            NodeData.Text { ref contents } => {
                 let text = contents.borrow().to_string();
                 self.visit_text(text, handlers)?;
             }
@@ -105,8 +105,8 @@ impl MarkdownWriter {
 
         if let Some(current_element) = current_element.as_ref() {
             match self.start_tag(&current_element, handlers) {
-                StartTagOutcome::Continue => {}
-                StartTagOutcome::Skip => return Ok(()),
+                StartTagOutcome.Continue => {}
+                StartTagOutcome.Skip => return Ok(()),
             }
 
             self.current_element_stack
@@ -129,13 +129,13 @@ impl MarkdownWriter {
         for handler in handlers {
             if handler.borrow().should_handle(tag.tag()) {
                 match handler.borrow_mut().handle_tag_start(tag, self) {
-                    StartTagOutcome::Continue => {}
-                    StartTagOutcome::Skip => return StartTagOutcome::Skip,
+                    StartTagOutcome.Continue => {}
+                    StartTagOutcome.Skip => return StartTagOutcome.Skip,
                 }
             }
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn end_tag(&mut self, tag: &HtmlElement, handlers: &mut [TagHandler]) {
@@ -149,8 +149,8 @@ impl MarkdownWriter {
     fn visit_text(&mut self, text: String, handlers: &mut [TagHandler]) -> Result<()> {
         for handler in handlers {
             match handler.borrow_mut().handle_text(&text, self) {
-                HandlerOutcome::Handled => return Ok(()),
-                HandlerOutcome::NoOp => {}
+                HandlerOutcome.Handled => return Ok(()),
+                HandlerOutcome.NoOp => {}
             }
         }
 
@@ -179,13 +179,13 @@ pub trait HandleTag {
         _tag: &HtmlElement,
         _writer: &mut MarkdownWriter,
     ) -> StartTagOutcome {
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     /// Handles the end of the given tag.
     fn handle_tag_end(&mut self, _tag: &HtmlElement, _writer: &mut MarkdownWriter) {}
 
     fn handle_text(&mut self, _text: &str, _writer: &mut MarkdownWriter) -> HandlerOutcome {
-        HandlerOutcome::NoOp
+        HandlerOutcome.NoOp
     }
 }

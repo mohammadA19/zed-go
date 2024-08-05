@@ -1,8 +1,8 @@
-use std::ops::Deref;
+use std.ops.Deref;
 
-use futures::channel::oneshot;
+use futures.channel.oneshot;
 
-use crate::{
+use crate.{
     div, opaque_grey, white, AnyView, EventEmitter, FocusHandle, FocusableView, InteractiveElement,
     IntoElement, ParentElement, PromptLevel, Render, StatefulInteractiveElement, Styled, View,
     ViewContext, VisualContext, WindowContext,
@@ -20,11 +20,11 @@ impl<V: EventEmitter<PromptResponse> + FocusableView> Prompt for V {}
 
 /// A handle to a prompt that can be used to interact with it.
 pub struct PromptHandle {
-    sender: oneshot::Sender<usize>,
+    sender: oneshot.Sender<usize>,
 }
 
 impl PromptHandle {
-    pub(crate) fn new(sender: oneshot::Sender<usize>) -> Self {
+    pub(crate) fn new(sender: oneshot.Sender<usize>) -> Self {
         Self { sender }
     }
 
@@ -50,7 +50,7 @@ impl PromptHandle {
         cx.focus_view(&view);
 
         RenderablePromptHandle {
-            view: Box::new(view),
+            view: Box.new(view),
         }
     }
 }
@@ -60,7 +60,7 @@ pub struct RenderablePromptHandle {
     pub(crate) view: Box<dyn PromptViewHandle>,
 }
 
-/// Use this function in conjunction with [AppContext::set_prompt_renderer] to force
+/// Use this function in conjunction with [AppContext.set_prompt_renderer] to force
 /// GPUI to always use the fallback prompt renderer.
 pub fn fallback_prompt_renderer(
     level: PromptLevel,
@@ -74,8 +74,8 @@ pub fn fallback_prompt_renderer(
         |cx| FallbackPromptRenderer {
             _level: level,
             message: message.to_string(),
-            detail: detail.map(ToString::to_string),
-            actions: actions.iter().map(ToString::to_string).collect(),
+            detail: detail.map(ToString.to_string),
+            actions: actions.iter().map(ToString.to_string).collect(),
             focus: cx.focus_handle(),
         }
     });
@@ -172,7 +172,7 @@ impl Render for FallbackPromptRenderer {
 impl EventEmitter<PromptResponse> for FallbackPromptRenderer {}
 
 impl FocusableView for FallbackPromptRenderer {
-    fn focus_handle(&self, _: &crate::AppContext) -> FocusHandle {
+    fn focus_handle(&self, _: &crate.AppContext) -> FocusHandle {
         self.focus.clone()
     }
 }
@@ -213,10 +213,10 @@ impl Deref for PromptBuilder {
         &mut WindowContext,
     ) -> RenderablePromptHandle;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         match self {
-            Self::Default => &fallback_prompt_renderer,
-            Self::Custom(f) => f.as_ref(),
+            Self.Default => &fallback_prompt_renderer,
+            Self.Custom(f) => f.as_ref(),
         }
     }
 }

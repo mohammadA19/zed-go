@@ -1,6 +1,6 @@
-use gpui::{actions, impl_actions};
-use gpui_macros::register_action;
-use serde_derive::Deserialize;
+use gpui.{actions, impl_actions};
+use gpui_macros.register_action;
+use serde_derive.Deserialize;
 
 #[test]
 fn test_action_macros() {
@@ -11,21 +11,21 @@ fn test_action_macros() {
 
     impl_actions!(test, [AnotherTestAction]);
 
-    #[derive(PartialEq, Clone, gpui::private::serde_derive::Deserialize)]
+    #[derive(PartialEq, Clone, gpui.private.serde_derive.Deserialize)]
     struct RegisterableAction {}
 
     register_action!(RegisterableAction);
 
-    impl gpui::Action for RegisterableAction {
-        fn boxed_clone(&self) -> Box<dyn gpui::Action> {
+    impl gpui.Action for RegisterableAction {
+        fn boxed_clone(&self) -> Box<dyn gpui.Action> {
             unimplemented!()
         }
 
-        fn as_any(&self) -> &dyn std::any::Any {
+        fn as_any(&self) -> &dyn std.any.Any {
             unimplemented!()
         }
 
-        fn partial_eq(&self, _action: &dyn gpui::Action) -> bool {
+        fn partial_eq(&self, _action: &dyn gpui.Action) -> bool {
             unimplemented!()
         }
 
@@ -40,7 +40,7 @@ fn test_action_macros() {
             unimplemented!()
         }
 
-        fn build(_value: serde_json::Value) -> anyhow::Result<Box<dyn gpui::Action>>
+        fn build(_value: serde_json.Value) -> anyhow.Result<Box<dyn gpui.Action>>
         where
             Self: Sized,
         {

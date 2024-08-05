@@ -1,12 +1,12 @@
-use crate::{point, px, FontId, GlyphId, Pixels, PlatformTextSystem, Point, Size};
-use collections::FxHashMap;
-use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
-use smallvec::SmallVec;
-use std::{
-    borrow::Borrow,
-    hash::{Hash, Hasher},
-    ops::Range,
-    sync::Arc,
+use crate.{point, px, FontId, GlyphId, Pixels, PlatformTextSystem, Point, Size};
+use collections.FxHashMap;
+use parking_lot.{Mutex, RwLock, RwLockUpgradableReadGuard};
+use smallvec.SmallVec;
+use std.{
+    borrow.Borrow,
+    hash.{Hash, Hasher},
+    ops.Range,
+    sync.Arc,
 };
 
 /// A laid out and styled line of text
@@ -120,7 +120,7 @@ impl LineLayout {
         text: &str,
         wrap_width: Pixels,
     ) -> SmallVec<[WrapBoundary; 1]> {
-        let mut boundaries = SmallVec::new();
+        let mut boundaries = SmallVec.new();
 
         let mut first_non_whitespace_ix = None;
         let mut last_candidate_ix = None;
@@ -205,7 +205,7 @@ pub struct WrapBoundary {
 
 impl WrappedLineLayout {
     /// The length of the underlying text, in utf8 bytes.
-    #[allow(clippy::len_without_is_empty)]
+    #[allow(clippy.len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.unwrapped_layout.len
     }
@@ -213,7 +213,7 @@ impl WrappedLineLayout {
     /// The width of this line, in pixels, whether or not it was wrapped.
     pub fn width(&self) -> Pixels {
         self.wrap_width
-            .unwrap_or(Pixels::MAX)
+            .unwrap_or(Pixels.MAX)
             .min(self.unwrapped_layout.width)
     }
 
@@ -271,7 +271,7 @@ impl WrappedLineLayout {
             wrapped_line_start_x = glyph.position.x;
         } else {
             wrapped_line_start_index = 0;
-            wrapped_line_start_x = Pixels::ZERO;
+            wrapped_line_start_x = Pixels.ZERO;
         };
 
         let wrapped_line_end_index;
@@ -356,8 +356,8 @@ pub(crate) struct LineLayoutIndex {
 impl LineLayoutCache {
     pub fn new(platform_text_system: Arc<dyn PlatformTextSystem>) -> Self {
         Self {
-            previous_frame: Mutex::default(),
-            current_frame: RwLock::default(),
+            previous_frame: Mutex.default(),
+            current_frame: RwLock.default(),
             platform_text_system,
         }
     }
@@ -402,7 +402,7 @@ impl LineLayoutCache {
     pub fn finish_frame(&self) {
         let mut prev_frame = self.previous_frame.lock();
         let mut curr_frame = self.current_frame.write();
-        std::mem::swap(&mut *prev_frame, &mut *curr_frame);
+        std.mem.swap(&mut *prev_frame, &mut *curr_frame);
         curr_frame.lines.clear();
         curr_frame.wrapped_lines.clear();
         curr_frame.used_lines.clear();
@@ -430,7 +430,7 @@ impl LineLayoutCache {
 
         let previous_frame_entry = self.previous_frame.lock().wrapped_lines.remove_entry(key);
         if let Some((key, layout)) = previous_frame_entry {
-            let mut current_frame = RwLockUpgradableReadGuard::upgrade(current_frame);
+            let mut current_frame = RwLockUpgradableReadGuard.upgrade(current_frame);
             current_frame
                 .wrapped_lines
                 .insert(key.clone(), layout.clone());
@@ -443,17 +443,17 @@ impl LineLayoutCache {
             let wrap_boundaries = if let Some(wrap_width) = wrap_width {
                 unwrapped_layout.compute_wrap_boundaries(text.as_ref(), wrap_width)
             } else {
-                SmallVec::new()
+                SmallVec.new()
             };
-            let layout = Arc::new(WrappedLineLayout {
+            let layout = Arc.new(WrappedLineLayout {
                 unwrapped_layout,
                 wrap_boundaries,
                 wrap_width,
             });
-            let key = Arc::new(CacheKey {
+            let key = Arc.new(CacheKey {
                 text: text.into(),
                 font_size,
-                runs: SmallVec::from(runs),
+                runs: SmallVec.from(runs),
                 wrap_width,
             });
 
@@ -480,17 +480,17 @@ impl LineLayoutCache {
             return layout.clone();
         }
 
-        let mut current_frame = RwLockUpgradableReadGuard::upgrade(current_frame);
+        let mut current_frame = RwLockUpgradableReadGuard.upgrade(current_frame);
         if let Some((key, layout)) = self.previous_frame.lock().lines.remove_entry(key) {
             current_frame.lines.insert(key.clone(), layout.clone());
             current_frame.used_lines.push(key);
             layout
         } else {
-            let layout = Arc::new(self.platform_text_system.layout_line(text, font_size, runs));
-            let key = Arc::new(CacheKey {
+            let layout = Arc.new(self.platform_text_system.layout_line(text, font_size, runs));
+            let key = Arc.new(CacheKey {
                 text: text.into(),
                 font_size,
-                runs: SmallVec::from(runs),
+                runs: SmallVec.from(runs),
                 wrap_width: None,
             });
             current_frame.lines.insert(key.clone(), layout.clone());

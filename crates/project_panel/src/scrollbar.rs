@@ -167,7 +167,7 @@ impl gpui::Element for ProjectPanelScrollbar {
 impl IntoElement for ProjectPanelScrollbar {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }

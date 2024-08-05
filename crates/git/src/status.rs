@@ -1,9 +1,9 @@
-use crate::repository::{GitFileStatus, RepoPath};
-use anyhow::{anyhow, Result};
-use std::{
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
-    sync::Arc,
+use crate.repository.{GitFileStatus, RepoPath};
+use anyhow.{anyhow, Result};
+use std.{
+    path.{Path, PathBuf},
+    process.{Command, Stdio},
+    sync.Arc,
 };
 
 #[derive(Clone)]
@@ -17,10 +17,10 @@ impl GitStatus {
         working_directory: &Path,
         mut path_prefix: &Path,
     ) -> Result<Self> {
-        let mut child = Command::new(git_binary);
+        let mut child = Command.new(git_binary);
 
-        if path_prefix == Path::new("") {
-            path_prefix = Path::new(".");
+        if path_prefix == Path.new("") {
+            path_prefix = Path.new(".");
         }
 
         child
@@ -33,14 +33,14 @@ impl GitStatus {
                 "-z",
             ])
             .arg(path_prefix)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+            .stdin(Stdio.null())
+            .stdout(Stdio.piped())
+            .stderr(Stdio.piped());
 
         #[cfg(windows)]
         {
-            use std::os::windows::process::CommandExt;
-            child.creation_flags(windows::Win32::System::Threading::CREATE_NO_WINDOW.0);
+            use std.os.windows.process.CommandExt;
+            child.creation_flags(windows.Win32.System.Threading.CREATE_NO_WINDOW.0);
         }
 
         let child = child
@@ -52,11 +52,11 @@ impl GitStatus {
             .map_err(|e| anyhow!("Failed to read git blame output: {}", e))?;
 
         if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stderr = String.from_utf8_lossy(&output.stderr);
             return Err(anyhow!("git status process failed: {}", stderr));
         }
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stdout = String.from_utf8_lossy(&output.stdout);
         let mut entries = stdout
             .split('\0')
             .filter_map(|entry| {
@@ -64,10 +64,10 @@ impl GitStatus {
                     let (status, path) = entry.split_at(3);
                     let status = status.trim();
                     Some((
-                        RepoPath(PathBuf::from(path)),
+                        RepoPath(PathBuf.from(path)),
                         match status {
-                            "A" | "??" => GitFileStatus::Added,
-                            "M" => GitFileStatus::Modified,
+                            "A" | "??" => GitFileStatus.Added,
+                            "M" => GitFileStatus.Modified,
                             _ => return None,
                         },
                     ))
@@ -75,7 +75,7 @@ impl GitStatus {
                     None
                 }
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         entries.sort_unstable_by(|a, b| a.0.cmp(&b.0));
         Ok(Self {
             entries: entries.into(),
@@ -93,7 +93,7 @@ impl GitStatus {
 impl Default for GitStatus {
     fn default() -> Self {
         Self {
-            entries: Arc::new([]),
+            entries: Arc.new([]),
         }
     }
 }

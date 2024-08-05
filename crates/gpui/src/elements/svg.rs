@@ -1,9 +1,9 @@
-use crate::{
-    geometry::Negate as _, point, px, radians, size, Bounds, Element, GlobalElementId, Hitbox,
+use crate.{
+    geometry.Negate as _, point, px, radians, size, Bounds, Element, GlobalElementId, Hitbox,
     InteractiveElement, Interactivity, IntoElement, LayoutId, Pixels, Point, Radians, SharedString,
     Size, StyleRefinement, Styled, TransformationMatrix, WindowContext,
 };
-use util::ResultExt;
+use util.ResultExt;
 
 /// An SVG element.
 pub struct Svg {
@@ -15,7 +15,7 @@ pub struct Svg {
 /// Create a new SVG element.
 pub fn svg() -> Svg {
     Svg {
-        interactivity: Interactivity::default(),
+        interactivity: Interactivity.default(),
         transformation: None,
         path: None,
     }
@@ -40,7 +40,7 @@ impl Element for Svg {
     type RequestLayoutState = ();
     type PrepaintState = Option<Hitbox>;
 
-    fn id(&self) -> Option<crate::ElementId> {
+    fn id(&self) -> Option<crate.ElementId> {
         self.interactivity.element_id.clone()
     }
 
@@ -48,7 +48,7 @@ impl Element for Svg {
         &mut self,
         global_id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         let layout_id = self
             .interactivity
             .request_layout(global_id, cx, |style, cx| cx.request_layout(style, None));
@@ -59,7 +59,7 @@ impl Element for Svg {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
+        _request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) -> Option<Hitbox> {
         self.interactivity
@@ -70,7 +70,7 @@ impl Element for Svg {
         &mut self,
         global_id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        _request_layout: &mut Self::RequestLayoutState,
+        _request_layout: &mut Self.RequestLayoutState,
         hitbox: &mut Option<Hitbox>,
         cx: &mut WindowContext,
     ) where
@@ -97,7 +97,7 @@ impl Element for Svg {
 impl IntoElement for Svg {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -181,7 +181,7 @@ impl Transformation {
 
     fn into_matrix(self, center: Point<Pixels>, scale_factor: f32) -> TransformationMatrix {
         //Note: if you read this as a sequence of matrix multiplications, start from the bottom
-        TransformationMatrix::unit()
+        TransformationMatrix.unit()
             .translate(center.scale(scale_factor) + self.translate.scale(scale_factor))
             .rotate(self.rotate)
             .scale(self.scale)

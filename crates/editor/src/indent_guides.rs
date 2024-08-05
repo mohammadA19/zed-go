@@ -1,14 +1,14 @@
-use std::{ops::Range, time::Duration};
+use std.{ops.Range, time.Duration};
 
-use collections::HashSet;
-use gpui::{AppContext, Task};
-use language::{language_settings::language_settings, BufferRow};
-use multi_buffer::{MultiBufferIndentGuide, MultiBufferRow};
-use text::{BufferId, LineIndent, Point};
-use ui::ViewContext;
-use util::ResultExt;
+use collections.HashSet;
+use gpui.{AppContext, Task};
+use language.{language_settings.language_settings, BufferRow};
+use multi_buffer.{MultiBufferIndentGuide, MultiBufferRow};
+use text.{BufferId, LineIndent, Point};
+use ui.ViewContext;
+use util.ResultExt;
 
-use crate::{DisplaySnapshot, Editor};
+use crate.{DisplaySnapshot, Editor};
 
 struct ActiveIndentedRange {
     buffer_id: BufferId,
@@ -65,7 +65,7 @@ impl Editor {
         snapshot: &DisplaySnapshot,
         cx: &mut ViewContext<Editor>,
     ) -> Option<HashSet<usize>> {
-        let selection = self.selections.newest::<Point>(cx);
+        let selection = self.selections.newest.<Point>(cx);
         let cursor_row = MultiBufferRow(selection.head().row);
 
         let state = &mut self.active_indent_guides_state;
@@ -105,7 +105,7 @@ impl Editor {
             // Try to resolve the indent in a short amount of time, otherwise move it to a background task.
             match cx
                 .background_executor()
-                .block_with_timeout(Duration::from_micros(200), task)
+                .block_with_timeout(Duration.from_micros(200), task)
             {
                 Ok(result) => state.active_indent_range = result,
                 Err(future) => {
@@ -134,7 +134,7 @@ impl Editor {
                         == active_indent_range.indent.len(indent_guide.tab_size)
             });
 
-        let mut matches = HashSet::default();
+        let mut matches = HashSet.default();
         for (i, indent) in candidates {
             // Find matches that are either an exact match, partially on screen, or inside the enclosing indent
             if active_indent_range.row_range.start <= indent.end_row
@@ -155,10 +155,10 @@ pub fn indent_guides_in_range(
 ) -> Vec<MultiBufferIndentGuide> {
     let start_anchor = snapshot
         .buffer_snapshot
-        .anchor_before(Point::new(visible_buffer_range.start.0, 0));
+        .anchor_before(Point.new(visible_buffer_range.start.0, 0));
     let end_anchor = snapshot
         .buffer_snapshot
-        .anchor_after(Point::new(visible_buffer_range.end.0, 0));
+        .anchor_after(Point.new(visible_buffer_range.end.0, 0));
 
     snapshot
         .buffer_snapshot

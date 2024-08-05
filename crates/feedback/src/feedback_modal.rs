@@ -1,31 +1,31 @@
-use std::{ops::RangeInclusive, sync::Arc, time::Duration};
+use std.{ops.RangeInclusive, sync.Arc, time.Duration};
 
-use anyhow::{anyhow, bail};
-use bitflags::bitflags;
-use client::Client;
-use db::kvp::KEY_VALUE_STORE;
-use editor::{Editor, EditorEvent};
-use futures::AsyncReadExt;
-use gpui::{
+use anyhow.{anyhow, bail};
+use bitflags.bitflags;
+use client.Client;
+use db.kvp.KEY_VALUE_STORE;
+use editor.{Editor, EditorEvent};
+use futures.AsyncReadExt;
+use gpui.{
     div, rems, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model,
     PromptLevel, Render, Task, View, ViewContext,
 };
-use http_client::HttpClient;
-use isahc::Request;
-use language::Buffer;
-use project::Project;
-use regex::Regex;
-use serde_derive::Serialize;
-use ui::{prelude::*, Button, ButtonStyle, IconPosition, Tooltip};
-use util::ResultExt;
-use workspace::notifications::NotificationId;
-use workspace::{DismissDecision, ModalView, Toast, Workspace};
+use http_client.HttpClient;
+use isahc.Request;
+use language.Buffer;
+use project.Project;
+use regex.Regex;
+use serde_derive.Serialize;
+use ui.{prelude.*, Button, ButtonStyle, IconPosition, Tooltip};
+use util.ResultExt;
+use workspace.notifications.NotificationId;
+use workspace.{DismissDecision, ModalView, Toast, Workspace};
 
-use crate::{system_specs::SystemSpecs, GiveFeedback, OpenZedRepo};
+use crate.{system_specs.SystemSpecs, GiveFeedback, OpenZedRepo};
 
 // For UI testing purposes
 const SEND_SUCCESS_IN_DEV_MODE: bool = true;
-const SEND_TIME_IN_DEV_MODE: Duration = Duration::from_secs(2);
+const SEND_TIME_IN_DEV_MODE: Duration = Duration.from_secs(2);
 
 // Temporary, until tests are in place
 #[cfg(debug_assertions)]
@@ -91,15 +91,15 @@ impl ModalView for FeedbackModal {
         self.update_email_in_store(cx);
 
         if self.dismiss_modal {
-            return DismissDecision::Dismiss(true);
+            return DismissDecision.Dismiss(true);
         }
 
         let has_feedback = self.feedback_editor.read(cx).text_option(cx).is_some();
         if !has_feedback {
-            return DismissDecision::Dismiss(true);
+            return DismissDecision.Dismiss(true);
         }
 
-        let answer = cx.prompt(PromptLevel::Info, "Discard feedback?", None, &["Yes", "No"]);
+        let answer = cx.prompt(PromptLevel.Info, "Discard feedback?", None, &["Yes", "No"]);
 
         cx.spawn(move |this, mut cx| async move {
             if answer.await.ok() == Some(0) {
@@ -112,7 +112,7 @@ impl ModalView for FeedbackModal {
         })
         .detach();
 
-        DismissDecision::Pending
+        DismissDecision.Pending
     }
 }
 
@@ -132,8 +132,8 @@ impl FeedbackModal {
                 struct FeedbackInRemoteProject;
 
                 workspace.show_toast(
-                    Toast::new(
-                        NotificationId::unique::<FeedbackInRemoteProject>(),
+                    Toast.new(
+                        NotificationId.unique.<FeedbackInRemoteProject>(),
                         "You can only submit feedback in your own project.",
                     ),
                     cx,
@@ -141,7 +141,7 @@ impl FeedbackModal {
                 return;
             }
 
-            let system_specs = SystemSpecs::new(cx);
+            let system_specs = SystemSpecs.new(cx);
             cx.spawn(|workspace, mut cx| async move {
                 let markdown = markdown.await.log_err();
                 let buffer = project.update(&mut cx, |project, cx| {
@@ -151,11 +151,11 @@ impl FeedbackModal {
 
                 workspace.update(&mut cx, |workspace, cx| {
                     workspace.toggle_modal(cx, move |cx| {
-                        FeedbackModal::new(system_specs, project, buffer, cx)
+                        FeedbackModal.new(system_specs, project, buffer, cx)
                     });
                 })?;
 
-                anyhow::Ok(())
+                anyhow.Ok(())
             })
             .detach_and_log_err(cx);
         });
@@ -168,7 +168,7 @@ impl FeedbackModal {
         cx: &mut ViewContext<Self>,
     ) -> Self {
         let email_address_editor = cx.new_view(|cx| {
-            let mut editor = Editor::single_line(cx);
+            let mut editor = Editor.single_line(cx);
             editor.set_placeholder_text("Email address (optional)", cx);
 
             if let Ok(Some(email_address)) = KEY_VALUE_STORE.read_kvp(DATABASE_KEY_NAME) {
@@ -179,7 +179,7 @@ impl FeedbackModal {
         });
 
         let feedback_editor = cx.new_view(|cx| {
-            let mut editor = Editor::for_buffer(buffer, Some(project.clone()), cx);
+            let mut editor = Editor.for_buffer(buffer, Some(project.clone()), cx);
             editor.set_placeholder_text(
                 "You can use markdown to organize your feedback with code and links.",
                 cx,
@@ -193,7 +193,7 @@ impl FeedbackModal {
         });
 
         cx.subscribe(&feedback_editor, |this, editor, event: &EditorEvent, cx| {
-            if matches!(event, EditorEvent::Edited { .. }) {
+            if matches!(event, EditorEvent.Edited { .. }) {
                 this.character_count = editor
                     .read(cx)
                     .buffer()
@@ -217,31 +217,31 @@ impl FeedbackModal {
         }
     }
 
-    pub fn submit(&mut self, cx: &mut ViewContext<Self>) -> Task<anyhow::Result<()>> {
+    pub fn submit(&mut self, cx: &mut ViewContext<Self>) -> Task<anyhow.Result<()>> {
         let feedback_text = self.feedback_editor.read(cx).text(cx).trim().to_string();
         let email = self.email_address_editor.read(cx).text_option(cx);
 
         let answer = cx.prompt(
-            PromptLevel::Info,
+            PromptLevel.Info,
             "Ready to submit your feedback?",
             None,
             &["Yes, Submit!", "No"],
         );
-        let client = Client::global(cx).clone();
+        let client = Client.global(cx).clone();
         let specs = self.system_specs.clone();
         cx.spawn(|this, mut cx| async move {
             let answer = answer.await.ok();
             if answer == Some(0) {
                 this.update(&mut cx, |this, cx| {
-                    this.submission_state = Some(SubmissionState::CannotSubmit {
-                        reason: CannotSubmitReason::AwaitingSubmission,
+                    this.submission_state = Some(SubmissionState.CannotSubmit {
+                        reason: CannotSubmitReason.AwaitingSubmission,
                     });
                     cx.notify();
                 })
                 .log_err();
 
                 let res =
-                    FeedbackModal::submit_feedback(&feedback_text, email, client, specs).await;
+                    FeedbackModal.submit_feedback(&feedback_text, email, client, specs).await;
 
                 match res {
                     Ok(_) => {
@@ -253,10 +253,10 @@ impl FeedbackModal {
                         .ok();
                     }
                     Err(error) => {
-                        log::error!("{}", error);
+                        log.error!("{}", error);
                         this.update(&mut cx, |this, cx| {
                             let prompt = cx.prompt(
-                                PromptLevel::Critical,
+                                PromptLevel.Critical,
                                 FEEDBACK_SUBMISSION_ERROR_TEXT,
                                 None,
                                 &["OK"],
@@ -266,7 +266,7 @@ impl FeedbackModal {
                             })
                             .detach();
 
-                            this.submission_state = Some(SubmissionState::CanSubmit);
+                            this.submission_state = Some(SubmissionState.CanSubmit);
                             cx.notify();
                         })
                         .log_err();
@@ -276,7 +276,7 @@ impl FeedbackModal {
         })
         .detach();
 
-        Task::ready(Ok(()))
+        Task.ready(Ok(()))
     }
 
     async fn submit_feedback(
@@ -284,9 +284,9 @@ impl FeedbackModal {
         email: Option<String>,
         zed_client: Arc<Client>,
         system_specs: SystemSpecs,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow.Result<()> {
         if DEV_MODE {
-            smol::Timer::after(SEND_TIME_IN_DEV_MODE).await;
+            smol.Timer.after(SEND_TIME_IN_DEV_MODE).await;
 
             if SEND_SUCCESS_IN_DEV_MODE {
                 return Ok(());
@@ -309,12 +309,12 @@ impl FeedbackModal {
             system_specs,
             is_staff: is_staff.unwrap_or(false),
         };
-        let json_bytes = serde_json::to_vec(&request)?;
-        let request = Request::post(feedback_endpoint)
+        let json_bytes = serde_json.to_vec(&request)?;
+        let request = Request.post(feedback_endpoint)
             .header("content-type", "application/json")
             .body(json_bytes.into())?;
         let mut response = http_client.send(request).await?;
-        let mut body = String::new();
+        let mut body = String.new();
         response.body_mut().read_to_string(&mut body).await?;
         let response_status = response.status();
         if !response_status.is_success() {
@@ -328,26 +328,26 @@ impl FeedbackModal {
             return;
         }
 
-        let mut invalid_state_flags = InvalidStateFlags::empty();
+        let mut invalid_state_flags = InvalidStateFlags.empty();
 
         let valid_email_address = match self.email_address_editor.read(cx).text_option(cx) {
-            Some(email_address) => Regex::new(EMAIL_REGEX).unwrap().is_match(&email_address),
+            Some(email_address) => Regex.new(EMAIL_REGEX).unwrap().is_match(&email_address),
             None => true,
         };
 
         if !valid_email_address {
-            invalid_state_flags |= InvalidStateFlags::EmailAddress;
+            invalid_state_flags |= InvalidStateFlags.EmailAddress;
         }
 
         if !FEEDBACK_CHAR_LIMIT.contains(&self.character_count) {
-            invalid_state_flags |= InvalidStateFlags::CharacterCount;
+            invalid_state_flags |= InvalidStateFlags.CharacterCount;
         }
 
         if invalid_state_flags.is_empty() {
-            self.submission_state = Some(SubmissionState::CanSubmit);
+            self.submission_state = Some(SubmissionState.CanSubmit);
         } else {
-            self.submission_state = Some(SubmissionState::CannotSubmit {
-                reason: CannotSubmitReason::InvalidState {
+            self.submission_state = Some(SubmissionState.CannotSubmit {
+                reason: CannotSubmitReason.InvalidState {
                     flags: invalid_state_flags,
                 },
             });
@@ -377,17 +377,17 @@ impl FeedbackModal {
     }
 
     fn valid_email_address(&self) -> bool {
-        !self.in_invalid_state(InvalidStateFlags::EmailAddress)
+        !self.in_invalid_state(InvalidStateFlags.EmailAddress)
     }
 
     fn valid_character_count(&self) -> bool {
-        !self.in_invalid_state(InvalidStateFlags::CharacterCount)
+        !self.in_invalid_state(InvalidStateFlags.CharacterCount)
     }
 
     fn in_invalid_state(&self, flag: InvalidStateFlags) -> bool {
         match self.submission_state {
-            Some(SubmissionState::CannotSubmit {
-                reason: CannotSubmitReason::InvalidState { ref flags },
+            Some(SubmissionState.CannotSubmit {
+                reason: CannotSubmitReason.InvalidState { ref flags },
             }) => flags.contains(flag),
             _ => false,
         }
@@ -396,17 +396,17 @@ impl FeedbackModal {
     fn awaiting_submission(&self) -> bool {
         matches!(
             self.submission_state,
-            Some(SubmissionState::CannotSubmit {
-                reason: CannotSubmitReason::AwaitingSubmission
+            Some(SubmissionState.CannotSubmit {
+                reason: CannotSubmitReason.AwaitingSubmission
             })
         )
     }
 
     fn can_submit(&self) -> bool {
-        matches!(self.submission_state, Some(SubmissionState::CanSubmit))
+        matches!(self.submission_state, Some(SubmissionState.CanSubmit))
     }
 
-    fn cancel(&mut self, _: &menu::Cancel, cx: &mut ViewContext<Self>) {
+    fn cancel(&mut self, _: &menu.Cancel, cx: &mut ViewContext<Self>) {
         cx.emit(DismissEvent)
     }
 }
@@ -421,20 +421,20 @@ impl Render for FeedbackModal {
             "Submit"
         };
 
-        let open_zed_repo = cx.listener(|_, _, cx| cx.dispatch_action(Box::new(OpenZedRepo)));
+        let open_zed_repo = cx.listener(|_, _, cx| cx.dispatch_action(Box.new(OpenZedRepo)));
 
         v_flex()
             .elevation_3(cx)
             .key_context("GiveFeedback")
-            .on_action(cx.listener(Self::cancel))
+            .on_action(cx.listener(Self.cancel))
             .min_w(rems(40.))
             .max_w(rems(96.))
             .h(rems(32.))
             .p_4()
             .gap_2()
-            .child(Headline::new("Give Feedback"))
+            .child(Headline.new("Give Feedback"))
             .child(
-                Label::new(if self.character_count < *FEEDBACK_CHAR_LIMIT.start() {
+                Label.new(if self.character_count < *FEEDBACK_CHAR_LIMIT.start() {
                     format!(
                         "Feedback must be at least {} characters.",
                         FEEDBACK_CHAR_LIMIT.start()
@@ -446,9 +446,9 @@ impl Render for FeedbackModal {
                     )
                 })
                 .color(if self.valid_character_count() {
-                    Color::Success
+                    Color.Success
                 } else {
-                    Color::Error
+                    Color.Error
                 }),
             )
             .child(
@@ -478,9 +478,9 @@ impl Render for FeedbackModal {
                             .child(self.email_address_editor.clone()),
                     )
                     .child(
-                        Label::new("Provide an email address if you want us to be able to reply.")
-                            .size(LabelSize::Small)
-                            .color(Color::Muted),
+                        Label.new("Provide an email address if you want us to be able to reply.")
+                            .size(LabelSize.Small)
+                            .color(Color.Muted),
                     ),
             )
             .child(
@@ -488,20 +488,20 @@ impl Render for FeedbackModal {
                     .justify_between()
                     .gap_1()
                     .child(
-                        Button::new("zed_repository", "Zed Repository")
-                            .style(ButtonStyle::Transparent)
-                            .icon(IconName::ExternalLink)
-                            .icon_position(IconPosition::End)
-                            .icon_size(IconSize::Small)
+                        Button.new("zed_repository", "Zed Repository")
+                            .style(ButtonStyle.Transparent)
+                            .icon(IconName.ExternalLink)
+                            .icon_position(IconPosition.End)
+                            .icon_size(IconSize.Small)
                             .on_click(open_zed_repo),
                     )
                     .child(
                         h_flex()
                             .gap_1()
                             .child(
-                                Button::new("cancel_feedback", "Cancel")
-                                    .style(ButtonStyle::Subtle)
-                                    .color(Color::Muted)
+                                Button.new("cancel_feedback", "Cancel")
+                                    .style(ButtonStyle.Subtle)
+                                    .color(Color.Muted)
                                     .on_click(cx.listener(move |_, _, cx| {
                                         cx.spawn(|this, mut cx| async move {
                                             this.update(&mut cx, |_, cx| cx.emit(DismissEvent))
@@ -511,14 +511,14 @@ impl Render for FeedbackModal {
                                     })),
                             )
                             .child(
-                                Button::new("submit_feedback", submit_button_text)
-                                    .color(Color::Accent)
-                                    .style(ButtonStyle::Filled)
+                                Button.new("submit_feedback", submit_button_text)
+                                    .color(Color.Accent)
+                                    .style(ButtonStyle.Filled)
                                     .on_click(cx.listener(|this, _, cx| {
                                         this.submit(cx).detach();
                                     }))
                                     .tooltip(move |cx| {
-                                        Tooltip::text("Submit feedback to the Zed team.", cx)
+                                        Tooltip.text("Submit feedback to the Zed team.", cx)
                                     })
                                     .when(!self.can_submit(), |this| this.disabled(true)),
                             ),

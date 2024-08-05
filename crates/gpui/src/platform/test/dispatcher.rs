@@ -1,19 +1,19 @@
-use crate::{PlatformDispatcher, TaskLabel};
-use async_task::Runnable;
-use backtrace::Backtrace;
-use collections::{HashMap, HashSet, VecDeque};
-use parking::{Parker, Unparker};
-use parking_lot::Mutex;
-use rand::prelude::*;
-use std::{
-    future::Future,
-    ops::RangeInclusive,
-    pin::Pin,
-    sync::Arc,
-    task::{Context, Poll},
-    time::{Duration, Instant},
+use crate.{PlatformDispatcher, TaskLabel};
+use async_task.Runnable;
+use backtrace.Backtrace;
+use collections.{HashMap, HashSet, VecDeque};
+use parking.{Parker, Unparker};
+use parking_lot.Mutex;
+use rand.prelude.*;
+use std.{
+    future.Future,
+    ops.RangeInclusive,
+    pin.Pin,
+    sync.Arc,
+    task.{Context, Poll},
+    time.{Duration, Instant},
 };
-use util::post_inc;
+use util.post_inc;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct TestDispatcherId(usize);
@@ -45,28 +45,28 @@ struct TestDispatcherState {
 
 impl TestDispatcher {
     pub fn new(random: StdRng) -> Self {
-        let (parker, unparker) = parking::pair();
+        let (parker, unparker) = parking.pair();
         let state = TestDispatcherState {
             random,
-            foreground: HashMap::default(),
-            background: Vec::new(),
-            deprioritized_background: Vec::new(),
-            delayed: Vec::new(),
-            time: Duration::ZERO,
-            start_time: Instant::now(),
+            foreground: HashMap.default(),
+            background: Vec.new(),
+            deprioritized_background: Vec.new(),
+            delayed: Vec.new(),
+            time: Duration.ZERO,
+            start_time: Instant.now(),
             is_main_thread: true,
             next_id: TestDispatcherId(1),
             allow_parking: false,
             waiting_hint: None,
             waiting_backtrace: None,
-            deprioritized_task_labels: Default::default(),
+            deprioritized_task_labels: Default.default(),
             block_on_ticks: 0..=1000,
         };
 
         TestDispatcher {
             id: TestDispatcherId(0),
-            state: Arc::new(Mutex::new(state)),
-            parker: Arc::new(Mutex::new(parker)),
+            state: Arc.new(Mutex.new(state)),
+            parker: Arc.new(Mutex.new(parker)),
             unparker,
         }
     }
@@ -97,13 +97,13 @@ impl TestDispatcher {
         impl Future for YieldNow {
             type Output = ();
 
-            fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+            fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self.Output> {
                 if self.count > 0 {
                     self.count -= 1;
                     cx.waker().wake_by_ref();
-                    Poll::Pending
+                    Poll.Pending
                 } else {
-                    Poll::Ready(())
+                    Poll.Ready(())
                 }
             }
         }
@@ -207,7 +207,7 @@ impl TestDispatcher {
     }
 
     pub fn start_waiting(&self) {
-        self.state.lock().waiting_backtrace = Some(Backtrace::new_unresolved());
+        self.state.lock().waiting_backtrace = Some(Backtrace.new_unresolved());
     }
 
     pub fn finish_waiting(&self) {
@@ -225,7 +225,7 @@ impl TestDispatcher {
         self.state.lock().random.clone()
     }
 
-    pub fn set_block_on_ticks(&self, range: std::ops::RangeInclusive<usize>) {
+    pub fn set_block_on_ticks(&self, range: std.ops.RangeInclusive<usize>) {
         self.state.lock().block_on_ticks = range;
     }
 
@@ -282,7 +282,7 @@ impl PlatformDispatcher for TestDispatcher {
         self.unparker.unpark();
     }
 
-    fn dispatch_after(&self, duration: std::time::Duration, runnable: Runnable) {
+    fn dispatch_after(&self, duration: std.time.Duration, runnable: Runnable) {
         let mut state = self.state.lock();
         let next_time = state.time + duration;
         let ix = match state.delayed.binary_search_by_key(&next_time, |e| e.0) {
@@ -290,7 +290,7 @@ impl PlatformDispatcher for TestDispatcher {
         };
         state.delayed.insert(ix, (next_time, runnable));
     }
-    fn park(&self, _: Option<std::time::Duration>) -> bool {
+    fn park(&self, _: Option<std.time.Duration>) -> bool {
         self.parker.lock().park();
         true
     }

@@ -1,12 +1,12 @@
-use std::{
-    fmt::Debug,
-    hash::{Hash, Hasher},
+use std.{
+    fmt.Debug,
+    hash.{Hash, Hasher},
 };
 
-use uuid::Uuid;
-use wayland_backend::client::ObjectId;
+use uuid.Uuid;
+use wayland_backend.client.ObjectId;
 
-use crate::{Bounds, DisplayId, Pixels, PlatformDisplay};
+use crate.{Bounds, DisplayId, Pixels, PlatformDisplay};
 
 #[derive(Debug, Clone)]
 pub(crate) struct WaylandDisplay {
@@ -27,11 +27,11 @@ impl PlatformDisplay for WaylandDisplay {
         DisplayId(self.id.protocol_id())
     }
 
-    fn uuid(&self) -> anyhow::Result<Uuid> {
+    fn uuid(&self) -> anyhow.Result<Uuid> {
         if let Some(name) = &self.name {
-            Ok(Uuid::new_v5(&Uuid::NAMESPACE_DNS, name.as_bytes()))
+            Ok(Uuid.new_v5(&Uuid.NAMESPACE_DNS, name.as_bytes()))
         } else {
-            Err(anyhow::anyhow!("Wayland display does not have a name"))
+            Err(anyhow.anyhow!("Wayland display does not have a name"))
         }
     }
 

@@ -1,33 +1,33 @@
 pub(crate) mod wit;
 
-use crate::ExtensionManifest;
-use anyhow::{anyhow, bail, Context as _, Result};
-use fs::{normalize_path, Fs};
-use futures::future::LocalBoxFuture;
-use futures::{
-    channel::{
-        mpsc::{self, UnboundedSender},
+use crate.ExtensionManifest;
+use anyhow.{anyhow, bail, Context as _, Result};
+use fs.{normalize_path, Fs};
+use futures.future.LocalBoxFuture;
+use futures.{
+    channel.{
+        mpsc.{self, UnboundedSender},
         oneshot,
     },
-    future::BoxFuture,
+    future.BoxFuture,
     Future, FutureExt, StreamExt as _,
 };
-use gpui::{AppContext, AsyncAppContext, BackgroundExecutor, Task};
-use http_client::HttpClient;
-use language::LanguageRegistry;
-use node_runtime::NodeRuntime;
-use release_channel::ReleaseChannel;
-use semantic_version::SemanticVersion;
-use std::{
-    path::{Path, PathBuf},
-    sync::{Arc, OnceLock},
+use gpui.{AppContext, AsyncAppContext, BackgroundExecutor, Task};
+use http_client.HttpClient;
+use language.LanguageRegistry;
+use node_runtime.NodeRuntime;
+use release_channel.ReleaseChannel;
+use semantic_version.SemanticVersion;
+use std.{
+    path.{Path, PathBuf},
+    sync.{Arc, OnceLock},
 };
-use wasmtime::{
-    component::{Component, ResourceTable},
+use wasmtime.{
+    component.{Component, ResourceTable},
     Engine, Store,
 };
 use wasmtime_wasi as wasi;
-use wit::Extension;
+use wit.Extension;
 
 pub(crate) struct WasmHost {
     engine: Engine,
@@ -38,7 +38,7 @@ pub(crate) struct WasmHost {
     fs: Arc<dyn Fs>,
     pub(crate) work_dir: PathBuf,
     _main_thread_message_task: Task<()>,
-    main_thread_message_tx: mpsc::UnboundedSender<MainThreadCall>,
+    main_thread_message_tx: mpsc.UnboundedSender<MainThreadCall>,
 }
 
 #[derive(Clone)]
@@ -52,7 +52,7 @@ pub struct WasmExtension {
 pub(crate) struct WasmState {
     manifest: Arc<ExtensionManifest>,
     pub(crate) table: ResourceTable,
-    ctx: wasi::WasiCtx,
+    ctx: wasi.WasiCtx,
     pub(crate) host: Arc<WasmHost>,
 }
 
@@ -63,15 +63,15 @@ type ExtensionCall = Box<
     dyn Send + for<'a> FnOnce(&'a mut Extension, &'a mut Store<WasmState>) -> BoxFuture<'a, ()>,
 >;
 
-fn wasm_engine() -> wasmtime::Engine {
-    static WASM_ENGINE: OnceLock<wasmtime::Engine> = OnceLock::new();
+fn wasm_engine() -> wasmtime.Engine {
+    static WASM_ENGINE: OnceLock<wasmtime.Engine> = OnceLock.new();
 
     WASM_ENGINE
         .get_or_init(|| {
-            let mut config = wasmtime::Config::new();
+            let mut config = wasmtime.Config.new();
             config.wasm_component_model(true);
             config.async_support(true);
-            wasmtime::Engine::new(&config).unwrap()
+            wasmtime.Engine.new(&config).unwrap()
         })
         .clone()
 }
@@ -85,20 +85,20 @@ impl WasmHost {
         work_dir: PathBuf,
         cx: &mut AppContext,
     ) -> Arc<Self> {
-        let (tx, mut rx) = mpsc::unbounded::<MainThreadCall>();
+        let (tx, mut rx) = mpsc.unbounded.<MainThreadCall>();
         let task = cx.spawn(|mut cx| async move {
             while let Some(message) = rx.next().await {
                 message(&mut cx).await;
             }
         });
-        Arc::new(Self {
+        Arc.new(Self {
             engine: wasm_engine(),
             fs,
             work_dir,
             http_client,
             node_runtime,
             language_registry,
-            release_channel: ReleaseChannel::global(cx),
+            release_channel: ReleaseChannel.global(cx),
             _main_thread_message_task: task,
             main_thread_message_tx: tx,
         })
@@ -114,20 +114,20 @@ impl WasmHost {
         executor.clone().spawn(async move {
             let zed_api_version = parse_wasm_extension_version(&manifest.id, &wasm_bytes)?;
 
-            let component = Component::from_binary(&this.engine, &wasm_bytes)
+            let component = Component.from_binary(&this.engine, &wasm_bytes)
                 .context("failed to compile wasm component")?;
 
-            let mut store = wasmtime::Store::new(
+            let mut store = wasmtime.Store.new(
                 &this.engine,
                 WasmState {
                     ctx: this.build_wasi_ctx(&manifest).await?,
                     manifest: manifest.clone(),
-                    table: ResourceTable::new(),
+                    table: ResourceTable.new(),
                     host: this.clone(),
                 },
             );
 
-            let (mut extension, instance) = Extension::instantiate_async(
+            let (mut extension, instance) = Extension.instantiate_async(
                 &mut store,
                 this.release_channel,
                 zed_api_version,
@@ -140,7 +140,7 @@ impl WasmHost {
                 .await
                 .context("failed to initialize wasm extension")?;
 
-            let (tx, mut rx) = mpsc::unbounded::<ExtensionCall>();
+            let (tx, mut rx) = mpsc.unbounded.<ExtensionCall>();
             executor
                 .spawn(async move {
                     let _instance = instance;
@@ -158,17 +158,17 @@ impl WasmHost {
         })
     }
 
-    async fn build_wasi_ctx(&self, manifest: &Arc<ExtensionManifest>) -> Result<wasi::WasiCtx> {
+    async fn build_wasi_ctx(&self, manifest: &Arc<ExtensionManifest>) -> Result<wasi.WasiCtx> {
         let extension_work_dir = self.work_dir.join(manifest.id.as_ref());
         self.fs
             .create_dir(&extension_work_dir)
             .await
             .context("failed to create extension work dir")?;
 
-        let file_perms = wasi::FilePerms::all();
-        let dir_perms = wasi::DirPerms::all();
+        let file_perms = wasi.FilePerms.all();
+        let dir_perms = wasi.DirPerms.all();
 
-        Ok(wasi::WasiCtxBuilder::new()
+        Ok(wasi.WasiCtxBuilder.new()
             .inherit_stdio()
             .preopened_dir(&extension_work_dir, ".", dir_perms, file_perms)?
             .preopened_dir(
@@ -204,8 +204,8 @@ pub fn parse_wasm_extension_version(
 ) -> Result<SemanticVersion> {
     let mut version = None;
 
-    for part in wasmparser::Parser::new(0).parse_all(wasm_bytes) {
-        if let wasmparser::Payload::CustomSection(s) =
+    for part in wasmparser.Parser.new(0).parse_all(wasm_bytes) {
+        if let wasmparser.Payload.CustomSection(s) =
             part.context("error parsing wasm extension")?
         {
             if s.name() == "zed:api-version" {
@@ -231,10 +231,10 @@ pub fn parse_wasm_extension_version(
 
 fn parse_wasm_extension_version_custom_section(data: &[u8]) -> Option<SemanticVersion> {
     if data.len() == 6 {
-        Some(SemanticVersion::new(
-            u16::from_be_bytes([data[0], data[1]]) as _,
-            u16::from_be_bytes([data[2], data[3]]) as _,
-            u16::from_be_bytes([data[4], data[5]]) as _,
+        Some(SemanticVersion.new(
+            u16.from_be_bytes([data[0], data[1]]) as _,
+            u16.from_be_bytes([data[2], data[3]]) as _,
+            u16.from_be_bytes([data[4], data[5]]) as _,
         ))
     } else {
         None
@@ -249,10 +249,10 @@ impl WasmExtension {
             + Send
             + for<'a> FnOnce(&'a mut Extension, &'a mut Store<WasmState>) -> BoxFuture<'a, T>,
     {
-        let (return_tx, return_rx) = oneshot::channel();
+        let (return_tx, return_rx) = oneshot.channel();
         self.tx
             .clone()
-            .unbounded_send(Box::new(move |extension, store| {
+            .unbounded_send(Box.new(move |extension, store| {
                 async {
                     let result = f(extension, store).await;
                     return_tx.send(result).ok();
@@ -270,11 +270,11 @@ impl WasmState {
         T: 'static + Send,
         Fn: 'static + Send + for<'a> FnOnce(&'a mut AsyncAppContext) -> LocalBoxFuture<'a, T>,
     {
-        let (return_tx, return_rx) = oneshot::channel();
+        let (return_tx, return_rx) = oneshot.channel();
         self.host
             .main_thread_message_tx
             .clone()
-            .unbounded_send(Box::new(move |cx| {
+            .unbounded_send(Box.new(move |cx| {
                 async {
                     let result = f(cx).await;
                     return_tx.send(result).ok();
@@ -290,12 +290,12 @@ impl WasmState {
     }
 }
 
-impl wasi::WasiView for WasmState {
+impl wasi.WasiView for WasmState {
     fn table(&mut self) -> &mut ResourceTable {
         &mut self.table
     }
 
-    fn ctx(&mut self) -> &mut wasi::WasiCtx {
+    fn ctx(&mut self) -> &mut wasi.WasiCtx {
         &mut self.ctx
     }
 }

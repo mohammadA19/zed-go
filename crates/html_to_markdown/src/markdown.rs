@@ -1,5 +1,5 @@
-use crate::html_element::HtmlElement;
-use crate::markdown_writer::{HandleTag, HandlerOutcome, MarkdownWriter, StartTagOutcome};
+use crate.html_element.HtmlElement;
+use crate.markdown_writer.{HandleTag, HandlerOutcome, MarkdownWriter, StartTagOutcome};
 
 pub struct WebpageChromeRemover;
 
@@ -17,11 +17,11 @@ impl HandleTag for WebpageChromeRemover {
         _writer: &mut MarkdownWriter,
     ) -> StartTagOutcome {
         match tag.tag() {
-            "head" | "script" | "style" | "nav" => return StartTagOutcome::Skip,
+            "head" | "script" | "style" | "nav" => return StartTagOutcome.Skip,
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 }
 
@@ -52,7 +52,7 @@ impl HandleTag for ParagraphHandler {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 }
 
@@ -81,7 +81,7 @@ impl HandleTag for HeadingHandler {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn handle_tag_end(&mut self, tag: &HtmlElement, writer: &mut MarkdownWriter) {
@@ -113,7 +113,7 @@ impl HandleTag for ListHandler {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn handle_tag_end(&mut self, tag: &HtmlElement, writer: &mut MarkdownWriter) {
@@ -178,7 +178,7 @@ impl HandleTag for TableHandler {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn handle_tag_end(&mut self, tag: &HtmlElement, writer: &mut MarkdownWriter) {
@@ -227,7 +227,7 @@ impl HandleTag for StyledTextHandler {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn handle_tag_end(&mut self, tag: &HtmlElement, writer: &mut MarkdownWriter) {
@@ -264,7 +264,7 @@ impl HandleTag for CodeHandler {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn handle_tag_end(&mut self, tag: &HtmlElement, writer: &mut MarkdownWriter) {
@@ -282,9 +282,9 @@ impl HandleTag for CodeHandler {
     fn handle_text(&mut self, text: &str, writer: &mut MarkdownWriter) -> HandlerOutcome {
         if writer.is_inside("pre") {
             writer.push_str(&text);
-            return HandlerOutcome::Handled;
+            return HandlerOutcome.Handled;
         }
 
-        HandlerOutcome::NoOp
+        HandlerOutcome.NoOp
     }
 }

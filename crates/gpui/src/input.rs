@@ -1,27 +1,27 @@
-use crate::{Bounds, InputHandler, Pixels, View, ViewContext, WindowContext};
-use std::ops::Range;
+use crate.{Bounds, InputHandler, Pixels, View, ViewContext, WindowContext};
+use std.ops.Range;
 
 /// Implement this trait to allow views to handle textual input when implementing an editor, field, etc.
 ///
 /// Once your view implements this trait, you can use it to construct an [`ElementInputHandler<V>`].
-/// This input handler can then be assigned during paint by calling [`WindowContext::handle_input`].
+/// This input handler can then be assigned during paint by calling [`WindowContext.handle_input`].
 ///
 /// See [`InputHandler`] for details on how to implement each method.
 pub trait ViewInputHandler: 'static + Sized {
-    /// See [`InputHandler::text_for_range`] for details
+    /// See [`InputHandler.text_for_range`] for details
     fn text_for_range(&mut self, range: Range<usize>, cx: &mut ViewContext<Self>)
         -> Option<String>;
 
-    /// See [`InputHandler::selected_text_range`] for details
+    /// See [`InputHandler.selected_text_range`] for details
     fn selected_text_range(&mut self, cx: &mut ViewContext<Self>) -> Option<Range<usize>>;
 
-    /// See [`InputHandler::marked_text_range`] for details
+    /// See [`InputHandler.marked_text_range`] for details
     fn marked_text_range(&self, cx: &mut ViewContext<Self>) -> Option<Range<usize>>;
 
-    /// See [`InputHandler::unmark_text`] for details
+    /// See [`InputHandler.unmark_text`] for details
     fn unmark_text(&mut self, cx: &mut ViewContext<Self>);
 
-    /// See [`InputHandler::replace_text_in_range`] for details
+    /// See [`InputHandler.replace_text_in_range`] for details
     fn replace_text_in_range(
         &mut self,
         range: Option<Range<usize>>,
@@ -29,7 +29,7 @@ pub trait ViewInputHandler: 'static + Sized {
         cx: &mut ViewContext<Self>,
     );
 
-    /// See [`InputHandler::replace_and_mark_text_in_range`] for details
+    /// See [`InputHandler.replace_and_mark_text_in_range`] for details
     fn replace_and_mark_text_in_range(
         &mut self,
         range: Option<Range<usize>>,
@@ -38,7 +38,7 @@ pub trait ViewInputHandler: 'static + Sized {
         cx: &mut ViewContext<Self>,
     );
 
-    /// See [`InputHandler::bounds_for_range`] for details
+    /// See [`InputHandler.bounds_for_range`] for details
     fn bounds_for_range(
         &mut self,
         range_utf16: Range<usize>,
@@ -47,7 +47,7 @@ pub trait ViewInputHandler: 'static + Sized {
     ) -> Option<Bounds<Pixels>>;
 }
 
-/// The canonical implementation of [`PlatformInputHandler`]. Call [`WindowContext::handle_input`]
+/// The canonical implementation of [`PlatformInputHandler`]. Call [`WindowContext.handle_input`]
 /// with an instance during your element's paint.
 pub struct ElementInputHandler<V> {
     view: View<V>,
@@ -55,10 +55,10 @@ pub struct ElementInputHandler<V> {
 }
 
 impl<V: 'static> ElementInputHandler<V> {
-    /// Used in [`Element::paint`][element_paint] with the element's bounds and a view context for its
+    /// Used in [`Element.paint`][element_paint] with the element's bounds and a view context for its
     /// containing view.
     ///
-    /// [element_paint]: crate::Element::paint
+    /// [element_paint]: crate.Element.paint
     pub fn new(element_bounds: Bounds<Pixels>, view: View<V>) -> Self {
         ElementInputHandler {
             view,

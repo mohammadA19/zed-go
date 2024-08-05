@@ -1,27 +1,27 @@
-use crate::Direction;
-use gpui::{AppContext, Model, ModelContext};
-use language::Buffer;
-use std::ops::Range;
+use crate.Direction;
+use gpui.{AppContext, Model, ModelContext};
+use language.Buffer;
+use std.ops.Range;
 
 pub trait InlineCompletionProvider: 'static + Sized {
     fn name() -> &'static str;
     fn is_enabled(
         &self,
         buffer: &Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         cx: &AppContext,
     ) -> bool;
     fn refresh(
         &mut self,
         buffer: Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         debounce: bool,
         cx: &mut ModelContext<Self>,
     );
     fn cycle(
         &mut self,
         buffer: Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         direction: Direction,
         cx: &mut ModelContext<Self>,
     );
@@ -30,29 +30,29 @@ pub trait InlineCompletionProvider: 'static + Sized {
     fn active_completion_text<'a>(
         &'a self,
         buffer: &Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         cx: &'a AppContext,
-    ) -> Option<(&'a str, Option<Range<language::Anchor>>)>;
+    ) -> Option<(&'a str, Option<Range<language.Anchor>>)>;
 }
 
 pub trait InlineCompletionProviderHandle {
     fn is_enabled(
         &self,
         buffer: &Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         cx: &AppContext,
     ) -> bool;
     fn refresh(
         &self,
         buffer: Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         debounce: bool,
         cx: &mut AppContext,
     );
     fn cycle(
         &self,
         buffer: Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         direction: Direction,
         cx: &mut AppContext,
     );
@@ -61,9 +61,9 @@ pub trait InlineCompletionProviderHandle {
     fn active_completion_text<'a>(
         &'a self,
         buffer: &Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         cx: &'a AppContext,
-    ) -> Option<(&'a str, Option<Range<language::Anchor>>)>;
+    ) -> Option<(&'a str, Option<Range<language.Anchor>>)>;
 }
 
 impl<T> InlineCompletionProviderHandle for Model<T>
@@ -73,7 +73,7 @@ where
     fn is_enabled(
         &self,
         buffer: &Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         cx: &AppContext,
     ) -> bool {
         self.read(cx).is_enabled(buffer, cursor_position, cx)
@@ -82,7 +82,7 @@ where
     fn refresh(
         &self,
         buffer: Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         debounce: bool,
         cx: &mut AppContext,
     ) {
@@ -94,7 +94,7 @@ where
     fn cycle(
         &self,
         buffer: Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         direction: Direction,
         cx: &mut AppContext,
     ) {
@@ -116,9 +116,9 @@ where
     fn active_completion_text<'a>(
         &'a self,
         buffer: &Model<Buffer>,
-        cursor_position: language::Anchor,
+        cursor_position: language.Anchor,
         cx: &'a AppContext,
-    ) -> Option<(&'a str, Option<Range<language::Anchor>>)> {
+    ) -> Option<(&'a str, Option<Range<language.Anchor>>)> {
         self.read(cx)
             .active_completion_text(buffer, cursor_position, cx)
     }

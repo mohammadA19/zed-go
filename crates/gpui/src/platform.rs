@@ -19,60 +19,60 @@ mod test;
 #[cfg(target_os = "windows")]
 mod windows;
 
-use crate::{
+use crate.{
     point, Action, AnyWindowHandle, AsyncWindowContext, BackgroundExecutor, Bounds, DevicePixels,
     DispatchEventResult, Font, FontId, FontMetrics, FontRun, ForegroundExecutor, GPUSpecs, GlyphId,
     Keymap, LineLayout, Pixels, PlatformInput, Point, RenderGlyphParams, RenderImageParams,
     RenderSvgParams, Scene, SharedString, Size, Task, TaskLabel, WindowContext,
     DEFAULT_WINDOW_SIZE,
 };
-use anyhow::Result;
-use async_task::Runnable;
-use futures::channel::oneshot;
-use parking::Unparker;
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-use seahash::SeaHasher;
-use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-use std::hash::{Hash, Hasher};
-use std::time::{Duration, Instant};
-use std::{
-    fmt::{self, Debug},
-    ops::Range,
-    path::{Path, PathBuf},
-    rc::Rc,
-    sync::Arc,
+use anyhow.Result;
+use async_task.Runnable;
+use futures.channel.oneshot;
+use parking.Unparker;
+use raw_window_handle.{HasDisplayHandle, HasWindowHandle};
+use seahash.SeaHasher;
+use serde.{Deserialize, Serialize};
+use std.borrow.Cow;
+use std.hash.{Hash, Hasher};
+use std.time.{Duration, Instant};
+use std.{
+    fmt.{self, Debug},
+    ops.Range,
+    path.{Path, PathBuf},
+    rc.Rc,
+    sync.Arc,
 };
-use uuid::Uuid;
+use uuid.Uuid;
 
-pub use app_menu::*;
-pub use keystroke::*;
+pub use app_menu.*;
+pub use keystroke.*;
 
 #[cfg(target_os = "linux")]
-pub(crate) use linux::*;
+pub(crate) use linux.*;
 #[cfg(target_os = "macos")]
-pub(crate) use mac::*;
-pub use semantic_version::SemanticVersion;
+pub(crate) use mac.*;
+pub use semantic_version.SemanticVersion;
 #[cfg(any(test, feature = "test-support"))]
-pub(crate) use test::*;
+pub(crate) use test.*;
 #[cfg(target_os = "windows")]
-pub(crate) use windows::*;
+pub(crate) use windows.*;
 
 #[cfg(target_os = "macos")]
 pub(crate) fn current_platform(headless: bool) -> Rc<dyn Platform> {
-    Rc::new(MacPlatform::new(headless))
+    Rc.new(MacPlatform.new(headless))
 }
 
 #[cfg(target_os = "linux")]
 pub(crate) fn current_platform(headless: bool) -> Rc<dyn Platform> {
     if headless {
-        return Rc::new(HeadlessClient::new());
+        return Rc.new(HeadlessClient.new());
     }
 
     match guess_compositor() {
-        "Wayland" => Rc::new(WaylandClient::new()),
-        "X11" => Rc::new(X11Client::new()),
-        "Headless" => Rc::new(HeadlessClient::new()),
+        "Wayland" => Rc.new(WaylandClient.new()),
+        "X11" => Rc.new(X11Client.new()),
+        "Headless" => Rc.new(HeadlessClient.new()),
         _ => unreachable!(),
     }
 }
@@ -82,11 +82,11 @@ pub(crate) fn current_platform(headless: bool) -> Rc<dyn Platform> {
 #[cfg(target_os = "linux")]
 #[inline]
 pub fn guess_compositor() -> &'static str {
-    if std::env::var_os("ZED_HEADLESS").is_some() {
+    if std.env.var_os("ZED_HEADLESS").is_some() {
         return "Headless";
     }
-    let wayland_display = std::env::var_os("WAYLAND_DISPLAY");
-    let x11_display = std::env::var_os("DISPLAY");
+    let wayland_display = std.env.var_os("WAYLAND_DISPLAY");
+    let x11_display = std.env.var_os("DISPLAY");
 
     let use_wayland = wayland_display.is_some_and(|display| !display.is_empty());
     let use_x11 = x11_display.is_some_and(|display| !display.is_empty());
@@ -102,7 +102,7 @@ pub fn guess_compositor() -> &'static str {
 
 #[cfg(target_os = "windows")]
 pub(crate) fn current_platform(_headless: bool) -> Rc<dyn Platform> {
-    Rc::new(WindowsPlatform::new())
+    Rc.new(WindowsPlatform.new())
 }
 
 pub(crate) trait Platform: 'static {
@@ -129,7 +129,7 @@ pub(crate) trait Platform: 'static {
         &self,
         handle: AnyWindowHandle,
         options: WindowParams,
-    ) -> anyhow::Result<Box<dyn PlatformWindow>>;
+    ) -> anyhow.Result<Box<dyn PlatformWindow>>;
 
     /// Returns the appearance of the application's windows.
     fn window_appearance(&self) -> WindowAppearance;
@@ -141,8 +141,8 @@ pub(crate) trait Platform: 'static {
     fn prompt_for_paths(
         &self,
         options: PathPromptOptions,
-    ) -> oneshot::Receiver<Result<Option<Vec<PathBuf>>>>;
-    fn prompt_for_new_path(&self, directory: &Path) -> oneshot::Receiver<Result<Option<PathBuf>>>;
+    ) -> oneshot.Receiver<Result<Option<Vec<PathBuf>>>>;
+    fn prompt_for_new_path(&self, directory: &Path) -> oneshot.Receiver<Result<Option<PathBuf>>>;
     fn reveal_path(&self, path: &Path);
 
     fn on_quit(&self, callback: Box<dyn FnMut()>);
@@ -197,7 +197,7 @@ pub trait PlatformDisplay: Send + Sync + Debug {
         let center = self.bounds().center();
         let offset = DEFAULT_WINDOW_SIZE / 2.0;
         let origin = point(center.x - offset.width, center.y - offset.height);
-        Bounds::new(origin, DEFAULT_WINDOW_SIZE)
+        Bounds.new(origin, DEFAULT_WINDOW_SIZE)
     }
 }
 
@@ -206,7 +206,7 @@ pub trait PlatformDisplay: Send + Sync + Debug {
 pub struct DisplayId(pub(crate) u32);
 
 impl Debug for DisplayId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "DisplayId({})", self.0)
     }
 }
@@ -330,7 +330,7 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
         msg: &str,
         detail: Option<&str>,
         answers: &[&str],
-    ) -> Option<oneshot::Receiver<usize>>;
+    ) -> Option<oneshot.Receiver<usize>>;
     fn activate(&self);
     fn is_active(&self) -> bool;
     fn is_hovered(&self) -> bool;
@@ -358,7 +358,7 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
     fn show_character_palette(&self) {}
 
     #[cfg(target_os = "windows")]
-    fn get_raw_handle(&self) -> windows::HWND;
+    fn get_raw_handle(&self) -> windows.HWND;
 
     // Linux specific methods
     fn request_decorations(&self, _decorations: WindowDecorations) {}
@@ -366,11 +366,11 @@ pub(crate) trait PlatformWindow: HasWindowHandle + HasDisplayHandle {
     fn start_window_move(&self) {}
     fn start_window_resize(&self, _edge: ResizeEdge) {}
     fn window_decorations(&self) -> Decorations {
-        Decorations::Server
+        Decorations.Server
     }
     fn set_app_id(&mut self, _app_id: &str) {}
     fn window_controls(&self) -> WindowControls {
-        WindowControls::default()
+        WindowControls.default()
     }
     fn set_client_inset(&self, _inset: Pixels) {}
     fn gpu_specs(&self) -> Option<GPUSpecs>;
@@ -392,7 +392,7 @@ pub trait PlatformDispatcher: Send + Sync {
     fn park(&self, timeout: Option<Duration>) -> bool;
     fn unparker(&self) -> Unparker;
     fn now(&self) -> Instant {
-        Instant::now()
+        Instant.now()
     }
 
     #[cfg(any(test, feature = "test-support"))]
@@ -429,34 +429,34 @@ pub(crate) enum AtlasKey {
 impl AtlasKey {
     pub(crate) fn texture_kind(&self) -> AtlasTextureKind {
         match self {
-            AtlasKey::Glyph(params) => {
+            AtlasKey.Glyph(params) => {
                 if params.is_emoji {
-                    AtlasTextureKind::Polychrome
+                    AtlasTextureKind.Polychrome
                 } else {
-                    AtlasTextureKind::Monochrome
+                    AtlasTextureKind.Monochrome
                 }
             }
-            AtlasKey::Svg(_) => AtlasTextureKind::Monochrome,
-            AtlasKey::Image(_) => AtlasTextureKind::Polychrome,
+            AtlasKey.Svg(_) => AtlasTextureKind.Monochrome,
+            AtlasKey.Image(_) => AtlasTextureKind.Polychrome,
         }
     }
 }
 
 impl From<RenderGlyphParams> for AtlasKey {
     fn from(params: RenderGlyphParams) -> Self {
-        Self::Glyph(params)
+        Self.Glyph(params)
     }
 }
 
 impl From<RenderSvgParams> for AtlasKey {
     fn from(params: RenderSvgParams) -> Self {
-        Self::Svg(params)
+        Self.Svg(params)
     }
 }
 
 impl From<RenderImageParams> for AtlasKey {
     fn from(params: RenderImageParams) -> Self {
-        Self::Image(params)
+        Self.Image(params)
     }
 }
 
@@ -497,15 +497,15 @@ pub(crate) enum AtlasTextureKind {
 #[repr(C)]
 pub(crate) struct TileId(pub(crate) u32);
 
-impl From<etagere::AllocId> for TileId {
-    fn from(id: etagere::AllocId) -> Self {
+impl From<etagere.AllocId> for TileId {
+    fn from(id: etagere.AllocId) -> Self {
         Self(id.serialize())
     }
 }
 
-impl From<TileId> for etagere::AllocId {
+impl From<TileId> for etagere.AllocId {
     fn from(id: TileId) -> Self {
-        Self::deserialize(id.0)
+        Self.deserialize(id.0)
     }
 }
 
@@ -734,7 +734,7 @@ pub enum WindowBounds {
 
 impl Default for WindowBounds {
     fn default() -> Self {
-        WindowBounds::Windowed(Bounds::default())
+        WindowBounds.Windowed(Bounds.default())
     }
 }
 
@@ -742,9 +742,9 @@ impl WindowBounds {
     /// Retrieve the inner bounds
     pub fn get_bounds(&self) -> Bounds<Pixels> {
         match self {
-            WindowBounds::Windowed(bounds) => *bounds,
-            WindowBounds::Maximized(bounds) => *bounds,
-            WindowBounds::Fullscreen(bounds) => *bounds,
+            WindowBounds.Windowed(bounds) => *bounds,
+            WindowBounds.Maximized(bounds) => *bounds,
+            WindowBounds.Fullscreen(bounds) => *bounds,
         }
     }
 }
@@ -754,16 +754,16 @@ impl Default for WindowOptions {
         Self {
             window_bounds: None,
             titlebar: Some(TitlebarOptions {
-                title: Default::default(),
-                appears_transparent: Default::default(),
-                traffic_light_position: Default::default(),
+                title: Default.default(),
+                appears_transparent: Default.default(),
+                traffic_light_position: Default.default(),
             }),
             focus: true,
             show: true,
-            kind: WindowKind::Normal,
+            kind: WindowKind.Normal,
             is_movable: true,
             display_id: None,
-            window_background: WindowBackgroundAppearance::default(),
+            window_background: WindowBackgroundAppearance.default(),
             app_id: None,
             window_min_size: None,
             window_decorations: None,
@@ -824,7 +824,7 @@ pub enum WindowAppearance {
 
 impl Default for WindowAppearance {
     fn default() -> Self {
-        Self::Light
+        Self.Light
     }
 }
 
@@ -962,7 +962,7 @@ pub enum CursorStyle {
 
 impl Default for CursorStyle {
     fn default() -> Self {
-        Self::Arrow
+        Self.Arrow
     }
 }
 
@@ -984,7 +984,7 @@ impl ClipboardItem {
 
     /// Create a new clipboard item with the given text and metadata
     pub fn with_metadata<T: Serialize>(mut self, metadata: T) -> Self {
-        self.metadata = Some(serde_json::to_string(&metadata).unwrap());
+        self.metadata = Some(serde_json.to_string(&metadata).unwrap());
         self
     }
 
@@ -1000,12 +1000,12 @@ impl ClipboardItem {
     {
         self.metadata
             .as_ref()
-            .and_then(|m| serde_json::from_str(m).ok())
+            .and_then(|m| serde_json.from_str(m).ok())
     }
 
     #[cfg_attr(target_os = "linux", allow(dead_code))]
     pub(crate) fn text_hash(text: &str) -> u64 {
-        let mut hasher = SeaHasher::new();
+        let mut hasher = SeaHasher.new();
         text.hash(&mut hasher);
         hasher.finish()
     }

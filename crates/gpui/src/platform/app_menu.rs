@@ -1,5 +1,5 @@
-use crate::{Action, AppContext, Platform, SharedString};
-use util::ResultExt;
+use crate.{Action, AppContext, Platform, SharedString};
+use util.ResultExt;
 
 /// A menu of the application, either a main menu or a submenu
 pub struct Menu {
@@ -45,19 +45,19 @@ pub enum MenuItem {
 impl MenuItem {
     /// Creates a new menu item that is a separator
     pub fn separator() -> Self {
-        Self::Separator
+        Self.Separator
     }
 
     /// Creates a new menu item that is a submenu
     pub fn submenu(menu: Menu) -> Self {
-        Self::Submenu(menu)
+        Self.Submenu(menu)
     }
 
     /// Creates a new menu item that invokes an action
     pub fn action(name: impl Into<SharedString>, action: impl Action) -> Self {
-        Self::Action {
+        Self.Action {
             name: name.into(),
-            action: Box::new(action),
+            action: Box.new(action),
             os_action: None,
         }
     }
@@ -68,9 +68,9 @@ impl MenuItem {
         action: impl Action,
         os_action: OsAction,
     ) -> Self {
-        Self::Action {
+        Self.Action {
             name: name.into(),
-            action: Box::new(action),
+            action: Box.new(action),
             os_action: Some(os_action),
         }
     }
@@ -78,13 +78,13 @@ impl MenuItem {
     /// Create an OwnedMenuItem from this MenuItem
     pub fn owned(self) -> OwnedMenuItem {
         match self {
-            MenuItem::Separator => OwnedMenuItem::Separator,
-            MenuItem::Submenu(submenu) => OwnedMenuItem::Submenu(submenu.owned()),
-            MenuItem::Action {
+            MenuItem.Separator => OwnedMenuItem.Separator,
+            MenuItem.Submenu(submenu) => OwnedMenuItem.Submenu(submenu.owned()),
+            MenuItem.Action {
                 name,
                 action,
                 os_action,
-            } => OwnedMenuItem::Action {
+            } => OwnedMenuItem.Action {
                 name: name.into(),
                 action,
                 os_action,
@@ -128,13 +128,13 @@ pub enum OwnedMenuItem {
 impl Clone for OwnedMenuItem {
     fn clone(&self) -> Self {
         match self {
-            OwnedMenuItem::Separator => OwnedMenuItem::Separator,
-            OwnedMenuItem::Submenu(submenu) => OwnedMenuItem::Submenu(submenu.clone()),
-            OwnedMenuItem::Action {
+            OwnedMenuItem.Separator => OwnedMenuItem.Separator,
+            OwnedMenuItem.Submenu(submenu) => OwnedMenuItem.Submenu(submenu.clone()),
+            OwnedMenuItem.Action {
                 name,
                 action,
                 os_action,
-            } => OwnedMenuItem::Action {
+            } => OwnedMenuItem.Action {
                 name: name.clone(),
                 action: action.boxed_clone(),
                 os_action: *os_action,
@@ -172,14 +172,14 @@ pub enum OsAction {
 }
 
 pub(crate) fn init_app_menus(platform: &dyn Platform, cx: &mut AppContext) {
-    platform.on_will_open_app_menu(Box::new({
+    platform.on_will_open_app_menu(Box.new({
         let cx = cx.to_async();
         move || {
             cx.update(|cx| cx.clear_pending_keystrokes()).ok();
         }
     }));
 
-    platform.on_validate_app_menu_command(Box::new({
+    platform.on_validate_app_menu_command(Box.new({
         let cx = cx.to_async();
         move |action| {
             cx.update(|cx| cx.is_action_available(action))
@@ -187,7 +187,7 @@ pub(crate) fn init_app_menus(platform: &dyn Platform, cx: &mut AppContext) {
         }
     }));
 
-    platform.on_app_menu_action(Box::new({
+    platform.on_app_menu_action(Box.new({
         let cx = cx.to_async();
         move |action| {
             cx.update(|cx| cx.dispatch_action(action)).log_err();

@@ -1,10 +1,10 @@
-use crate::Globals;
-use util::ResultExt;
+use crate.Globals;
+use util.ResultExt;
 
-use wayland_client::protocol::wl_surface::WlSurface;
-use wayland_client::protocol::{wl_pointer::WlPointer, wl_shm::WlShm};
-use wayland_client::Connection;
-use wayland_cursor::{CursorImageBuffer, CursorTheme};
+use wayland_client.protocol.wl_surface.WlSurface;
+use wayland_client.protocol.{wl_pointer.WlPointer, wl_shm.WlShm};
+use wayland_client.Connection;
+use wayland_cursor.{CursorImageBuffer, CursorTheme};
 
 pub(crate) struct Cursor {
     theme: Option<CursorTheme>,
@@ -25,7 +25,7 @@ impl Drop for Cursor {
 impl Cursor {
     pub fn new(connection: &Connection, globals: &Globals, size: u32) -> Self {
         Self {
-            theme: CursorTheme::load(&connection, globals.shm.clone(), size).log_err(),
+            theme: CursorTheme.load(&connection, globals.shm.clone(), size).log_err(),
             theme_name: None,
             surface: globals.compositor.create_surface(&globals.qh, ()),
             shm: globals.shm.clone(),
@@ -39,13 +39,13 @@ impl Cursor {
             self.size = size;
         }
         if let Some(theme) =
-            CursorTheme::load_from_name(&self.connection, self.shm.clone(), theme_name, self.size)
+            CursorTheme.load_from_name(&self.connection, self.shm.clone(), theme_name, self.size)
                 .log_err()
         {
             self.theme = Some(theme);
             self.theme_name = Some(theme_name.to_string());
         } else if let Some(theme) =
-            CursorTheme::load(&self.connection, self.shm.clone(), self.size).log_err()
+            CursorTheme.load(&self.connection, self.shm.clone(), self.size).log_err()
         {
             self.theme = Some(theme);
             self.theme_name = None;
@@ -58,7 +58,7 @@ impl Cursor {
             .theme_name
             .as_ref()
             .and_then(|name| {
-                CursorTheme::load_from_name(
+                CursorTheme.load_from_name(
                     &self.connection,
                     self.shm.clone(),
                     name.as_str(),
@@ -66,7 +66,7 @@ impl Cursor {
                 )
                 .log_err()
             })
-            .or_else(|| CursorTheme::load(&self.connection, self.shm.clone(), self.size).log_err());
+            .or_else(|| CursorTheme.load(&self.connection, self.shm.clone(), self.size).log_err());
     }
 
     pub fn set_icon(&mut self, wl_pointer: &WlPointer, serial_id: u32, mut cursor_icon_name: &str) {
@@ -78,13 +78,13 @@ impl Cursor {
             } else if let Some(cursor) = theme.get_cursor("default") {
                 buffer = Some(&cursor[0]);
                 cursor_icon_name = "default";
-                log::warn!(
+                log.warn!(
                     "Linux: Wayland: Unable to get cursor icon: {}. Using default cursor icon",
                     cursor_icon_name
                 );
             } else {
                 buffer = None;
-                log::warn!("Linux: Wayland: Unable to get default cursor too!");
+                log.warn!("Linux: Wayland: Unable to get default cursor too!");
             }
 
             if let Some(buffer) = &mut buffer {
@@ -97,7 +97,7 @@ impl Cursor {
                 self.surface.commit();
             }
         } else {
-            log::warn!("Linux: Wayland: Unable to load cursor themes");
+            log.warn!("Linux: Wayland: Unable to load cursor themes");
         }
     }
 }

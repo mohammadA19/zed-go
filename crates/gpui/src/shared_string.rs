@@ -1,8 +1,8 @@
-use derive_more::{Deref, DerefMut};
+use derive_more.{Deref, DerefMut};
 
-use serde::{Deserialize, Serialize};
-use std::{borrow::Borrow, sync::Arc};
-use util::arc_cow::ArcCow;
+use serde.{Deserialize, Serialize};
+use std.{borrow.Borrow, sync.Arc};
+use util.arc_cow.ArcCow;
 
 /// A shared string is an immutable string that can be cheaply cloned in GPUI
 /// tasks. Essentially an abstraction over an `Arc<str>` and `&'static str`,
@@ -11,7 +11,7 @@ pub struct SharedString(ArcCow<'static, str>);
 
 impl Default for SharedString {
     fn default() -> Self {
-        Self(ArcCow::Owned(Arc::default()))
+        Self(ArcCow.Owned(Arc.default()))
     }
 }
 
@@ -27,14 +27,14 @@ impl Borrow<str> for SharedString {
     }
 }
 
-impl std::fmt::Debug for SharedString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Debug for SharedString {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         self.0.fmt(f)
     }
 }
 
-impl std::fmt::Display for SharedString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Display for SharedString {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         write!(f, "{}", self.0.as_ref())
     }
 }
@@ -66,8 +66,8 @@ impl<'a> PartialEq<&'a str> for SharedString {
 impl From<SharedString> for Arc<str> {
     fn from(val: SharedString) -> Self {
         match val.0 {
-            ArcCow::Borrowed(borrowed) => Arc::from(borrowed),
-            ArcCow::Owned(owned) => owned.clone(),
+            ArcCow.Borrowed(borrowed) => Arc.from(borrowed),
+            ArcCow.Owned(owned) => owned.clone(),
         }
     }
 }
@@ -85,20 +85,20 @@ impl From<SharedString> for String {
 }
 
 impl Serialize for SharedString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S.Ok, S.Error>
     where
-        S: serde::Serializer,
+        S: serde.Serializer,
     {
         serializer.serialize_str(self.as_ref())
     }
 }
 
 impl<'de> Deserialize<'de> for SharedString {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D.Error>
     where
-        D: serde::Deserializer<'de>,
+        D: serde.Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        Ok(SharedString::from(s))
+        let s = String.deserialize(deserializer)?;
+        Ok(SharedString.from(s))
     }
 }

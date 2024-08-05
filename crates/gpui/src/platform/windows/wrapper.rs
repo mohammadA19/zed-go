@@ -1,6 +1,6 @@
-use std::ops::Deref;
+use std.ops.Deref;
 
-use windows::Win32::{Foundation::HANDLE, UI::WindowsAndMessaging::HCURSOR};
+use windows.Win32.{Foundation.HANDLE, UI.WindowsAndMessaging.HCURSOR};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct SafeHandle {
@@ -19,7 +19,7 @@ impl From<HANDLE> for SafeHandle {
 impl Deref for SafeHandle {
     type Target = HANDLE;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.raw
     }
 }
@@ -41,7 +41,7 @@ impl From<HCURSOR> for SafeCursor {
 impl Deref for SafeCursor {
     type Target = HCURSOR;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.raw
     }
 }

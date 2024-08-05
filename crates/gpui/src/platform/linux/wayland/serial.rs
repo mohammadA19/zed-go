@@ -1,4 +1,4 @@
-use collections::HashMap;
+use collections.HashMap;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub(crate) enum SerialKind {
@@ -30,12 +30,12 @@ pub(crate) struct SerialTracker {
 impl SerialTracker {
     pub fn new() -> Self {
         Self {
-            serials: HashMap::default(),
+            serials: HashMap.default(),
         }
     }
 
     pub fn update(&mut self, kind: SerialKind, value: u32) {
-        self.serials.insert(kind, SerialData::new(value));
+        self.serials.insert(kind, SerialData.new(value));
     }
 
     /// Returns the latest tracked serial of the provided [`SerialKind`]

@@ -1,4 +1,4 @@
-use crate::{AppContext, BorrowAppContext};
+use crate.{AppContext, BorrowAppContext};
 
 /// A marker trait for types that can be stored in GPUI's global state.
 ///
@@ -36,7 +36,7 @@ pub trait ReadGlobal {
 
 impl<T: Global> ReadGlobal for T {
     fn global(cx: &AppContext) -> &Self {
-        cx.global::<T>()
+        cx.global.<T>()
     }
 }
 

@@ -1,7 +1,7 @@
-use gpui::AppContext;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
+use gpui.AppContext;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
 
 #[derive(Deserialize, Clone)]
 pub struct EditorSettings {
@@ -327,7 +327,7 @@ pub struct GutterContent {
 
 impl EditorSettings {
     pub fn jupyter_enabled(cx: &AppContext) -> bool {
-        EditorSettings::get_global(cx).jupyter.enabled
+        EditorSettings.get_global(cx).jupyter.enabled
     }
 }
 
@@ -337,9 +337,9 @@ impl Settings for EditorSettings {
     type FileContent = EditorSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
+        sources: SettingsSources<Self.FileContent>,
         _: &mut AppContext,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 }

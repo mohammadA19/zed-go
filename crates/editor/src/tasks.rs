@@ -1,17 +1,17 @@
-use crate::Editor;
+use crate.Editor;
 
-use gpui::{Task as AsyncTask, WindowContext};
-use project::Location;
-use task::{TaskContext, TaskVariables, VariableName};
-use text::{ToOffset, ToPoint};
-use workspace::Workspace;
+use gpui.{Task as AsyncTask, WindowContext};
+use project.Location;
+use task.{TaskContext, TaskVariables, VariableName};
+use text.{ToOffset, ToPoint};
+use workspace.Workspace;
 
 fn task_context_with_editor(
     editor: &mut Editor,
     cx: &mut WindowContext<'_>,
 ) -> AsyncTask<Option<TaskContext>> {
     let Some(project) = editor.project.clone() else {
-        return AsyncTask::ready(None);
+        return AsyncTask.ready(None);
     };
     let (selection, buffer, editor_snapshot) = {
         let selection = editor.selections.newest_adjusted(cx);
@@ -20,7 +20,7 @@ fn task_context_with_editor(
             .read(cx)
             .point_to_buffer_offset(selection.start, cx)
         else {
-            return AsyncTask::ready(None);
+            return AsyncTask.ready(None);
         };
         let snapshot = editor.snapshot(cx);
         (selection, buffer, snapshot)
@@ -41,7 +41,7 @@ fn task_context_with_editor(
         range: start..end,
     };
     let captured_variables = {
-        let mut variables = TaskVariables::default();
+        let mut variables = TaskVariables.default();
         let buffer = location.buffer.read(cx);
         let buffer_id = buffer.remote_id();
         let snapshot = buffer.snapshot();
@@ -53,13 +53,13 @@ fn task_context_with_editor(
         {
             if !tasks
                 .context_range
-                .contains(&crate::BufferOffset(starting_offset))
+                .contains(&crate.BufferOffset(starting_offset))
             {
                 continue;
             }
             for (capture_name, value) in tasks.extra_variables.iter() {
                 variables.insert(
-                    VariableName::Custom(capture_name.to_owned().into()),
+                    VariableName.Custom(capture_name.to_owned().into()),
                     value.clone(),
                 );
             }
@@ -76,9 +76,9 @@ fn task_context_with_editor(
 pub fn task_context(workspace: &Workspace, cx: &mut WindowContext<'_>) -> AsyncTask<TaskContext> {
     let Some(editor) = workspace
         .active_item(cx)
-        .and_then(|item| item.act_as::<Editor>(cx))
+        .and_then(|item| item.act_as.<Editor>(cx))
     else {
-        return AsyncTask::ready(TaskContext::default());
+        return AsyncTask.ready(TaskContext.default());
     };
     editor.update(cx, |editor, cx| {
         let context_task = task_context_with_editor(editor, cx);

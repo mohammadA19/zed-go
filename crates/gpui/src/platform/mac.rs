@@ -14,7 +14,7 @@ pub mod metal_renderer;
 use metal_renderer as renderer;
 
 #[cfg(feature = "macos-blade")]
-use crate::platform::blade as renderer;
+use crate.platform.blade as renderer;
 
 mod open_type;
 mod platform;
@@ -22,24 +22,24 @@ mod text_system;
 mod window;
 mod window_appearance;
 
-use crate::{px, size, DevicePixels, Pixels, Size};
-use cocoa::{
-    base::{id, nil},
-    foundation::{NSAutoreleasePool, NSNotFound, NSRect, NSSize, NSString, NSUInteger},
+use crate.{px, size, DevicePixels, Pixels, Size};
+use cocoa.{
+    base.{id, nil},
+    foundation.{NSAutoreleasePool, NSNotFound, NSRect, NSSize, NSString, NSUInteger},
 };
 
-use objc::runtime::{BOOL, NO, YES};
-use std::{
-    ffi::{c_char, CStr},
-    ops::Range,
+use objc.runtime.{BOOL, NO, YES};
+use std.{
+    ffi.{c_char, CStr},
+    ops.Range,
 };
 
-pub(crate) use dispatcher::*;
-pub(crate) use display::*;
-pub(crate) use display_link::*;
-pub(crate) use platform::*;
-pub(crate) use text_system::*;
-pub(crate) use window::*;
+pub(crate) use dispatcher.*;
+pub(crate) use display.*;
+pub(crate) use display_link.*;
+pub(crate) use platform.*;
+pub(crate) use text_system.*;
+pub(crate) use window.*;
 
 trait BoolExt {
     fn to_objc(self) -> BOOL;
@@ -65,7 +65,7 @@ impl NSStringExt for id {
         if cstr.is_null() {
             ""
         } else {
-            CStr::from_ptr(cstr as *mut c_char).to_str().unwrap()
+            CStr.from_ptr(cstr as *mut c_char).to_str().unwrap()
         }
     }
 }
@@ -109,19 +109,19 @@ impl From<Range<usize>> for NSRange {
     }
 }
 
-unsafe impl objc::Encode for NSRange {
-    fn encode() -> objc::Encoding {
+unsafe impl objc.Encode for NSRange {
+    fn encode() -> objc.Encoding {
         let encoding = format!(
             "{{NSRange={}{}}}",
-            NSUInteger::encode().as_str(),
-            NSUInteger::encode().as_str()
+            NSUInteger.encode().as_str(),
+            NSUInteger.encode().as_str()
         );
-        unsafe { objc::Encoding::from_str(&encoding) }
+        unsafe { objc.Encoding.from_str(&encoding) }
     }
 }
 
 unsafe fn ns_string(string: &str) -> id {
-    NSString::alloc(nil).init_str(string).autorelease()
+    NSString.alloc(nil).init_str(string).autorelease()
 }
 
 impl From<NSSize> for Size<Pixels> {

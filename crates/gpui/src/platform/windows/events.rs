@@ -1,19 +1,19 @@
-use std::rc::Rc;
+use std.rc.Rc;
 
-use ::util::ResultExt;
-use anyhow::Context;
-use windows::Win32::{
-    Foundation::*,
-    Graphics::Gdi::*,
-    System::SystemServices::*,
-    UI::{
-        HiDpi::*,
-        Input::{Ime::*, KeyboardAndMouse::*},
-        WindowsAndMessaging::*,
+use .util.ResultExt;
+use anyhow.Context;
+use windows.Win32.{
+    Foundation.*,
+    Graphics.Gdi.*,
+    System.SystemServices.*,
+    UI.{
+        HiDpi.*,
+        Input.{Ime.*, KeyboardAndMouse.*},
+        WindowsAndMessaging.*,
     },
 };
 
-use crate::*;
+use crate.*;
 
 pub(crate) const CURSOR_STYLE_CHANGED: u32 = WM_USER + 1;
 pub(crate) const CLOSE_ONE_WINDOW: u32 = WM_USER + 2;
@@ -45,32 +45,32 @@ pub(crate) fn handle_msg(
         WM_MOUSEMOVE => handle_mouse_move_msg(lparam, wparam, state_ptr),
         WM_NCMOUSEMOVE => handle_nc_mouse_move_msg(handle, lparam, state_ptr),
         WM_NCLBUTTONDOWN => {
-            handle_nc_mouse_down_msg(handle, MouseButton::Left, wparam, lparam, state_ptr)
+            handle_nc_mouse_down_msg(handle, MouseButton.Left, wparam, lparam, state_ptr)
         }
         WM_NCRBUTTONDOWN => {
-            handle_nc_mouse_down_msg(handle, MouseButton::Right, wparam, lparam, state_ptr)
+            handle_nc_mouse_down_msg(handle, MouseButton.Right, wparam, lparam, state_ptr)
         }
         WM_NCMBUTTONDOWN => {
-            handle_nc_mouse_down_msg(handle, MouseButton::Middle, wparam, lparam, state_ptr)
+            handle_nc_mouse_down_msg(handle, MouseButton.Middle, wparam, lparam, state_ptr)
         }
         WM_NCLBUTTONUP => {
-            handle_nc_mouse_up_msg(handle, MouseButton::Left, wparam, lparam, state_ptr)
+            handle_nc_mouse_up_msg(handle, MouseButton.Left, wparam, lparam, state_ptr)
         }
         WM_NCRBUTTONUP => {
-            handle_nc_mouse_up_msg(handle, MouseButton::Right, wparam, lparam, state_ptr)
+            handle_nc_mouse_up_msg(handle, MouseButton.Right, wparam, lparam, state_ptr)
         }
         WM_NCMBUTTONUP => {
-            handle_nc_mouse_up_msg(handle, MouseButton::Middle, wparam, lparam, state_ptr)
+            handle_nc_mouse_up_msg(handle, MouseButton.Middle, wparam, lparam, state_ptr)
         }
-        WM_LBUTTONDOWN => handle_mouse_down_msg(handle, MouseButton::Left, lparam, state_ptr),
-        WM_RBUTTONDOWN => handle_mouse_down_msg(handle, MouseButton::Right, lparam, state_ptr),
-        WM_MBUTTONDOWN => handle_mouse_down_msg(handle, MouseButton::Middle, lparam, state_ptr),
+        WM_LBUTTONDOWN => handle_mouse_down_msg(handle, MouseButton.Left, lparam, state_ptr),
+        WM_RBUTTONDOWN => handle_mouse_down_msg(handle, MouseButton.Right, lparam, state_ptr),
+        WM_MBUTTONDOWN => handle_mouse_down_msg(handle, MouseButton.Middle, lparam, state_ptr),
         WM_XBUTTONDOWN => {
             handle_xbutton_msg(handle, wparam, lparam, handle_mouse_down_msg, state_ptr)
         }
-        WM_LBUTTONUP => handle_mouse_up_msg(handle, MouseButton::Left, lparam, state_ptr),
-        WM_RBUTTONUP => handle_mouse_up_msg(handle, MouseButton::Right, lparam, state_ptr),
-        WM_MBUTTONUP => handle_mouse_up_msg(handle, MouseButton::Middle, lparam, state_ptr),
+        WM_LBUTTONUP => handle_mouse_up_msg(handle, MouseButton.Left, lparam, state_ptr),
+        WM_RBUTTONUP => handle_mouse_up_msg(handle, MouseButton.Right, lparam, state_ptr),
+        WM_MBUTTONUP => handle_mouse_up_msg(handle, MouseButton.Middle, lparam, state_ptr),
         WM_XBUTTONUP => handle_xbutton_msg(handle, wparam, lparam, handle_mouse_up_msg, state_ptr),
         WM_MOUSEWHEEL => handle_mouse_wheel_msg(handle, wparam, lparam, state_ptr),
         WM_MOUSEHWHEEL => handle_mouse_horizontal_wheel_msg(handle, wparam, lparam, state_ptr),
@@ -121,7 +121,7 @@ fn handle_move_msg(
         // monitor is invalid, we do nothing.
         if !monitor.is_invalid() && lock.display.handle != monitor {
             // we will get the same monitor if we only have one
-            lock.display = WindowsDisplay::new_with_handle(monitor);
+            lock.display = WindowsDisplay.new_with_handle(monitor);
         }
     }
     if let Some(mut callback) = lock.callbacks.moved.take() {
@@ -153,9 +153,9 @@ fn handle_size_move_loop(handle: HWND) -> Option<isize> {
     unsafe {
         let ret = SetTimer(handle, SIZE_MOVE_LOOP_TIMER_ID, USER_TIMER_MINIMUM, None);
         if ret == 0 {
-            log::error!(
+            log.error!(
                 "unable to create timer: {}",
-                std::io::Error::last_os_error()
+                std.io.Error.last_os_error()
             );
         }
     }
@@ -238,14 +238,14 @@ fn handle_mouse_move_msg(
         let scale_factor = lock.scale_factor;
         drop(lock);
         let pressed_button = match MODIFIERKEYS_FLAGS(wparam.loword() as u32) {
-            flags if flags.contains(MK_LBUTTON) => Some(MouseButton::Left),
-            flags if flags.contains(MK_RBUTTON) => Some(MouseButton::Right),
-            flags if flags.contains(MK_MBUTTON) => Some(MouseButton::Middle),
+            flags if flags.contains(MK_LBUTTON) => Some(MouseButton.Left),
+            flags if flags.contains(MK_RBUTTON) => Some(MouseButton.Right),
+            flags if flags.contains(MK_MBUTTON) => Some(MouseButton.Middle),
             flags if flags.contains(MK_XBUTTON1) => {
-                Some(MouseButton::Navigate(NavigationDirection::Back))
+                Some(MouseButton.Navigate(NavigationDirection.Back))
             }
             flags if flags.contains(MK_XBUTTON2) => {
-                Some(MouseButton::Navigate(NavigationDirection::Forward))
+                Some(MouseButton.Navigate(NavigationDirection.Forward))
             }
             _ => None,
         };
@@ -256,7 +256,7 @@ fn handle_mouse_move_msg(
             pressed_button,
             modifiers: current_modifiers(),
         };
-        let result = if callback(PlatformInput::MouseMove(event)).default_prevented {
+        let result = if callback(PlatformInput.MouseMove(event)).default_prevented {
             Some(0)
         } else {
             Some(1)
@@ -280,7 +280,7 @@ fn handle_syskeydown_msg(
         keystroke,
         is_held: lparam.0 & (0x1 << 30) > 0,
     };
-    let result = if !func(PlatformInput::KeyDown(event)).propagate {
+    let result = if !func(PlatformInput.KeyDown(event)).propagate {
         state_ptr.state.borrow_mut().system_key_handled = true;
         Some(0)
     } else {
@@ -297,7 +297,7 @@ fn handle_syskeyup_msg(wparam: WPARAM, state_ptr: Rc<WindowsWindowStatePtr>) -> 
     let keystroke = parse_syskeydown_msg_keystroke(wparam)?;
     let mut func = state_ptr.state.borrow_mut().callbacks.input.take()?;
     let event = KeyUpEvent { keystroke };
-    let result = if func(PlatformInput::KeyUp(event)).default_prevented {
+    let result = if func(PlatformInput.KeyUp(event)).default_prevented {
         Some(0)
     } else {
         Some(1)
@@ -322,12 +322,12 @@ fn handle_keydown_msg(
     drop(lock);
 
     let event = match keystroke_or_modifier {
-        KeystrokeOrModifier::Keystroke(keystroke) => PlatformInput::KeyDown(KeyDownEvent {
+        KeystrokeOrModifier.Keystroke(keystroke) => PlatformInput.KeyDown(KeyDownEvent {
             keystroke,
             is_held: lparam.0 & (0x1 << 30) > 0,
         }),
-        KeystrokeOrModifier::Modifier(modifiers) => {
-            PlatformInput::ModifiersChanged(ModifiersChangedEvent { modifiers })
+        KeystrokeOrModifier.Modifier(modifiers) => {
+            PlatformInput.ModifiersChanged(ModifiersChangedEvent { modifiers })
         }
     };
 
@@ -352,9 +352,9 @@ fn handle_keyup_msg(wparam: WPARAM, state_ptr: Rc<WindowsWindowStatePtr>) -> Opt
     drop(lock);
 
     let event = match keystroke_or_modifier {
-        KeystrokeOrModifier::Keystroke(keystroke) => PlatformInput::KeyUp(KeyUpEvent { keystroke }),
-        KeystrokeOrModifier::Modifier(modifiers) => {
-            PlatformInput::ModifiersChanged(ModifiersChangedEvent { modifiers })
+        KeystrokeOrModifier.Keystroke(keystroke) => PlatformInput.KeyUp(KeyUpEvent { keystroke }),
+        KeystrokeOrModifier.Modifier(modifiers) => {
+            PlatformInput.ModifiersChanged(ModifiersChangedEvent { modifiers })
         }
     };
 
@@ -387,7 +387,7 @@ fn handle_char_msg(
         is_held: lparam.0 & (0x1 << 30) > 0,
     };
 
-    let dispatch_event_result = func(PlatformInput::KeyDown(event));
+    let dispatch_event_result = func(PlatformInput.KeyDown(event));
     let mut lock = state_ptr.state.borrow_mut();
     lock.callbacks.input = Some(func);
     if dispatch_event_result.default_prevented || !dispatch_event_result.propagate {
@@ -429,7 +429,7 @@ fn handle_mouse_down_msg(
             click_count,
             first_mouse: false,
         };
-        let result = if callback(PlatformInput::MouseDown(event)).default_prevented {
+        let result = if callback(PlatformInput.MouseDown(event)).default_prevented {
             Some(0)
         } else {
             Some(1)
@@ -463,7 +463,7 @@ fn handle_mouse_up_msg(
             modifiers: current_modifiers(),
             click_count,
         };
-        let result = if callback(PlatformInput::MouseUp(event)).default_prevented {
+        let result = if callback(PlatformInput.MouseUp(event)).default_prevented {
             Some(0)
         } else {
             Some(1)
@@ -484,11 +484,11 @@ fn handle_xbutton_msg(
     state_ptr: Rc<WindowsWindowStatePtr>,
 ) -> Option<isize> {
     let nav_dir = match wparam.hiword() {
-        XBUTTON1 => NavigationDirection::Back,
-        XBUTTON2 => NavigationDirection::Forward,
+        XBUTTON1 => NavigationDirection.Back,
+        XBUTTON2 => NavigationDirection.Forward,
         _ => return Some(1),
     };
-    handler(handle, MouseButton::Navigate(nav_dir), lparam, state_ptr)
+    handler(handle, MouseButton.Navigate(nav_dir), lparam, state_ptr)
 }
 
 fn handle_mouse_wheel_msg(
@@ -515,7 +515,7 @@ fn handle_mouse_wheel_msg(
         unsafe { ScreenToClient(handle, &mut cursor_point).ok().log_err() };
         let event = ScrollWheelEvent {
             position: logical_point(cursor_point.x as f32, cursor_point.y as f32, scale_factor),
-            delta: ScrollDelta::Lines(match modifiers.shift {
+            delta: ScrollDelta.Lines(match modifiers.shift {
                 true => Point {
                     x: wheel_distance,
                     y: 0.0,
@@ -526,9 +526,9 @@ fn handle_mouse_wheel_msg(
                 },
             }),
             modifiers: current_modifiers(),
-            touch_phase: TouchPhase::Moved,
+            touch_phase: TouchPhase.Moved,
         };
-        let result = if callback(PlatformInput::ScrollWheel(event)).default_prevented {
+        let result = if callback(PlatformInput.ScrollWheel(event)).default_prevented {
             Some(0)
         } else {
             Some(1)
@@ -561,14 +561,14 @@ fn handle_mouse_horizontal_wheel_msg(
         unsafe { ScreenToClient(handle, &mut cursor_point).ok().log_err() };
         let event = ScrollWheelEvent {
             position: logical_point(cursor_point.x as f32, cursor_point.y as f32, scale_factor),
-            delta: ScrollDelta::Lines(Point {
+            delta: ScrollDelta.Lines(Point {
                 x: wheel_distance,
                 y: 0.0,
             }),
             modifiers: current_modifiers(),
-            touch_phase: TouchPhase::Moved,
+            touch_phase: TouchPhase.Moved,
         };
-        let result = if callback(PlatformInput::ScrollWheel(event)).default_prevented {
+        let result = if callback(PlatformInput.ScrollWheel(event)).default_prevented {
             Some(0)
         } else {
             Some(1)
@@ -605,7 +605,7 @@ fn handle_ime_position(handle: HWND, state_ptr: Rc<WindowsWindowStatePtr>) -> Op
                 y: (caret_position.origin.y.0 * scale_factor) as i32
                     + ((caret_position.size.height.0 * scale_factor) as i32 / 2),
             },
-            ..Default::default()
+            ..Default.default()
         };
         ImmSetCandidateWindow(ctx, &config as _).ok().log_err();
         ImmReleaseContext(handle, ctx).ok().log_err();
@@ -681,8 +681,8 @@ fn handle_calc_client_size(
         requested_client_rect[0].top += frame_y + padding;
     } else {
         match state_ptr.windows_version {
-            WindowsVersion::Win10 => {}
-            WindowsVersion::Win11 => {
+            WindowsVersion.Win10 => {}
+            WindowsVersion.Win11 => {
                 // Magic number that calculates the width of the border
                 let border = (dpi as f32 / USER_DEFAULT_SCREEN_DPI as f32).round() as i32;
                 requested_client_rect[0].top += border;
@@ -725,7 +725,7 @@ fn handle_activate_msg(
 }
 
 fn handle_create_msg(handle: HWND, state_ptr: Rc<WindowsWindowStatePtr>) -> Option<isize> {
-    let mut size_rect = RECT::default();
+    let mut size_rect = RECT.default();
     unsafe { GetWindowRect(handle, &mut size_rect).log_err() };
 
     let width = size_rect.right - size_rect.left;
@@ -800,7 +800,7 @@ fn handle_display_change_msg(handle: HWND, state_ptr: Rc<WindowsWindowStatePtr>)
     // are handled there.
     // So we only care about if monitor is disconnected.
     let previous_monitor = state_ptr.as_ref().state.borrow().display;
-    if WindowsDisplay::is_connected(previous_monitor.handle) {
+    if WindowsDisplay.is_connected(previous_monitor.handle) {
         // we are fine, other display changed
         return None;
     }
@@ -813,10 +813,10 @@ fn handle_display_change_msg(handle: HWND, state_ptr: Rc<WindowsWindowStatePtr>)
     let new_monitor = unsafe { MonitorFromWindow(handle, MONITOR_DEFAULTTONULL) };
     // all monitors disconnected
     if new_monitor.is_invalid() {
-        log::error!("No monitor detected!");
+        log.error!("No monitor detected!");
         return None;
     }
-    let new_display = WindowsDisplay::new_with_handle(new_monitor);
+    let new_display = WindowsDisplay.new_with_handle(new_monitor);
     state_ptr.as_ref().state.borrow_mut().display = new_display;
     Some(0)
 }
@@ -912,7 +912,7 @@ fn handle_nc_mouse_move_msg(
             pressed_button: None,
             modifiers: current_modifiers(),
         };
-        let result = if callback(PlatformInput::MouseMove(event)).default_prevented {
+        let result = if callback(PlatformInput.MouseMove(event)).default_prevented {
             Some(0)
         } else {
             Some(1)
@@ -954,7 +954,7 @@ fn handle_nc_mouse_down_msg(
             click_count,
             first_mouse: false,
         };
-        let result = if callback(PlatformInput::MouseDown(event)).default_prevented {
+        let result = if callback(PlatformInput.MouseDown(event)).default_prevented {
             Some(0)
         } else {
             None
@@ -969,7 +969,7 @@ fn handle_nc_mouse_down_msg(
     };
 
     // Since these are handled in handle_nc_mouse_up_msg we must prevent the default window proc
-    if button == MouseButton::Left {
+    if button == MouseButton.Left {
         match wparam.0 as u32 {
             HTMINBUTTON => state_ptr.state.borrow_mut().nc_button_pressed = Some(HTMINBUTTON),
             HTMAXBUTTON => state_ptr.state.borrow_mut().nc_button_pressed = Some(HTMAXBUTTON),
@@ -1008,7 +1008,7 @@ fn handle_nc_mouse_up_msg(
             modifiers: current_modifiers(),
             click_count: 1,
         };
-        let result = if callback(PlatformInput::MouseUp(event)).default_prevented {
+        let result = if callback(PlatformInput.MouseUp(event)).default_prevented {
             Some(0)
         } else {
             None
@@ -1022,7 +1022,7 @@ fn handle_nc_mouse_up_msg(
     }
 
     let last_pressed = state_ptr.state.borrow_mut().nc_button_pressed.take();
-    if button == MouseButton::Left && last_pressed.is_some() {
+    if button == MouseButton.Left && last_pressed.is_some() {
         let last_button = last_pressed.unwrap();
         let mut handled = false;
         match wparam.0 as u32 {
@@ -1045,7 +1045,7 @@ fn handle_nc_mouse_up_msg(
             HTCLOSE => {
                 if last_button == HTCLOSE {
                     unsafe {
-                        PostMessageW(handle, WM_CLOSE, WPARAM::default(), LPARAM::default())
+                        PostMessageW(handle, WM_CLOSE, WPARAM.default(), LPARAM.default())
                             .log_err()
                     };
                     handled = true;
@@ -1165,19 +1165,19 @@ fn parse_keydown_msg_keystroke(wparam: WPARAM) -> Option<KeystrokeOrModifier> {
         VK_DELETE => "delete",
         _ => {
             if is_modifier(VIRTUAL_KEY(vk_code)) {
-                return Some(KeystrokeOrModifier::Modifier(modifiers));
+                return Some(KeystrokeOrModifier.Modifier(modifiers));
             }
 
             if modifiers.control || modifiers.alt {
                 let basic_key = basic_vkcode_to_string(vk_code, modifiers);
                 if let Some(basic_key) = basic_key {
-                    return Some(KeystrokeOrModifier::Keystroke(basic_key));
+                    return Some(KeystrokeOrModifier.Keystroke(basic_key));
                 }
             }
 
             if vk_code >= VK_F1.0 && vk_code <= VK_F24.0 {
                 let offset = vk_code - VK_F1.0;
-                return Some(KeystrokeOrModifier::Keystroke(Keystroke {
+                return Some(KeystrokeOrModifier.Keystroke(Keystroke {
                     modifiers,
                     key: format!("f{}", offset + 1),
                     ime_key: None,
@@ -1188,7 +1188,7 @@ fn parse_keydown_msg_keystroke(wparam: WPARAM) -> Option<KeystrokeOrModifier> {
     }
     .to_owned();
 
-    Some(KeystrokeOrModifier::Keystroke(Keystroke {
+    Some(KeystrokeOrModifier.Keystroke(Keystroke {
         modifiers,
         key,
         ime_key: None,
@@ -1196,7 +1196,7 @@ fn parse_keydown_msg_keystroke(wparam: WPARAM) -> Option<KeystrokeOrModifier> {
 }
 
 fn parse_char_msg_keystroke(wparam: WPARAM) -> Option<Keystroke> {
-    let first_char = char::from_u32((wparam.0 as u16).into())?;
+    let first_char = char.from_u32((wparam.0 as u16).into())?;
     if first_char.is_control() {
         None
     } else {
@@ -1230,11 +1230,11 @@ fn parse_ime_compostion_string(handle: HWND) -> Option<(String, usize)> {
                 Some(buffer.as_mut_ptr() as _),
                 string_len as _,
             );
-            let wstring = std::slice::from_raw_parts::<u16>(
-                buffer.as_mut_ptr().cast::<u16>(),
+            let wstring = std.slice.from_raw_parts.<u16>(
+                buffer.as_mut_ptr().cast.<u16>(),
                 string_len as usize / 2,
             );
-            let string = String::from_utf16_lossy(wstring);
+            let string = String.from_utf16_lossy(wstring);
             Some((string, string_len as usize / 2))
         } else {
             None
@@ -1265,11 +1265,11 @@ fn parse_ime_compostion_result(handle: HWND) -> Option<String> {
                 Some(buffer.as_mut_ptr() as _),
                 string_len as _,
             );
-            let wstring = std::slice::from_raw_parts::<u16>(
-                buffer.as_mut_ptr().cast::<u16>(),
+            let wstring = std.slice.from_raw_parts.<u16>(
+                buffer.as_mut_ptr().cast.<u16>(),
                 string_len as usize / 2,
             );
-            let string = String::from_utf16_lossy(wstring);
+            let string = String.from_utf16_lossy(wstring);
             Some(string)
         } else {
             None
@@ -1284,7 +1284,7 @@ fn basic_vkcode_to_string(code: u16, modifiers: Modifiers) -> Option<Keystroke> 
 
     let key = match mapped_code {
         0 => None,
-        raw_code => char::from_u32(raw_code),
+        raw_code => char.from_u32(raw_code),
     }?
     .to_ascii_lowercase();
 

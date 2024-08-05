@@ -1,6 +1,6 @@
-use gpui::{prelude::*, AnyElement};
-use smallvec::SmallVec;
-use ui::prelude::*;
+use gpui.{prelude.*, AnyElement};
+use smallvec.SmallVec;
+use ui.prelude.*;
 
 #[derive(IntoElement)]
 pub struct ExtensionCard {
@@ -12,7 +12,7 @@ impl ExtensionCard {
     pub fn new() -> Self {
         Self {
             overridden_by_dev_extension: false,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 
@@ -52,11 +52,11 @@ impl RenderOnce for ExtensionCard {
                             .size_full()
                             .items_center()
                             .justify_center()
-                            .bg(theme::color_alpha(
+                            .bg(theme.color_alpha(
                                 cx.theme().colors().elevated_surface_background,
                                 0.8,
                             ))
-                            .child(Label::new("Overridden by dev extension.")),
+                            .child(Label.new("Overridden by dev extension.")),
                     )
                 }),
         )

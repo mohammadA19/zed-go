@@ -1,17 +1,17 @@
-use crate::commit::get_messages;
-use crate::{parse_git_remote_url, BuildCommitPermalinkParams, GitHostingProviderRegistry, Oid};
-use anyhow::{anyhow, Context, Result};
-use collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
-use std::io::Write;
-use std::process::{Command, Stdio};
-use std::sync::Arc;
-use std::{ops::Range, path::Path};
-use text::Rope;
-use time::macros::format_description;
-use time::OffsetDateTime;
-use time::UtcOffset;
-use url::Url;
+use crate.commit.get_messages;
+use crate.{parse_git_remote_url, BuildCommitPermalinkParams, GitHostingProviderRegistry, Oid};
+use anyhow.{anyhow, Context, Result};
+use collections.{HashMap, HashSet};
+use serde.{Deserialize, Serialize};
+use std.io.Write;
+use std.process.{Command, Stdio};
+use std.sync.Arc;
+use std.{ops.Range, path.Path};
+use text.Rope;
+use time.macros.format_description;
+use time.OffsetDateTime;
+use time.UtcOffset;
+use url.Url;
 
 pub use git2 as libgit;
 
@@ -36,8 +36,8 @@ impl Blame {
         let mut entries = parse_git_blame(&output)?;
         entries.sort_unstable_by(|a, b| a.range.start.cmp(&b.range.start));
 
-        let mut permalinks = HashMap::default();
-        let mut unique_shas = HashSet::default();
+        let mut permalinks = HashMap.default();
+        let mut unique_shas = HashSet.default();
         let parsed_remote_url = remote_url
             .as_deref()
             .and_then(|remote_url| parse_git_remote_url(provider_registry, remote_url));
@@ -58,7 +58,7 @@ impl Blame {
             }
         }
 
-        let shas = unique_shas.into_iter().collect::<Vec<_>>();
+        let shas = unique_shas.into_iter().collect.<Vec<_>>();
         let messages =
             get_messages(&working_directory, &shas).context("failed to get commit messages")?;
 
@@ -80,7 +80,7 @@ fn run_git_blame(
     path: &Path,
     contents: &Rope,
 ) -> Result<String> {
-    let mut child = Command::new(git_binary);
+    let mut child = Command.new(git_binary);
 
     child
         .current_dir(working_directory)
@@ -89,14 +89,14 @@ fn run_git_blame(
         .arg("--contents")
         .arg("-")
         .arg(path.as_os_str())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stdin(Stdio.piped())
+        .stdout(Stdio.piped())
+        .stderr(Stdio.piped());
 
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
-        child.creation_flags(windows::Win32::System::Threading::CREATE_NO_WINDOW.0);
+        use std.os.windows.process.CommandExt;
+        child.creation_flags(windows.Win32.System.Threading.CREATE_NO_WINDOW.0);
     }
 
     let child = child
@@ -118,15 +118,15 @@ fn run_git_blame(
         .map_err(|e| anyhow!("Failed to read git blame output: {}", e))?;
 
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stderr = String.from_utf8_lossy(&output.stderr);
         let trimmed = stderr.trim();
         if trimmed == GIT_BLAME_NO_COMMIT_ERROR || trimmed.contains(GIT_BLAME_NO_PATH) {
-            return Ok(String::new());
+            return Ok(String.new());
         }
         return Err(anyhow!("git blame process failed: {}", stderr));
     }
 
-    Ok(String::from_utf8(output.stdout)?)
+    Ok(String.from_utf8(output.stdout)?)
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq, Eq)]
@@ -163,21 +163,21 @@ impl BlameEntry {
 
         let sha = parts
             .next()
-            .and_then(|line| line.parse::<Oid>().ok())
+            .and_then(|line| line.parse.<Oid>().ok())
             .ok_or_else(|| anyhow!("failed to parse sha"))?;
 
         let original_line_number = parts
             .next()
-            .and_then(|line| line.parse::<u32>().ok())
+            .and_then(|line| line.parse.<u32>().ok())
             .ok_or_else(|| anyhow!("Failed to parse original line number"))?;
         let final_line_number = parts
             .next()
-            .and_then(|line| line.parse::<u32>().ok())
+            .and_then(|line| line.parse.<u32>().ok())
             .ok_or_else(|| anyhow!("Failed to parse final line number"))?;
 
         let line_count = parts
             .next()
-            .and_then(|line| line.parse::<u32>().ok())
+            .and_then(|line| line.parse.<u32>().ok())
             .ok_or_else(|| anyhow!("Failed to parse final line number"))?;
 
         let start_line = final_line_number.saturating_sub(1);
@@ -188,20 +188,20 @@ impl BlameEntry {
             sha,
             range,
             original_line_number,
-            ..Default::default()
+            ..Default.default()
         })
     }
 
-    pub fn author_offset_date_time(&self) -> Result<time::OffsetDateTime> {
+    pub fn author_offset_date_time(&self) -> Result<time.OffsetDateTime> {
         if let (Some(author_time), Some(author_tz)) = (self.author_time, &self.author_tz) {
             let format = format_description!("[offset_hour][offset_minute]");
-            let offset = UtcOffset::parse(author_tz, &format)?;
-            let date_time_utc = OffsetDateTime::from_unix_timestamp(author_time)?;
+            let offset = UtcOffset.parse(author_tz, &format)?;
+            let date_time_utc = OffsetDateTime.from_unix_timestamp(author_time)?;
 
             Ok(date_time_utc.to_offset(offset))
         } else {
             // Directly return current time in UTC if there's no committer time or timezone
-            Ok(time::OffsetDateTime::now_utc())
+            Ok(time.OffsetDateTime.now_utc())
         }
     }
 }
@@ -243,8 +243,8 @@ impl BlameEntry {
 //
 // More about `--incremental` output: https://mirrors.edge.kernel.org/pub/software/scm/git/docs/git-blame.html
 fn parse_git_blame(output: &str) -> Result<Vec<BlameEntry>> {
-    let mut entries: Vec<BlameEntry> = Vec::new();
-    let mut index: HashMap<Oid, usize> = HashMap::default();
+    let mut entries: Vec<BlameEntry> = Vec.new();
+    let mut index: HashMap<Oid, usize> = HashMap.default();
 
     let mut current_entry: Option<BlameEntry> = None;
 
@@ -253,7 +253,7 @@ fn parse_git_blame(output: &str) -> Result<Vec<BlameEntry>> {
 
         match &mut current_entry {
             None => {
-                let mut new_entry = BlameEntry::new_from_blame_line(line)?;
+                let mut new_entry = BlameEntry.new_from_blame_line(line)?;
 
                 if let Some(existing_entry) = index
                     .get(&new_entry.sha)
@@ -294,14 +294,14 @@ fn parse_git_blame(output: &str) -> Result<Vec<BlameEntry>> {
                     "author" if is_committed => entry.author = Some(value.into()),
                     "author-mail" if is_committed => entry.author_mail = Some(value.into()),
                     "author-time" if is_committed => {
-                        entry.author_time = Some(value.parse::<i64>()?)
+                        entry.author_time = Some(value.parse.<i64>()?)
                     }
                     "author-tz" if is_committed => entry.author_tz = Some(value.into()),
 
                     "committer" if is_committed => entry.committer = Some(value.into()),
                     "committer-mail" if is_committed => entry.committer_mail = Some(value.into()),
                     "committer-time" if is_committed => {
-                        entry.committer_time = Some(value.parse::<i64>()?)
+                        entry.committer_time = Some(value.parse.<i64>()?)
                     }
                     "committer-tz" if is_committed => entry.committer_tz = Some(value.into()),
                     _ => {}
@@ -326,46 +326,46 @@ fn parse_git_blame(output: &str) -> Result<Vec<BlameEntry>> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std.path.PathBuf;
 
-    use super::parse_git_blame;
-    use super::BlameEntry;
+    use super.parse_git_blame;
+    use super.BlameEntry;
 
     fn read_test_data(filename: &str) -> String {
-        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut path = PathBuf.from(env!("CARGO_MANIFEST_DIR"));
         path.push("test_data");
         path.push(filename);
 
-        std::fs::read_to_string(&path)
+        std.fs.read_to_string(&path)
             .unwrap_or_else(|_| panic!("Could not read test data at {:?}. Is it generated?", path))
     }
 
     fn assert_eq_golden(entries: &Vec<BlameEntry>, golden_filename: &str) {
-        let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut path = PathBuf.from(env!("CARGO_MANIFEST_DIR"));
         path.push("test_data");
         path.push("golden");
         path.push(format!("{}.json", golden_filename));
 
         let mut have_json =
-            serde_json::to_string_pretty(&entries).expect("could not serialize entries to JSON");
+            serde_json.to_string_pretty(&entries).expect("could not serialize entries to JSON");
         // We always want to save with a trailing newline.
         have_json.push('\n');
 
-        let update = std::env::var("UPDATE_GOLDEN")
+        let update = std.env.var("UPDATE_GOLDEN")
             .map(|val| val.to_ascii_lowercase() == "true")
             .unwrap_or(false);
 
         if update {
-            std::fs::create_dir_all(path.parent().unwrap())
+            std.fs.create_dir_all(path.parent().unwrap())
                 .expect("could not create golden test data directory");
-            std::fs::write(&path, have_json).expect("could not write out golden data");
+            std.fs.write(&path, have_json).expect("could not write out golden data");
         } else {
             let want_json =
-                std::fs::read_to_string(&path).unwrap_or_else(|_| {
+                std.fs.read_to_string(&path).unwrap_or_else(|_| {
                     panic!("could not read golden test data file at {:?}. Did you run the test with UPDATE_GOLDEN=true before?", path);
                 });
 
-            pretty_assertions::assert_eq!(have_json, want_json, "wrong blame entries");
+            pretty_assertions.assert_eq!(have_json, want_json, "wrong blame entries");
         }
     }
 

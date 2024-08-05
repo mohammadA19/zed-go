@@ -1,9 +1,9 @@
-use super::Axis;
-use crate::{
+use super.Axis;
+use crate.{
     Autoscroll, Bias, Editor, EditorMode, NextScreen, ScrollAnchor, ScrollCursorBottom,
     ScrollCursorCenter, ScrollCursorTop,
 };
-use gpui::{Point, ViewContext};
+use gpui.{Point, ViewContext};
 
 impl Editor {
     pub fn next_screen(&mut self, _: &NextScreen, cx: &mut ViewContext<Editor>) {
@@ -15,11 +15,11 @@ impl Editor {
             return;
         }
 
-        if matches!(self.mode, EditorMode::SingleLine { .. }) {
+        if matches!(self.mode, EditorMode.SingleLine { .. }) {
             cx.propagate();
             return;
         }
-        self.request_autoscroll(Autoscroll::Next, cx);
+        self.request_autoscroll(Autoscroll.Next, cx);
     }
 
     pub fn scroll(
@@ -39,13 +39,13 @@ impl Editor {
         let mut new_screen_top = self.selections.newest_display(cx).head();
         *new_screen_top.row_mut() = new_screen_top.row().0.saturating_sub(scroll_margin_rows);
         *new_screen_top.column_mut() = 0;
-        let new_screen_top = new_screen_top.to_offset(&snapshot, Bias::Left);
+        let new_screen_top = new_screen_top.to_offset(&snapshot, Bias.Left);
         let new_anchor = snapshot.buffer_snapshot.anchor_before(new_screen_top);
 
         self.set_scroll_anchor(
             ScrollAnchor {
                 anchor: new_anchor,
-                offset: Default::default(),
+                offset: Default.default(),
             },
             cx,
         )
@@ -62,13 +62,13 @@ impl Editor {
         let mut new_screen_top = self.selections.newest_display(cx).head();
         *new_screen_top.row_mut() = new_screen_top.row().0.saturating_sub(visible_rows / 2);
         *new_screen_top.column_mut() = 0;
-        let new_screen_top = new_screen_top.to_offset(&snapshot, Bias::Left);
+        let new_screen_top = new_screen_top.to_offset(&snapshot, Bias.Left);
         let new_anchor = snapshot.buffer_snapshot.anchor_before(new_screen_top);
 
         self.set_scroll_anchor(
             ScrollAnchor {
                 anchor: new_anchor,
-                offset: Default::default(),
+                offset: Default.default(),
             },
             cx,
         )
@@ -89,13 +89,13 @@ impl Editor {
             .0
             .saturating_sub(visible_rows.saturating_sub(scroll_margin_rows));
         *new_screen_top.column_mut() = 0;
-        let new_screen_top = new_screen_top.to_offset(&snapshot, Bias::Left);
+        let new_screen_top = new_screen_top.to_offset(&snapshot, Bias.Left);
         let new_anchor = snapshot.buffer_snapshot.anchor_before(new_screen_top);
 
         self.set_scroll_anchor(
             ScrollAnchor {
                 anchor: new_anchor,
-                offset: Default::default(),
+                offset: Default.default(),
             },
             cx,
         )

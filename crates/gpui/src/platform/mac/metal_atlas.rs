@@ -1,29 +1,29 @@
-use crate::{
+use crate.{
     AtlasKey, AtlasTextureId, AtlasTextureKind, AtlasTile, Bounds, DevicePixels, PlatformAtlas,
     Point, Size,
 };
-use anyhow::{anyhow, Result};
-use collections::FxHashMap;
-use derive_more::{Deref, DerefMut};
-use etagere::BucketedAtlasAllocator;
-use metal::Device;
-use parking_lot::Mutex;
-use std::borrow::Cow;
+use anyhow.{anyhow, Result};
+use collections.FxHashMap;
+use derive_more.{Deref, DerefMut};
+use etagere.BucketedAtlasAllocator;
+use metal.Device;
+use parking_lot.Mutex;
+use std.borrow.Cow;
 
 pub(crate) struct MetalAtlas(Mutex<MetalAtlasState>);
 
 impl MetalAtlas {
     pub(crate) fn new(device: Device) -> Self {
-        MetalAtlas(Mutex::new(MetalAtlasState {
+        MetalAtlas(Mutex.new(MetalAtlasState {
             device: AssertSend(device),
-            monochrome_textures: Default::default(),
-            polychrome_textures: Default::default(),
-            path_textures: Default::default(),
-            tiles_by_key: Default::default(),
+            monochrome_textures: Default.default(),
+            polychrome_textures: Default.default(),
+            path_textures: Default.default(),
+            tiles_by_key: Default.default(),
         }))
     }
 
-    pub(crate) fn metal_texture(&self, id: AtlasTextureId) -> metal::Texture {
+    pub(crate) fn metal_texture(&self, id: AtlasTextureId) -> metal.Texture {
         self.0.lock().texture(id).metal_texture.clone()
     }
 
@@ -38,9 +38,9 @@ impl MetalAtlas {
     pub(crate) fn clear_textures(&self, texture_kind: AtlasTextureKind) {
         let mut lock = self.0.lock();
         let textures = match texture_kind {
-            AtlasTextureKind::Monochrome => &mut lock.monochrome_textures,
-            AtlasTextureKind::Polychrome => &mut lock.polychrome_textures,
-            AtlasTextureKind::Path => &mut lock.path_textures,
+            AtlasTextureKind.Monochrome => &mut lock.monochrome_textures,
+            AtlasTextureKind.Polychrome => &mut lock.polychrome_textures,
+            AtlasTextureKind.Path => &mut lock.path_textures,
         };
         for texture in textures {
             texture.clear();
@@ -87,9 +87,9 @@ impl MetalAtlasState {
         texture_kind: AtlasTextureKind,
     ) -> Option<AtlasTile> {
         let textures = match texture_kind {
-            AtlasTextureKind::Monochrome => &mut self.monochrome_textures,
-            AtlasTextureKind::Polychrome => &mut self.polychrome_textures,
-            AtlasTextureKind::Path => &mut self.path_textures,
+            AtlasTextureKind.Monochrome => &mut self.monochrome_textures,
+            AtlasTextureKind.Polychrome => &mut self.polychrome_textures,
+            AtlasTextureKind.Path => &mut self.path_textures,
         };
 
         textures
@@ -117,23 +117,23 @@ impl MetalAtlasState {
             height: DevicePixels(16384),
         };
         let size = min_size.min(&MAX_ATLAS_SIZE).max(&DEFAULT_ATLAS_SIZE);
-        let texture_descriptor = metal::TextureDescriptor::new();
+        let texture_descriptor = metal.TextureDescriptor.new();
         texture_descriptor.set_width(size.width.into());
         texture_descriptor.set_height(size.height.into());
         let pixel_format;
         let usage;
         match kind {
-            AtlasTextureKind::Monochrome => {
-                pixel_format = metal::MTLPixelFormat::A8Unorm;
-                usage = metal::MTLTextureUsage::ShaderRead;
+            AtlasTextureKind.Monochrome => {
+                pixel_format = metal.MTLPixelFormat.A8Unorm;
+                usage = metal.MTLTextureUsage.ShaderRead;
             }
-            AtlasTextureKind::Polychrome => {
-                pixel_format = metal::MTLPixelFormat::BGRA8Unorm;
-                usage = metal::MTLTextureUsage::ShaderRead;
+            AtlasTextureKind.Polychrome => {
+                pixel_format = metal.MTLPixelFormat.BGRA8Unorm;
+                usage = metal.MTLTextureUsage.ShaderRead;
             }
-            AtlasTextureKind::Path => {
-                pixel_format = metal::MTLPixelFormat::R16Float;
-                usage = metal::MTLTextureUsage::RenderTarget | metal::MTLTextureUsage::ShaderRead;
+            AtlasTextureKind.Path => {
+                pixel_format = metal.MTLPixelFormat.R16Float;
+                usage = metal.MTLTextureUsage.RenderTarget | metal.MTLTextureUsage.ShaderRead;
             }
         }
         texture_descriptor.set_pixel_format(pixel_format);
@@ -141,16 +141,16 @@ impl MetalAtlasState {
         let metal_texture = self.device.new_texture(&texture_descriptor);
 
         let textures = match kind {
-            AtlasTextureKind::Monochrome => &mut self.monochrome_textures,
-            AtlasTextureKind::Polychrome => &mut self.polychrome_textures,
-            AtlasTextureKind::Path => &mut self.path_textures,
+            AtlasTextureKind.Monochrome => &mut self.monochrome_textures,
+            AtlasTextureKind.Polychrome => &mut self.polychrome_textures,
+            AtlasTextureKind.Path => &mut self.path_textures,
         };
         let atlas_texture = MetalAtlasTexture {
             id: AtlasTextureId {
                 index: textures.len() as u32,
                 kind,
             },
-            allocator: etagere::BucketedAtlasAllocator::new(size.into()),
+            allocator: etagere.BucketedAtlasAllocator.new(size.into()),
             metal_texture: AssertSend(metal_texture),
         };
         textures.push(atlas_texture);
@@ -159,9 +159,9 @@ impl MetalAtlasState {
 
     fn texture(&self, id: AtlasTextureId) -> &MetalAtlasTexture {
         let textures = match id.kind {
-            crate::AtlasTextureKind::Monochrome => &self.monochrome_textures,
-            crate::AtlasTextureKind::Polychrome => &self.polychrome_textures,
-            crate::AtlasTextureKind::Path => &self.path_textures,
+            crate.AtlasTextureKind.Monochrome => &self.monochrome_textures,
+            crate.AtlasTextureKind.Polychrome => &self.polychrome_textures,
+            crate.AtlasTextureKind.Path => &self.path_textures,
         };
         &textures[id.index as usize]
     }
@@ -170,7 +170,7 @@ impl MetalAtlasState {
 struct MetalAtlasTexture {
     id: AtlasTextureId,
     allocator: BucketedAtlasAllocator,
-    metal_texture: AssertSend<metal::Texture>,
+    metal_texture: AssertSend<metal.Texture>,
 }
 
 impl MetalAtlasTexture {
@@ -193,7 +193,7 @@ impl MetalAtlasTexture {
     }
 
     fn upload(&self, bounds: Bounds<DevicePixels>, bytes: &[u8]) {
-        let region = metal::MTLRegion::new_2d(
+        let region = metal.MTLRegion.new_2d(
             bounds.origin.x.into(),
             bounds.origin.y.into(),
             bounds.size.width.into(),
@@ -208,7 +208,7 @@ impl MetalAtlasTexture {
     }
 
     fn bytes_per_pixel(&self) -> u8 {
-        use metal::MTLPixelFormat::*;
+        use metal.MTLPixelFormat.*;
         match self.metal_texture.pixel_format() {
             A8Unorm | R8Unorm => 1,
             RGBA8Unorm | BGRA8Unorm => 4,
@@ -217,32 +217,32 @@ impl MetalAtlasTexture {
     }
 }
 
-impl From<Size<DevicePixels>> for etagere::Size {
+impl From<Size<DevicePixels>> for etagere.Size {
     fn from(size: Size<DevicePixels>) -> Self {
-        etagere::Size::new(size.width.into(), size.height.into())
+        etagere.Size.new(size.width.into(), size.height.into())
     }
 }
 
-impl From<etagere::Point> for Point<DevicePixels> {
-    fn from(value: etagere::Point) -> Self {
+impl From<etagere.Point> for Point<DevicePixels> {
+    fn from(value: etagere.Point) -> Self {
         Point {
-            x: DevicePixels::from(value.x),
-            y: DevicePixels::from(value.y),
+            x: DevicePixels.from(value.x),
+            y: DevicePixels.from(value.y),
         }
     }
 }
 
-impl From<etagere::Size> for Size<DevicePixels> {
-    fn from(size: etagere::Size) -> Self {
+impl From<etagere.Size> for Size<DevicePixels> {
+    fn from(size: etagere.Size) -> Self {
         Size {
-            width: DevicePixels::from(size.width),
-            height: DevicePixels::from(size.height),
+            width: DevicePixels.from(size.width),
+            height: DevicePixels.from(size.height),
         }
     }
 }
 
-impl From<etagere::Rectangle> for Bounds<DevicePixels> {
-    fn from(rectangle: etagere::Rectangle) -> Self {
+impl From<etagere.Rectangle> for Bounds<DevicePixels> {
+    fn from(rectangle: etagere.Rectangle) -> Self {
         Bounds {
             origin: rectangle.min.into(),
             size: rectangle.size().into(),

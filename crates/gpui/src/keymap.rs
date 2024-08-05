@@ -1,13 +1,13 @@
 mod binding;
 mod context;
 
-pub use binding::*;
-pub use context::*;
+pub use binding.*;
+pub use context.*;
 
-use crate::{Action, Keystroke, NoAction};
-use collections::HashMap;
-use smallvec::SmallVec;
-use std::any::{Any, TypeId};
+use crate.{Action, Keystroke, NoAction};
+use collections.HashMap;
+use smallvec.SmallVec;
+use std.any.{Any, TypeId};
 
 /// An opaque identifier of which version of the keymap is currently active.
 /// The keymap's version is changed whenever bindings are added or removed.
@@ -25,7 +25,7 @@ pub struct Keymap {
 impl Keymap {
     /// Create a new keymap with the given bindings.
     pub fn new(bindings: Vec<KeyBinding>) -> Self {
-        let mut this = Self::default();
+        let mut this = Self.default();
         this.add_bindings(bindings);
         this
     }
@@ -69,7 +69,7 @@ impl Keymap {
         let action_id = action.type_id();
         self.binding_indices_by_action_id
             .get(&action_id)
-            .map_or(&[] as _, SmallVec::as_slice)
+            .map_or(&[] as _, SmallVec.as_slice)
             .iter()
             .map(|ix| &self.bindings[*ix])
             .filter(move |binding| binding.action().partial_eq(action))
@@ -102,7 +102,7 @@ impl Keymap {
                 .map(|pending| (binding, pending))
         });
 
-        let mut bindings: SmallVec<[(KeyBinding, usize); 1]> = SmallVec::new();
+        let mut bindings: SmallVec<[(KeyBinding, usize); 1]> = SmallVec.new();
         let mut is_pending = None;
 
         'outer: for (binding, pending) in possibilities {
@@ -148,9 +148,9 @@ impl Keymap {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
     use crate as gpui;
-    use gpui::actions;
+    use gpui.actions;
 
     actions!(
         keymap_test,
@@ -160,53 +160,53 @@ mod tests {
     #[test]
     fn test_keymap() {
         let bindings = [
-            KeyBinding::new("ctrl-a", ActionAlpha {}, None),
-            KeyBinding::new("ctrl-a", ActionBeta {}, Some("pane")),
-            KeyBinding::new("ctrl-a", ActionGamma {}, Some("editor && mode==full")),
+            KeyBinding.new("ctrl-a", ActionAlpha {}, None),
+            KeyBinding.new("ctrl-a", ActionBeta {}, Some("pane")),
+            KeyBinding.new("ctrl-a", ActionGamma {}, Some("editor && mode==full")),
         ];
 
-        let mut keymap = Keymap::default();
+        let mut keymap = Keymap.default();
         keymap.add_bindings(bindings.clone());
 
         // global bindings are enabled in all contexts
         assert!(keymap.binding_enabled(&bindings[0], &[]));
-        assert!(keymap.binding_enabled(&bindings[0], &[KeyContext::parse("terminal").unwrap()]));
+        assert!(keymap.binding_enabled(&bindings[0], &[KeyContext.parse("terminal").unwrap()]));
 
         // contextual bindings are enabled in contexts that match their predicate
-        assert!(!keymap.binding_enabled(&bindings[1], &[KeyContext::parse("barf x=y").unwrap()]));
-        assert!(keymap.binding_enabled(&bindings[1], &[KeyContext::parse("pane x=y").unwrap()]));
+        assert!(!keymap.binding_enabled(&bindings[1], &[KeyContext.parse("barf x=y").unwrap()]));
+        assert!(keymap.binding_enabled(&bindings[1], &[KeyContext.parse("pane x=y").unwrap()]));
 
-        assert!(!keymap.binding_enabled(&bindings[2], &[KeyContext::parse("editor").unwrap()]));
+        assert!(!keymap.binding_enabled(&bindings[2], &[KeyContext.parse("editor").unwrap()]));
         assert!(keymap.binding_enabled(
             &bindings[2],
-            &[KeyContext::parse("editor mode=full").unwrap()]
+            &[KeyContext.parse("editor mode=full").unwrap()]
         ));
     }
 
     #[test]
     fn test_keymap_disabled() {
         let bindings = [
-            KeyBinding::new("ctrl-a", ActionAlpha {}, Some("editor")),
-            KeyBinding::new("ctrl-b", ActionAlpha {}, Some("editor")),
-            KeyBinding::new("ctrl-a", NoAction {}, Some("editor && mode==full")),
-            KeyBinding::new("ctrl-b", NoAction {}, None),
+            KeyBinding.new("ctrl-a", ActionAlpha {}, Some("editor")),
+            KeyBinding.new("ctrl-b", ActionAlpha {}, Some("editor")),
+            KeyBinding.new("ctrl-a", NoAction {}, Some("editor && mode==full")),
+            KeyBinding.new("ctrl-b", NoAction {}, None),
         ];
 
-        let mut keymap = Keymap::default();
+        let mut keymap = Keymap.default();
         keymap.add_bindings(bindings.clone());
 
         // binding is only enabled in a specific context
         assert!(keymap
             .bindings_for_input(
-                &[Keystroke::parse("ctrl-a").unwrap()],
-                &[KeyContext::parse("barf").unwrap()],
+                &[Keystroke.parse("ctrl-a").unwrap()],
+                &[KeyContext.parse("barf").unwrap()],
             )
             .0
             .is_empty());
         assert!(!keymap
             .bindings_for_input(
-                &[Keystroke::parse("ctrl-a").unwrap()],
-                &[KeyContext::parse("editor").unwrap()],
+                &[Keystroke.parse("ctrl-a").unwrap()],
+                &[KeyContext.parse("editor").unwrap()],
             )
             .0
             .is_empty());
@@ -214,8 +214,8 @@ mod tests {
         // binding is disabled in a more specific context
         assert!(keymap
             .bindings_for_input(
-                &[Keystroke::parse("ctrl-a").unwrap()],
-                &[KeyContext::parse("editor mode=full").unwrap()],
+                &[Keystroke.parse("ctrl-a").unwrap()],
+                &[KeyContext.parse("editor mode=full").unwrap()],
             )
             .0
             .is_empty());
@@ -223,8 +223,8 @@ mod tests {
         // binding is globally disabled
         assert!(keymap
             .bindings_for_input(
-                &[Keystroke::parse("ctrl-b").unwrap()],
-                &[KeyContext::parse("barf").unwrap()],
+                &[Keystroke.parse("ctrl-b").unwrap()],
+                &[KeyContext.parse("barf").unwrap()],
             )
             .0
             .is_empty());

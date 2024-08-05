@@ -1,17 +1,17 @@
-use crate::{PlatformDispatcher, TaskLabel};
-use async_task::Runnable;
-use calloop::{
-    channel::{self, Sender},
-    timer::TimeoutAction,
+use crate.{PlatformDispatcher, TaskLabel};
+use async_task.Runnable;
+use calloop.{
+    channel.{self, Sender},
+    timer.TimeoutAction,
     EventLoop,
 };
-use parking::{Parker, Unparker};
-use parking_lot::Mutex;
-use std::{
+use parking.{Parker, Unparker};
+use parking_lot.Mutex;
+use std.{
     thread,
-    time::{Duration, Instant},
+    time.{Duration, Instant},
 };
-use util::ResultExt;
+use util.ResultExt;
 
 struct TimerAfter {
     duration: Duration,
@@ -22,28 +22,28 @@ pub(crate) struct LinuxDispatcher {
     parker: Mutex<Parker>,
     main_sender: Sender<Runnable>,
     timer_sender: Sender<TimerAfter>,
-    background_sender: flume::Sender<Runnable>,
-    _background_threads: Vec<thread::JoinHandle<()>>,
-    main_thread_id: thread::ThreadId,
+    background_sender: flume.Sender<Runnable>,
+    _background_threads: Vec<thread.JoinHandle<()>>,
+    main_thread_id: thread.ThreadId,
 }
 
 impl LinuxDispatcher {
     pub fn new(main_sender: Sender<Runnable>) -> Self {
-        let (background_sender, background_receiver) = flume::unbounded::<Runnable>();
-        let thread_count = std::thread::available_parallelism()
+        let (background_sender, background_receiver) = flume.unbounded.<Runnable>();
+        let thread_count = std.thread.available_parallelism()
             .map(|i| i.get())
             .unwrap_or(1);
 
         let mut background_threads = (0..thread_count)
             .map(|i| {
                 let receiver = background_receiver.clone();
-                std::thread::spawn(move || {
+                std.thread.spawn(move || {
                     for runnable in receiver {
-                        let start = Instant::now();
+                        let start = Instant.now();
 
                         runnable.run();
 
-                        log::trace!(
+                        log.trace!(
                             "background thread {}: ran runnable. took: {:?}",
                             i,
                             start.elapsed()
@@ -51,28 +51,28 @@ impl LinuxDispatcher {
                     }
                 })
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
-        let (timer_sender, timer_channel) = calloop::channel::channel::<TimerAfter>();
-        let timer_thread = std::thread::spawn(|| {
+        let (timer_sender, timer_channel) = calloop.channel.channel.<TimerAfter>();
+        let timer_thread = std.thread.spawn(|| {
             let mut event_loop: EventLoop<()> =
-                EventLoop::try_new().expect("Failed to initialize timer loop!");
+                EventLoop.try_new().expect("Failed to initialize timer loop!");
 
             let handle = event_loop.handle();
             let timer_handle = event_loop.handle();
             handle
                 .insert_source(timer_channel, move |e, _, _| {
-                    if let channel::Event::Msg(timer) = e {
+                    if let channel.Event.Msg(timer) = e {
                         // This has to be in an option to satisfy the borrow checker. The callback below should only be scheduled once.
                         let mut runnable = Some(timer.runnable);
                         timer_handle
                             .insert_source(
-                                calloop::timer::Timer::from_duration(timer.duration),
+                                calloop.timer.Timer.from_duration(timer.duration),
                                 move |_, _, _| {
                                     if let Some(runnable) = runnable.take() {
                                         runnable.run();
                                     }
-                                    TimeoutAction::Drop
+                                    TimeoutAction.Drop
                                 },
                             )
                             .expect("Failed to start timer");
@@ -86,19 +86,19 @@ impl LinuxDispatcher {
         background_threads.push(timer_thread);
 
         Self {
-            parker: Mutex::new(Parker::new()),
+            parker: Mutex.new(Parker.new()),
             main_sender,
             timer_sender,
             background_sender,
             _background_threads: background_threads,
-            main_thread_id: thread::current().id(),
+            main_thread_id: thread.current().id(),
         }
     }
 }
 
 impl PlatformDispatcher for LinuxDispatcher {
     fn is_main_thread(&self) -> bool {
-        thread::current().id() == self.main_thread_id
+        thread.current().id() == self.main_thread_id
     }
 
     fn dispatch(&self, runnable: Runnable, _: Option<TaskLabel>) {

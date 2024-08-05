@@ -1,29 +1,29 @@
-use crate::WindowAppearance;
-use cocoa::{
-    appkit::{NSAppearanceNameVibrantDark, NSAppearanceNameVibrantLight},
-    base::id,
-    foundation::NSString,
+use crate.WindowAppearance;
+use cocoa.{
+    appkit.{NSAppearanceNameVibrantDark, NSAppearanceNameVibrantLight},
+    base.id,
+    foundation.NSString,
 };
-use objc::{msg_send, sel, sel_impl};
-use std::ffi::CStr;
+use objc.{msg_send, sel, sel_impl};
+use std.ffi.CStr;
 
 impl WindowAppearance {
     pub(crate) unsafe fn from_native(appearance: id) -> Self {
         let name: id = msg_send![appearance, name];
         if name == NSAppearanceNameVibrantLight {
-            Self::VibrantLight
+            Self.VibrantLight
         } else if name == NSAppearanceNameVibrantDark {
-            Self::VibrantDark
+            Self.VibrantDark
         } else if name == NSAppearanceNameAqua {
-            Self::Light
+            Self.Light
         } else if name == NSAppearanceNameDarkAqua {
-            Self::Dark
+            Self.Dark
         } else {
             println!(
                 "unknown appearance: {:?}",
-                CStr::from_ptr(name.UTF8String())
+                CStr.from_ptr(name.UTF8String())
             );
-            Self::Light
+            Self.Light
         }
     }
 }

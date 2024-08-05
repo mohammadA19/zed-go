@@ -1,16 +1,16 @@
 mod popover;
 mod state;
 
-use crate::actions::ShowSignatureHelp;
-use crate::{Editor, EditorSettings, ToggleAutoSignatureHelp};
-use gpui::{AppContext, ViewContext};
-use language::markdown::parse_markdown;
-use multi_buffer::{Anchor, ToOffset};
-use settings::Settings;
-use std::ops::Range;
+use crate.actions.ShowSignatureHelp;
+use crate.{Editor, EditorSettings, ToggleAutoSignatureHelp};
+use gpui.{AppContext, ViewContext};
+use language.markdown.parse_markdown;
+use multi_buffer.{Anchor, ToOffset};
+use settings.Settings;
+use std.ops.Range;
 
-pub use popover::SignatureHelpPopover;
-pub use state::SignatureHelpState;
+pub use popover.SignatureHelpPopover;
+pub use state.SignatureHelpState;
 
 // Language-specific settings may define quotes as "brackets", so filter them out separately.
 const QUOTE_PAIRS: [(&'static str, &'static str); 3] = [("'", "'"), ("\"", "\""), ("`", "`")];
@@ -31,13 +31,13 @@ impl Editor {
         self.auto_signature_help = self
             .auto_signature_help
             .map(|auto_signature_help| !auto_signature_help)
-            .or_else(|| Some(!EditorSettings::get_global(cx).auto_signature_help));
+            .or_else(|| Some(!EditorSettings.get_global(cx).auto_signature_help));
         match self.auto_signature_help {
             Some(auto_signature_help) if auto_signature_help => {
                 self.show_signature_help(&ShowSignatureHelp, cx);
             }
             Some(_) => {
-                self.hide_signature_help(cx, SignatureHelpHiddenBy::AutoClose);
+                self.hide_signature_help(cx, SignatureHelpHiddenBy.AutoClose);
             }
             None => {}
         }
@@ -63,7 +63,7 @@ impl Editor {
         if let Some(auto_signature_help) = self.auto_signature_help {
             auto_signature_help
         } else {
-            EditorSettings::get_global(cx).auto_signature_help
+            EditorSettings.get_global(cx).auto_signature_help
         }
     }
 
@@ -76,14 +76,14 @@ impl Editor {
         if !(self.signature_help_state.is_shown() || self.auto_signature_help_enabled(cx)) {
             return false;
         }
-        let newest_selection = self.selections.newest::<usize>(cx);
+        let newest_selection = self.selections.newest.<usize>(cx);
         let head = newest_selection.head();
 
         // There are two cases where the head and tail of a selection are different: selecting multiple ranges and using backspace.
         // If we don’t exclude the backspace case, signature_help will blink every time backspace is pressed, so we need to prevent this.
         if !newest_selection.is_empty() && !backspace_pressed && head != newest_selection.tail() {
             self.signature_help_state
-                .hide(SignatureHelpHiddenBy::Selection);
+                .hide(SignatureHelpHiddenBy.Selection);
             return false;
         }
 
@@ -126,12 +126,12 @@ impl Editor {
         match (previous_brackets_surround, current_brackets_surround) {
             (None, None) => {
                 self.signature_help_state
-                    .hide(SignatureHelpHiddenBy::AutoClose);
+                    .hide(SignatureHelpHiddenBy.AutoClose);
                 false
             }
             (Some(_), None) => {
                 self.signature_help_state
-                    .hide(SignatureHelpHiddenBy::AutoClose);
+                    .hide(SignatureHelpHiddenBy.AutoClose);
                 false
             }
             (None, Some(_)) => true,
@@ -141,7 +141,7 @@ impl Editor {
                     || (previous == current && self.signature_help_state.is_shown());
                 if !condition {
                     self.signature_help_state
-                        .hide(SignatureHelpHiddenBy::AutoClose);
+                        .hide(SignatureHelpHiddenBy.AutoClose);
                 }
                 condition
             }
@@ -214,7 +214,7 @@ impl Editor {
                             } else {
                                 editor
                                     .signature_help_state
-                                    .hide(SignatureHelpHiddenBy::AutoClose);
+                                    .hide(SignatureHelpHiddenBy.AutoClose);
                             }
                             cx.notify();
                         }

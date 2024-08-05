@@ -1,6 +1,6 @@
-use crate::{Action, KeyBindingContextPredicate, Keystroke};
-use anyhow::Result;
-use smallvec::SmallVec;
+use crate.{Action, KeyBindingContextPredicate, Keystroke};
+use anyhow.Result;
+use smallvec.SmallVec;
 
 /// A keybinding and its associated metadata, from the keymap.
 pub struct KeyBinding {
@@ -22,21 +22,21 @@ impl Clone for KeyBinding {
 impl KeyBinding {
     /// Construct a new keybinding from the given data.
     pub fn new<A: Action>(keystrokes: &str, action: A, context_predicate: Option<&str>) -> Self {
-        Self::load(keystrokes, Box::new(action), context_predicate).unwrap()
+        Self.load(keystrokes, Box.new(action), context_predicate).unwrap()
     }
 
     /// Load a keybinding from the given raw data.
     pub fn load(keystrokes: &str, action: Box<dyn Action>, context: Option<&str>) -> Result<Self> {
         let context = if let Some(context) = context {
-            Some(KeyBindingContextPredicate::parse(context)?)
+            Some(KeyBindingContextPredicate.parse(context)?)
         } else {
             None
         };
 
         let keystrokes = keystrokes
             .split_whitespace()
-            .map(Keystroke::parse)
-            .collect::<Result<_>>()?;
+            .map(Keystroke.parse)
+            .collect.<Result<_>>()?;
 
         Ok(Self {
             keystrokes,
@@ -71,8 +71,8 @@ impl KeyBinding {
     }
 }
 
-impl std::fmt::Debug for KeyBinding {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Debug for KeyBinding {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         f.debug_struct("KeyBinding")
             .field("keystrokes", &self.keystrokes)
             .field("context_predicate", &self.context_predicate)

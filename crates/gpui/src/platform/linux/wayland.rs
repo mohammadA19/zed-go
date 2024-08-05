@@ -5,4 +5,4 @@ mod display;
 mod serial;
 mod window;
 
-pub(crate) use client::*;
+pub(crate) use client.*;

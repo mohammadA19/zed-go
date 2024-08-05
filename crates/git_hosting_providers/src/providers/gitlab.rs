@@ -1,6 +1,6 @@
-use url::Url;
+use url.Url;
 
-use git::{BuildCommitPermalinkParams, BuildPermalinkParams, GitHostingProvider, ParsedGitRemote};
+use git.{BuildCommitPermalinkParams, BuildPermalinkParams, GitHostingProvider, ParsedGitRemote};
 
 pub struct Gitlab;
 
@@ -10,7 +10,7 @@ impl GitHostingProvider for Gitlab {
     }
 
     fn base_url(&self) -> Url {
-        Url::parse("https://gitlab.com").unwrap()
+        Url.parse("https://gitlab.com").unwrap()
     }
 
     fn supports_avatars(&self) -> bool {
@@ -76,7 +76,7 @@ impl GitHostingProvider for Gitlab {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_build_gitlab_permalink_from_ssh_url() {

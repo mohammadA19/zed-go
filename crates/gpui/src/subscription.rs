@@ -1,7 +1,7 @@
-use collections::{BTreeMap, BTreeSet};
-use parking_lot::Mutex;
-use std::{cell::Cell, fmt::Debug, mem, rc::Rc, sync::Arc};
-use util::post_inc;
+use collections.{BTreeMap, BTreeSet};
+use parking_lot.Mutex;
+use std.{cell.Cell, fmt.Debug, mem, rc.Rc, sync.Arc};
+use util.post_inc;
 
 pub(crate) struct SubscriberSet<EmitterKey, Callback>(
     Arc<Mutex<SubscriberSetState<EmitterKey, Callback>>>,
@@ -30,15 +30,15 @@ where
     Callback: 'static,
 {
     pub fn new() -> Self {
-        Self(Arc::new(Mutex::new(SubscriberSetState {
-            subscribers: Default::default(),
-            dropped_subscribers: Default::default(),
+        Self(Arc.new(Mutex.new(SubscriberSetState {
+            subscribers: Default.default(),
+            dropped_subscribers: Default.default(),
             next_subscriber_id: 0,
         })))
     }
 
     /// Inserts a new [`Subscription`] for the given `emitter_key`. By default, subscriptions
-    /// are inert, meaning that they won't be listed when calling `[SubscriberSet::remove]` or `[SubscriberSet::retain]`.
+    /// are inert, meaning that they won't be listed when calling `[SubscriberSet.remove]` or `[SubscriberSet.retain]`.
     /// This method returns a tuple of a [`Subscription`] and an `impl FnOnce`, and you can use the latter
     /// to activate the [`Subscription`].
     pub fn insert(
@@ -46,13 +46,13 @@ where
         emitter_key: EmitterKey,
         callback: Callback,
     ) -> (Subscription, impl FnOnce()) {
-        let active = Rc::new(Cell::new(false));
+        let active = Rc.new(Cell.new(false));
         let mut lock = self.0.lock();
         let subscriber_id = post_inc(&mut lock.next_subscriber_id);
         lock.subscribers
             .entry(emitter_key.clone())
             .or_default()
-            .get_or_insert_with(Default::default)
+            .get_or_insert_with(Default.default)
             .insert(
                 subscriber_id,
                 Subscriber {
@@ -63,7 +63,7 @@ where
         let this = self.0.clone();
 
         let subscription = Subscription {
-            unsubscribe: Some(Box::new(move || {
+            unsubscribe: Some(Box.new(move || {
                 let mut lock = this.lock();
                 let Some(subscribers) = lock.subscribers.get_mut(&emitter_key) else {
                     // remove was called with this emitter_key
@@ -135,7 +135,7 @@ where
         }
 
         // Remove any dropped subscriptions that were dropped while invoking the callback.
-        for (dropped_emitter, dropped_subscription_id) in mem::take(&mut lock.dropped_subscribers) {
+        for (dropped_emitter, dropped_subscription_id) in mem.take(&mut lock.dropped_subscribers) {
             debug_assert_eq!(*emitter, dropped_emitter);
             subscribers.remove(&dropped_subscription_id);
         }
@@ -158,7 +158,7 @@ impl Subscription {
     /// this subscription is dropped.
     pub fn new(unsubscribe: impl 'static + FnOnce()) -> Self {
         Self {
-            unsubscribe: Some(Box::new(unsubscribe)),
+            unsubscribe: Some(Box.new(unsubscribe)),
         }
     }
 
