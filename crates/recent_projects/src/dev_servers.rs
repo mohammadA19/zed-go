@@ -1,66 +1,66 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
-use std::time::Duration;
+use std.collections.HashMap;
+use std.path.PathBuf;
+use std.time.Duration;
 
-use anyhow::anyhow;
-use anyhow::Context;
-use anyhow::Result;
-use client::Client;
-use dev_server_projects::{DevServer, DevServerId, DevServerProject, DevServerProjectId};
-use editor::Editor;
-use gpui::AsyncWindowContext;
-use gpui::PathPromptOptions;
-use gpui::Subscription;
-use gpui::Task;
-use gpui::WeakView;
-use gpui::{
+use anyhow.anyhow;
+use anyhow.Context;
+use anyhow.Result;
+use client.Client;
+use dev_server_projects.{DevServer, DevServerId, DevServerProject, DevServerProjectId};
+use editor.Editor;
+use gpui.AsyncWindowContext;
+use gpui.PathPromptOptions;
+use gpui.Subscription;
+use gpui.Task;
+use gpui.WeakView;
+use gpui.{
     percentage, Animation, AnimationExt, AnyElement, AppContext, DismissEvent, EventEmitter,
     FocusHandle, FocusableView, Model, ScrollHandle, Transformation, View, ViewContext,
 };
-use markdown::Markdown;
-use markdown::MarkdownStyle;
-use project::terminals::wrap_for_ssh;
-use project::terminals::SshCommand;
-use rpc::proto::RegenerateDevServerTokenResponse;
-use rpc::{
-    proto::{CreateDevServerResponse, DevServerStatus},
+use markdown.Markdown;
+use markdown.MarkdownStyle;
+use project.terminals.wrap_for_ssh;
+use project.terminals.SshCommand;
+use rpc.proto.RegenerateDevServerTokenResponse;
+use rpc.{
+    proto.{CreateDevServerResponse, DevServerStatus},
     ErrorCode, ErrorExt,
 };
-use settings::update_settings_file;
-use settings::Settings;
-use task::HideStrategy;
-use task::RevealStrategy;
-use task::SpawnInTerminal;
-use terminal_view::terminal_panel::TerminalPanel;
-use ui::ElevationIndex;
-use ui::Section;
-use ui::{
-    prelude::*, Indicator, List, ListHeader, ListItem, Modal, ModalFooter, ModalHeader,
+use settings.update_settings_file;
+use settings.Settings;
+use task.HideStrategy;
+use task.RevealStrategy;
+use task.SpawnInTerminal;
+use terminal_view.terminal_panel.TerminalPanel;
+use ui.ElevationIndex;
+use ui.Section;
+use ui.{
+    prelude.*, Indicator, List, ListHeader, ListItem, Modal, ModalFooter, ModalHeader,
     RadioWithLabel, Tooltip,
 };
-use ui_input::{FieldLabelLayout, TextField};
-use util::paths::PathWithPosition;
-use util::ResultExt;
-use workspace::notifications::NotifyResultExt;
-use workspace::OpenOptions;
-use workspace::{notifications::DetachAndPromptErr, AppState, ModalView, Workspace, WORKSPACE_DB};
+use ui_input.{FieldLabelLayout, TextField};
+use util.paths.PathWithPosition;
+use util.ResultExt;
+use workspace.notifications.NotifyResultExt;
+use workspace.OpenOptions;
+use workspace.{notifications.DetachAndPromptErr, AppState, ModalView, Workspace, WORKSPACE_DB};
 
-use crate::open_dev_server_project;
-use crate::ssh_connections::connect_over_ssh;
-use crate::ssh_connections::open_ssh_project;
-use crate::ssh_connections::RemoteSettingsContent;
-use crate::ssh_connections::SshConnection;
-use crate::ssh_connections::SshConnectionModal;
-use crate::ssh_connections::SshProject;
-use crate::ssh_connections::SshPrompt;
-use crate::ssh_connections::SshSettings;
-use crate::OpenRemote;
+use crate.open_dev_server_project;
+use crate.ssh_connections.connect_over_ssh;
+use crate.ssh_connections.open_ssh_project;
+use crate.ssh_connections.RemoteSettingsContent;
+use crate.ssh_connections.SshConnection;
+use crate.ssh_connections.SshConnectionModal;
+use crate.ssh_connections.SshProject;
+use crate.ssh_connections.SshPrompt;
+use crate.ssh_connections.SshSettings;
+use crate.OpenRemote;
 
 pub struct DevServerProjects {
     mode: Mode,
     focus_handle: FocusHandle,
     scroll_handle: ScrollHandle,
-    dev_server_store: Model<dev_server_projects::Store>,
+    dev_server_store: Model<dev_server_projects.Store>,
     workspace: WeakView<Workspace>,
     project_path_input: View<Editor>,
     dev_server_name_input: View<TextField>,
@@ -100,64 +100,64 @@ impl DevServerProjects {
     pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
         workspace.register_action(|workspace, _: &OpenRemote, cx| {
             let handle = cx.view().downgrade();
-            workspace.toggle_modal(cx, |cx| Self::new(cx, handle))
+            workspace.toggle_modal(cx, |cx| Self.new(cx, handle))
         });
     }
 
     pub fn open(workspace: View<Workspace>, cx: &mut WindowContext) {
         workspace.update(cx, |workspace, cx| {
             let handle = cx.view().downgrade();
-            workspace.toggle_modal(cx, |cx| Self::new(cx, handle))
+            workspace.toggle_modal(cx, |cx| Self.new(cx, handle))
         })
     }
 
     pub fn new(cx: &mut ViewContext<Self>, workspace: WeakView<Workspace>) -> Self {
         let project_path_input = cx.new_view(|cx| {
-            let mut editor = Editor::single_line(cx);
+            let mut editor = Editor.single_line(cx);
             editor.set_placeholder_text("Project path (~/work/zed, /workspace/zed, …)", cx);
             editor
         });
         let dev_server_name_input = cx.new_view(|cx| {
-            TextField::new(cx, "Name", "192.168.0.1").with_label(FieldLabelLayout::Hidden)
+            TextField.new(cx, "Name", "192.168.0.1").with_label(FieldLabelLayout.Hidden)
         });
 
         let focus_handle = cx.focus_handle();
-        let dev_server_store = dev_server_projects::Store::global(cx);
+        let dev_server_store = dev_server_projects.Store.global(cx);
 
         let subscription = cx.observe(&dev_server_store, |_, _, cx| {
             cx.notify();
         });
 
         let mut base_style = cx.text_style();
-        base_style.refine(&gpui::TextStyleRefinement {
+        base_style.refine(&gpui.TextStyleRefinement {
             color: Some(cx.theme().colors().editor_foreground),
-            ..Default::default()
+            ..Default.default()
         });
 
         let markdown_style = MarkdownStyle {
             base_text_style: base_style,
-            code_block: gpui::StyleRefinement {
-                text: Some(gpui::TextStyleRefinement {
+            code_block: gpui.StyleRefinement {
+                text: Some(gpui.TextStyleRefinement {
                     font_family: Some("Zed Plex Mono".into()),
-                    ..Default::default()
+                    ..Default.default()
                 }),
-                ..Default::default()
+                ..Default.default()
             },
-            link: gpui::TextStyleRefinement {
-                color: Some(Color::Accent.color(cx)),
-                ..Default::default()
+            link: gpui.TextStyleRefinement {
+                color: Some(Color.Accent.color(cx)),
+                ..Default.default()
             },
             syntax: cx.theme().syntax().clone(),
             selection_background_color: cx.theme().players().local().selection,
-            ..Default::default()
+            ..Default.default()
         };
         let markdown =
-            cx.new_view(|cx| Markdown::new("".to_string(), markdown_style, None, cx, None));
+            cx.new_view(|cx| Markdown.new("".to_string(), markdown_style, None, cx, None));
 
         Self {
-            mode: Mode::Default(None),
+            mode: Mode.Default(None),
             focus_handle,
-            scroll_handle: ScrollHandle::new(),
+            scroll_handle: ScrollHandle.new(),
             dev_server_store,
             project_path_input,
             dev_server_name_input,
@@ -191,7 +191,7 @@ impl DevServerProjects {
         {
             cx.spawn(|_, mut cx| async move {
                 cx.prompt(
-                    gpui::PromptLevel::Critical,
+                    gpui.PromptLevel.Critical,
                     "Failed to create project",
                     Some(&format!("{} is already open on this dev server.", path)),
                     &["Ok"],
@@ -226,9 +226,9 @@ impl DevServerProjects {
                                     this.project_path_input.update(cx, |editor, cx| {
                                         editor.set_text("", cx);
                                     });
-                                    this.mode = Mode::Default(None);
-                                    if let Some(app_state) = AppState::global(cx).upgrade() {
-                                        workspace::join_dev_server_project(
+                                    this.mode = Mode.Default(None);
+                                    if let Some(app_state) = AppState.global(cx).upgrade() {
+                                        workspace.join_dev_server_project(
                                             DevServerProjectId(dev_server_project_id),
                                             project_id,
                                             app_state,
@@ -244,14 +244,14 @@ impl DevServerProjects {
                                 }
                             });
 
-                        this.mode = Mode::Default(Some(CreateDevServerProject {
+                        this.mode = Mode.Default(Some(CreateDevServerProject {
                             dev_server_id,
                             creating: true,
                             _opening: Some(subscription),
                         }));
                     }
                 } else {
-                    this.mode = Mode::Default(Some(CreateDevServerProject {
+                    this.mode = Mode.Default(Some(CreateDevServerProject {
                         dev_server_id,
                         creating: false,
                         _opening: None,
@@ -263,18 +263,18 @@ impl DevServerProjects {
         })
         .detach_and_prompt_err("Failed to create project", cx, move |e, _| {
             match e.error_code() {
-                ErrorCode::DevServerOffline => Some(
+                ErrorCode.DevServerOffline => Some(
                     "The dev server is offline. Please log in and check it is connected."
                         .to_string(),
                 ),
-                ErrorCode::DevServerProjectPathDoesNotExist => {
+                ErrorCode.DevServerProjectPathDoesNotExist => {
                     Some(format!("The path `{}` does not exist on the server.", path))
                 }
                 _ => None,
             }
         });
 
-        self.mode = Mode::Default(Some(CreateDevServerProject {
+        self.mode = Mode.Default(Some(CreateDevServerProject {
             dev_server_id,
             creating: true,
             _opening: None,
@@ -305,13 +305,13 @@ impl DevServerProjects {
             port = p.trim().parse().ok()
         }
 
-        let connection_options = remote::SshConnectionOptions {
+        let connection_options = remote.SshConnectionOptions {
             host: host.to_string(),
             username,
             port,
             password: None,
         };
-        let ssh_prompt = cx.new_view(|cx| SshPrompt::new(&connection_options, cx));
+        let ssh_prompt = cx.new_view(|cx| SshPrompt.new(&connection_options, cx));
         let connection = connect_over_ssh(connection_options.clone(), ssh_prompt.clone(), cx)
             .prompt_err("Failed to connect", cx, |_, _| None);
 
@@ -320,15 +320,15 @@ impl DevServerProjects {
                 Some(_) => this
                     .update(&mut cx, |this, cx| {
                         this.add_ssh_server(connection_options, cx);
-                        this.mode = Mode::Default(None);
+                        this.mode = Mode.Default(None);
                         cx.notify()
                     })
                     .log_err(),
                 None => this
                     .update(&mut cx, |this, cx| {
-                        this.mode = Mode::CreateDevServer(CreateDevServer {
-                            kind: NewServerKind::DirectSSH,
-                            ..Default::default()
+                        this.mode = Mode.CreateDevServer(CreateDevServer {
+                            kind: NewServerKind.DirectSSH,
+                            ..Default.default()
                         });
                         cx.notify()
                     })
@@ -336,11 +336,11 @@ impl DevServerProjects {
             };
             None
         });
-        self.mode = Mode::CreateDevServer(CreateDevServer {
-            kind: NewServerKind::DirectSSH,
+        self.mode = Mode.CreateDevServer(CreateDevServer {
+            kind: NewServerKind.DirectSSH,
             ssh_prompt: Some(ssh_prompt.clone()),
             creating: Some(creating),
-            ..Default::default()
+            ..Default.default()
         });
     }
 
@@ -357,9 +357,9 @@ impl DevServerProjects {
         let connection_options = ssh_connection.into();
         workspace.update(cx, |_, cx| {
             cx.defer(move |workspace, cx| {
-                workspace.toggle_modal(cx, |cx| SshConnectionModal::new(&connection_options, cx));
+                workspace.toggle_modal(cx, |cx| SshConnectionModal.new(&connection_options, cx));
                 let prompt = workspace
-                    .active_modal::<SshConnectionModal>(cx)
+                    .active_modal.<SshConnectionModal>(cx)
                     .unwrap()
                     .read(cx)
                     .prompt
@@ -375,7 +375,7 @@ impl DevServerProjects {
                         workspace
                             .update(&mut cx, |workspace, cx| {
                                 let weak = cx.view().downgrade();
-                                workspace.toggle_modal(cx, |cx| DevServerProjects::new(cx, weak));
+                                workspace.toggle_modal(cx, |cx| DevServerProjects.new(cx, weak));
                             })
                             .log_err();
                         return;
@@ -383,7 +383,7 @@ impl DevServerProjects {
                     let Ok((app_state, project, paths)) =
                         workspace.update(&mut cx, |workspace, cx| {
                             let app_state = workspace.app_state().clone();
-                            let project = project::Project::ssh(
+                            let project = project.Project.ssh(
                                 session,
                                 app_state.client.clone(),
                                 app_state.node_runtime.clone(),
@@ -398,7 +398,7 @@ impl DevServerProjects {
                                     directories: true,
                                     multiple: true,
                                 },
-                                project::DirectoryLister::Project(project.clone()),
+                                project.DirectoryLister.Project(project.clone()),
                                 cx,
                             );
                             (app_state, project, paths)
@@ -411,7 +411,7 @@ impl DevServerProjects {
                         workspace
                             .update(&mut cx, |workspace, cx| {
                                 let weak = cx.view().downgrade();
-                                workspace.toggle_modal(cx, |cx| DevServerProjects::new(cx, weak));
+                                workspace.toggle_modal(cx, |cx| DevServerProjects.new(cx, weak));
                             })
                             .log_err();
                         return;
@@ -428,7 +428,7 @@ impl DevServerProjects {
                         cx.activate_window();
 
                         let fs = app_state.fs.clone();
-                        update_settings_file::<SshSettings>(fs, cx, {
+                        update_settings_file.<SshSettings>(fs, cx, {
                             let paths = paths
                                 .iter()
                                 .map(|path| path.to_string_lossy().to_string())
@@ -451,7 +451,7 @@ impl DevServerProjects {
                                     project.find_or_create_worktree(&path, true, cx)
                                 })
                             })
-                            .collect::<Vec<_>>();
+                            .collect.<Vec<_>>();
                         cx.spawn(|_| async move {
                             for task in tasks {
                                 task.await?;
@@ -465,7 +465,7 @@ impl DevServerProjects {
                         );
 
                         cx.new_view(|cx| {
-                            Workspace::new(None, project.clone(), app_state.clone(), cx)
+                            Workspace.new(None, project.clone(), app_state.clone(), cx)
                         })
                     })
                     .log_err();
@@ -488,9 +488,9 @@ impl DevServerProjects {
         }
 
         let manual_setup = match kind {
-            NewServerKind::DirectSSH => unreachable!(),
-            NewServerKind::LegacySSH => false,
-            NewServerKind::Manual => true,
+            NewServerKind.DirectSSH => unreachable!(),
+            NewServerKind.LegacySSH => false,
+            NewServerKind.Manual => true,
         };
 
         let ssh_connection_string = if manual_setup {
@@ -513,7 +513,7 @@ impl DevServerProjects {
                         cx,
                     );
                     let token = if let Some(access_token) = access_token {
-                        Task::ready(Ok(RegenerateDevServerTokenResponse {
+                        Task.ready(Ok(RegenerateDevServerTokenResponse {
                             dev_server_id: dev_server_id.0,
                             access_token,
                         }))
@@ -536,7 +536,7 @@ impl DevServerProjects {
         });
 
         let workspace = self.workspace.clone();
-        let store = dev_server_projects::Store::global(cx);
+        let store = dev_server_projects.Store.global(cx);
 
         let task = cx
             .spawn({
@@ -547,7 +547,7 @@ impl DevServerProjects {
                         Ok(dev_server) => {
                             if let Some(ssh_connection_string) = ssh_connection_string {
                                 this.update(&mut cx, |this, cx| {
-                                    if let Mode::CreateDevServer(CreateDevServer {
+                                    if let Mode.CreateDevServer(CreateDevServer {
                                         access_token,
                                         dev_server_id,
                                         ..
@@ -576,11 +576,11 @@ impl DevServerProjects {
 
                             this.update(&mut cx, |this, cx| {
                                 this.focus_handle.focus(cx);
-                                this.mode = Mode::CreateDevServer(CreateDevServer {
+                                this.mode = Mode.CreateDevServer(CreateDevServer {
                                     dev_server_id: Some(DevServerId(dev_server.dev_server_id)),
                                     access_token: Some(dev_server.access_token),
                                     kind,
-                                    ..Default::default()
+                                    ..Default.default()
                                 });
                                 cx.notify();
                             })?;
@@ -588,11 +588,11 @@ impl DevServerProjects {
                         }
                         Err(e) => {
                             this.update(&mut cx, |this, cx| {
-                                this.mode = Mode::CreateDevServer(CreateDevServer {
+                                this.mode = Mode.CreateDevServer(CreateDevServer {
                                     dev_server_id: existing_id,
                                     access_token: None,
                                     kind,
-                                    ..Default::default()
+                                    ..Default.default()
                                 });
                                 cx.notify()
                             })
@@ -605,12 +605,12 @@ impl DevServerProjects {
             })
             .prompt_err("Failed to create server", cx, |_, _| None);
 
-        self.mode = Mode::CreateDevServer(CreateDevServer {
+        self.mode = Mode.CreateDevServer(CreateDevServer {
             creating: Some(task),
             dev_server_id: existing_id,
             access_token,
             kind,
-            ..Default::default()
+            ..Default.default()
         });
         cx.notify()
     }
@@ -620,12 +620,12 @@ impl DevServerProjects {
         let prompt = if store.projects_for_server(id).is_empty()
             && store
                 .dev_server(id)
-                .is_some_and(|server| server.status == DevServerStatus::Offline)
+                .is_some_and(|server| server.status == DevServerStatus.Offline)
         {
             None
         } else {
             Some(cx.prompt(
-                gpui::PromptLevel::Warning,
+                gpui.PromptLevel.Warning,
                 "Are you sure?",
                 Some("This will delete the dev server and all of its remote projects."),
                 &["Delete", "Cancel"],
@@ -668,7 +668,7 @@ impl DevServerProjects {
 
     fn delete_dev_server_project(&mut self, id: DevServerProjectId, cx: &mut ViewContext<Self>) {
         let answer = cx.prompt(
-            gpui::PromptLevel::Warning,
+            gpui.PromptLevel.Warning,
             "Delete this project?",
             Some("This will delete the remote project. You can always re-add it later."),
             &["Delete", "Cancel"],
@@ -697,20 +697,20 @@ impl DevServerProjects {
         .detach_and_prompt_err("Failed to delete dev server project", cx, |_, _| None);
     }
 
-    fn confirm(&mut self, _: &menu::Confirm, cx: &mut ViewContext<Self>) {
+    fn confirm(&mut self, _: &menu.Confirm, cx: &mut ViewContext<Self>) {
         match &self.mode {
-            Mode::Default(None) => {}
-            Mode::Default(Some(create_project)) => {
+            Mode.Default(None) => {}
+            Mode.Default(Some(create_project)) => {
                 self.create_dev_server_project(create_project.dev_server_id, cx);
             }
-            Mode::CreateDevServer(state) => {
+            Mode.CreateDevServer(state) => {
                 if let Some(prompt) = state.ssh_prompt.as_ref() {
                     prompt.update(cx, |prompt, cx| {
                         prompt.confirm(cx);
                     });
                     return;
                 }
-                if state.kind == NewServerKind::DirectSSH {
+                if state.kind == NewServerKind.DirectSSH {
                     self.create_ssh_server(cx);
                     return;
                 }
@@ -726,19 +726,19 @@ impl DevServerProjects {
         }
     }
 
-    fn cancel(&mut self, _: &menu::Cancel, cx: &mut ViewContext<Self>) {
+    fn cancel(&mut self, _: &menu.Cancel, cx: &mut ViewContext<Self>) {
         match &self.mode {
-            Mode::Default(None) => cx.emit(DismissEvent),
-            Mode::CreateDevServer(state) if state.ssh_prompt.is_some() => {
-                self.mode = Mode::CreateDevServer(CreateDevServer {
-                    kind: NewServerKind::DirectSSH,
-                    ..Default::default()
+            Mode.Default(None) => cx.emit(DismissEvent),
+            Mode.CreateDevServer(state) if state.ssh_prompt.is_some() => {
+                self.mode = Mode.CreateDevServer(CreateDevServer {
+                    kind: NewServerKind.DirectSSH,
+                    ..Default.default()
                 });
                 cx.notify();
                 return;
             }
             _ => {
-                self.mode = Mode::Default(None);
+                self.mode = Mode.Default(None);
                 self.focus_handle(cx).focus(cx);
                 cx.notify();
             }
@@ -755,9 +755,9 @@ impl DevServerProjects {
         let status = dev_server.status;
         let dev_server_name = dev_server.name.clone();
         let kind = if dev_server.ssh_connection_string.is_some() {
-            NewServerKind::LegacySSH
+            NewServerKind.LegacySSH
         } else {
-            NewServerKind::Manual
+            NewServerKind.Manual
         };
 
         v_flex()
@@ -770,18 +770,18 @@ impl DevServerProjects {
                             div()
                                 .id(("status", dev_server.id.0))
                                 .relative()
-                                .child(Icon::new(IconName::Server).size(IconSize::Small))
+                                .child(Icon.new(IconName.Server).size(IconSize.Small))
                                 .child(div().absolute().bottom_0().left(rems_from_px(8.0)).child(
-                                    Indicator::dot().color(match status {
-                                        DevServerStatus::Online => Color::Created,
-                                        DevServerStatus::Offline => Color::Hidden,
+                                    Indicator.dot().color(match status {
+                                        DevServerStatus.Online => Color.Created,
+                                        DevServerStatus.Offline => Color.Hidden,
                                     }),
                                 ))
                                 .tooltip(move |cx| {
-                                    Tooltip::text(
+                                    Tooltip.text(
                                         match status {
-                                            DevServerStatus::Online => "Online",
-                                            DevServerStatus::Offline => "Offline",
+                                            DevServerStatus.Online => "Online",
+                                            DevServerStatus.Offline => "Offline",
                                         },
                                         cx,
                                     )
@@ -792,7 +792,7 @@ impl DevServerProjects {
                                 .max_w(rems(26.))
                                 .overflow_hidden()
                                 .whitespace_nowrap()
-                                .child(Label::new(dev_server_name.clone())),
+                                .child(Label.new(dev_server_name.clone())),
                         )
                         .child(
                             h_flex()
@@ -800,7 +800,7 @@ impl DevServerProjects {
                                 .gap_1()
                                 .child(if dev_server.ssh_connection_string.is_some() {
                                     let dev_server = dev_server.clone();
-                                    IconButton::new("reconnect-dev-server", IconName::ArrowCircle)
+                                    IconButton.new("reconnect-dev-server", IconName.ArrowCircle)
                                         .on_click(cx.listener(move |this, _, cx| {
                                             let Some(workspace) = this.workspace.upgrade() else {
                                                 return;
@@ -817,14 +817,14 @@ impl DevServerProjects {
                                                 |_, _| None,
                                             );
                                         }))
-                                        .tooltip(|cx| Tooltip::text("Reconnect", cx))
+                                        .tooltip(|cx| Tooltip.text("Reconnect", cx))
                                 } else {
-                                    IconButton::new("edit-dev-server", IconName::Pencil)
+                                    IconButton.new("edit-dev-server", IconName.Pencil)
                                         .on_click(cx.listener(move |this, _, cx| {
-                                            this.mode = Mode::CreateDevServer(CreateDevServer {
+                                            this.mode = Mode.CreateDevServer(CreateDevServer {
                                                 dev_server_id: Some(dev_server_id),
                                                 kind,
-                                                ..Default::default()
+                                                ..Default.default()
                                             });
                                             let dev_server_name = dev_server_name.clone();
                                             this.dev_server_name_input.update(
@@ -836,15 +836,15 @@ impl DevServerProjects {
                                                 },
                                             )
                                         }))
-                                        .tooltip(|cx| Tooltip::text("Edit dev server", cx))
+                                        .tooltip(|cx| Tooltip.text("Edit dev server", cx))
                                 })
                                 .child({
                                     let dev_server_id = dev_server.id;
-                                    IconButton::new("remove-dev-server", IconName::Trash)
+                                    IconButton.new("remove-dev-server", IconName.Trash)
                                         .on_click(cx.listener(move |this, _, cx| {
                                             this.delete_dev_server(dev_server_id, cx)
                                         }))
-                                        .tooltip(|cx| Tooltip::text("Remove dev server", cx))
+                                        .tooltip(|cx| Tooltip.text("Remove dev server", cx))
                                 }),
                         ),
                 ),
@@ -860,7 +860,7 @@ impl DevServerProjects {
                     .py_0p5()
                     .px_3()
                     .child(
-                        List::new()
+                        List.new()
                             .empty_message("No projects.")
                             .children(
                                 self.dev_server_store
@@ -871,15 +871,15 @@ impl DevServerProjects {
                             )
                             .when(
                                 create_project.is_none()
-                                    && dev_server.status == DevServerStatus::Online,
+                                    && dev_server.status == DevServerStatus.Online,
                                 |el| {
                                     el.child(
-                                        ListItem::new("new-remote_project")
-                                            .start_slot(Icon::new(IconName::Plus))
-                                            .child(Label::new("Open folder…"))
+                                        ListItem.new("new-remote_project")
+                                            .start_slot(Icon.new(IconName.Plus))
+                                            .child(Label.new("Open folder…"))
                                             .on_click(cx.listener(move |this, _, cx| {
                                                 this.mode =
-                                                    Mode::Default(Some(CreateDevServerProject {
+                                                    Mode.Default(Some(CreateDevServerProject {
                                                         dev_server_id,
                                                         creating: false,
                                                         _opening: None,
@@ -916,21 +916,21 @@ impl DevServerProjects {
                             div()
                                 .id(("status", ix))
                                 .relative()
-                                .child(Icon::new(IconName::Server).size(IconSize::Small)),
+                                .child(Icon.new(IconName.Server).size(IconSize.Small)),
                         )
                         .child(
                             div()
                                 .max_w(rems(26.))
                                 .overflow_hidden()
                                 .whitespace_nowrap()
-                                .child(Label::new(ssh_connection.host.clone())),
+                                .child(Label.new(ssh_connection.host.clone())),
                         )
                         .child(h_flex().visible_on_hover("ssh-server").gap_1().child({
-                            IconButton::new("remove-dev-server", IconName::Trash)
+                            IconButton.new("remove-dev-server", IconName.Trash)
                                 .on_click(
                                     cx.listener(move |this, _, cx| this.delete_ssh_server(ix, cx)),
                                 )
-                                .tooltip(|cx| Tooltip::text("Remove dev server", cx))
+                                .tooltip(|cx| Tooltip.text("Remove dev server", cx))
                         })),
                 ),
             )
@@ -945,15 +945,15 @@ impl DevServerProjects {
                     .py_0p5()
                     .px_3()
                     .child(
-                        List::new()
+                        List.new()
                             .empty_message("No projects.")
                             .children(ssh_connection.projects.iter().enumerate().map(|(pix, p)| {
                                 self.render_ssh_project(ix, &ssh_connection, pix, p, cx)
                             }))
                             .child(
-                                ListItem::new("new-remote_project")
-                                    .start_slot(Icon::new(IconName::Plus))
-                                    .child(Label::new("Open folder…"))
+                                ListItem.new("new-remote_project")
+                                    .start_slot(Icon.new(IconName.Plus))
+                                    .child(Label.new("Open folder…"))
                                     .on_click(cx.listener(move |this, _, cx| {
                                         this.create_ssh_project(ix, ssh_connection.clone(), cx);
                                     })),
@@ -972,9 +972,9 @@ impl DevServerProjects {
     ) -> impl IntoElement {
         let project = project.clone();
         let server = server.clone();
-        ListItem::new(("remote-project", ix))
-            .start_slot(Icon::new(IconName::FileTree))
-            .child(Label::new(project.paths.join(", ")))
+        ListItem.new(("remote-project", ix))
+            .start_slot(Icon.new(IconName.FileTree))
+            .child(Label.new(project.paths.join(", ")))
             .on_click(cx.listener(move |this, _, cx| {
                 let Some(app_state) = this
                     .workspace
@@ -991,17 +991,17 @@ impl DevServerProjects {
                         project
                             .paths
                             .into_iter()
-                            .map(|path| PathWithPosition::from_path(PathBuf::from(path)))
+                            .map(|path| PathWithPosition.from_path(PathBuf.from(path)))
                             .collect(),
                         app_state,
-                        OpenOptions::default(),
+                        OpenOptions.default(),
                         &mut cx,
                     )
                     .await;
                     if let Err(e) = result {
-                        log::error!("Failed to connect: {:?}", e);
+                        log.error!("Failed to connect: {:?}", e);
                         cx.prompt(
-                            gpui::PromptLevel::Critical,
+                            gpui.PromptLevel.Critical,
                             "Failed to connect",
                             Some(&e.to_string()),
                             &["Ok"],
@@ -1012,12 +1012,12 @@ impl DevServerProjects {
                 })
                 .detach();
             }))
-            .end_hover_slot::<AnyElement>(Some(
-                IconButton::new("remove-remote-project", IconName::Trash)
+            .end_hover_slot.<AnyElement>(Some(
+                IconButton.new("remove-remote-project", IconName.Trash)
                     .on_click(
                         cx.listener(move |this, _, cx| this.delete_ssh_project(server_ix, ix, cx)),
                     )
-                    .tooltip(|cx| Tooltip::text("Delete remote project", cx))
+                    .tooltip(|cx| Tooltip.text("Delete remote project", cx))
                     .into_any_element(),
             ))
     }
@@ -1034,7 +1034,7 @@ impl DevServerProjects {
         else {
             return;
         };
-        update_settings_file::<SshSettings>(fs, cx, move |setting, _| f(setting));
+        update_settings_file.<SshSettings>(fs, cx, move |setting, _| f(setting));
     }
 
     fn delete_ssh_server(&mut self, server: usize, cx: &mut ViewContext<Self>) {
@@ -1059,13 +1059,13 @@ impl DevServerProjects {
 
     fn add_ssh_server(
         &mut self,
-        connection_options: remote::SshConnectionOptions,
+        connection_options: remote.SshConnectionOptions,
         cx: &mut ViewContext<Self>,
     ) {
         self.update_settings_file(cx, move |setting| {
             setting
                 .ssh_connections
-                .get_or_insert(Default::default())
+                .get_or_insert(Default.default())
                 .push(SshConnection {
                     host: connection_options.host,
                     username: connection_options.username,
@@ -1080,18 +1080,18 @@ impl DevServerProjects {
         creating: bool,
         _: &mut ViewContext<Self>,
     ) -> impl IntoElement {
-        ListItem::new("create-remote-project")
+        ListItem.new("create-remote-project")
             .disabled(true)
-            .start_slot(Icon::new(IconName::FileTree).color(Color::Muted))
+            .start_slot(Icon.new(IconName.FileTree).color(Color.Muted))
             .child(self.project_path_input.clone())
-            .child(div().w(IconSize::Medium.rems()).when(creating, |el| {
+            .child(div().w(IconSize.Medium.rems()).when(creating, |el| {
                 el.child(
-                    Icon::new(IconName::ArrowCircle)
-                        .size(IconSize::Medium)
+                    Icon.new(IconName.ArrowCircle)
+                        .size(IconSize.Medium)
                         .with_animation(
                             "arrow-circle",
-                            Animation::new(Duration::from_secs(2)).repeat(),
-                            |icon, delta| icon.transform(Transformation::rotate(percentage(delta))),
+                            Animation.new(Duration.from_secs(2)).repeat(),
+                            |icon, delta| icon.transform(Transformation.rotate(percentage(delta))),
                         ),
                 )
             }))
@@ -1106,28 +1106,28 @@ impl DevServerProjects {
         let project_id = project.project_id;
         let is_online = project_id.is_some();
 
-        ListItem::new(("remote-project", dev_server_project_id.0))
-            .start_slot(Icon::new(IconName::FileTree).when(!is_online, |icon| icon.color(Color::Muted)))
+        ListItem.new(("remote-project", dev_server_project_id.0))
+            .start_slot(Icon.new(IconName.FileTree).when(!is_online, |icon| icon.color(Color.Muted)))
             .child(
-                    Label::new(project.paths.join(", "))
+                    Label.new(project.paths.join(", "))
             )
             .on_click(cx.listener(move |_, _, cx| {
                 if let Some(project_id) = project_id {
-                    if let Some(app_state) = AppState::global(cx).upgrade() {
-                        workspace::join_dev_server_project(dev_server_project_id, project_id, app_state, None, cx)
+                    if let Some(app_state) = AppState.global(cx).upgrade() {
+                        workspace.join_dev_server_project(dev_server_project_id, project_id, app_state, None, cx)
                             .detach_and_prompt_err("Could not join project", cx, |_, _| None)
                     }
                 } else {
                     cx.spawn(|_, mut cx| async move {
-                        cx.prompt(gpui::PromptLevel::Critical, "This project is offline", Some("The `zed` instance running on this dev server is not connected. You will have to restart it."), &["Ok"]).await.log_err();
+                        cx.prompt(gpui.PromptLevel.Critical, "This project is offline", Some("The `zed` instance running on this dev server is not connected. You will have to restart it."), &["Ok"]).await.log_err();
                     }).detach();
                 }
             }))
-            .end_hover_slot::<AnyElement>(Some(IconButton::new("remove-remote-project", IconName::Trash)
+            .end_hover_slot.<AnyElement>(Some(IconButton.new("remove-remote-project", IconName.Trash)
                 .on_click(cx.listener(move |this, _, cx| {
                     this.delete_dev_server_project(dev_server_project_id, cx)
                 }))
-                .tooltip(|cx| Tooltip::text("Delete remote project", cx)).into_any_element()))
+                .tooltip(|cx| Tooltip.text("Delete remote project", cx)).into_any_element()))
     }
 
     fn render_create_dev_server(
@@ -1139,11 +1139,11 @@ impl DevServerProjects {
         let dev_server_id = state.dev_server_id;
         let access_token = state.access_token.clone();
         let ssh_prompt = state.ssh_prompt.clone();
-        let use_direct_ssh = SshSettings::get_global(cx).use_direct_ssh();
+        let use_direct_ssh = SshSettings.get_global(cx).use_direct_ssh();
 
         let mut kind = state.kind;
-        if use_direct_ssh && kind == NewServerKind::LegacySSH {
-            kind = NewServerKind::DirectSSH;
+        if use_direct_ssh && kind == NewServerKind.LegacySSH {
+            kind = NewServerKind.DirectSSH;
         }
 
         let status = dev_server_id
@@ -1154,9 +1154,9 @@ impl DevServerProjects {
             input.editor().update(cx, |editor, cx| {
                 if editor.text(cx).is_empty() {
                     match kind {
-                        NewServerKind::DirectSSH => editor.set_placeholder_text("ssh host", cx),
-                        NewServerKind::LegacySSH => editor.set_placeholder_text("ssh host", cx),
-                        NewServerKind::Manual => editor.set_placeholder_text("example-host", cx),
+                        NewServerKind.DirectSSH => editor.set_placeholder_text("ssh host", cx),
+                        NewServerKind.LegacySSH => editor.set_placeholder_text("ssh host", cx),
+                        NewServerKind.Manual => editor.set_placeholder_text("example-host", cx),
                     }
                 }
                 editor.text(cx)
@@ -1167,15 +1167,15 @@ impl DevServerProjects {
         const SSH_SETUP_MESSAGE: &str =
             "Enter the command you use to ssh into this server.\nFor example: `ssh me@my.server` or `ssh me@secret-box:2222`.";
 
-        Modal::new("create-dev-server", Some(self.scroll_handle.clone()))
+        Modal.new("create-dev-server", Some(self.scroll_handle.clone()))
             .header(
-                ModalHeader::new()
+                ModalHeader.new()
                     .headline("Create Dev Server")
                     .show_back_button(true),
             )
             .section(
-                Section::new()
-                    .header(if kind == NewServerKind::Manual {
+                Section.new()
+                    .header(if kind == NewServerKind.Manual {
                         "Server Name".into()
                     } else {
                         "SSH arguments".into()
@@ -1187,27 +1187,27 @@ impl DevServerProjects {
                     ),
             )
             .section(
-                Section::new_contained()
+                Section.new_contained()
                     .header("Connection Method".into())
                     .child(
                         v_flex()
                             .w_full()
-                            .gap_y(Spacing::Large.rems(cx))
+                            .gap_y(Spacing.Large.rems(cx))
                             .when(ssh_prompt.is_none(), |el| {
                                 el.child(
                                     v_flex()
                                         .when(use_direct_ssh, |el| {
-                                            el.child(RadioWithLabel::new(
+                                            el.child(RadioWithLabel.new(
                                                 "use-server-name-in-ssh",
-                                                Label::new("Connect via SSH (default)"),
-                                                NewServerKind::DirectSSH == kind,
+                                                Label.new("Connect via SSH (default)"),
+                                                NewServerKind.DirectSSH == kind,
                                                 cx.listener({
                                                     move |this, _, cx| {
-                                                        if let Mode::CreateDevServer(
+                                                        if let Mode.CreateDevServer(
                                                             CreateDevServer { kind, .. },
                                                         ) = &mut this.mode
                                                         {
-                                                            *kind = NewServerKind::DirectSSH;
+                                                            *kind = NewServerKind.DirectSSH;
                                                         }
                                                         cx.notify()
                                                     }
@@ -1215,34 +1215,34 @@ impl DevServerProjects {
                                             ))
                                         })
                                         .when(!use_direct_ssh, |el| {
-                                            el.child(RadioWithLabel::new(
+                                            el.child(RadioWithLabel.new(
                                                 "use-server-name-in-ssh",
-                                                Label::new("Configure over SSH (default)"),
-                                                kind == NewServerKind::LegacySSH,
+                                                Label.new("Configure over SSH (default)"),
+                                                kind == NewServerKind.LegacySSH,
                                                 cx.listener({
                                                     move |this, _, cx| {
-                                                        if let Mode::CreateDevServer(
+                                                        if let Mode.CreateDevServer(
                                                             CreateDevServer { kind, .. },
                                                         ) = &mut this.mode
                                                         {
-                                                            *kind = NewServerKind::LegacySSH;
+                                                            *kind = NewServerKind.LegacySSH;
                                                         }
                                                         cx.notify()
                                                     }
                                                 }),
                                             ))
                                         })
-                                        .child(RadioWithLabel::new(
+                                        .child(RadioWithLabel.new(
                                             "use-server-name-in-ssh",
-                                            Label::new("Configure manually"),
-                                            kind == NewServerKind::Manual,
+                                            Label.new("Configure manually"),
+                                            kind == NewServerKind.Manual,
                                             cx.listener({
                                                 move |this, _, cx| {
-                                                    if let Mode::CreateDevServer(
+                                                    if let Mode.CreateDevServer(
                                                         CreateDevServer { kind, .. },
                                                     ) = &mut this.mode
                                                     {
-                                                        *kind = NewServerKind::Manual;
+                                                        *kind = NewServerKind.Manual;
                                                     }
                                                     cx.notify()
                                                 }
@@ -1252,27 +1252,27 @@ impl DevServerProjects {
                             })
                             .when(dev_server_id.is_none() && ssh_prompt.is_none(), |el| {
                                 el.child(
-                                    if kind == NewServerKind::Manual {
-                                        Label::new(MANUAL_SETUP_MESSAGE)
+                                    if kind == NewServerKind.Manual {
+                                        Label.new(MANUAL_SETUP_MESSAGE)
                                     } else {
-                                        Label::new(SSH_SETUP_MESSAGE)
+                                        Label.new(SSH_SETUP_MESSAGE)
                                     }
-                                    .size(LabelSize::Small)
-                                    .color(Color::Muted),
+                                    .size(LabelSize.Small)
+                                    .color(Color.Muted),
                                 )
                             })
                             .when_some(ssh_prompt, |el, ssh_prompt| el.child(ssh_prompt))
                             .when(dev_server_id.is_some() && access_token.is_none(), |el| {
                                 el.child(
-                                    if kind == NewServerKind::Manual {
-                                        Label::new(
+                                    if kind == NewServerKind.Manual {
+                                        Label.new(
                                             "Note: updating the dev server generate a new token",
                                         )
                                     } else {
-                                        Label::new(SSH_SETUP_MESSAGE)
+                                        Label.new(SSH_SETUP_MESSAGE)
                                     }
-                                    .size(LabelSize::Small)
-                                    .color(Color::Muted),
+                                    .size(LabelSize.Small)
+                                    .color(Color.Muted),
                                 )
                             })
                             .when_some(access_token.clone(), {
@@ -1290,19 +1290,19 @@ impl DevServerProjects {
                     ),
             )
             .footer(
-                ModalFooter::new().end_slot(if status == DevServerStatus::Online {
-                    Button::new("create-dev-server", "Done")
-                        .style(ButtonStyle::Filled)
-                        .layer(ElevationIndex::ModalSurface)
+                ModalFooter.new().end_slot(if status == DevServerStatus.Online {
+                    Button.new("create-dev-server", "Done")
+                        .style(ButtonStyle.Filled)
+                        .layer(ElevationIndex.ModalSurface)
                         .on_click(cx.listener(move |this, _, cx| {
                             cx.focus(&this.focus_handle);
-                            this.mode = Mode::Default(None);
+                            this.mode = Mode.Default(None);
                             cx.notify();
                         }))
                 } else {
-                    Button::new(
+                    Button.new(
                         "create-dev-server",
-                        if kind == NewServerKind::Manual {
+                        if kind == NewServerKind.Manual {
                             if dev_server_id.is_some() {
                                 "Update"
                             } else {
@@ -1316,13 +1316,13 @@ impl DevServerProjects {
                             }
                         },
                     )
-                    .style(ButtonStyle::Filled)
-                    .layer(ElevationIndex::ModalSurface)
+                    .style(ButtonStyle.Filled)
+                    .layer(ElevationIndex.ModalSurface)
                     .disabled(creating && dev_server_id.is_none())
                     .on_click(cx.listener({
                         let access_token = access_token.clone();
                         move |this, _, cx| {
-                            if kind == NewServerKind::DirectSSH {
+                            if kind == NewServerKind.DirectSSH {
                                 this.create_ssh_server(cx);
                                 return;
                             }
@@ -1348,7 +1348,7 @@ impl DevServerProjects {
         cx: &mut ViewContext<Self>,
     ) -> Div {
         self.markdown.update(cx, |markdown, cx| {
-            if kind == NewServerKind::Manual {
+            if kind == NewServerKind.Manual {
                 markdown.reset(format!("Please log into '{}'. If you don't yet have zed installed, run:\n```\ncurl https://zed.dev/install.sh | bash\n```\nThen to start zed in headless mode:\n```\nzed --dev-server-token {}\n```", dev_server_name, access_token), cx);
             } else {
                 markdown.reset("Please wait while we connect over SSH.\n\nIf you run into problems, please [file a bug](https://github.com/zed-industries/zed), and in the meantime try using manual setup.".to_string(), cx);
@@ -1361,18 +1361,18 @@ impl DevServerProjects {
             .gap_2()
             .child(v_flex().w_full().text_sm().child(self.markdown.clone()))
             .map(|el| {
-                if status == DevServerStatus::Offline && kind != NewServerKind::Manual && !creating
+                if status == DevServerStatus.Offline && kind != NewServerKind.Manual && !creating
                 {
                     el.child(
                         h_flex()
                             .gap_2()
-                            .child(Icon::new(IconName::Disconnected).size(IconSize::Medium))
-                            .child(Label::new("Not connected")),
+                            .child(Icon.new(IconName.Disconnected).size(IconSize.Medium))
+                            .child(Label.new("Not connected")),
                     )
-                } else if status == DevServerStatus::Offline {
-                    el.child(Self::render_loading_spinner("Waiting for connection…"))
+                } else if status == DevServerStatus.Offline {
+                    el.child(Self.render_loading_spinner("Waiting for connection…"))
                 } else {
-                    el.child(Label::new("🎊 Connection established!"))
+                    el.child(Label.new("🎊 Connection established!"))
                 }
             })
     }
@@ -1381,24 +1381,24 @@ impl DevServerProjects {
         h_flex()
             .gap_2()
             .child(
-                Icon::new(IconName::ArrowCircle)
-                    .size(IconSize::Medium)
+                Icon.new(IconName.ArrowCircle)
+                    .size(IconSize.Medium)
                     .with_animation(
                         "arrow-circle",
-                        Animation::new(Duration::from_secs(2)).repeat(),
-                        |icon, delta| icon.transform(Transformation::rotate(percentage(delta))),
+                        Animation.new(Duration.from_secs(2)).repeat(),
+                        |icon, delta| icon.transform(Transformation.rotate(percentage(delta))),
                     ),
             )
-            .child(Label::new(label))
+            .child(Label.new(label))
     }
 
     fn render_default(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let dev_servers = self.dev_server_store.read(cx).dev_servers();
-        let ssh_connections = SshSettings::get_global(cx)
+        let ssh_connections = SshSettings.get_global(cx)
             .ssh_connections()
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
-        let Mode::Default(create_dev_server_project) = &self.mode else {
+        let Mode.Default(create_dev_server_project) = &self.mode else {
             unreachable!()
         };
 
@@ -1413,28 +1413,28 @@ impl DevServerProjects {
             is_creating = Some(*creating);
             creating_dev_server = Some(*dev_server_id);
         };
-        let is_signed_out = Client::global(cx).status().borrow().is_signed_out();
+        let is_signed_out = Client.global(cx).status().borrow().is_signed_out();
 
-        Modal::new("remote-projects", Some(self.scroll_handle.clone()))
+        Modal.new("remote-projects", Some(self.scroll_handle.clone()))
             .header(
-                ModalHeader::new()
+                ModalHeader.new()
                     .show_dismiss_button(true)
-                    .child(Headline::new("Remote Projects (alpha)").size(HeadlineSize::Small)),
+                    .child(Headline.new("Remote Projects (alpha)").size(HeadlineSize.Small)),
             )
             .when(is_signed_out, |modal| {
                 modal
-                    .section(Section::new().child(v_flex().mb_4().child(Label::new(
+                    .section(Section.new().child(v_flex().mb_4().child(Label.new(
                         "You are not currently signed in to Zed. Currently the remote development features are only available to signed in users. Please sign in to continue.",
                     ))))
                     .footer(
-                        ModalFooter::new().end_slot(
-                            Button::new("sign_in", "Sign in")
-                                .icon(IconName::Github)
-                                .icon_position(IconPosition::Start)
-                                .style(ButtonStyle::Filled)
+                        ModalFooter.new().end_slot(
+                            Button.new("sign_in", "Sign in")
+                                .icon(IconName.Github)
+                                .icon_position(IconPosition.Start)
+                                .style(ButtonStyle.Filled)
                                 .full_width()
                                 .on_click(cx.listener(|_, _, cx| {
-                                    let client = Client::global(cx).clone();
+                                    let client = Client.global(cx).clone();
                                     cx.spawn(|_, mut cx| async move {
                                         client
                                             .authenticate_and_connect(true, &cx)
@@ -1442,30 +1442,30 @@ impl DevServerProjects {
                                             .notify_async_err(&mut cx);
                                     })
                                     .detach();
-                                    cx.emit(gpui::DismissEvent);
+                                    cx.emit(gpui.DismissEvent);
                                 })),
                         ),
                     )
             })
             .when(!is_signed_out, |modal| {
                 modal.section(
-                    Section::new().child(
+                    Section.new().child(
                         div().mb_4().child(
-                            List::new()
+                            List.new()
                                 .empty_message("No dev servers registered.")
                                 .header(Some(
-                                    ListHeader::new("Connections").end_slot(
-                                        Button::new("register-dev-server-button", "Connect")
-                                            .icon(IconName::Plus)
-                                            .icon_position(IconPosition::Start)
+                                    ListHeader.new("Connections").end_slot(
+                                        Button.new("register-dev-server-button", "Connect")
+                                            .icon(IconName.Plus)
+                                            .icon_position(IconPosition.Start)
                                             .tooltip(|cx| {
-                                                Tooltip::text("Connect to a new server", cx)
+                                                Tooltip.text("Connect to a new server", cx)
                                             })
                                             .on_click(cx.listener(|this, _, cx| {
-                                                this.mode = Mode::CreateDevServer(
+                                                this.mode = Mode.CreateDevServer(
                                                     CreateDevServer {
-                                                        kind: if SshSettings::get_global(cx).use_direct_ssh() { NewServerKind::DirectSSH } else { NewServerKind::LegacySSH },
-                                                        ..Default::default()
+                                                        kind: if SshSettings.get_global(cx).use_direct_ssh() { NewServerKind.DirectSSH } else { NewServerKind.LegacySSH },
+                                                        ..Default.default()
                                                     }
                                                 );
                                                 this.dev_server_name_input.update(
@@ -1529,21 +1529,21 @@ impl Render for DevServerProjects {
             .track_focus(&self.focus_handle)
             .elevation_3(cx)
             .key_context("DevServerModal")
-            .on_action(cx.listener(Self::cancel))
-            .on_action(cx.listener(Self::confirm))
+            .on_action(cx.listener(Self.cancel))
+            .on_action(cx.listener(Self.confirm))
             .capture_any_mouse_down(cx.listener(|this, _, cx| {
                 this.focus_handle(cx).focus(cx);
             }))
             .on_mouse_down_out(cx.listener(|this, _, cx| {
-                if matches!(this.mode, Mode::Default(None)) {
+                if matches!(this.mode, Mode.Default(None)) {
                     cx.emit(DismissEvent)
                 }
             }))
             .w(rems(34.))
             .max_h(rems(40.))
             .child(match &self.mode {
-                Mode::Default(_) => self.render_default(cx).into_any_element(),
-                Mode::CreateDevServer(state) => {
+                Mode.Default(_) => self.render_default(cx).into_any_element(),
+                Mode.CreateDevServer(state) => {
                     self.render_create_dev_server(state, cx).into_any_element()
                 }
             })
@@ -1557,13 +1557,13 @@ pub fn reconnect_to_dev_server_project(
     replace_current_window: bool,
     cx: &mut WindowContext,
 ) -> Task<Result<()>> {
-    let store = dev_server_projects::Store::global(cx);
+    let store = dev_server_projects.Store.global(cx);
     let reconnect = reconnect_to_dev_server(workspace.clone(), dev_server, cx);
     cx.spawn(|mut cx| async move {
         reconnect.await?;
 
         cx.background_executor()
-            .timer(Duration::from_millis(1000))
+            .timer(Duration.from_millis(1000))
             .await;
 
         if let Some(project_id) = store.update(&mut cx, |store, _| {
@@ -1593,9 +1593,9 @@ pub fn reconnect_to_dev_server(
     cx: &mut WindowContext,
 ) -> Task<Result<()>> {
     let Some(ssh_connection_string) = dev_server.ssh_connection_string else {
-        return Task::ready(Err(anyhow!("can't reconnect, no ssh_connection_string")));
+        return Task.ready(Err(anyhow!("can't reconnect, no ssh_connection_string")));
     };
-    let dev_server_store = dev_server_projects::Store::global(cx);
+    let dev_server_store = dev_server_projects.Store.global(cx);
     let get_access_token = dev_server_store.update(cx, |store, cx| {
         store.regenerate_dev_server_token(dev_server.id, cx)
     });
@@ -1617,14 +1617,14 @@ pub fn reconnect_to_dev_server(
 
 pub async fn spawn_ssh_task(
     workspace: View<Workspace>,
-    dev_server_store: Model<dev_server_projects::Store>,
+    dev_server_store: Model<dev_server_projects.Store>,
     dev_server_id: DevServerId,
     ssh_connection_string: String,
     access_token: String,
     cx: &mut AsyncWindowContext,
 ) -> Result<()> {
     let terminal_panel = workspace
-        .update(cx, |workspace, cx| workspace.panel::<TerminalPanel>(cx))
+        .update(cx, |workspace, cx| workspace.panel.<TerminalPanel>(cx))
         .ok()
         .flatten()
         .with_context(|| anyhow!("No terminal panel"))?;
@@ -1641,10 +1641,10 @@ pub async fn spawn_ssh_task(
 
     let ssh_connection_string = ssh_connection_string.to_string();
     let (command, args) = wrap_for_ssh(
-        &SshCommand::DevServer(ssh_connection_string.clone()),
+        &SshCommand.DevServer(ssh_connection_string.clone()),
         Some((&command, &args)),
         None,
-        HashMap::default(),
+        HashMap.default(),
         None,
     );
 
@@ -1652,7 +1652,7 @@ pub async fn spawn_ssh_task(
         .update(cx, |terminal_panel, cx| {
             terminal_panel.spawn_in_new_terminal(
                 SpawnInTerminal {
-                    id: task::TaskId("ssh-remote".into()),
+                    id: task.TaskId("ssh-remote".into()),
                     full_label: "Install zed over ssh".into(),
                     label: "Install zed over ssh".into(),
                     command,
@@ -1661,10 +1661,10 @@ pub async fn spawn_ssh_task(
                     cwd: None,
                     use_new_terminal: true,
                     allow_concurrent_runs: false,
-                    reveal: RevealStrategy::Always,
-                    hide: HideStrategy::Never,
-                    env: Default::default(),
-                    shell: Default::default(),
+                    reveal: RevealStrategy.Always,
+                    hide: HideStrategy.Never,
+                    env: Default.default(),
+                    shell: Default.default(),
                 },
                 cx,
             )
@@ -1677,15 +1677,15 @@ pub async fn spawn_ssh_task(
 
     // There's a race-condition between the task completing successfully, and the server sending us the online status. Make it less likely we'll show the error state.
     if dev_server_store.update(cx, |this, _| this.dev_server_status(dev_server_id))?
-        == DevServerStatus::Offline
+        == DevServerStatus.Offline
     {
         cx.background_executor()
-            .timer(Duration::from_millis(200))
+            .timer(Duration.from_millis(200))
             .await
     }
 
     if dev_server_store.update(cx, |this, _| this.dev_server_status(dev_server_id))?
-        == DevServerStatus::Offline
+        == DevServerStatus.Offline
     {
         return Err(anyhow!("couldn't reconnect"))?;
     }

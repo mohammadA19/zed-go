@@ -1,35 +1,35 @@
-use crate::components::KernelListItem;
-use crate::KernelStatus;
-use crate::{
-    kernels::{Kernel, KernelSpecification, RunningKernel},
-    outputs::{ExecutionStatus, ExecutionView},
+use crate.components.KernelListItem;
+use crate.KernelStatus;
+use crate.{
+    kernels.{Kernel, KernelSpecification, RunningKernel},
+    outputs.{ExecutionStatus, ExecutionView},
 };
-use client::telemetry::Telemetry;
-use collections::{HashMap, HashSet};
-use editor::{
-    display_map::{
+use client.telemetry.Telemetry;
+use collections.{HashMap, HashSet};
+use editor.{
+    display_map.{
         BlockContext, BlockDisposition, BlockId, BlockProperties, BlockStyle, CustomBlockId,
         RenderBlock,
     },
-    scroll::Autoscroll,
+    scroll.Autoscroll,
     Anchor, AnchorRangeExt as _, Editor, MultiBuffer, ToPoint,
 };
-use futures::io::BufReader;
-use futures::{AsyncBufReadExt as _, FutureExt as _, StreamExt as _};
-use gpui::{
-    div, prelude::*, EntityId, EventEmitter, Model, Render, Subscription, Task, View, ViewContext,
+use futures.io.BufReader;
+use futures.{AsyncBufReadExt as _, FutureExt as _, StreamExt as _};
+use gpui.{
+    div, prelude.*, EntityId, EventEmitter, Model, Render, Subscription, Task, View, ViewContext,
     WeakView,
 };
-use language::Point;
-use project::Fs;
-use runtimelib::{
+use language.Point;
+use project.Fs;
+use runtimelib.{
     ExecuteRequest, ExecutionState, InterruptRequest, JupyterMessage, JupyterMessageContent,
     ShutdownRequest,
 };
-use settings::Settings as _;
-use std::{env::temp_dir, ops::Range, sync::Arc, time::Duration};
-use theme::{ActiveTheme, ThemeSettings};
-use ui::{prelude::*, IconButtonShape, Tooltip};
+use settings.Settings as _;
+use std.{env.temp_dir, ops.Range, sync.Arc, time.Duration};
+use theme.{ActiveTheme, ThemeSettings};
+use ui.{prelude.*, IconButtonShape, Tooltip};
 
 pub struct Session {
     editor: WeakView<Editor>,
@@ -58,14 +58,14 @@ impl EditorBlock {
         status: ExecutionStatus,
         on_close: CloseBlockFn,
         cx: &mut ViewContext<Session>,
-    ) -> anyhow::Result<Self> {
-        let execution_view = cx.new_view(|cx| ExecutionView::new(status, cx));
+    ) -> anyhow.Result<Self> {
+        let execution_view = cx.new_view(|cx| ExecutionView.new(status, cx));
 
         let (block_id, invalidation_anchor) = editor.update(cx, |editor, cx| {
             let buffer = editor.buffer().clone();
             let buffer_snapshot = buffer.read(cx).snapshot(cx);
             let end_point = code_range.end.to_point(&buffer_snapshot);
-            let next_row_start = end_point + Point::new(1, 0);
+            let next_row_start = end_point + Point.new(1, 0);
             if next_row_start > buffer_snapshot.max_point() {
                 buffer.update(cx, |buffer, cx| {
                     buffer.edit(
@@ -84,16 +84,16 @@ impl EditorBlock {
                 position: code_range.end,
                 // Take up at least one height for status, allow the editor to determine the real height based on the content from render
                 height: 1,
-                style: BlockStyle::Sticky,
-                render: Self::create_output_area_renderer(execution_view.clone(), on_close.clone()),
-                disposition: BlockDisposition::Below,
+                style: BlockStyle.Sticky,
+                render: Self.create_output_area_renderer(execution_view.clone(), on_close.clone()),
+                disposition: BlockDisposition.Below,
             };
 
             let block_id = editor.insert_blocks([block], None, cx)[0];
             (block_id, invalidation_anchor)
         })?;
 
-        anyhow::Ok(Self {
+        anyhow.Ok(Self {
             code_range,
             invalidation_anchor,
             block_id,
@@ -113,11 +113,11 @@ impl EditorBlock {
     ) -> RenderBlock {
         let render = move |cx: &mut BlockContext| {
             let execution_view = execution_view.clone();
-            let text_font = ThemeSettings::get_global(cx).buffer_font.family.clone();
-            let text_font_size = ThemeSettings::get_global(cx).buffer_font_size;
+            let text_font = ThemeSettings.get_global(cx).buffer_font.family.clone();
+            let text_font_size = ThemeSettings.get_global(cx).buffer_font_size;
 
             let gutter = cx.gutter_dimensions;
-            let close_button_size = IconSize::XSmall;
+            let close_button_size = IconSize.XSmall;
 
             let block_id = cx.block_id;
             let on_close = on_close.clone();
@@ -148,17 +148,17 @@ impl EditorBlock {
                                     .pr(gutter.width / 2. - close_button_width
                                         + close_button_padding / 2.)
                                     .child(
-                                        IconButton::new(
-                                            ("close_output_area", EntityId::from(cx.block_id)),
-                                            IconName::Close,
+                                        IconButton.new(
+                                            ("close_output_area", EntityId.from(cx.block_id)),
+                                            IconName.Close,
                                         )
-                                        .shape(IconButtonShape::Square)
+                                        .shape(IconButtonShape.Square)
                                         .icon_size(close_button_size)
-                                        .icon_color(Color::Muted)
-                                        .tooltip(|cx| Tooltip::text("Close output area", cx))
+                                        .icon_color(Color.Muted)
+                                        .tooltip(|cx| Tooltip.text("Close output area", cx))
                                         .on_click(
                                             move |_, cx| {
-                                                if let BlockId::Custom(block_id) = block_id {
+                                                if let BlockId.Custom(block_id) = block_id {
                                                     (on_close)(block_id, cx)
                                                 }
                                             },
@@ -180,7 +180,7 @@ impl EditorBlock {
                 .into_any_element()
         };
 
-        Box::new(render)
+        Box.new(render)
     }
 }
 
@@ -196,7 +196,7 @@ impl Session {
 
         telemetry.report_repl_event(
             kernel_language.clone(),
-            KernelStatus::Starting.to_string(),
+            KernelStatus.Starting.to_string(),
             cx.entity_id().to_string(),
         );
 
@@ -205,7 +205,7 @@ impl Session {
             .upgrade()
             .and_then(|editor| editor.read(cx).working_directory(cx))
             .unwrap_or_else(temp_dir);
-        let kernel = RunningKernel::new(
+        let kernel = RunningKernel.new(
             kernel_specification.clone(),
             entity_id,
             working_directory,
@@ -228,10 +228,10 @@ impl Session {
                                 if let None = stderr {
                                     return;
                                 }
-                                let reader = BufReader::new(stderr.unwrap());
+                                let reader = BufReader.new(stderr.unwrap());
                                 let mut lines = reader.lines();
                                 while let Some(Ok(line)) = lines.next().await {
-                                    log::error!("kernel: {}", line);
+                                    log.error!("kernel: {}", line);
                                 }
                             })
                             .detach();
@@ -242,22 +242,22 @@ impl Session {
                                 if let None = stdout {
                                     return;
                                 }
-                                let reader = BufReader::new(stdout.unwrap());
+                                let reader = BufReader.new(stdout.unwrap());
                                 let mut lines = reader.lines();
                                 while let Some(Ok(line)) = lines.next().await {
-                                    log::info!("kernel: {}", line);
+                                    log.info!("kernel: {}", line);
                                 }
                             })
                             .detach();
 
                             let status = kernel.process.status();
-                            session.kernel(Kernel::RunningKernel(kernel), cx);
+                            session.kernel(Kernel.RunningKernel(kernel), cx);
 
                             cx.spawn(|session, mut cx| async move {
                                 let error_message = match status.await {
                                     Ok(status) => {
                                         if status.success() {
-                                            log::info!("kernel process exited successfully");
+                                            log.info!("kernel process exited successfully");
                                             return;
                                         }
 
@@ -268,12 +268,12 @@ impl Session {
                                     }
                                 };
 
-                                log::error!("{}", error_message);
+                                log.error!("{}", error_message);
 
                                 session
                                     .update(&mut cx, |session, cx| {
                                         session.kernel(
-                                            Kernel::ErroredLaunch(error_message.clone()),
+                                            Kernel.ErroredLaunch(error_message.clone()),
                                             cx,
                                         );
 
@@ -282,13 +282,13 @@ impl Session {
                                                 cx,
                                                 |execution_view, cx| {
                                                     match execution_view.status {
-                                                        ExecutionStatus::Finished => {
+                                                        ExecutionStatus.Finished => {
                                                             // Do nothing when the output was good
                                                         }
                                                         _ => {
                                                             // All other cases, set the status to errored
                                                             execution_view.status =
-                                                                ExecutionStatus::KernelErrored(
+                                                                ExecutionStatus.KernelErrored(
                                                                     error_message.clone(),
                                                                 )
                                                         }
@@ -317,7 +317,7 @@ impl Session {
                             // todo!(kyle): send kernelinforequest once our shell channel read/writes are split
                             // cx.spawn(|this, mut cx| async move {
                             //     cx.background_executor()
-                            //         .timer(Duration::from_millis(120))
+                            //         .timer(Duration.from_millis(120))
                             //         .await;
                             //     this.update(&mut cx, |this, cx| {
                             //         this.send(KernelInfoRequest {}.into(), cx).ok();
@@ -330,7 +330,7 @@ impl Session {
                     }
                     Err(err) => {
                         this.update(&mut cx, |session, cx| {
-                            session.kernel(Kernel::ErroredLaunch(err.to_string()), cx);
+                            session.kernel(Kernel.ErroredLaunch(err.to_string()), cx);
                         })
                         .ok();
                     }
@@ -341,16 +341,16 @@ impl Session {
         let subscription = match editor.upgrade() {
             Some(editor) => {
                 let buffer = editor.read(cx).buffer().clone();
-                cx.subscribe(&buffer, Self::on_buffer_event)
+                cx.subscribe(&buffer, Self.on_buffer_event)
             }
-            None => Subscription::new(|| {}),
+            None => Subscription.new(|| {}),
         };
 
         return Self {
             editor,
-            kernel: Kernel::StartingKernel(pending_kernel),
-            messaging_task: Task::ready(()),
-            blocks: HashMap::default(),
+            kernel: Kernel.StartingKernel(pending_kernel),
+            messaging_task: Task.ready(()),
+            blocks: HashMap.default(),
             kernel_specification,
             _buffer_subscription: subscription,
             telemetry,
@@ -360,13 +360,13 @@ impl Session {
     fn on_buffer_event(
         &mut self,
         buffer: Model<MultiBuffer>,
-        event: &multi_buffer::Event,
+        event: &multi_buffer.Event,
         cx: &mut ViewContext<Self>,
     ) {
-        if let multi_buffer::Event::Edited { .. } = event {
+        if let multi_buffer.Event.Edited { .. } = event {
             let snapshot = buffer.read(cx).snapshot(cx);
 
-            let mut blocks_to_remove: HashSet<CustomBlockId> = HashSet::default();
+            let mut blocks_to_remove: HashSet<CustomBlockId> = HashSet.default();
 
             self.blocks.retain(|_id, block| {
                 if block.invalidation_anchor.is_valid(&snapshot) {
@@ -388,15 +388,15 @@ impl Session {
         }
     }
 
-    fn send(&mut self, message: JupyterMessage, _cx: &mut ViewContext<Self>) -> anyhow::Result<()> {
+    fn send(&mut self, message: JupyterMessage, _cx: &mut ViewContext<Self>) -> anyhow.Result<()> {
         match &mut self.kernel {
-            Kernel::RunningKernel(kernel) => {
+            Kernel.RunningKernel(kernel) => {
                 kernel.request_tx.try_send(message).ok();
             }
             _ => {}
         }
 
-        anyhow::Ok(())
+        anyhow.Ok(())
     }
 
     pub fn clear_outputs(&mut self, cx: &mut ViewContext<Self>) {
@@ -430,12 +430,12 @@ impl Session {
 
         let execute_request = ExecuteRequest {
             code,
-            ..ExecuteRequest::default()
+            ..ExecuteRequest.default()
         };
 
         let message: JupyterMessage = execute_request.into();
 
-        let mut blocks_to_remove: HashSet<CustomBlockId> = HashSet::default();
+        let mut blocks_to_remove: HashSet<CustomBlockId> = HashSet.default();
 
         let buffer = editor.read(cx).buffer().read(cx).snapshot(cx);
 
@@ -455,11 +455,11 @@ impl Session {
             .ok();
 
         let status = match &self.kernel {
-            Kernel::RunningKernel(_) => ExecutionStatus::Queued,
-            Kernel::StartingKernel(_) => ExecutionStatus::ConnectingToKernel,
-            Kernel::ErroredLaunch(error) => ExecutionStatus::KernelErrored(error.clone()),
-            Kernel::ShuttingDown => ExecutionStatus::ShuttingDown,
-            Kernel::Shutdown => ExecutionStatus::Shutdown,
+            Kernel.RunningKernel(_) => ExecutionStatus.Queued,
+            Kernel.StartingKernel(_) => ExecutionStatus.ConnectingToKernel,
+            Kernel.ErroredLaunch(error) => ExecutionStatus.KernelErrored(error.clone()),
+            Kernel.ShuttingDown => ExecutionStatus.ShuttingDown,
+            Kernel.Shutdown => ExecutionStatus.Shutdown,
         };
 
         let parent_message_id = message.header.msg_id.clone();
@@ -467,7 +467,7 @@ impl Session {
         let weak_editor = self.editor.clone();
 
         let on_close: CloseBlockFn =
-            Arc::new(move |block_id: CustomBlockId, cx: &mut WindowContext| {
+            Arc.new(move |block_id: CustomBlockId, cx: &mut WindowContext| {
                 if let Some(session) = session_view.upgrade() {
                     session.update(cx, |session, cx| {
                         session.blocks.remove(&parent_message_id);
@@ -477,7 +477,7 @@ impl Session {
 
                 if let Some(editor) = weak_editor.upgrade() {
                     editor.update(cx, |editor, cx| {
-                        let mut block_ids = HashSet::default();
+                        let mut block_ids = HashSet.default();
                         block_ids.insert(block_id);
                         editor.remove_blocks(block_ids, None, cx);
                     });
@@ -485,7 +485,7 @@ impl Session {
             });
 
         let Ok(editor_block) =
-            EditorBlock::new(self.editor.clone(), anchor_range, status, on_close, cx)
+            EditorBlock.new(self.editor.clone(), anchor_range, status, on_close, cx)
         else {
             return;
         };
@@ -500,10 +500,10 @@ impl Session {
             .insert(message.header.msg_id.clone(), editor_block);
 
         match &self.kernel {
-            Kernel::RunningKernel(_) => {
+            Kernel.RunningKernel(_) => {
                 self.send(message, cx).ok();
             }
-            Kernel::StartingKernel(task) => {
+            Kernel.StartingKernel(task) => {
                 // Queue up the execution as a task to run after the kernel starts
                 let task = task.clone();
                 let message = message.clone();
@@ -522,7 +522,7 @@ impl Session {
 
         if move_down {
             editor.update(cx, move |editor, cx| {
-                editor.change_selections(Some(Autoscroll::top_relative(8)), cx, |selections| {
+                editor.change_selections(Some(Autoscroll.top_relative(8)), cx, |selections| {
                     selections.select_ranges([new_cursor_pos..new_cursor_pos]);
                 });
             });
@@ -536,22 +536,22 @@ impl Session {
         };
 
         match &message.content {
-            JupyterMessageContent::Status(status) => {
+            JupyterMessageContent.Status(status) => {
                 self.kernel.set_execution_state(&status.execution_state);
 
                 self.telemetry.report_repl_event(
                     self.kernel_specification.kernelspec.language.clone(),
-                    KernelStatus::from(&self.kernel).to_string(),
+                    KernelStatus.from(&self.kernel).to_string(),
                     cx.entity_id().to_string(),
                 );
 
                 cx.notify();
             }
-            JupyterMessageContent::KernelInfoReply(reply) => {
+            JupyterMessageContent.KernelInfoReply(reply) => {
                 self.kernel.set_kernel_info(&reply);
                 cx.notify();
             }
-            JupyterMessageContent::UpdateDisplayData(update) => {
+            JupyterMessageContent.UpdateDisplayData(update) => {
                 let display_id = if let Some(display_id) = update.transient.display_id.clone() {
                     display_id
                 } else {
@@ -576,10 +576,10 @@ impl Session {
 
     pub fn interrupt(&mut self, cx: &mut ViewContext<Self>) {
         match &mut self.kernel {
-            Kernel::RunningKernel(_kernel) => {
+            Kernel.RunningKernel(_kernel) => {
                 self.send(InterruptRequest {}.into(), cx).ok();
             }
-            Kernel::StartingKernel(_task) => {
+            Kernel.StartingKernel(_task) => {
                 // NOTE: If we switch to a literal queue instead of chaining on to the task, clear all queued executions
             }
             _ => {}
@@ -587,11 +587,11 @@ impl Session {
     }
 
     pub fn kernel(&mut self, kernel: Kernel, cx: &mut ViewContext<Self>) {
-        if let Kernel::Shutdown = kernel {
-            cx.emit(SessionEvent::Shutdown(self.editor.clone()));
+        if let Kernel.Shutdown = kernel {
+            cx.emit(SessionEvent.Shutdown(self.editor.clone()));
         }
 
-        let kernel_status = KernelStatus::from(&kernel).to_string();
+        let kernel_status = KernelStatus.from(&kernel).to_string();
         let kernel_language = self.kernel_specification.kernelspec.language.clone();
 
         self.telemetry.report_repl_event(
@@ -604,10 +604,10 @@ impl Session {
     }
 
     pub fn shutdown(&mut self, cx: &mut ViewContext<Self>) {
-        let kernel = std::mem::replace(&mut self.kernel, Kernel::ShuttingDown);
+        let kernel = std.mem.replace(&mut self.kernel, Kernel.ShuttingDown);
 
         match kernel {
-            Kernel::RunningKernel(mut kernel) => {
+            Kernel.RunningKernel(mut kernel) => {
                 let mut request_tx = kernel.request_tx.clone();
 
                 cx.spawn(|this, mut cx| async move {
@@ -615,24 +615,24 @@ impl Session {
                     request_tx.try_send(message).ok();
 
                     // Give the kernel a bit of time to clean up
-                    cx.background_executor().timer(Duration::from_secs(3)).await;
+                    cx.background_executor().timer(Duration.from_secs(3)).await;
 
                     kernel.process.kill().ok();
 
                     this.update(&mut cx, |session, cx| {
                         session.clear_outputs(cx);
-                        session.kernel(Kernel::Shutdown, cx);
+                        session.kernel(Kernel.Shutdown, cx);
                         cx.notify();
                     })
                     .ok();
                 })
                 .detach();
             }
-            Kernel::StartingKernel(_kernel) => {
-                self.kernel = Kernel::Shutdown;
+            Kernel.StartingKernel(_kernel) => {
+                self.kernel = Kernel.Shutdown;
             }
             _ => {
-                self.kernel = Kernel::Shutdown;
+                self.kernel = Kernel.Shutdown;
             }
         }
         cx.notify();
@@ -648,41 +648,41 @@ impl EventEmitter<SessionEvent> for Session {}
 impl Render for Session {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let (status_text, interrupt_button) = match &self.kernel {
-            Kernel::RunningKernel(kernel) => (
+            Kernel.RunningKernel(kernel) => (
                 kernel
                     .kernel_info
                     .as_ref()
                     .map(|info| info.language_info.name.clone()),
                 Some(
-                    Button::new("interrupt", "Interrupt")
-                        .style(ButtonStyle::Subtle)
+                    Button.new("interrupt", "Interrupt")
+                        .style(ButtonStyle.Subtle)
                         .on_click(cx.listener(move |session, _, cx| {
                             session.interrupt(cx);
                         })),
                 ),
             ),
-            Kernel::StartingKernel(_) => (Some("Starting".into()), None),
-            Kernel::ErroredLaunch(err) => (Some(format!("Error: {err}")), None),
-            Kernel::ShuttingDown => (Some("Shutting Down".into()), None),
-            Kernel::Shutdown => (Some("Shutdown".into()), None),
+            Kernel.StartingKernel(_) => (Some("Starting".into()), None),
+            Kernel.ErroredLaunch(err) => (Some(format!("Error: {err}")), None),
+            Kernel.ShuttingDown => (Some("Shutting Down".into()), None),
+            Kernel.Shutdown => (Some("Shutdown".into()), None),
         };
 
-        KernelListItem::new(self.kernel_specification.clone())
+        KernelListItem.new(self.kernel_specification.clone())
             .status_color(match &self.kernel {
-                Kernel::RunningKernel(kernel) => match kernel.execution_state {
-                    ExecutionState::Idle => Color::Success,
-                    ExecutionState::Busy => Color::Modified,
+                Kernel.RunningKernel(kernel) => match kernel.execution_state {
+                    ExecutionState.Idle => Color.Success,
+                    ExecutionState.Busy => Color.Modified,
                 },
-                Kernel::StartingKernel(_) => Color::Modified,
-                Kernel::ErroredLaunch(_) => Color::Error,
-                Kernel::ShuttingDown => Color::Modified,
-                Kernel::Shutdown => Color::Disabled,
+                Kernel.StartingKernel(_) => Color.Modified,
+                Kernel.ErroredLaunch(_) => Color.Error,
+                Kernel.ShuttingDown => Color.Modified,
+                Kernel.Shutdown => Color.Disabled,
             })
-            .child(Label::new(self.kernel_specification.name.clone()))
-            .children(status_text.map(|status_text| Label::new(format!("({status_text})"))))
+            .child(Label.new(self.kernel_specification.name.clone()))
+            .children(status_text.map(|status_text| Label.new(format!("({status_text})"))))
             .button(
-                Button::new("shutdown", "Shutdown")
-                    .style(ButtonStyle::Subtle)
+                Button.new("shutdown", "Shutdown")
+                    .style(ButtonStyle.Subtle)
                     .disabled(self.kernel.is_shutting_down())
                     .on_click(cx.listener(move |session, _, cx| {
                         session.shutdown(cx);

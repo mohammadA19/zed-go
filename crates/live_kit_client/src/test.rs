@@ -1,23 +1,23 @@
-use crate::{ConnectionState, RoomUpdate, Sid};
-use anyhow::{anyhow, Context, Result};
-use async_trait::async_trait;
-use collections::{btree_map::Entry as BTreeEntry, hash_map::Entry, BTreeMap, HashMap, HashSet};
-use futures::Stream;
-use gpui::{BackgroundExecutor, ImageSource};
-use live_kit_server::{proto, token};
+use crate.{ConnectionState, RoomUpdate, Sid};
+use anyhow.{anyhow, Context, Result};
+use async_trait.async_trait;
+use collections.{btree_map.Entry as BTreeEntry, hash_map.Entry, BTreeMap, HashMap, HashSet};
+use futures.Stream;
+use gpui.{BackgroundExecutor, ImageSource};
+use live_kit_server.{proto, token};
 
-use parking_lot::Mutex;
-use postage::watch;
-use std::{
-    future::Future,
+use parking_lot.Mutex;
+use postage.watch;
+use std.{
+    future.Future,
     mem,
-    sync::{
-        atomic::{AtomicBool, Ordering::SeqCst},
+    sync.{
+        atomic.{AtomicBool, Ordering.SeqCst},
         Arc, Weak,
     },
 };
 
-static SERVERS: Mutex<BTreeMap<String, Arc<TestServer>>> = Mutex::new(BTreeMap::new());
+static SERVERS: Mutex<BTreeMap<String, Arc<TestServer>>> = Mutex.new(BTreeMap.new());
 
 pub struct TestServer {
     pub url: String,
@@ -35,12 +35,12 @@ impl TestServer {
         executor: BackgroundExecutor,
     ) -> Result<Arc<TestServer>> {
         let mut servers = SERVERS.lock();
-        if let BTreeEntry::Vacant(e) = servers.entry(url.clone()) {
-            let server = Arc::new(TestServer {
+        if let BTreeEntry.Vacant(e) = servers.entry(url.clone()) {
+            let server = Arc.new(TestServer {
                 url,
                 api_key,
                 secret_key,
-                rooms: Default::default(),
+                rooms: Default.default(),
                 executor,
             });
             e.insert(server.clone());
@@ -77,8 +77,8 @@ impl TestServer {
         #[cfg(any(test, feature = "test-support"))]
         self.executor.simulate_random_delay().await;
         let mut server_rooms = self.rooms.lock();
-        if let Entry::Vacant(e) = server_rooms.entry(room.clone()) {
-            e.insert(Default::default());
+        if let Entry.Vacant(e) = server_rooms.entry(room.clone()) {
+            e.insert(Default.default());
             Ok(())
         } else {
             Err(anyhow!("room {:?} already exists", room))
@@ -102,19 +102,19 @@ impl TestServer {
         #[cfg(any(test, feature = "test-support"))]
         self.executor.simulate_random_delay().await;
 
-        let claims = live_kit_server::token::validate(&token, &self.secret_key)?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key)?;
         let identity = claims.sub.unwrap().to_string();
         let room_name = claims.video.room.unwrap();
         let mut server_rooms = self.rooms.lock();
         let room = (*server_rooms).entry(room_name.to_string()).or_default();
 
-        if let Entry::Vacant(e) = room.client_rooms.entry(identity.clone()) {
+        if let Entry.Vacant(e) = room.client_rooms.entry(identity.clone()) {
             for track in &room.video_tracks {
                 client_room
                     .0
                     .lock()
                     .updates_tx
-                    .try_broadcast(RoomUpdate::SubscribedToRemoteVideoTrack(Arc::new(
+                    .try_broadcast(RoomUpdate.SubscribedToRemoteVideoTrack(Arc.new(
                         RemoteVideoTrack {
                             server_track: track.clone(),
                         },
@@ -126,12 +126,12 @@ impl TestServer {
                     .0
                     .lock()
                     .updates_tx
-                    .try_broadcast(RoomUpdate::SubscribedToRemoteAudioTrack(
-                        Arc::new(RemoteAudioTrack {
+                    .try_broadcast(RoomUpdate.SubscribedToRemoteAudioTrack(
+                        Arc.new(RemoteAudioTrack {
                             server_track: track.clone(),
-                            room: Arc::downgrade(&client_room),
+                            room: Arc.downgrade(&client_room),
                         }),
-                        Arc::new(RemoteTrackPublication),
+                        Arc.new(RemoteTrackPublication),
                     ))
                     .unwrap();
             }
@@ -150,7 +150,7 @@ impl TestServer {
         // todo(linux): Remove this once the cross-platform LiveKit implementation is merged
         #[cfg(any(test, feature = "test-support"))]
         self.executor.simulate_random_delay().await;
-        let claims = live_kit_server::token::validate(&token, &self.secret_key)?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key)?;
         let identity = claims.sub.unwrap().to_string();
         let room_name = claims.video.room.unwrap();
         let mut server_rooms = self.rooms.lock();
@@ -191,7 +191,7 @@ impl TestServer {
         &self,
         room_name: String,
         identity: String,
-        permission: proto::ParticipantPermission,
+        permission: proto.ParticipantPermission,
     ) -> Result<()> {
         // todo(linux): Remove this once the cross-platform LiveKit implementation is merged
         #[cfg(any(test, feature = "test-support"))]
@@ -211,7 +211,7 @@ impl TestServer {
         let mut server_rooms = self.rooms.lock();
         for room in server_rooms.values_mut() {
             if let Some(room) = room.client_rooms.remove(&client_identity) {
-                *room.0.lock().connection.0.borrow_mut() = ConnectionState::Disconnected;
+                *room.0.lock().connection.0.borrow_mut() = ConnectionState.Disconnected;
             }
         }
     }
@@ -224,7 +224,7 @@ impl TestServer {
         // todo(linux): Remove this once the cross-platform LiveKit implementation is merged
         #[cfg(any(test, feature = "test-support"))]
         self.executor.simulate_random_delay().await;
-        let claims = live_kit_server::token::validate(&token, &self.secret_key)?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key)?;
         let identity = claims.sub.unwrap().to_string();
         let room_name = claims.video.room.unwrap();
 
@@ -244,8 +244,8 @@ impl TestServer {
             return Err(anyhow!("user is not allowed to publish"));
         }
 
-        let sid = nanoid::nanoid!(17);
-        let track = Arc::new(TestServerVideoTrack {
+        let sid = nanoid.nanoid!(17);
+        let track = Arc.new(TestServerVideoTrack {
             sid: sid.clone(),
             publisher_id: identity.clone(),
             frames_rx: local_track.frames_rx.clone(),
@@ -259,7 +259,7 @@ impl TestServer {
                     .0
                     .lock()
                     .updates_tx
-                    .try_broadcast(RoomUpdate::SubscribedToRemoteVideoTrack(Arc::new(
+                    .try_broadcast(RoomUpdate.SubscribedToRemoteVideoTrack(Arc.new(
                         RemoteVideoTrack {
                             server_track: track.clone(),
                         },
@@ -280,7 +280,7 @@ impl TestServer {
         #[cfg(any(test, feature = "test-support"))]
         self.executor.simulate_random_delay().await;
 
-        let claims = live_kit_server::token::validate(&token, &self.secret_key)?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key)?;
         let identity = claims.sub.unwrap().to_string();
         let room_name = claims.video.room.unwrap();
 
@@ -300,14 +300,14 @@ impl TestServer {
             return Err(anyhow!("user is not allowed to publish"));
         }
 
-        let sid = nanoid::nanoid!(17);
-        let track = Arc::new(TestServerAudioTrack {
+        let sid = nanoid.nanoid!(17);
+        let track = Arc.new(TestServerAudioTrack {
             sid: sid.clone(),
             publisher_id: identity.clone(),
-            muted: AtomicBool::new(false),
+            muted: AtomicBool.new(false),
         });
 
-        let publication = Arc::new(RemoteTrackPublication);
+        let publication = Arc.new(RemoteTrackPublication);
 
         room.audio_tracks.push(track.clone());
 
@@ -317,10 +317,10 @@ impl TestServer {
                     .0
                     .lock()
                     .updates_tx
-                    .try_broadcast(RoomUpdate::SubscribedToRemoteAudioTrack(
-                        Arc::new(RemoteAudioTrack {
+                    .try_broadcast(RoomUpdate.SubscribedToRemoteAudioTrack(
+                        Arc.new(RemoteAudioTrack {
                             server_track: track.clone(),
-                            room: Arc::downgrade(&client_room),
+                            room: Arc.downgrade(&client_room),
                         }),
                         publication.clone(),
                     ))
@@ -332,7 +332,7 @@ impl TestServer {
     }
 
     fn set_track_muted(&self, token: &str, track_sid: &str, muted: bool) -> Result<()> {
-        let claims = live_kit_server::token::validate(&token, &self.secret_key)?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key)?;
         let room_name = claims.video.room.unwrap();
         let identity = claims.sub.unwrap();
         let mut server_rooms = self.rooms.lock();
@@ -351,7 +351,7 @@ impl TestServer {
                         .0
                         .lock()
                         .updates_tx
-                        .try_broadcast(RoomUpdate::RemoteAudioTrackMuteChanged {
+                        .try_broadcast(RoomUpdate.RemoteAudioTrackMuteChanged {
                             track_id: track_sid.to_string(),
                             muted,
                         })
@@ -363,7 +363,7 @@ impl TestServer {
     }
 
     fn is_track_muted(&self, token: &str, track_sid: &str) -> Option<bool> {
-        let claims = live_kit_server::token::validate(&token, &self.secret_key).ok()?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key).ok()?;
         let room_name = claims.video.room.unwrap();
 
         let mut server_rooms = self.rooms.lock();
@@ -378,7 +378,7 @@ impl TestServer {
     }
 
     fn video_tracks(&self, token: String) -> Result<Vec<Arc<RemoteVideoTrack>>> {
-        let claims = live_kit_server::token::validate(&token, &self.secret_key)?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key)?;
         let room_name = claims.video.room.unwrap();
         let identity = claims.sub.unwrap();
 
@@ -393,7 +393,7 @@ impl TestServer {
             .video_tracks
             .iter()
             .map(|track| {
-                Arc::new(RemoteVideoTrack {
+                Arc.new(RemoteVideoTrack {
                     server_track: track.clone(),
                 })
             })
@@ -401,7 +401,7 @@ impl TestServer {
     }
 
     fn audio_tracks(&self, token: String) -> Result<Vec<Arc<RemoteAudioTrack>>> {
-        let claims = live_kit_server::token::validate(&token, &self.secret_key)?;
+        let claims = live_kit_server.token.validate(&token, &self.secret_key)?;
         let room_name = claims.video.room.unwrap();
         let identity = claims.sub.unwrap();
 
@@ -417,9 +417,9 @@ impl TestServer {
             .audio_tracks
             .iter()
             .map(|track| {
-                Arc::new(RemoteAudioTrack {
+                Arc.new(RemoteAudioTrack {
                     server_track: track.clone(),
-                    room: Arc::downgrade(&client_room),
+                    room: Arc.downgrade(&client_room),
                 })
             })
             .collect())
@@ -431,14 +431,14 @@ struct TestServerRoom {
     client_rooms: HashMap<Sid, Arc<Room>>,
     video_tracks: Vec<Arc<TestServerVideoTrack>>,
     audio_tracks: Vec<Arc<TestServerAudioTrack>>,
-    participant_permissions: HashMap<Sid, proto::ParticipantPermission>,
+    participant_permissions: HashMap<Sid, proto.ParticipantPermission>,
 }
 
 #[derive(Debug)]
 struct TestServerVideoTrack {
     sid: Sid,
     publisher_id: Sid,
-    frames_rx: async_broadcast::Receiver<Frame>,
+    frames_rx: async_broadcast.Receiver<Frame>,
 }
 
 #[derive(Debug)]
@@ -455,25 +455,25 @@ pub struct TestApiClient {
 }
 
 #[async_trait]
-impl live_kit_server::api::Client for TestApiClient {
+impl live_kit_server.api.Client for TestApiClient {
     fn url(&self) -> &str {
         &self.url
     }
 
     async fn create_room(&self, name: String) -> Result<()> {
-        let server = TestServer::get(&self.url)?;
+        let server = TestServer.get(&self.url)?;
         server.create_room(name).await?;
         Ok(())
     }
 
     async fn delete_room(&self, name: String) -> Result<()> {
-        let server = TestServer::get(&self.url)?;
+        let server = TestServer.get(&self.url)?;
         server.delete_room(name).await?;
         Ok(())
     }
 
     async fn remove_participant(&self, room: String, identity: String) -> Result<()> {
-        let server = TestServer::get(&self.url)?;
+        let server = TestServer.get(&self.url)?;
         server.remove_participant(room, identity).await?;
         Ok(())
     }
@@ -482,9 +482,9 @@ impl live_kit_server::api::Client for TestApiClient {
         &self,
         room: String,
         identity: String,
-        permission: live_kit_server::proto::ParticipantPermission,
+        permission: live_kit_server.proto.ParticipantPermission,
     ) -> Result<()> {
-        let server = TestServer::get(&self.url)?;
+        let server = TestServer.get(&self.url)?;
         server
             .update_participant(room, identity, permission)
             .await?;
@@ -492,52 +492,52 @@ impl live_kit_server::api::Client for TestApiClient {
     }
 
     fn room_token(&self, room: &str, identity: &str) -> Result<String> {
-        let server = TestServer::get(&self.url)?;
-        token::create(
+        let server = TestServer.get(&self.url)?;
+        token.create(
             &server.api_key,
             &server.secret_key,
             Some(identity),
-            token::VideoGrant::to_join(room),
+            token.VideoGrant.to_join(room),
         )
     }
 
     fn guest_token(&self, room: &str, identity: &str) -> Result<String> {
-        let server = TestServer::get(&self.url)?;
-        token::create(
+        let server = TestServer.get(&self.url)?;
+        token.create(
             &server.api_key,
             &server.secret_key,
             Some(identity),
-            token::VideoGrant::for_guest(room),
+            token.VideoGrant.for_guest(room),
         )
     }
 }
 
 struct RoomState {
     connection: (
-        watch::Sender<ConnectionState>,
-        watch::Receiver<ConnectionState>,
+        watch.Sender<ConnectionState>,
+        watch.Receiver<ConnectionState>,
     ),
     display_sources: Vec<MacOSDisplay>,
     paused_audio_tracks: HashSet<Sid>,
-    updates_tx: async_broadcast::Sender<RoomUpdate>,
-    updates_rx: async_broadcast::Receiver<RoomUpdate>,
+    updates_tx: async_broadcast.Sender<RoomUpdate>,
+    updates_rx: async_broadcast.Receiver<RoomUpdate>,
 }
 
 pub struct Room(Mutex<RoomState>);
 
 impl Room {
     pub fn new() -> Arc<Self> {
-        let (updates_tx, updates_rx) = async_broadcast::broadcast(128);
-        Arc::new(Self(Mutex::new(RoomState {
-            connection: watch::channel_with(ConnectionState::Disconnected),
-            display_sources: Default::default(),
-            paused_audio_tracks: Default::default(),
+        let (updates_tx, updates_rx) = async_broadcast.broadcast(128);
+        Arc.new(Self(Mutex.new(RoomState {
+            connection: watch.channel_with(ConnectionState.Disconnected),
+            display_sources: Default.default(),
+            paused_audio_tracks: Default.default(),
             updates_tx,
             updates_rx,
         })))
     }
 
-    pub fn status(&self) -> watch::Receiver<ConnectionState> {
+    pub fn status(&self) -> watch.Receiver<ConnectionState> {
         self.0.lock().connection.1.clone()
     }
 
@@ -546,12 +546,12 @@ impl Room {
         let url = url.to_string();
         let token = token.to_string();
         async move {
-            let server = TestServer::get(&url)?;
+            let server = TestServer.get(&url)?;
             server
                 .join_room(token.clone(), this.clone())
                 .await
                 .context("room join")?;
-            *this.0.lock().connection.0.borrow_mut() = ConnectionState::Connected { url, token };
+            *this.0.lock().connection.0.borrow_mut() = ConnectionState.Connected { url, token };
             Ok(())
         }
     }
@@ -582,7 +582,7 @@ impl Room {
                 .publish_video_track(this.token(), track)
                 .await?;
             Ok(LocalTrackPublication {
-                room: Arc::downgrade(&this),
+                room: Arc.downgrade(&this),
                 sid,
             })
         }
@@ -600,7 +600,7 @@ impl Room {
                 .publish_audio_track(this.token(), &track)
                 .await?;
             Ok(LocalTrackPublication {
-                room: Arc::downgrade(&this),
+                room: Arc.downgrade(&this),
                 sid,
             })
         }
@@ -610,7 +610,7 @@ impl Room {
 
     pub fn remote_audio_tracks(&self, publisher_id: &str) -> Vec<Arc<RemoteAudioTrack>> {
         if !self.is_connected() {
-            return Vec::new();
+            return Vec.new();
         }
 
         self.test_server()
@@ -626,7 +626,7 @@ impl Room {
         publisher_id: &str,
     ) -> Vec<Arc<RemoteTrackPublication>> {
         if !self.is_connected() {
-            return Vec::new();
+            return Vec.new();
         }
 
         self.test_server()
@@ -634,13 +634,13 @@ impl Room {
             .unwrap()
             .into_iter()
             .filter(|track| track.publisher_id() == publisher_id)
-            .map(|_track| Arc::new(RemoteTrackPublication {}))
+            .map(|_track| Arc.new(RemoteTrackPublication {}))
             .collect()
     }
 
     pub fn remote_video_tracks(&self, publisher_id: &str) -> Vec<Arc<RemoteVideoTrack>> {
         if !self.is_connected() {
-            return Vec::new();
+            return Vec.new();
         }
 
         self.test_server()
@@ -661,33 +661,33 @@ impl Room {
 
     fn test_server(&self) -> Arc<TestServer> {
         match self.0.lock().connection.1.borrow().clone() {
-            ConnectionState::Disconnected => panic!("must be connected to call this method"),
-            ConnectionState::Connected { url, .. } => TestServer::get(&url).unwrap(),
+            ConnectionState.Disconnected => panic!("must be connected to call this method"),
+            ConnectionState.Connected { url, .. } => TestServer.get(&url).unwrap(),
         }
     }
 
     fn token(&self) -> String {
         match self.0.lock().connection.1.borrow().clone() {
-            ConnectionState::Disconnected => panic!("must be connected to call this method"),
-            ConnectionState::Connected { token, .. } => token,
+            ConnectionState.Disconnected => panic!("must be connected to call this method"),
+            ConnectionState.Connected { token, .. } => token,
         }
     }
 
     fn is_connected(&self) -> bool {
         match *self.0.lock().connection.1.borrow() {
-            ConnectionState::Disconnected => false,
-            ConnectionState::Connected { .. } => true,
+            ConnectionState.Disconnected => false,
+            ConnectionState.Connected { .. } => true,
         }
     }
 }
 
 impl Drop for Room {
     fn drop(&mut self) {
-        if let ConnectionState::Connected { token, .. } = mem::replace(
+        if let ConnectionState.Connected { token, .. } = mem.replace(
             &mut *self.0.lock().connection.0.borrow_mut(),
-            ConnectionState::Disconnected,
+            ConnectionState.Disconnected,
         ) {
-            if let Ok(server) = TestServer::get(&token) {
+            if let Ok(server) = TestServer.get(&token) {
                 let executor = server.executor.clone();
                 executor
                     .spawn(async move { server.leave_room(token).await.unwrap() })
@@ -750,7 +750,7 @@ impl RemoteTrackPublication {
 
 #[derive(Clone)]
 pub struct LocalVideoTrack {
-    frames_rx: async_broadcast::Receiver<Frame>,
+    frames_rx: async_broadcast.Receiver<Frame>,
 }
 
 impl LocalVideoTrack {
@@ -784,7 +784,7 @@ impl RemoteVideoTrack {
         &self.server_track.publisher_id
     }
 
-    pub fn frames(&self) -> async_broadcast::Receiver<Frame> {
+    pub fn frames(&self) -> async_broadcast.Receiver<Frame> {
         self.server_track.frames_rx.clone()
     }
 }
@@ -837,15 +837,15 @@ impl RemoteAudioTrack {
 #[derive(Clone)]
 pub struct MacOSDisplay {
     frames: (
-        async_broadcast::Sender<Frame>,
-        async_broadcast::Receiver<Frame>,
+        async_broadcast.Sender<Frame>,
+        async_broadcast.Receiver<Frame>,
     ),
 }
 
 impl MacOSDisplay {
     pub fn new() -> Self {
         Self {
-            frames: async_broadcast::broadcast(128),
+            frames: async_broadcast.broadcast(128),
         }
     }
 

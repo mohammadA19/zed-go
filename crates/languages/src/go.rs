@@ -1,30 +1,30 @@
-use anyhow::{anyhow, Context, Result};
-use async_trait::async_trait;
-use futures::StreamExt;
-use gpui::{AppContext, AsyncAppContext, Task};
-use http_client::github::latest_github_release;
-pub use language::*;
-use lazy_static::lazy_static;
-use lsp::LanguageServerBinary;
-use project::project_settings::{BinarySettings, ProjectSettings};
-use regex::Regex;
-use serde_json::json;
-use settings::Settings;
-use smol::{fs, process};
-use std::{
-    any::Any,
-    borrow::Cow,
-    ffi::{OsStr, OsString},
-    ops::Range,
-    path::PathBuf,
+use anyhow.{anyhow, Context, Result};
+use async_trait.async_trait;
+use futures.StreamExt;
+use gpui.{AppContext, AsyncAppContext, Task};
+use http_client.github.latest_github_release;
+pub use language.*;
+use lazy_static.lazy_static;
+use lsp.LanguageServerBinary;
+use project.project_settings.{BinarySettings, ProjectSettings};
+use regex.Regex;
+use serde_json.json;
+use settings.Settings;
+use smol.{fs, process};
+use std.{
+    any.Any,
+    borrow.Cow,
+    ffi.{OsStr, OsString},
+    ops.Range,
+    path.PathBuf,
     str,
-    sync::{
-        atomic::{AtomicBool, Ordering::SeqCst},
+    sync.{
+        atomic.{AtomicBool, Ordering.SeqCst},
         Arc,
     },
 };
-use task::{TaskTemplate, TaskTemplates, TaskVariables, VariableName};
-use util::{fs::remove_matching, maybe, ResultExt};
+use task.{TaskTemplate, TaskTemplates, TaskVariables, VariableName};
+use util.{fs.remove_matching, maybe, ResultExt};
 
 fn server_binary_arguments() -> Vec<OsString> {
     vec!["-mode=stdio".into()]
@@ -38,16 +38,16 @@ impl GoLspAdapter {
 }
 
 lazy_static! {
-    static ref GOPLS_VERSION_REGEX: Regex = Regex::new(r"\d+\.\d+\.\d+").unwrap();
+    static ref GOPLS_VERSION_REGEX: Regex = Regex.new(r"\d+\.\d+\.\d+").unwrap();
     static ref GO_EXTRACT_SUBTEST_NAME_REGEX: Regex =
-        Regex::new(r#".*t\.Run\("([^"]*)".*"#).unwrap();
-    static ref GO_ESCAPE_SUBTEST_NAME_REGEX: Regex = Regex::new(r#"[.*+?^${}()|\[\]\\]"#).unwrap();
+        Regex.new(r#".*t\.Run\("([^"]*)".*"#).unwrap();
+    static ref GO_ESCAPE_SUBTEST_NAME_REGEX: Regex = Regex.new(r#"[.*+?^${}()|\[\]\\]"#).unwrap();
 }
 
 #[async_trait(?Send)]
-impl super::LspAdapter for GoLspAdapter {
+impl super.LspAdapter for GoLspAdapter {
     fn name(&self) -> LanguageServerName {
-        LanguageServerName(Self::SERVER_NAME.into())
+        LanguageServerName(Self.SERVER_NAME.into())
     }
 
     async fn fetch_latest_server_version(
@@ -56,14 +56,14 @@ impl super::LspAdapter for GoLspAdapter {
     ) -> Result<Box<dyn 'static + Send + Any>> {
         let release =
             latest_github_release("golang/tools", false, false, delegate.http_client()).await?;
-        let version: Option<String> = release.tag_name.strip_prefix("gopls/v").map(str::to_string);
+        let version: Option<String> = release.tag_name.strip_prefix("gopls/v").map(str.to_string);
         if version.is_none() {
-            log::warn!(
+            log.warn!(
                 "couldn't infer gopls version from GitHub release tag name '{}'",
                 release.tag_name
             );
         }
-        Ok(Box::new(version) as Box<_>)
+        Ok(Box.new(version) as Box<_>)
     }
 
     async fn check_if_user_installed(
@@ -72,9 +72,9 @@ impl super::LspAdapter for GoLspAdapter {
         cx: &AsyncAppContext,
     ) -> Option<LanguageServerBinary> {
         let configured_binary = cx.update(|cx| {
-            ProjectSettings::get_global(cx)
+            ProjectSettings.get_global(cx)
                 .lsp
-                .get(Self::SERVER_NAME)
+                .get(Self.SERVER_NAME)
                 .and_then(|s| s.binary.clone())
         });
 
@@ -98,7 +98,7 @@ impl super::LspAdapter for GoLspAdapter {
             })) => None,
             _ => {
                 let env = delegate.shell_env().await;
-                let path = delegate.which(Self::SERVER_NAME.as_ref()).await?;
+                let path = delegate.which(Self.SERVER_NAME.as_ref()).await?;
                 Some(LanguageServerBinary {
                     path,
                     arguments: server_binary_arguments(),
@@ -113,14 +113,14 @@ impl super::LspAdapter for GoLspAdapter {
         delegate: &Arc<dyn LspAdapterDelegate>,
         cx: &mut AsyncAppContext,
     ) -> Option<Task<Result<()>>> {
-        static DID_SHOW_NOTIFICATION: AtomicBool = AtomicBool::new(false);
+        static DID_SHOW_NOTIFICATION: AtomicBool = AtomicBool.new(false);
 
         const NOTIFICATION_MESSAGE: &str =
             "Could not install the Go language server `gopls`, because `go` was not found.";
 
         let delegate = delegate.clone();
         Some(cx.spawn(|cx| async move {
-            let install_output = process::Command::new("go").args(["version"]).output().await;
+            let install_output = process.Command.new("go").args(["version"]).output().await;
             if install_output.is_err() {
                 if DID_SHOW_NOTIFICATION
                     .compare_exchange(false, true, SeqCst, SeqCst)
@@ -142,15 +142,15 @@ impl super::LspAdapter for GoLspAdapter {
         container_dir: PathBuf,
         delegate: &dyn LspAdapterDelegate,
     ) -> Result<LanguageServerBinary> {
-        let version = version.downcast::<Option<String>>().unwrap();
+        let version = version.downcast.<Option<String>>().unwrap();
         let this = *self;
 
         if let Some(version) = *version {
             let binary_path = container_dir.join(&format!("gopls_{version}"));
-            if let Ok(metadata) = fs::metadata(&binary_path).await {
+            if let Ok(metadata) = fs.metadata(&binary_path).await {
                 if metadata.is_file() {
                     remove_matching(&container_dir, |entry| {
-                        entry != binary_path && entry.file_name() != Some(OsStr::new("gobin"))
+                        entry != binary_path && entry.file_name() != Some(OsStr.new("gobin"))
                     })
                     .await;
 
@@ -169,8 +169,8 @@ impl super::LspAdapter for GoLspAdapter {
         }
 
         let gobin_dir = container_dir.join("gobin");
-        fs::create_dir_all(&gobin_dir).await?;
-        let install_output = process::Command::new("go")
+        fs.create_dir_all(&gobin_dir).await?;
+        let install_output = process.Command.new("go")
             .env("GO111MODULE", "on")
             .env("GOBIN", &gobin_dir)
             .args(["install", "golang.org/x/tools/gopls@latest"])
@@ -178,29 +178,29 @@ impl super::LspAdapter for GoLspAdapter {
             .await?;
 
         if !install_output.status.success() {
-            log::error!(
+            log.error!(
                 "failed to install gopls via `go install`. stdout: {:?}, stderr: {:?}",
-                String::from_utf8_lossy(&install_output.stdout),
-                String::from_utf8_lossy(&install_output.stderr)
+                String.from_utf8_lossy(&install_output.stdout),
+                String.from_utf8_lossy(&install_output.stderr)
             );
 
             return Err(anyhow!("failed to install gopls with `go install`. Is `go` installed and in the PATH? Check logs for more information."));
         }
 
         let installed_binary_path = gobin_dir.join("gopls");
-        let version_output = process::Command::new(&installed_binary_path)
+        let version_output = process.Command.new(&installed_binary_path)
             .arg("version")
             .output()
             .await
             .context("failed to run installed gopls binary")?;
-        let version_stdout = str::from_utf8(&version_output.stdout)
+        let version_stdout = str.from_utf8(&version_output.stdout)
             .context("gopls version produced invalid utf8 output")?;
         let version = GOPLS_VERSION_REGEX
             .find(version_stdout)
             .with_context(|| format!("failed to parse golps version output '{version_stdout}'"))?
             .as_str();
         let binary_path = container_dir.join(&format!("gopls_{version}"));
-        fs::rename(&installed_binary_path, &binary_path).await?;
+        fs.rename(&installed_binary_path, &binary_path).await?;
 
         Ok(LanguageServerBinary {
             path: binary_path.to_path_buf(),
@@ -232,7 +232,7 @@ impl super::LspAdapter for GoLspAdapter {
     async fn initialization_options(
         self: Arc<Self>,
         _: &Arc<dyn LspAdapterDelegate>,
-    ) -> Result<Option<serde_json::Value>> {
+    ) -> Result<Option<serde_json.Value>> {
         Ok(Some(json!({
             "usePlaceholders": true,
             "hints": {
@@ -249,7 +249,7 @@ impl super::LspAdapter for GoLspAdapter {
 
     async fn label_for_completion(
         &self,
-        completion: &lsp::CompletionItem,
+        completion: &lsp.CompletionItem,
         language: &Arc<Language>,
     ) -> Option<CodeLabel> {
         let label = &completion.label;
@@ -260,9 +260,9 @@ impl super::LspAdapter for GoLspAdapter {
         let name_offset = label.rfind('.').unwrap_or(0);
 
         match completion.kind.zip(completion.detail.as_ref()) {
-            Some((lsp::CompletionItemKind::MODULE, detail)) => {
+            Some((lsp.CompletionItemKind.MODULE, detail)) => {
                 let text = format!("{label} {detail}");
-                let source = Rope::from(format!("import {text}").as_str());
+                let source = Rope.from(format!("import {text}").as_str());
                 let runs = language.highlight_text(&source, 7..7 + text.len());
                 return Some(CodeLabel {
                     text,
@@ -271,12 +271,12 @@ impl super::LspAdapter for GoLspAdapter {
                 });
             }
             Some((
-                lsp::CompletionItemKind::CONSTANT | lsp::CompletionItemKind::VARIABLE,
+                lsp.CompletionItemKind.CONSTANT | lsp.CompletionItemKind.VARIABLE,
                 detail,
             )) => {
                 let text = format!("{label} {detail}");
                 let source =
-                    Rope::from(format!("var {} {}", &text[name_offset..], detail).as_str());
+                    Rope.from(format!("var {} {}", &text[name_offset..], detail).as_str());
                 let runs = adjust_runs(
                     name_offset,
                     language.highlight_text(&source, 4..4 + text.len()),
@@ -287,9 +287,9 @@ impl super::LspAdapter for GoLspAdapter {
                     filter_range: 0..label.len(),
                 });
             }
-            Some((lsp::CompletionItemKind::STRUCT, _)) => {
+            Some((lsp.CompletionItemKind.STRUCT, _)) => {
                 let text = format!("{label} struct {{}}");
-                let source = Rope::from(format!("type {}", &text[name_offset..]).as_str());
+                let source = Rope.from(format!("type {}", &text[name_offset..]).as_str());
                 let runs = adjust_runs(
                     name_offset,
                     language.highlight_text(&source, 5..5 + text.len()),
@@ -300,9 +300,9 @@ impl super::LspAdapter for GoLspAdapter {
                     filter_range: 0..label.len(),
                 });
             }
-            Some((lsp::CompletionItemKind::INTERFACE, _)) => {
+            Some((lsp.CompletionItemKind.INTERFACE, _)) => {
                 let text = format!("{label} interface {{}}");
-                let source = Rope::from(format!("type {}", &text[name_offset..]).as_str());
+                let source = Rope.from(format!("type {}", &text[name_offset..]).as_str());
                 let runs = adjust_runs(
                     name_offset,
                     language.highlight_text(&source, 5..5 + text.len()),
@@ -313,10 +313,10 @@ impl super::LspAdapter for GoLspAdapter {
                     filter_range: 0..label.len(),
                 });
             }
-            Some((lsp::CompletionItemKind::FIELD, detail)) => {
+            Some((lsp.CompletionItemKind.FIELD, detail)) => {
                 let text = format!("{label} {detail}");
                 let source =
-                    Rope::from(format!("type T struct {{ {} }}", &text[name_offset..]).as_str());
+                    Rope.from(format!("type T struct {{ {} }}", &text[name_offset..]).as_str());
                 let runs = adjust_runs(
                     name_offset,
                     language.highlight_text(&source, 16..16 + text.len()),
@@ -327,10 +327,10 @@ impl super::LspAdapter for GoLspAdapter {
                     filter_range: 0..label.len(),
                 });
             }
-            Some((lsp::CompletionItemKind::FUNCTION | lsp::CompletionItemKind::METHOD, detail)) => {
+            Some((lsp.CompletionItemKind.FUNCTION | lsp.CompletionItemKind.METHOD, detail)) => {
                 if let Some(signature) = detail.strip_prefix("func") {
                     let text = format!("{label}{signature}");
-                    let source = Rope::from(format!("func {} {{}}", &text[name_offset..]).as_str());
+                    let source = Rope.from(format!("func {} {{}}", &text[name_offset..]).as_str());
                     let runs = adjust_runs(
                         name_offset,
                         language.highlight_text(&source, 5..5 + text.len()),
@@ -350,47 +350,47 @@ impl super::LspAdapter for GoLspAdapter {
     async fn label_for_symbol(
         &self,
         name: &str,
-        kind: lsp::SymbolKind,
+        kind: lsp.SymbolKind,
         language: &Arc<Language>,
     ) -> Option<CodeLabel> {
         let (text, filter_range, display_range) = match kind {
-            lsp::SymbolKind::METHOD | lsp::SymbolKind::FUNCTION => {
+            lsp.SymbolKind.METHOD | lsp.SymbolKind.FUNCTION => {
                 let text = format!("func {} () {{}}", name);
                 let filter_range = 5..5 + name.len();
                 let display_range = 0..filter_range.end;
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::STRUCT => {
+            lsp.SymbolKind.STRUCT => {
                 let text = format!("type {} struct {{}}", name);
                 let filter_range = 5..5 + name.len();
                 let display_range = 0..text.len();
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::INTERFACE => {
+            lsp.SymbolKind.INTERFACE => {
                 let text = format!("type {} interface {{}}", name);
                 let filter_range = 5..5 + name.len();
                 let display_range = 0..text.len();
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::CLASS => {
+            lsp.SymbolKind.CLASS => {
                 let text = format!("type {} T", name);
                 let filter_range = 5..5 + name.len();
                 let display_range = 0..filter_range.end;
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::CONSTANT => {
+            lsp.SymbolKind.CONSTANT => {
                 let text = format!("const {} = nil", name);
                 let filter_range = 6..6 + name.len();
                 let display_range = 0..filter_range.end;
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::VARIABLE => {
+            lsp.SymbolKind.VARIABLE => {
                 let text = format!("var {} = nil", name);
                 let filter_range = 4..4 + name.len();
                 let display_range = 0..filter_range.end;
                 (text, filter_range, display_range)
             }
-            lsp::SymbolKind::MODULE => {
+            lsp.SymbolKind.MODULE => {
                 let text = format!("package {}", name);
                 let filter_range = 8..8 + name.len();
                 let display_range = 0..filter_range.end;
@@ -410,7 +410,7 @@ impl super::LspAdapter for GoLspAdapter {
 async fn get_cached_server_binary(container_dir: PathBuf) -> Option<LanguageServerBinary> {
     maybe!(async {
         let mut last_binary_path = None;
-        let mut entries = fs::read_dir(&container_dir).await?;
+        let mut entries = fs.read_dir(&container_dir).await?;
         while let Some(entry) = entries.next().await {
             let entry = entry?;
             if entry.file_type().await?.is_file()
@@ -450,16 +450,16 @@ fn adjust_runs(
 
 pub(crate) struct GoContextProvider;
 
-const GO_PACKAGE_TASK_VARIABLE: VariableName = VariableName::Custom(Cow::Borrowed("GO_PACKAGE"));
+const GO_PACKAGE_TASK_VARIABLE: VariableName = VariableName.Custom(Cow.Borrowed("GO_PACKAGE"));
 const GO_SUBTEST_NAME_TASK_VARIABLE: VariableName =
-    VariableName::Custom(Cow::Borrowed("GO_SUBTEST_NAME"));
+    VariableName.Custom(Cow.Borrowed("GO_SUBTEST_NAME"));
 
 impl ContextProvider for GoContextProvider {
     fn build_context(
         &self,
         variables: &TaskVariables,
         location: &Location,
-        cx: &mut gpui::AppContext,
+        cx: &mut gpui.AppContext,
     ) -> Result<TaskVariables> {
         let local_abs_path = location
             .buffer
@@ -475,7 +475,7 @@ impl ContextProvider for GoContextProvider {
                 // absolute path, because it's more readable in the modal, but
                 // the absolute path also works.
                 let package_name = variables
-                    .get(&VariableName::WorktreeRoot)
+                    .get(&VariableName.WorktreeRoot)
                     .and_then(|worktree_abs_path| buffer_dir.strip_prefix(worktree_abs_path).ok())
                     .map(|relative_pkg_dir| {
                         if relative_pkg_dir.as_os_str().is_empty() {
@@ -489,12 +489,12 @@ impl ContextProvider for GoContextProvider {
                 (GO_PACKAGE_TASK_VARIABLE.clone(), package_name.to_string())
             });
 
-        let _subtest_name = variables.get(&VariableName::Custom(Cow::Borrowed("_subtest_name")));
+        let _subtest_name = variables.get(&VariableName.Custom(Cow.Borrowed("_subtest_name")));
 
         let go_subtest_variable = extract_subtest_name(_subtest_name.unwrap_or(""))
             .map(|subtest_name| (GO_SUBTEST_NAME_TASK_VARIABLE.clone(), subtest_name));
 
-        Ok(TaskVariables::from_iter(
+        Ok(TaskVariables.from_iter(
             [go_package_variable, go_subtest_variable]
                 .into_iter()
                 .flatten(),
@@ -503,7 +503,7 @@ impl ContextProvider for GoContextProvider {
 
     fn associated_tasks(
         &self,
-        _: Option<Arc<dyn language::File>>,
+        _: Option<Arc<dyn language.File>>,
         _: &AppContext,
     ) -> Option<TaskTemplates> {
         Some(TaskTemplates(vec![
@@ -511,35 +511,35 @@ impl ContextProvider for GoContextProvider {
                 label: format!(
                     "go test {} -run {}",
                     GO_PACKAGE_TASK_VARIABLE.template_value(),
-                    VariableName::Symbol.template_value(),
+                    VariableName.Symbol.template_value(),
                 ),
                 command: "go".into(),
                 args: vec![
                     "test".into(),
                     GO_PACKAGE_TASK_VARIABLE.template_value(),
                     "-run".into(),
-                    format!("^{}\\$", VariableName::Symbol.template_value(),),
+                    format!("^{}\\$", VariableName.Symbol.template_value(),),
                 ],
                 tags: vec!["go-test".to_owned()],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
             TaskTemplate {
                 label: format!("go test {}", GO_PACKAGE_TASK_VARIABLE.template_value()),
                 command: "go".into(),
                 args: vec!["test".into(), GO_PACKAGE_TASK_VARIABLE.template_value()],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
             TaskTemplate {
                 label: "go test ./...".into(),
                 command: "go".into(),
                 args: vec!["test".into(), "./...".into()],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
             TaskTemplate {
                 label: format!(
                     "go test {} -v -run {}/{}",
                     GO_PACKAGE_TASK_VARIABLE.template_value(),
-                    VariableName::Symbol.template_value(),
+                    VariableName.Symbol.template_value(),
                     GO_SUBTEST_NAME_TASK_VARIABLE.template_value(),
                 ),
                 command: "go".into(),
@@ -550,18 +550,18 @@ impl ContextProvider for GoContextProvider {
                     "-run".into(),
                     format!(
                         "^{}\\$/^{}\\$",
-                        VariableName::Symbol.template_value(),
+                        VariableName.Symbol.template_value(),
                         GO_SUBTEST_NAME_TASK_VARIABLE.template_value(),
                     ),
                 ],
                 tags: vec!["go-subtest".to_owned()],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
             TaskTemplate {
                 label: format!(
                     "go test {} -bench {}",
                     GO_PACKAGE_TASK_VARIABLE.template_value(),
-                    VariableName::Symbol.template_value()
+                    VariableName.Symbol.template_value()
                 ),
                 command: "go".into(),
                 args: vec![
@@ -570,17 +570,17 @@ impl ContextProvider for GoContextProvider {
                     "-benchmem".into(),
                     "-run=^$".into(),
                     "-bench".into(),
-                    format!("^{}\\$", VariableName::Symbol.template_value()),
+                    format!("^{}\\$", VariableName.Symbol.template_value()),
                 ],
                 tags: vec!["go-benchmark".to_owned()],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
             TaskTemplate {
                 label: format!("go run {}", GO_PACKAGE_TASK_VARIABLE.template_value(),),
                 command: "go".into(),
                 args: vec!["run".into(), GO_PACKAGE_TASK_VARIABLE.template_value()],
                 tags: vec!["go-main".to_owned()],
-                ..TaskTemplate::default()
+                ..TaskTemplate.default()
             },
         ]))
     }
@@ -591,7 +591,7 @@ fn extract_subtest_name(input: &str) -> Option<String> {
 
     Some(
         GO_ESCAPE_SUBTEST_NAME_REGEX
-            .replace_all(&replaced_spaces, |caps: &regex::Captures| {
+            .replace_all(&replaced_spaces, |caps: &regex.Captures| {
                 format!("\\{}", &caps[0])
             })
             .to_string(),
@@ -600,22 +600,22 @@ fn extract_subtest_name(input: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::language;
-    use gpui::Hsla;
-    use theme::SyntaxTheme;
+    use super.*;
+    use crate.language;
+    use gpui.Hsla;
+    use theme.SyntaxTheme;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_go_label_for_completion() {
-        let adapter = Arc::new(GoLspAdapter);
-        let language = language("go", tree_sitter_go::language());
+        let adapter = Arc.new(GoLspAdapter);
+        let language = language("go", tree_sitter_go.language());
 
-        let theme = SyntaxTheme::new_test([
-            ("type", Hsla::default()),
-            ("keyword", Hsla::default()),
-            ("function", Hsla::default()),
-            ("number", Hsla::default()),
-            ("property", Hsla::default()),
+        let theme = SyntaxTheme.new_test([
+            ("type", Hsla.default()),
+            ("keyword", Hsla.default()),
+            ("function", Hsla.default()),
+            ("number", Hsla.default()),
+            ("property", Hsla.default()),
         ]);
         language.set_theme(&theme);
 
@@ -628,11 +628,11 @@ mod tests {
         assert_eq!(
             adapter
                 .label_for_completion(
-                    &lsp::CompletionItem {
-                        kind: Some(lsp::CompletionItemKind::FUNCTION),
+                    &lsp.CompletionItem {
+                        kind: Some(lsp.CompletionItemKind.FUNCTION),
                         label: "Hello".to_string(),
                         detail: Some("func(a B) c.D".to_string()),
-                        ..Default::default()
+                        ..Default.default()
                     },
                     &language
                 )
@@ -652,11 +652,11 @@ mod tests {
         assert_eq!(
             adapter
                 .label_for_completion(
-                    &lsp::CompletionItem {
-                        kind: Some(lsp::CompletionItemKind::METHOD),
+                    &lsp.CompletionItem {
+                        kind: Some(lsp.CompletionItemKind.METHOD),
                         label: "one.two.Three".to_string(),
                         detail: Some("func() [3]interface{}".to_string()),
-                        ..Default::default()
+                        ..Default.default()
                     },
                     &language
                 )
@@ -676,11 +676,11 @@ mod tests {
         assert_eq!(
             adapter
                 .label_for_completion(
-                    &lsp::CompletionItem {
-                        kind: Some(lsp::CompletionItemKind::FIELD),
+                    &lsp.CompletionItem {
+                        kind: Some(lsp.CompletionItemKind.FIELD),
                         label: "two.Three".to_string(),
                         detail: Some("a.Bcd".to_string()),
-                        ..Default::default()
+                        ..Default.default()
                     },
                     &language
                 )

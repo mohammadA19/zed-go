@@ -1,34 +1,34 @@
-use std::sync::Arc;
-use std::time::Duration;
+use std.sync.Arc;
+use std.time.Duration;
 
-use crate::stdio::TerminalOutput;
-use anyhow::Result;
-use base64::prelude::*;
-use gpui::{
+use crate.stdio.TerminalOutput;
+use anyhow.Result;
+use base64.prelude.*;
+use gpui.{
     img, percentage, Animation, AnimationExt, AnyElement, FontWeight, ImageData, Render, Task,
     TextRun, Transformation, View,
 };
-use runtimelib::datatable::TableSchema;
-use runtimelib::media::datatable::TabularDataResource;
-use runtimelib::{ExecutionState, JupyterMessageContent, MimeBundle, MimeType};
-use serde_json::Value;
-use settings::Settings;
-use theme::ThemeSettings;
-use ui::{div, prelude::*, v_flex, IntoElement, Styled, ViewContext};
+use runtimelib.datatable.TableSchema;
+use runtimelib.media.datatable.TabularDataResource;
+use runtimelib.{ExecutionState, JupyterMessageContent, MimeBundle, MimeType};
+use serde_json.Value;
+use settings.Settings;
+use theme.ThemeSettings;
+use ui.{div, prelude.*, v_flex, IntoElement, Styled, ViewContext};
 
-use markdown_preview::{
-    markdown_elements::ParsedMarkdown, markdown_parser::parse_markdown,
-    markdown_renderer::render_markdown_block,
+use markdown_preview.{
+    markdown_elements.ParsedMarkdown, markdown_parser.parse_markdown,
+    markdown_renderer.render_markdown_block,
 };
 
 /// When deciding what to render from a collection of mediatypes, we need to rank them in order of importance
 fn rank_mime_type(mimetype: &MimeType) -> usize {
     match mimetype {
-        MimeType::DataTable(_) => 6,
-        MimeType::Png(_) => 4,
-        MimeType::Jpeg(_) => 3,
-        MimeType::Markdown(_) => 2,
-        MimeType::Plain(_) => 1,
+        MimeType.DataTable(_) => 6,
+        MimeType.Png(_) => 4,
+        MimeType.Jpeg(_) => 3,
+        MimeType.Markdown(_) => 2,
+        MimeType.Plain(_) => 1,
         // All other media types are not supported in Zed at this time
         _ => 0,
     }
@@ -45,8 +45,8 @@ impl ImageView {
     fn render(&self, cx: &ViewContext<ExecutionView>) -> AnyElement {
         let line_height = cx.line_height();
 
-        let (height, width) = if self.height as f32 / line_height.0 == u8::MAX as f32 {
-            let height = u8::MAX as f32 * line_height.0;
+        let (height, width) = if self.height as f32 / line_height.0 == u8.MAX as f32 {
+            let height = u8.MAX as f32 * line_height.0;
             let width = self.width as f32 * height / self.height as f32;
             (height, width)
         } else {
@@ -65,8 +65,8 @@ impl ImageView {
     fn from(base64_encoded_data: &str) -> Result<Self> {
         let bytes = BASE64_STANDARD.decode(base64_encoded_data)?;
 
-        let format = image::guess_format(&bytes)?;
-        let mut data = image::load_from_memory_with_format(&bytes, format)?.into_rgba8();
+        let format = image.guess_format(&bytes)?;
+        let mut data = image.load_from_memory_with_format(&bytes, format)?.into_rgba8();
 
         // Convert from RGBA to BGRA.
         for pixel in data.chunks_exact_mut(4) {
@@ -76,12 +76,12 @@ impl ImageView {
         let height = data.height();
         let width = data.width();
 
-        let gpui_image_data = ImageData::new(vec![image::Frame::new(data)]);
+        let gpui_image_data = ImageData.new(vec![image.Frame.new(data)]);
 
         return Ok(ImageView {
             height,
             width,
-            image: Arc::new(gpui_image_data),
+            image: Arc.new(gpui_image_data),
         });
     }
 }
@@ -95,12 +95,12 @@ pub struct TableView {
 
 fn cell_content(row: &Value, field: &str) -> String {
     match row.get(&field) {
-        Some(Value::String(s)) => s.clone(),
-        Some(Value::Number(n)) => n.to_string(),
-        Some(Value::Bool(b)) => b.to_string(),
-        Some(Value::Array(arr)) => format!("{:?}", arr),
-        Some(Value::Object(obj)) => format!("{:?}", obj),
-        Some(Value::Null) | None => String::new(),
+        Some(Value.String(s)) => s.clone(),
+        Some(Value.Number(n)) => n.to_string(),
+        Some(Value.Bool(b)) => b.to_string(),
+        Some(Value.Array(arr)) => format!("{:?}", arr),
+        Some(Value.Object(obj)) => format!("{:?}", obj),
+        Some(Value.Null) | None => String.new(),
     }
 }
 
@@ -109,12 +109,12 @@ const TABLE_Y_PADDING_MULTIPLE: f32 = 0.5;
 
 impl TableView {
     pub fn new(table: TabularDataResource, cx: &mut WindowContext) -> Self {
-        let mut widths = Vec::with_capacity(table.schema.fields.len());
+        let mut widths = Vec.with_capacity(table.schema.fields.len());
 
         let text_system = cx.text_system();
         let text_style = cx.text_style();
-        let text_font = ThemeSettings::get_global(cx).buffer_font.clone();
-        let font_size = ThemeSettings::get_global(cx).buffer_font_size;
+        let text_font = ThemeSettings.get_global(cx).buffer_font.clone();
+        let font_size = ThemeSettings.get_global(cx).buffer_font_size;
         let mut runs = [TextRun {
             len: 0,
             font: text_font,
@@ -160,11 +160,11 @@ impl TableView {
             None => return div().into_any_element(),
         };
 
-        let mut headings = serde_json::Map::new();
+        let mut headings = serde_json.Map.new();
         for field in &self.table.schema.fields {
-            headings.insert(field.name.clone(), Value::String(field.name.clone()));
+            headings.insert(field.name.clone(), Value.String(field.name.clone()));
         }
-        let header = self.render_row(&self.table.schema, true, &Value::Object(headings), cx);
+        let header = self.render_row(&self.table.schema, true, &Value.Object(headings), cx);
 
         let body = data
             .iter()
@@ -196,16 +196,16 @@ impl TableView {
             .zip(self.widths.iter())
             .map(|(field, width)| {
                 let container = match field.field_type {
-                    runtimelib::datatable::FieldType::String => div(),
+                    runtimelib.datatable.FieldType.String => div(),
 
-                    runtimelib::datatable::FieldType::Number
-                    | runtimelib::datatable::FieldType::Integer
-                    | runtimelib::datatable::FieldType::Date
-                    | runtimelib::datatable::FieldType::Time
-                    | runtimelib::datatable::FieldType::Datetime
-                    | runtimelib::datatable::FieldType::Year
-                    | runtimelib::datatable::FieldType::Duration
-                    | runtimelib::datatable::FieldType::Yearmonth => v_flex().items_end(),
+                    runtimelib.datatable.FieldType.Number
+                    | runtimelib.datatable.FieldType.Integer
+                    | runtimelib.datatable.FieldType.Date
+                    | runtimelib.datatable.FieldType.Time
+                    | runtimelib.datatable.FieldType.Datetime
+                    | runtimelib.datatable.FieldType.Year
+                    | runtimelib.datatable.FieldType.Duration
+                    | runtimelib.datatable.FieldType.Yearmonth => v_flex().items_end(),
 
                     _ => div(),
                 };
@@ -227,7 +227,7 @@ impl TableView {
                 }
                 cell
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         let mut total_width = px(0.);
         for width in self.widths.iter() {
@@ -264,7 +264,7 @@ impl ErrorView {
                 .border_color(theme.status().error_border)
                 .child(
                     h_flex()
-                        .font_weight(FontWeight::BOLD)
+                        .font_weight(FontWeight.BOLD)
                         .child(format!("{}: {}", self.ename, self.evalue)),
                 )
                 .child(self.traceback.render(cx))
@@ -309,7 +309,7 @@ impl Render for MarkdownView {
         };
 
         let mut markdown_render_context =
-            markdown_preview::markdown_renderer::RenderContext::new(None, cx);
+            markdown_preview.markdown_renderer.RenderContext.new(None, cx);
 
         v_flex()
             .gap_3()
@@ -333,7 +333,7 @@ pub struct Output {
 impl Output {
     pub fn new(data: &MimeBundle, display_id: Option<String>, cx: &mut WindowContext) -> Self {
         Self {
-            content: OutputContent::new(data, cx),
+            content: OutputContent.new(data, cx),
             display_id,
         }
     }
@@ -362,14 +362,14 @@ impl OutputContent {
         let el = match self {
             // Note: in typical frontends we would show the execute_result.execution_count
             // Here we can just handle either
-            Self::Plain(stdio) => Some(stdio.render(cx)),
-            Self::Markdown(markdown) => Some(markdown.clone().into_any_element()),
-            Self::Stream(stdio) => Some(stdio.render(cx)),
-            Self::Image(image) => Some(image.render(cx)),
-            Self::Message(message) => Some(div().child(message.clone()).into_any_element()),
-            Self::Table(table) => Some(table.render(cx)),
-            Self::ErrorOutput(error_view) => error_view.render(cx),
-            Self::ClearOutputWaitMarker => None,
+            Self.Plain(stdio) => Some(stdio.render(cx)),
+            Self.Markdown(markdown) => Some(markdown.clone().into_any_element()),
+            Self.Stream(stdio) => Some(stdio.render(cx)),
+            Self.Image(image) => Some(image.render(cx)),
+            Self.Message(message) => Some(div().child(message.clone()).into_any_element()),
+            Self.Table(table) => Some(table.render(cx)),
+            Self.ErrorOutput(error_view) => error_view.render(cx),
+            Self.ClearOutputWaitMarker => None,
         };
 
         el
@@ -377,20 +377,20 @@ impl OutputContent {
 
     pub fn new(data: &MimeBundle, cx: &mut WindowContext) -> Self {
         match data.richest(rank_mime_type) {
-            Some(MimeType::Plain(text)) => OutputContent::Plain(TerminalOutput::from(text, cx)),
-            Some(MimeType::Markdown(text)) => {
-                let view = cx.new_view(|cx| MarkdownView::from(text.clone(), cx));
-                OutputContent::Markdown(view)
+            Some(MimeType.Plain(text)) => OutputContent.Plain(TerminalOutput.from(text, cx)),
+            Some(MimeType.Markdown(text)) => {
+                let view = cx.new_view(|cx| MarkdownView.from(text.clone(), cx));
+                OutputContent.Markdown(view)
             }
-            Some(MimeType::Png(data)) | Some(MimeType::Jpeg(data)) => match ImageView::from(data) {
-                Ok(view) => OutputContent::Image(view),
-                Err(error) => OutputContent::Message(format!("Failed to load image: {}", error)),
+            Some(MimeType.Png(data)) | Some(MimeType.Jpeg(data)) => match ImageView.from(data) {
+                Ok(view) => OutputContent.Image(view),
+                Err(error) => OutputContent.Message(format!("Failed to load image: {}", error)),
             },
-            Some(MimeType::DataTable(data)) => {
-                OutputContent::Table(TableView::new(data.clone(), cx))
+            Some(MimeType.DataTable(data)) => {
+                OutputContent.Table(TableView.new(data.clone(), cx))
             }
             // Any other media types are not supported
-            _ => OutputContent::Message("Unsupported media type".to_string()),
+            _ => OutputContent.Message("Unsupported media type".to_string()),
         }
     }
 }
@@ -416,7 +416,7 @@ pub struct ExecutionView {
 impl ExecutionView {
     pub fn new(status: ExecutionStatus, _cx: &mut ViewContext<Self>) -> Self {
         Self {
-            outputs: Default::default(),
+            outputs: Default.default(),
             status,
         }
     }
@@ -424,39 +424,39 @@ impl ExecutionView {
     /// Accept a Jupyter message belonging to this execution
     pub fn push_message(&mut self, message: &JupyterMessageContent, cx: &mut ViewContext<Self>) {
         let output: Output = match message {
-            JupyterMessageContent::ExecuteResult(result) => Output::new(
+            JupyterMessageContent.ExecuteResult(result) => Output.new(
                 &result.data,
                 result.transient.as_ref().and_then(|t| t.display_id.clone()),
                 cx,
             ),
-            JupyterMessageContent::DisplayData(result) => {
-                Output::new(&result.data, result.transient.display_id.clone(), cx)
+            JupyterMessageContent.DisplayData(result) => {
+                Output.new(&result.data, result.transient.display_id.clone(), cx)
             }
-            JupyterMessageContent::StreamContent(result) => {
+            JupyterMessageContent.StreamContent(result) => {
                 // Previous stream data will combine together, handling colors, carriage returns, etc
                 if let Some(new_terminal) = self.apply_terminal_text(&result.text, cx) {
-                    Output::from(new_terminal)
+                    Output.from(new_terminal)
                 } else {
                     return;
                 }
             }
-            JupyterMessageContent::ErrorOutput(result) => {
-                let mut terminal = TerminalOutput::new(cx);
+            JupyterMessageContent.ErrorOutput(result) => {
+                let mut terminal = TerminalOutput.new(cx);
                 terminal.append_text(&result.traceback.join("\n"));
 
-                Output::from(OutputContent::ErrorOutput(ErrorView {
+                Output.from(OutputContent.ErrorOutput(ErrorView {
                     ename: result.ename.clone(),
                     evalue: result.evalue.clone(),
                     traceback: terminal,
                 }))
             }
-            JupyterMessageContent::ExecuteReply(reply) => {
+            JupyterMessageContent.ExecuteReply(reply) => {
                 for payload in reply.payload.iter() {
                     match payload {
                         // Pager data comes in via `?` at the end of a statement in Python, used for showing documentation.
                         // Some UI will show this as a popup. For ease of implementation, it's included as an output here.
-                        runtimelib::Payload::Page { data, .. } => {
-                            let output = Output::new(data, None, cx);
+                        runtimelib.Payload.Page { data, .. } => {
+                            let output = Output.new(data, None, cx);
                             self.outputs.push(output);
                         }
 
@@ -467,21 +467,21 @@ impl ExecutionView {
                         // However, this could be implemented by adding text to the buffer.
                         // Trigger in python using `get_ipython().set_next_input("text")`
                         //
-                        // runtimelib::Payload::SetNextInput { text, replace } => {},
+                        // runtimelib.Payload.SetNextInput { text, replace } => {},
 
                         // Not likely to be used in the context of Zed, where someone could just open the buffer themselves
                         // Python users can trigger this with the `%edit` magic command
-                        // runtimelib::Payload::EditMagic { filename, line_number } => {},
+                        // runtimelib.Payload.EditMagic { filename, line_number } => {},
 
                         // Ask the user if they want to exit the kernel. Not required to support.
-                        // runtimelib::Payload::AskExit { keepkernel } => {},
+                        // runtimelib.Payload.AskExit { keepkernel } => {},
                         _ => {}
                     }
                 }
                 cx.notify();
                 return;
             }
-            JupyterMessageContent::ClearOutput(options) => {
+            JupyterMessageContent.ClearOutput(options) => {
                 if !options.wait {
                     self.outputs.clear();
                     cx.notify();
@@ -489,14 +489,14 @@ impl ExecutionView {
                 }
 
                 // Create a marker to clear the output after we get in a new output
-                Output::from(OutputContent::ClearOutputWaitMarker)
+                Output.from(OutputContent.ClearOutputWaitMarker)
             }
-            JupyterMessageContent::Status(status) => {
+            JupyterMessageContent.Status(status) => {
                 match status.execution_state {
-                    ExecutionState::Busy => {
-                        self.status = ExecutionStatus::Executing;
+                    ExecutionState.Busy => {
+                        self.status = ExecutionStatus.Executing;
                     }
-                    ExecutionState::Idle => self.status = ExecutionStatus::Finished,
+                    ExecutionState.Idle => self.status = ExecutionStatus.Finished,
                 }
                 cx.notify();
                 return;
@@ -508,7 +508,7 @@ impl ExecutionView {
 
         // Check for a clear output marker as the previous output, so we can clear it out
         if let Some(output) = self.outputs.last() {
-            if let OutputContent::ClearOutputWaitMarker = output.content {
+            if let OutputContent.ClearOutputWaitMarker = output.content {
                 self.outputs.clear();
             }
         }
@@ -529,7 +529,7 @@ impl ExecutionView {
         self.outputs.iter_mut().for_each(|output| {
             if let Some(other_display_id) = output.display_id.as_ref() {
                 if other_display_id == display_id {
-                    output.content = OutputContent::new(data, cx);
+                    output.content = OutputContent.new(data, cx);
                     any = true;
                 }
             }
@@ -547,14 +547,14 @@ impl ExecutionView {
     ) -> Option<OutputContent> {
         if let Some(last_output) = self.outputs.last_mut() {
             match &mut last_output.content {
-                OutputContent::Stream(last_stream) => {
+                OutputContent.Stream(last_stream) => {
                     last_stream.append_text(text);
                     // Don't need to add a new output, we already have a terminal output
                     cx.notify();
                     return None;
                 }
                 // Edge case note: a clear output marker
-                OutputContent::ClearOutputWaitMarker => {
+                OutputContent.ClearOutputWaitMarker => {
                     // Edge case note: a clear output marker is handled by the caller
                     // since we will return a new output at the end here as a new terminal output
                 }
@@ -564,49 +564,49 @@ impl ExecutionView {
             }
         }
 
-        let mut new_terminal = TerminalOutput::new(cx);
+        let mut new_terminal = TerminalOutput.new(cx);
         new_terminal.append_text(text);
-        Some(OutputContent::Stream(new_terminal))
+        Some(OutputContent.Stream(new_terminal))
     }
 }
 
 impl Render for ExecutionView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let status = match &self.status {
-            ExecutionStatus::ConnectingToKernel => Label::new("Connecting to kernel...")
-                .color(Color::Muted)
+            ExecutionStatus.ConnectingToKernel => Label.new("Connecting to kernel...")
+                .color(Color.Muted)
                 .into_any_element(),
-            ExecutionStatus::Executing => h_flex()
+            ExecutionStatus.Executing => h_flex()
                 .gap_2()
                 .child(
-                    Icon::new(IconName::ArrowCircle)
-                        .size(IconSize::Small)
-                        .color(Color::Muted)
+                    Icon.new(IconName.ArrowCircle)
+                        .size(IconSize.Small)
+                        .color(Color.Muted)
                         .with_animation(
                             "arrow-circle",
-                            Animation::new(Duration::from_secs(3)).repeat(),
-                            |icon, delta| icon.transform(Transformation::rotate(percentage(delta))),
+                            Animation.new(Duration.from_secs(3)).repeat(),
+                            |icon, delta| icon.transform(Transformation.rotate(percentage(delta))),
                         ),
                 )
-                .child(Label::new("Executing...").color(Color::Muted))
+                .child(Label.new("Executing...").color(Color.Muted))
                 .into_any_element(),
-            ExecutionStatus::Finished => Icon::new(IconName::Check)
-                .size(IconSize::Small)
+            ExecutionStatus.Finished => Icon.new(IconName.Check)
+                .size(IconSize.Small)
                 .into_any_element(),
-            ExecutionStatus::Unknown => Label::new("Unknown status")
-                .color(Color::Muted)
+            ExecutionStatus.Unknown => Label.new("Unknown status")
+                .color(Color.Muted)
                 .into_any_element(),
-            ExecutionStatus::ShuttingDown => Label::new("Kernel shutting down...")
-                .color(Color::Muted)
+            ExecutionStatus.ShuttingDown => Label.new("Kernel shutting down...")
+                .color(Color.Muted)
                 .into_any_element(),
-            ExecutionStatus::Shutdown => Label::new("Kernel shutdown")
-                .color(Color::Muted)
+            ExecutionStatus.Shutdown => Label.new("Kernel shutdown")
+                .color(Color.Muted)
                 .into_any_element(),
-            ExecutionStatus::Queued => Label::new("Queued...")
-                .color(Color::Muted)
+            ExecutionStatus.Queued => Label.new("Queued...")
+                .color(Color.Muted)
                 .into_any_element(),
-            ExecutionStatus::KernelErrored(error) => Label::new(format!("Kernel error: {}", error))
-                .color(Color::Error)
+            ExecutionStatus.KernelErrored(error) => Label.new(format!("Kernel error: {}", error))
+                .color(Color.Error)
                 .into_any_element(),
         };
 
@@ -626,8 +626,8 @@ impl Render for ExecutionView {
                     .filter_map(|output| output.content.render(cx)),
             )
             .children(match self.status {
-                ExecutionStatus::Executing => vec![status],
-                ExecutionStatus::Queued => vec![status],
+                ExecutionStatus.Executing => vec![status],
+                ExecutionStatus.Queued => vec![status],
                 _ => vec![],
             })
             .into_any_element()

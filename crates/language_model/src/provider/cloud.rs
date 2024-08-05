@@ -1,24 +1,24 @@
-use super::open_ai::count_open_ai_tokens;
-use crate::{
-    settings::AllLanguageModelSettings, CloudModel, LanguageModel, LanguageModelId,
+use super.open_ai.count_open_ai_tokens;
+use crate.{
+    settings.AllLanguageModelSettings, CloudModel, LanguageModel, LanguageModelId,
     LanguageModelName, LanguageModelProviderId, LanguageModelProviderName,
     LanguageModelProviderState, LanguageModelRequest, RateLimiter, ZedModel,
 };
-use anyhow::{anyhow, Context as _, Result};
-use client::{Client, UserStore};
-use collections::BTreeMap;
-use futures::{future::BoxFuture, stream::BoxStream, FutureExt, StreamExt};
-use gpui::{AnyView, AppContext, AsyncAppContext, Model, ModelContext, Subscription, Task};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsStore};
-use std::{future, sync::Arc};
-use strum::IntoEnumIterator;
-use ui::prelude::*;
+use anyhow.{anyhow, Context as _, Result};
+use client.{Client, UserStore};
+use collections.BTreeMap;
+use futures.{future.BoxFuture, stream.BoxStream, FutureExt, StreamExt};
+use gpui.{AnyView, AppContext, AsyncAppContext, Model, ModelContext, Subscription, Task};
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsStore};
+use std.{future, sync.Arc};
+use strum.IntoEnumIterator;
+use ui.prelude.*;
 
-use crate::{LanguageModelAvailability, LanguageModelProvider};
+use crate.{LanguageModelAvailability, LanguageModelProvider};
 
-use super::anthropic::count_anthropic_tokens;
+use super.anthropic.count_anthropic_tokens;
 
 pub const PROVIDER_ID: &str = "zed.dev";
 pub const PROVIDER_NAME: &str = "Zed";
@@ -46,14 +46,14 @@ pub struct AvailableModel {
 
 pub struct CloudLanguageModelProvider {
     client: Arc<Client>,
-    state: gpui::Model<State>,
+    state: gpui.Model<State>,
     _maintain_client_status: Task<()>,
 }
 
 pub struct State {
     client: Arc<Client>,
     user_store: Model<UserStore>,
-    status: client::Status,
+    status: client.Status,
     _subscription: Subscription,
 }
 
@@ -80,7 +80,7 @@ impl CloudLanguageModelProvider {
             client: client.clone(),
             user_store,
             status,
-            _subscription: cx.observe_global::<SettingsStore>(|_, cx| {
+            _subscription: cx.observe_global.<SettingsStore>(|_, cx| {
                 cx.notify();
             }),
         });
@@ -112,7 +112,7 @@ impl CloudLanguageModelProvider {
 impl LanguageModelProviderState for CloudLanguageModelProvider {
     type ObservableEntity = State;
 
-    fn observable_entity(&self) -> Option<gpui::Model<Self::ObservableEntity>> {
+    fn observable_entity(&self) -> Option<gpui.Model<Self.ObservableEntity>> {
         Some(self.state.clone())
     }
 }
@@ -127,47 +127,47 @@ impl LanguageModelProvider for CloudLanguageModelProvider {
     }
 
     fn icon(&self) -> IconName {
-        IconName::AiZed
+        IconName.AiZed
     }
 
     fn provided_models(&self, cx: &AppContext) -> Vec<Arc<dyn LanguageModel>> {
-        let mut models = BTreeMap::default();
+        let mut models = BTreeMap.default();
 
-        for model in anthropic::Model::iter() {
-            if !matches!(model, anthropic::Model::Custom { .. }) {
-                models.insert(model.id().to_string(), CloudModel::Anthropic(model));
+        for model in anthropic.Model.iter() {
+            if !matches!(model, anthropic.Model.Custom { .. }) {
+                models.insert(model.id().to_string(), CloudModel.Anthropic(model));
             }
         }
-        for model in open_ai::Model::iter() {
-            if !matches!(model, open_ai::Model::Custom { .. }) {
-                models.insert(model.id().to_string(), CloudModel::OpenAi(model));
+        for model in open_ai.Model.iter() {
+            if !matches!(model, open_ai.Model.Custom { .. }) {
+                models.insert(model.id().to_string(), CloudModel.OpenAi(model));
             }
         }
-        for model in google_ai::Model::iter() {
-            if !matches!(model, google_ai::Model::Custom { .. }) {
-                models.insert(model.id().to_string(), CloudModel::Google(model));
+        for model in google_ai.Model.iter() {
+            if !matches!(model, google_ai.Model.Custom { .. }) {
+                models.insert(model.id().to_string(), CloudModel.Google(model));
             }
         }
-        for model in ZedModel::iter() {
-            models.insert(model.id().to_string(), CloudModel::Zed(model));
+        for model in ZedModel.iter() {
+            models.insert(model.id().to_string(), CloudModel.Zed(model));
         }
 
         // Override with available models from settings
-        for model in &AllLanguageModelSettings::get_global(cx)
+        for model in &AllLanguageModelSettings.get_global(cx)
             .zed_dot_dev
             .available_models
         {
             let model = match model.provider {
-                AvailableProvider::Anthropic => CloudModel::Anthropic(anthropic::Model::Custom {
+                AvailableProvider.Anthropic => CloudModel.Anthropic(anthropic.Model.Custom {
                     name: model.name.clone(),
                     max_tokens: model.max_tokens,
                     tool_override: model.tool_override.clone(),
                 }),
-                AvailableProvider::OpenAi => CloudModel::OpenAi(open_ai::Model::Custom {
+                AvailableProvider.OpenAi => CloudModel.OpenAi(open_ai.Model.Custom {
                     name: model.name.clone(),
                     max_tokens: model.max_tokens,
                 }),
-                AvailableProvider::Google => CloudModel::Google(google_ai::Model::Custom {
+                AvailableProvider.Google => CloudModel.Google(google_ai.Model.Custom {
                     name: model.name.clone(),
                     max_tokens: model.max_tokens,
                 }),
@@ -178,11 +178,11 @@ impl LanguageModelProvider for CloudLanguageModelProvider {
         models
             .into_values()
             .map(|model| {
-                Arc::new(CloudLanguageModel {
-                    id: LanguageModelId::from(model.id().to_string()),
+                Arc.new(CloudLanguageModel {
+                    id: LanguageModelId.from(model.id().to_string()),
                     model,
                     client: self.client.clone(),
-                    request_limiter: RateLimiter::new(4),
+                    request_limiter: RateLimiter.new(4),
                 }) as Arc<dyn LanguageModel>
             })
             .collect()
@@ -193,7 +193,7 @@ impl LanguageModelProvider for CloudLanguageModelProvider {
     }
 
     fn authenticate(&self, _cx: &mut AppContext) -> Task<Result<()>> {
-        Task::ready(Ok(()))
+        Task.ready(Ok(()))
     }
 
     fn configuration_view(&self, cx: &mut WindowContext) -> AnyView {
@@ -204,7 +204,7 @@ impl LanguageModelProvider for CloudLanguageModelProvider {
     }
 
     fn reset_credentials(&self, _cx: &mut AppContext) -> Task<Result<()>> {
-        Task::ready(Ok(()))
+        Task.ready(Ok(()))
     }
 }
 
@@ -221,7 +221,7 @@ impl LanguageModel for CloudLanguageModel {
     }
 
     fn name(&self) -> LanguageModelName {
-        LanguageModelName::from(self.model.display_name().to_string())
+        LanguageModelName.from(self.model.display_name().to_string())
     }
 
     fn provider_id(&self) -> LanguageModelProviderId {
@@ -250,19 +250,19 @@ impl LanguageModel for CloudLanguageModel {
         cx: &AppContext,
     ) -> BoxFuture<'static, Result<usize>> {
         match self.model.clone() {
-            CloudModel::Anthropic(_) => count_anthropic_tokens(request, cx),
-            CloudModel::OpenAi(model) => count_open_ai_tokens(request, model, cx),
-            CloudModel::Google(model) => {
+            CloudModel.Anthropic(_) => count_anthropic_tokens(request, cx),
+            CloudModel.OpenAi(model) => count_open_ai_tokens(request, model, cx),
+            CloudModel.Google(model) => {
                 let client = self.client.clone();
                 let request = request.into_google(model.id().into());
-                let request = google_ai::CountTokensRequest {
+                let request = google_ai.CountTokensRequest {
                     contents: request.contents,
                 };
                 async move {
-                    let request = serde_json::to_string(&request)?;
+                    let request = serde_json.to_string(&request)?;
                     let response = client
-                        .request(proto::CountLanguageModelTokens {
-                            provider: proto::LanguageModelProvider::Google as i32,
+                        .request(proto.CountLanguageModelTokens {
+                            provider: proto.LanguageModelProvider.Google as i32,
                             request,
                         })
                         .await?;
@@ -270,8 +270,8 @@ impl LanguageModel for CloudLanguageModel {
                 }
                 .boxed()
             }
-            CloudModel::Zed(_) => {
-                count_open_ai_tokens(request, open_ai::Model::ThreePointFiveTurbo, cx)
+            CloudModel.Zed(_) => {
+                count_open_ai_tokens(request, open_ai.Model.ThreePointFiveTurbo, cx)
             }
         }
     }
@@ -282,71 +282,71 @@ impl LanguageModel for CloudLanguageModel {
         _: &AsyncAppContext,
     ) -> BoxFuture<'static, Result<BoxStream<'static, Result<String>>>> {
         match &self.model {
-            CloudModel::Anthropic(model) => {
+            CloudModel.Anthropic(model) => {
                 let client = self.client.clone();
                 let request = request.into_anthropic(model.id().into());
                 let future = self.request_limiter.stream(async move {
-                    let request = serde_json::to_string(&request)?;
+                    let request = serde_json.to_string(&request)?;
                     let stream = client
-                        .request_stream(proto::StreamCompleteWithLanguageModel {
-                            provider: proto::LanguageModelProvider::Anthropic as i32,
+                        .request_stream(proto.StreamCompleteWithLanguageModel {
+                            provider: proto.LanguageModelProvider.Anthropic as i32,
                             request,
                         })
                         .await?;
-                    Ok(anthropic::extract_text_from_events(
-                        stream.map(|item| Ok(serde_json::from_str(&item?.event)?)),
+                    Ok(anthropic.extract_text_from_events(
+                        stream.map(|item| Ok(serde_json.from_str(&item?.event)?)),
                     ))
                 });
                 async move { Ok(future.await?.boxed()) }.boxed()
             }
-            CloudModel::OpenAi(model) => {
+            CloudModel.OpenAi(model) => {
                 let client = self.client.clone();
                 let request = request.into_open_ai(model.id().into());
                 let future = self.request_limiter.stream(async move {
-                    let request = serde_json::to_string(&request)?;
+                    let request = serde_json.to_string(&request)?;
                     let stream = client
-                        .request_stream(proto::StreamCompleteWithLanguageModel {
-                            provider: proto::LanguageModelProvider::OpenAi as i32,
+                        .request_stream(proto.StreamCompleteWithLanguageModel {
+                            provider: proto.LanguageModelProvider.OpenAi as i32,
                             request,
                         })
                         .await?;
-                    Ok(open_ai::extract_text_from_events(
-                        stream.map(|item| Ok(serde_json::from_str(&item?.event)?)),
+                    Ok(open_ai.extract_text_from_events(
+                        stream.map(|item| Ok(serde_json.from_str(&item?.event)?)),
                     ))
                 });
                 async move { Ok(future.await?.boxed()) }.boxed()
             }
-            CloudModel::Google(model) => {
+            CloudModel.Google(model) => {
                 let client = self.client.clone();
                 let request = request.into_google(model.id().into());
                 let future = self.request_limiter.stream(async move {
-                    let request = serde_json::to_string(&request)?;
+                    let request = serde_json.to_string(&request)?;
                     let stream = client
-                        .request_stream(proto::StreamCompleteWithLanguageModel {
-                            provider: proto::LanguageModelProvider::Google as i32,
+                        .request_stream(proto.StreamCompleteWithLanguageModel {
+                            provider: proto.LanguageModelProvider.Google as i32,
                             request,
                         })
                         .await?;
-                    Ok(google_ai::extract_text_from_events(
-                        stream.map(|item| Ok(serde_json::from_str(&item?.event)?)),
+                    Ok(google_ai.extract_text_from_events(
+                        stream.map(|item| Ok(serde_json.from_str(&item?.event)?)),
                     ))
                 });
                 async move { Ok(future.await?.boxed()) }.boxed()
             }
-            CloudModel::Zed(model) => {
+            CloudModel.Zed(model) => {
                 let client = self.client.clone();
                 let mut request = request.into_open_ai(model.id().into());
                 request.max_tokens = Some(4000);
                 let future = self.request_limiter.stream(async move {
-                    let request = serde_json::to_string(&request)?;
+                    let request = serde_json.to_string(&request)?;
                     let stream = client
-                        .request_stream(proto::StreamCompleteWithLanguageModel {
-                            provider: proto::LanguageModelProvider::Zed as i32,
+                        .request_stream(proto.StreamCompleteWithLanguageModel {
+                            provider: proto.LanguageModelProvider.Zed as i32,
                             request,
                         })
                         .await?;
-                    Ok(open_ai::extract_text_from_events(
-                        stream.map(|item| Ok(serde_json::from_str(&item?.event)?)),
+                    Ok(open_ai.extract_text_from_events(
+                        stream.map(|item| Ok(serde_json.from_str(&item?.event)?)),
                     ))
                 });
                 async move { Ok(future.await?.boxed()) }.boxed()
@@ -359,17 +359,17 @@ impl LanguageModel for CloudLanguageModel {
         request: LanguageModelRequest,
         tool_name: String,
         tool_description: String,
-        input_schema: serde_json::Value,
+        input_schema: serde_json.Value,
         _cx: &AsyncAppContext,
-    ) -> BoxFuture<'static, Result<serde_json::Value>> {
+    ) -> BoxFuture<'static, Result<serde_json.Value>> {
         match &self.model {
-            CloudModel::Anthropic(model) => {
+            CloudModel.Anthropic(model) => {
                 let client = self.client.clone();
                 let mut request = request.into_anthropic(model.tool_model_id().into());
-                request.tool_choice = Some(anthropic::ToolChoice::Tool {
+                request.tool_choice = Some(anthropic.ToolChoice.Tool {
                     name: tool_name.clone(),
                 });
-                request.tools = vec![anthropic::Tool {
+                request.tools = vec![anthropic.Tool {
                     name: tool_name.clone(),
                     description: tool_description,
                     input_schema,
@@ -377,20 +377,20 @@ impl LanguageModel for CloudLanguageModel {
 
                 self.request_limiter
                     .run(async move {
-                        let request = serde_json::to_string(&request)?;
+                        let request = serde_json.to_string(&request)?;
                         let response = client
-                            .request(proto::CompleteWithLanguageModel {
-                                provider: proto::LanguageModelProvider::Anthropic as i32,
+                            .request(proto.CompleteWithLanguageModel {
+                                provider: proto.LanguageModelProvider.Anthropic as i32,
                                 request,
                             })
                             .await?;
-                        let response: anthropic::Response =
-                            serde_json::from_str(&response.completion)?;
+                        let response: anthropic.Response =
+                            serde_json.from_str(&response.completion)?;
                         response
                             .content
                             .into_iter()
                             .find_map(|content| {
-                                if let anthropic::Content::ToolUse { name, input, .. } = content {
+                                if let anthropic.Content.ToolUse { name, input, .. } = content {
                                     if name == tool_name {
                                         Some(input)
                                     } else {
@@ -404,21 +404,21 @@ impl LanguageModel for CloudLanguageModel {
                     })
                     .boxed()
             }
-            CloudModel::OpenAi(_) => {
-                future::ready(Err(anyhow!("tool use not implemented for OpenAI"))).boxed()
+            CloudModel.OpenAi(_) => {
+                future.ready(Err(anyhow!("tool use not implemented for OpenAI"))).boxed()
             }
-            CloudModel::Google(_) => {
-                future::ready(Err(anyhow!("tool use not implemented for Google AI"))).boxed()
+            CloudModel.Google(_) => {
+                future.ready(Err(anyhow!("tool use not implemented for Google AI"))).boxed()
             }
-            CloudModel::Zed(_) => {
-                future::ready(Err(anyhow!("tool use not implemented for Zed models"))).boxed()
+            CloudModel.Zed(_) => {
+                future.ready(Err(anyhow!("tool use not implemented for Zed models"))).boxed()
             }
         }
     }
 }
 
 struct ConfigurationView {
-    state: gpui::Model<State>,
+    state: gpui.Model<State>,
 }
 
 impl ConfigurationView {
@@ -438,13 +438,13 @@ impl Render for ConfigurationView {
         let is_connected = self.state.read(cx).is_signed_out();
         let plan = self.state.read(cx).user_store.read(cx).current_plan();
 
-        let is_pro = plan == Some(proto::Plan::ZedPro);
+        let is_pro = plan == Some(proto.Plan.ZedPro);
 
         if is_connected {
             v_flex()
                 .gap_3()
                 .max_w_4_5()
-                .child(Label::new(
+                .child(Label.new(
                     if is_pro {
                         "You have full access to Zed's hosted models from Anthropic, OpenAI, Google with faster speeds and higher limits through Zed Pro."
                     } else {
@@ -453,8 +453,8 @@ impl Render for ConfigurationView {
                 .child(
                     if is_pro {
                         h_flex().child(
-                        Button::new("manage_settings", "Manage Subscription")
-                            .style(ButtonStyle::Filled)
+                        Button.new("manage_settings", "Manage Subscription")
+                            .style(ButtonStyle.Filled)
                             .on_click(cx.listener(|_, _, cx| {
                                 cx.open_url(ACCOUNT_SETTINGS_URL)
                             })))
@@ -462,15 +462,15 @@ impl Render for ConfigurationView {
                         h_flex()
                             .gap_2()
                             .child(
-                        Button::new("learn_more", "Learn more")
-                            .style(ButtonStyle::Subtle)
+                        Button.new("learn_more", "Learn more")
+                            .style(ButtonStyle.Subtle)
                             .on_click(cx.listener(|_, _, cx| {
                                 cx.open_url(ZED_AI_URL)
                             })))
                             .child(
-                        Button::new("upgrade", "Upgrade")
-                            .style(ButtonStyle::Subtle)
-                            .color(Color::Accent)
+                        Button.new("upgrade", "Upgrade")
+                            .style(ButtonStyle.Subtle)
+                            .color(Color.Accent)
                             .on_click(cx.listener(|_, _, cx| {
                                 cx.open_url(ACCOUNT_SETTINGS_URL)
                             })))
@@ -479,24 +479,24 @@ impl Render for ConfigurationView {
         } else {
             v_flex()
                 .gap_6()
-                .child(Label::new("Use the zed.dev to access language models."))
+                .child(Label.new("Use the zed.dev to access language models."))
                 .child(
                     v_flex()
                         .gap_2()
                         .child(
-                            Button::new("sign_in", "Sign in")
-                                .icon_color(Color::Muted)
-                                .icon(IconName::Github)
-                                .icon_position(IconPosition::Start)
-                                .style(ButtonStyle::Filled)
+                            Button.new("sign_in", "Sign in")
+                                .icon_color(Color.Muted)
+                                .icon(IconName.Github)
+                                .icon_position(IconPosition.Start)
+                                .style(ButtonStyle.Filled)
                                 .full_width()
                                 .on_click(cx.listener(move |this, _, cx| this.authenticate(cx))),
                         )
                         .child(
                             div().flex().w_full().items_center().child(
-                                Label::new("Sign in to enable collaboration.")
-                                    .color(Color::Muted)
-                                    .size(LabelSize::Small),
+                                Label.new("Sign in to enable collaboration.")
+                                    .color(Color.Muted)
+                                    .size(LabelSize.Small),
                             ),
                         ),
                 )

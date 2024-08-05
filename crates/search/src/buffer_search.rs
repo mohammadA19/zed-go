@@ -1,41 +1,41 @@
 mod registrar;
 
-use crate::{
-    search_bar::render_nav_button, FocusSearch, NextHistoryQuery, PreviousHistoryQuery, ReplaceAll,
+use crate.{
+    search_bar.render_nav_button, FocusSearch, NextHistoryQuery, PreviousHistoryQuery, ReplaceAll,
     ReplaceNext, SearchOptions, SelectAllMatches, SelectNextMatch, SelectPrevMatch,
     ToggleCaseSensitive, ToggleRegex, ToggleReplace, ToggleSelection, ToggleWholeWord,
 };
-use any_vec::AnyVec;
-use collections::HashMap;
-use editor::{
-    actions::{Tab, TabPrev},
+use any_vec.AnyVec;
+use collections.HashMap;
+use editor.{
+    actions.{Tab, TabPrev},
     DisplayPoint, Editor, EditorElement, EditorSettings, EditorStyle,
 };
-use futures::channel::oneshot;
-use gpui::{
+use futures.channel.oneshot;
+use gpui.{
     actions, div, impl_actions, Action, AppContext, ClickEvent, EventEmitter, FocusableView, Hsla,
     InteractiveElement as _, IntoElement, KeyContext, ParentElement as _, Render, ScrollHandle,
     Styled, Subscription, Task, TextStyle, View, ViewContext, VisualContext as _, WindowContext,
 };
-use project::{
-    search::SearchQuery,
-    search_history::{SearchHistory, SearchHistoryCursor},
+use project.{
+    search.SearchQuery,
+    search_history.{SearchHistory, SearchHistoryCursor},
 };
-use serde::Deserialize;
-use settings::Settings;
-use std::sync::Arc;
-use theme::ThemeSettings;
+use serde.Deserialize;
+use settings.Settings;
+use std.sync.Arc;
+use theme.ThemeSettings;
 
-use ui::{h_flex, prelude::*, IconButton, IconName, Tooltip, BASE_REM_SIZE_IN_PX};
-use util::ResultExt;
-use workspace::{
-    item::ItemHandle,
-    searchable::{Direction, SearchEvent, SearchableItemHandle, WeakSearchableItemHandle},
+use ui.{h_flex, prelude.*, IconButton, IconName, Tooltip, BASE_REM_SIZE_IN_PX};
+use util.ResultExt;
+use workspace.{
+    item.ItemHandle,
+    searchable.{Direction, SearchEvent, SearchableItemHandle, WeakSearchableItemHandle},
     ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView, Workspace,
 };
 
-pub use registrar::DivRegistrar;
-use registrar::{ForDeployed, ForDismissed, SearchActionsRegistrar, WithResults};
+pub use registrar.DivRegistrar;
+use registrar.{ForDeployed, ForDismissed, SearchActionsRegistrar, WithResults};
 
 const MIN_INPUT_WIDTH_REMS: f32 = 10.;
 const MAX_INPUT_WIDTH_REMS: f32 = 30.;
@@ -43,7 +43,7 @@ const MAX_BUFFER_SEARCH_HISTORY_SIZE: usize = 50;
 
 #[derive(PartialEq, Clone, Deserialize)]
 pub struct Deploy {
-    #[serde(default = "util::serde::default_true")]
+    #[serde(default = "util.serde.default_true")]
     pub focus: bool,
     #[serde(default)]
     pub replace_enabled: bool,
@@ -70,7 +70,7 @@ pub enum Event {
 }
 
 pub fn init(cx: &mut AppContext) {
-    cx.observe_new_views(|workspace: &mut Workspace, _| BufferSearchBar::register(workspace))
+    cx.observe_new_views(|workspace: &mut Workspace, _| BufferSearchBar.register(workspace))
         .detach();
 }
 
@@ -105,7 +105,7 @@ impl BufferSearchBar {
         color: Hsla,
         cx: &ViewContext<Self>,
     ) -> impl IntoElement {
-        let settings = ThemeSettings::get_global(cx);
+        let settings = ThemeSettings.get_global(cx);
         let text_style = TextStyle {
             color: if editor.read(cx).read_only(cx) {
                 cx.theme().colors().text_disabled
@@ -118,23 +118,23 @@ impl BufferSearchBar {
             font_size: rems(0.875).into(),
             font_weight: settings.buffer_font.weight,
             line_height: relative(1.3),
-            ..Default::default()
+            ..Default.default()
         };
 
-        EditorElement::new(
+        EditorElement.new(
             &editor,
             EditorStyle {
                 background: cx.theme().colors().editor_background,
                 local_player: cx.theme().players().local(),
                 text: text_style,
-                ..Default::default()
+                ..Default.default()
             },
         )
     }
 }
 
 impl EventEmitter<Event> for BufferSearchBar {}
-impl EventEmitter<workspace::ToolbarItemEvent> for BufferSearchBar {}
+impl EventEmitter<workspace.ToolbarItemEvent> for BufferSearchBar {}
 impl Render for BufferSearchBar {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         if self.dismissed {
@@ -160,7 +160,7 @@ impl Render for BufferSearchBar {
             editor.set_placeholder_text("Replace with...", cx);
         });
 
-        let mut text_color = Color::Default;
+        let mut text_color = Color.Default;
         let match_text = self
             .active_searchable_item
             .as_ref()
@@ -171,12 +171,12 @@ impl Render for BufferSearchBar {
                 let matches_count = self
                     .searchable_items_with_matches
                     .get(&searchable_item.downgrade())
-                    .map(AnyVec::len)
+                    .map(AnyVec.len)
                     .unwrap_or(0);
                 if let Some(match_ix) = self.active_match_index {
                     Some(format!("{}/{}", match_ix + 1, matches_count))
                 } else {
-                    text_color = Color::Error; // No matches found
+                    text_color = Color.Error; // No matches found
                     None
                 }
             })
@@ -184,13 +184,13 @@ impl Render for BufferSearchBar {
         let should_show_replace_input = self.replace_enabled && supported_options.replacement;
         let in_replace = self.replacement_editor.focus_handle(cx).is_focused(cx);
 
-        let mut key_context = KeyContext::new_with_defaults();
+        let mut key_context = KeyContext.new_with_defaults();
         key_context.add("BufferSearchBar");
         if in_replace {
             key_context.add("in_replace");
         }
         let editor_border = if self.query_contains_error {
-            Color::Error.color(cx)
+            Color.Error.color(cx)
         } else {
             cx.theme().colors().border
         };
@@ -215,7 +215,7 @@ impl Render for BufferSearchBar {
                     .when(!hide_inline_icons, |div| {
                         div.children(supported_options.case.then(|| {
                             self.render_search_option_button(
-                                SearchOptions::CASE_SENSITIVE,
+                                SearchOptions.CASE_SENSITIVE,
                                 cx.listener(|this, _, cx| {
                                     this.toggle_case_sensitive(&ToggleCaseSensitive, cx)
                                 }),
@@ -223,7 +223,7 @@ impl Render for BufferSearchBar {
                         }))
                         .children(supported_options.word.then(|| {
                             self.render_search_option_button(
-                                SearchOptions::WHOLE_WORD,
+                                SearchOptions.WHOLE_WORD,
                                 cx.listener(|this, _, cx| {
                                     this.toggle_whole_word(&ToggleWholeWord, cx)
                                 }),
@@ -231,7 +231,7 @@ impl Render for BufferSearchBar {
                         }))
                         .children(supported_options.regex.then(|| {
                             self.render_search_option_button(
-                                SearchOptions::REGEX,
+                                SearchOptions.REGEX,
                                 cx.listener(|this, _, cx| this.toggle_regex(&ToggleRegex, cx)),
                             )
                         }))
@@ -239,36 +239,36 @@ impl Render for BufferSearchBar {
             )
             .when(supported_options.replacement, |this| {
                 this.child(
-                    IconButton::new("buffer-search-bar-toggle-replace-button", IconName::Replace)
-                        .style(ButtonStyle::Subtle)
+                    IconButton.new("buffer-search-bar-toggle-replace-button", IconName.Replace)
+                        .style(ButtonStyle.Subtle)
                         .when(self.replace_enabled, |button| {
-                            button.style(ButtonStyle::Filled)
+                            button.style(ButtonStyle.Filled)
                         })
                         .on_click(cx.listener(|this, _: &ClickEvent, cx| {
                             this.toggle_replace(&ToggleReplace, cx);
                         }))
                         .selected(self.replace_enabled)
-                        .size(ButtonSize::Compact)
-                        .tooltip(|cx| Tooltip::for_action("Toggle replace", &ToggleReplace, cx)),
+                        .size(ButtonSize.Compact)
+                        .tooltip(|cx| Tooltip.for_action("Toggle replace", &ToggleReplace, cx)),
                 )
             })
             .when(supported_options.selection, |this| {
                 this.child(
-                    IconButton::new(
+                    IconButton.new(
                         "buffer-search-bar-toggle-search-selection-button",
-                        IconName::SearchSelection,
+                        IconName.SearchSelection,
                     )
-                    .style(ButtonStyle::Subtle)
+                    .style(ButtonStyle.Subtle)
                     .when(self.selection_search_enabled, |button| {
-                        button.style(ButtonStyle::Filled)
+                        button.style(ButtonStyle.Filled)
                     })
                     .on_click(cx.listener(|this, _: &ClickEvent, cx| {
                         this.toggle_selection(&ToggleSelection, cx);
                     }))
                     .selected(self.selection_search_enabled)
-                    .size(ButtonSize::Compact)
+                    .size(ButtonSize.Compact)
                     .tooltip(|cx| {
-                        Tooltip::for_action("Toggle search selection", &ToggleSelection, cx)
+                        Tooltip.for_action("Toggle search selection", &ToggleSelection, cx)
                     }),
                 )
             })
@@ -276,31 +276,31 @@ impl Render for BufferSearchBar {
                 h_flex()
                     .flex_none()
                     .child(
-                        IconButton::new("select-all", ui::IconName::SelectAll)
+                        IconButton.new("select-all", ui.IconName.SelectAll)
                             .on_click(|_, cx| cx.dispatch_action(SelectAllMatches.boxed_clone()))
-                            .size(ButtonSize::Compact)
+                            .size(ButtonSize.Compact)
                             .tooltip(|cx| {
-                                Tooltip::for_action("Select all matches", &SelectAllMatches, cx)
+                                Tooltip.for_action("Select all matches", &SelectAllMatches, cx)
                             }),
                     )
                     .child(render_nav_button(
-                        ui::IconName::ChevronLeft,
+                        ui.IconName.ChevronLeft,
                         self.active_match_index.is_some(),
                         "Select previous match",
                         &SelectPrevMatch,
                     ))
                     .child(render_nav_button(
-                        ui::IconName::ChevronRight,
+                        ui.IconName.ChevronRight,
                         self.active_match_index.is_some(),
                         "Select next match",
                         &SelectNextMatch,
                     ))
                     .when(!narrow_mode, |this| {
                         this.child(h_flex().ml_2().min_w(rems_from_px(40.)).child(
-                            Label::new(match_text).color(if self.active_match_index.is_some() {
-                                Color::Default
+                            Label.new(match_text).color(if self.active_match_index.is_some() {
+                                Color.Default
                             } else {
-                                Color::Disabled
+                                Color.Disabled
                             }),
                         ))
                     }),
@@ -333,18 +333,18 @@ impl Render for BufferSearchBar {
                     h_flex()
                         .flex_none()
                         .child(
-                            IconButton::new("search-replace-next", ui::IconName::ReplaceNext)
+                            IconButton.new("search-replace-next", ui.IconName.ReplaceNext)
                                 .tooltip(move |cx| {
-                                    Tooltip::for_action("Replace next", &ReplaceNext, cx)
+                                    Tooltip.for_action("Replace next", &ReplaceNext, cx)
                                 })
                                 .on_click(
                                     cx.listener(|this, _, cx| this.replace_next(&ReplaceNext, cx)),
                                 ),
                         )
                         .child(
-                            IconButton::new("search-replace-all", ui::IconName::ReplaceAll)
+                            IconButton.new("search-replace-all", ui.IconName.ReplaceAll)
                                 .tooltip(move |cx| {
-                                    Tooltip::for_action("Replace all", &ReplaceAll, cx)
+                                    Tooltip.for_action("Replace all", &ReplaceAll, cx)
                                 })
                                 .on_click(
                                     cx.listener(|this, _, cx| this.replace_all(&ReplaceAll, cx)),
@@ -357,31 +357,31 @@ impl Render for BufferSearchBar {
             .id("buffer_search")
             .track_scroll(&self.scroll_handle)
             .key_context(key_context)
-            .capture_action(cx.listener(Self::tab))
-            .capture_action(cx.listener(Self::tab_prev))
-            .on_action(cx.listener(Self::previous_history_query))
-            .on_action(cx.listener(Self::next_history_query))
-            .on_action(cx.listener(Self::dismiss))
-            .on_action(cx.listener(Self::select_next_match))
-            .on_action(cx.listener(Self::select_prev_match))
+            .capture_action(cx.listener(Self.tab))
+            .capture_action(cx.listener(Self.tab_prev))
+            .on_action(cx.listener(Self.previous_history_query))
+            .on_action(cx.listener(Self.next_history_query))
+            .on_action(cx.listener(Self.dismiss))
+            .on_action(cx.listener(Self.select_next_match))
+            .on_action(cx.listener(Self.select_prev_match))
             .when(self.supported_options().replacement, |this| {
-                this.on_action(cx.listener(Self::toggle_replace))
+                this.on_action(cx.listener(Self.toggle_replace))
                     .when(in_replace, |this| {
-                        this.on_action(cx.listener(Self::replace_next))
-                            .on_action(cx.listener(Self::replace_all))
+                        this.on_action(cx.listener(Self.replace_next))
+                            .on_action(cx.listener(Self.replace_all))
                     })
             })
             .when(self.supported_options().case, |this| {
-                this.on_action(cx.listener(Self::toggle_case_sensitive))
+                this.on_action(cx.listener(Self.toggle_case_sensitive))
             })
             .when(self.supported_options().word, |this| {
-                this.on_action(cx.listener(Self::toggle_whole_word))
+                this.on_action(cx.listener(Self.toggle_whole_word))
             })
             .when(self.supported_options().regex, |this| {
-                this.on_action(cx.listener(Self::toggle_regex))
+                this.on_action(cx.listener(Self.toggle_regex))
             })
             .when(self.supported_options().selection, |this| {
-                this.on_action(cx.listener(Self::toggle_selection))
+                this.on_action(cx.listener(Self.toggle_selection))
             })
             .gap_2()
             .child(
@@ -389,9 +389,9 @@ impl Render for BufferSearchBar {
                     .child(search_line.w_full())
                     .when(!narrow_mode, |div| {
                         div.child(
-                            IconButton::new(SharedString::from("Close"), IconName::Close)
+                            IconButton.new(SharedString.from("Close"), IconName.Close)
                                 .tooltip(move |cx| {
-                                    Tooltip::for_action("Close search bar", &Dismiss, cx)
+                                    Tooltip.for_action("Close search bar", &Dismiss, cx)
                                 })
                                 .on_click(cx.listener(|this, _: &ClickEvent, cx| {
                                     this.dismiss(&Dismiss, cx)
@@ -404,7 +404,7 @@ impl Render for BufferSearchBar {
 }
 
 impl FocusableView for BufferSearchBar {
-    fn focus_handle(&self, cx: &AppContext) -> gpui::FocusHandle {
+    fn focus_handle(&self, cx: &AppContext) -> gpui.FocusHandle {
         self.query_editor.focus_handle(cx)
     }
 }
@@ -429,7 +429,7 @@ impl ToolbarItemView for BufferSearchBar {
             self.active_searchable_item_subscription =
                 Some(searchable_item_handle.subscribe_to_search_events(
                     cx,
-                    Box::new(move |search_event, cx| {
+                    Box.new(move |search_event, cx| {
                         if let Some(this) = this.upgrade() {
                             this.update(cx, |this, cx| {
                                 this.on_active_searchable_item_event(search_event, cx)
@@ -441,10 +441,10 @@ impl ToolbarItemView for BufferSearchBar {
             self.active_searchable_item = Some(searchable_item_handle);
             drop(self.update_matches(cx));
             if !self.dismissed {
-                return ToolbarItemLocation::Secondary;
+                return ToolbarItemLocation.Secondary;
             }
         }
-        ToolbarItemLocation::Hidden
+        ToolbarItemLocation.Hidden
     }
 }
 
@@ -483,7 +483,7 @@ impl BufferSearchBar {
         registrar.register_handler(WithResults(|this, action: &SelectAllMatches, cx| {
             this.select_all_matches(action, cx);
         }));
-        registrar.register_handler(ForDeployed(|this, _: &editor::actions::Cancel, cx| {
+        registrar.register_handler(ForDeployed(|this, _: &editor.actions.Cancel, cx| {
             this.dismiss(&Dismiss, cx);
         }));
 
@@ -498,11 +498,11 @@ impl BufferSearchBar {
     }
 
     pub fn new(cx: &mut ViewContext<Self>) -> Self {
-        let query_editor = cx.new_view(|cx| Editor::single_line(cx));
-        cx.subscribe(&query_editor, Self::on_query_editor_event)
+        let query_editor = cx.new_view(|cx| Editor.single_line(cx));
+        cx.subscribe(&query_editor, Self.on_query_editor_event)
             .detach();
-        let replacement_editor = cx.new_view(|cx| Editor::single_line(cx));
-        cx.subscribe(&replacement_editor, Self::on_replacement_editor_event)
+        let replacement_editor = cx.new_view(|cx| Editor.single_line(cx));
+        cx.subscribe(&replacement_editor, Self.on_replacement_editor_event)
             .detach();
 
         Self {
@@ -513,22 +513,22 @@ impl BufferSearchBar {
             active_searchable_item: None,
             active_searchable_item_subscription: None,
             active_match_index: None,
-            searchable_items_with_matches: Default::default(),
-            default_options: SearchOptions::NONE,
-            search_options: SearchOptions::NONE,
+            searchable_items_with_matches: Default.default(),
+            default_options: SearchOptions.NONE,
+            search_options: SearchOptions.NONE,
             pending_search: None,
             query_contains_error: false,
             dismissed: true,
-            search_history: SearchHistory::new(
+            search_history: SearchHistory.new(
                 Some(MAX_BUFFER_SEARCH_HISTORY_SIZE),
-                project::search_history::QueryInsertionBehavior::ReplacePreviousIfContains,
+                project.search_history.QueryInsertionBehavior.ReplacePreviousIfContains,
             ),
-            search_history_cursor: Default::default(),
+            search_history_cursor: Default.default(),
             active_search: None,
             replace_enabled: false,
             selection_search_enabled: false,
-            scroll_handle: ScrollHandle::new(),
-            editor_scroll_handle: ScrollHandle::new(),
+            scroll_handle: ScrollHandle.new(),
+            editor_scroll_handle: ScrollHandle.new(),
             editor_needed_width: px(0.),
         }
     }
@@ -541,7 +541,7 @@ impl BufferSearchBar {
         self.dismissed = true;
         for searchable_item in self.searchable_items_with_matches.keys() {
             if let Some(searchable_item) =
-                WeakSearchableItemHandle::upgrade(searchable_item.as_ref(), cx)
+                WeakSearchableItemHandle.upgrade(searchable_item.as_ref(), cx)
             {
                 searchable_item.clear_matches(cx);
             }
@@ -554,9 +554,9 @@ impl BufferSearchBar {
             let handle = active_editor.focus_handle(cx);
             cx.focus(&handle);
         }
-        cx.emit(Event::UpdateLocation);
-        cx.emit(ToolbarItemEvent::ChangeLocation(
-            ToolbarItemLocation::Hidden,
+        cx.emit(Event.UpdateLocation);
+        cx.emit(ToolbarItemEvent.ChangeLocation(
+            ToolbarItemLocation.Hidden,
         ));
         cx.notify();
     }
@@ -605,17 +605,17 @@ impl BufferSearchBar {
         self.dismissed = false;
         handle.search_bar_visibility_changed(true, cx);
         cx.notify();
-        cx.emit(Event::UpdateLocation);
-        cx.emit(ToolbarItemEvent::ChangeLocation(
-            ToolbarItemLocation::Secondary,
+        cx.emit(Event.UpdateLocation);
+        cx.emit(ToolbarItemEvent.ChangeLocation(
+            ToolbarItemLocation.Secondary,
         ));
         true
     }
 
-    fn supported_options(&self) -> workspace::searchable::SearchOptions {
+    fn supported_options(&self) -> workspace.searchable.SearchOptions {
         self.active_searchable_item
             .as_deref()
-            .map(SearchableItemHandle::supported_options)
+            .map(SearchableItemHandle.supported_options)
             .unwrap_or_default()
     }
     pub fn search_suggested(&mut self, cx: &mut ViewContext<Self>) {
@@ -647,7 +647,7 @@ impl BufferSearchBar {
 
     pub fn select_query(&mut self, cx: &mut ViewContext<Self>) {
         self.query_editor.update(cx, |query_editor, cx| {
-            query_editor.select_all(&Default::default(), cx);
+            query_editor.select_all(&Default.default(), cx);
         });
     }
 
@@ -686,7 +686,7 @@ impl BufferSearchBar {
         query: &str,
         options: Option<SearchOptions>,
         cx: &mut ViewContext<Self>,
-    ) -> oneshot::Receiver<()> {
+    ) -> oneshot.Receiver<()> {
         let options = options.unwrap_or(self.default_options);
         if query != self.query(cx) || self.search_options != options {
             self.query_editor.update(cx, |query_editor, cx| {
@@ -745,11 +745,11 @@ impl BufferSearchBar {
     }
 
     fn select_next_match(&mut self, _: &SelectNextMatch, cx: &mut ViewContext<Self>) {
-        self.select_match(Direction::Next, 1, cx);
+        self.select_match(Direction.Next, 1, cx);
     }
 
     fn select_prev_match(&mut self, _: &SelectPrevMatch, cx: &mut ViewContext<Self>) {
-        self.select_match(Direction::Prev, 1, cx);
+        self.select_match(Direction.Prev, 1, cx);
     }
 
     fn select_all_matches(&mut self, _: &SelectAllMatches, cx: &mut ViewContext<Self>) {
@@ -775,11 +775,11 @@ impl BufferSearchBar {
                     .filter(|matches| !matches.is_empty())
                 {
                     // If 'wrapscan' is disabled, searches do not wrap around the end of the file.
-                    if !EditorSettings::get_global(cx).search_wrap {
-                        if (direction == Direction::Next && index + count >= matches.len())
-                            || (direction == Direction::Prev && index < count)
+                    if !EditorSettings.get_global(cx).search_wrap {
+                        if (direction == Direction.Next && index + count >= matches.len())
+                            || (direction == Direction.Prev && index < count)
                         {
-                            crate::show_no_more_matches(cx);
+                            crate.show_no_more_matches(cx);
                             return;
                         }
                     }
@@ -812,13 +812,13 @@ impl BufferSearchBar {
     fn on_query_editor_event(
         &mut self,
         editor: View<Editor>,
-        event: &editor::EditorEvent,
+        event: &editor.EditorEvent,
         cx: &mut ViewContext<Self>,
     ) {
         match event {
-            editor::EditorEvent::Focused => self.query_editor_focused = true,
-            editor::EditorEvent::Blurred => self.query_editor_focused = false,
-            editor::EditorEvent::Edited { .. } => {
+            editor.EditorEvent.Focused => self.query_editor_focused = true,
+            editor.EditorEvent.Blurred => self.query_editor_focused = false,
+            editor.EditorEvent.Edited { .. } => {
                 self.clear_matches(cx);
                 let search = self.update_matches(cx);
 
@@ -827,7 +827,7 @@ impl BufferSearchBar {
                     let snapshot = editor.snapshot(cx).display_snapshot;
 
                     snapshot.x_for_display_point(snapshot.max_point(), &text_layout_details)
-                        - snapshot.x_for_display_point(DisplayPoint::zero(), &text_layout_details)
+                        - snapshot.x_for_display_point(DisplayPoint.zero(), &text_layout_details)
                 });
                 self.editor_needed_width = width;
                 cx.notify();
@@ -845,31 +845,31 @@ impl BufferSearchBar {
     fn on_replacement_editor_event(
         &mut self,
         _: View<Editor>,
-        event: &editor::EditorEvent,
+        event: &editor.EditorEvent,
         _: &mut ViewContext<Self>,
     ) {
         match event {
-            editor::EditorEvent::Focused => self.replacement_editor_focused = true,
-            editor::EditorEvent::Blurred => self.replacement_editor_focused = false,
+            editor.EditorEvent.Focused => self.replacement_editor_focused = true,
+            editor.EditorEvent.Blurred => self.replacement_editor_focused = false,
             _ => {}
         }
     }
 
     fn on_active_searchable_item_event(&mut self, event: &SearchEvent, cx: &mut ViewContext<Self>) {
         match event {
-            SearchEvent::MatchesInvalidated => {
+            SearchEvent.MatchesInvalidated => {
                 drop(self.update_matches(cx));
             }
-            SearchEvent::ActiveMatchChanged => self.update_match_index(cx),
+            SearchEvent.ActiveMatchChanged => self.update_match_index(cx),
         }
     }
 
     fn toggle_case_sensitive(&mut self, _: &ToggleCaseSensitive, cx: &mut ViewContext<Self>) {
-        self.toggle_search_option(SearchOptions::CASE_SENSITIVE, cx)
+        self.toggle_search_option(SearchOptions.CASE_SENSITIVE, cx)
     }
 
     fn toggle_whole_word(&mut self, _: &ToggleWholeWord, cx: &mut ViewContext<Self>) {
-        self.toggle_search_option(SearchOptions::WHOLE_WORD, cx)
+        self.toggle_search_option(SearchOptions.WHOLE_WORD, cx)
     }
 
     fn toggle_selection(&mut self, _: &ToggleSelection, cx: &mut ViewContext<Self>) {
@@ -882,7 +882,7 @@ impl BufferSearchBar {
     }
 
     fn toggle_regex(&mut self, _: &ToggleRegex, cx: &mut ViewContext<Self>) {
-        self.toggle_search_option(SearchOptions::REGEX, cx)
+        self.toggle_search_option(SearchOptions.REGEX, cx)
     }
 
     fn clear_active_searchable_item_matches(&mut self, cx: &mut WindowContext) {
@@ -902,7 +902,7 @@ impl BufferSearchBar {
         let mut active_item_matches = None;
         for (searchable_item, matches) in self.searchable_items_with_matches.drain() {
             if let Some(searchable_item) =
-                WeakSearchableItemHandle::upgrade(searchable_item.as_ref(), cx)
+                WeakSearchableItemHandle.upgrade(searchable_item.as_ref(), cx)
             {
                 if Some(&searchable_item) == self.active_searchable_item.as_ref() {
                     active_item_matches = Some((searchable_item.downgrade(), matches));
@@ -916,8 +916,8 @@ impl BufferSearchBar {
             .extend(active_item_matches);
     }
 
-    fn update_matches(&mut self, cx: &mut ViewContext<Self>) -> oneshot::Receiver<()> {
-        let (done_tx, done_rx) = oneshot::channel();
+    fn update_matches(&mut self, cx: &mut ViewContext<Self>) -> oneshot.Receiver<()> {
+        let (done_tx, done_rx) = oneshot.channel();
         let query = self.query(cx);
         self.pending_search.take();
 
@@ -928,14 +928,14 @@ impl BufferSearchBar {
                 let _ = done_tx.send(());
                 cx.notify();
             } else {
-                let query: Arc<_> = if self.search_options.contains(SearchOptions::REGEX) {
-                    match SearchQuery::regex(
+                let query: Arc<_> = if self.search_options.contains(SearchOptions.REGEX) {
+                    match SearchQuery.regex(
                         query,
-                        self.search_options.contains(SearchOptions::WHOLE_WORD),
-                        self.search_options.contains(SearchOptions::CASE_SENSITIVE),
+                        self.search_options.contains(SearchOptions.WHOLE_WORD),
+                        self.search_options.contains(SearchOptions.CASE_SENSITIVE),
                         false,
-                        Default::default(),
-                        Default::default(),
+                        Default.default(),
+                        Default.default(),
                     ) {
                         Ok(query) => query.with_replacement(self.replacement(cx)),
                         Err(_) => {
@@ -946,13 +946,13 @@ impl BufferSearchBar {
                         }
                     }
                 } else {
-                    match SearchQuery::text(
+                    match SearchQuery.text(
                         query,
-                        self.search_options.contains(SearchOptions::WHOLE_WORD),
-                        self.search_options.contains(SearchOptions::CASE_SENSITIVE),
+                        self.search_options.contains(SearchOptions.WHOLE_WORD),
+                        self.search_options.contains(SearchOptions.CASE_SENSITIVE),
                         false,
-                        Default::default(),
-                        Default::default(),
+                        Default.default(),
+                        Default.default(),
                     ) {
                         Ok(query) => query.with_replacement(self.replacement(cx)),
                         Err(_) => {
@@ -975,7 +975,7 @@ impl BufferSearchBar {
 
                     this.update(&mut cx, |this, cx| {
                         if let Some(active_searchable_item) =
-                            WeakSearchableItemHandle::upgrade(active_searchable_item.as_ref(), cx)
+                            WeakSearchableItemHandle.upgrade(active_searchable_item.as_ref(), cx)
                         {
                             this.searchable_items_with_matches
                                 .insert(active_searchable_item.downgrade(), matches);
@@ -1047,7 +1047,7 @@ impl BufferSearchBar {
         if let Some(new_query) = self
             .search_history
             .next(&mut self.search_history_cursor)
-            .map(str::to_string)
+            .map(str.to_string)
         {
             drop(self.search(&new_query, Some(self.search_options), cx));
         } else {
@@ -1061,7 +1061,7 @@ impl BufferSearchBar {
             if let Some(new_query) = self
                 .search_history
                 .current(&mut self.search_history_cursor)
-                .map(str::to_string)
+                .map(str.to_string)
             {
                 drop(self.search(&new_query, Some(self.search_options), cx));
                 return;
@@ -1071,7 +1071,7 @@ impl BufferSearchBar {
         if let Some(new_query) = self
             .search_history
             .previous(&mut self.search_history_cursor)
-            .map(str::to_string)
+            .map(str.to_string)
         {
             drop(self.search(&new_query, Some(self.search_options), cx));
         }
@@ -1143,25 +1143,25 @@ impl BufferSearchBar {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Range;
+    use std.ops.Range;
 
-    use super::*;
-    use editor::{display_map::DisplayRow, DisplayPoint, Editor, MultiBuffer};
-    use gpui::{Context, Hsla, TestAppContext, VisualTestContext};
-    use language::{Buffer, Point};
-    use project::Project;
-    use smol::stream::StreamExt as _;
-    use unindent::Unindent as _;
+    use super.*;
+    use editor.{display_map.DisplayRow, DisplayPoint, Editor, MultiBuffer};
+    use gpui.{Context, Hsla, TestAppContext, VisualTestContext};
+    use language.{Buffer, Point};
+    use project.Project;
+    use smol.stream.StreamExt as _;
+    use unindent.Unindent as _;
 
     fn init_globals(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let store = settings::SettingsStore::test(cx);
+            let store = settings.SettingsStore.test(cx);
             cx.set_global(store);
-            editor::init(cx);
+            editor.init(cx);
 
-            language::init(cx);
-            Project::init_settings(cx);
-            theme::init(theme::LoadThemes::JustBase, cx);
+            language.init(cx);
+            Project.init_settings(cx);
+            theme.init(theme.LoadThemes.JustBase, cx);
         });
     }
 
@@ -1170,7 +1170,7 @@ mod tests {
     ) -> (View<Editor>, View<BufferSearchBar>, &mut VisualTestContext) {
         init_globals(cx);
         let buffer = cx.new_model(|cx| {
-            Buffer::local(
+            Buffer.local(
                 r#"
                 A regular expression (shortened as regex or regexp;[1] also referred to as
                 rational expression[2][3]) is a sequence of characters that specifies a search
@@ -1182,10 +1182,10 @@ mod tests {
             )
         });
         let cx = cx.add_empty_window();
-        let editor = cx.new_view(|cx| Editor::for_buffer(buffer.clone(), None, cx));
+        let editor = cx.new_view(|cx| Editor.for_buffer(buffer.clone(), None, cx));
 
         let search_bar = cx.new_view(|cx| {
-            let mut search_bar = BufferSearchBar::new(cx);
+            let mut search_bar = BufferSearchBar.new(cx);
             search_bar.set_active_pane_item(Some(&editor), cx);
             search_bar.show(cx);
             search_bar
@@ -1194,14 +1194,14 @@ mod tests {
         (editor, search_bar, cx)
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_search_simple(cx: &mut TestAppContext) {
         let (editor, search_bar, cx) = init_test(cx);
         let display_points_of = |background_highlights: Vec<(Range<DisplayPoint>, Hsla)>| {
             background_highlights
                 .into_iter()
                 .map(|(range, _)| range)
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         };
         // Search for a string that appears with different casing.
         // By default, search is case-insensitive.
@@ -1213,22 +1213,22 @@ mod tests {
             assert_eq!(
                 display_points_of(editor.all_text_background_highlights(cx)),
                 &[
-                    DisplayPoint::new(DisplayRow(2), 17)..DisplayPoint::new(DisplayRow(2), 19),
-                    DisplayPoint::new(DisplayRow(2), 43)..DisplayPoint::new(DisplayRow(2), 45),
+                    DisplayPoint.new(DisplayRow(2), 17)..DisplayPoint.new(DisplayRow(2), 19),
+                    DisplayPoint.new(DisplayRow(2), 43)..DisplayPoint.new(DisplayRow(2), 45),
                 ]
             );
         });
 
         // Switch to a case sensitive search.
         search_bar.update(cx, |search_bar, cx| {
-            search_bar.toggle_search_option(SearchOptions::CASE_SENSITIVE, cx);
+            search_bar.toggle_search_option(SearchOptions.CASE_SENSITIVE, cx);
         });
         let mut editor_notifications = cx.notifications(&editor);
         editor_notifications.next().await;
         editor.update(cx, |editor, cx| {
             assert_eq!(
                 display_points_of(editor.all_text_background_highlights(cx)),
-                &[DisplayPoint::new(DisplayRow(2), 43)..DisplayPoint::new(DisplayRow(2), 45),]
+                &[DisplayPoint.new(DisplayRow(2), 43)..DisplayPoint.new(DisplayRow(2), 45),]
             );
         });
 
@@ -1242,20 +1242,20 @@ mod tests {
             assert_eq!(
                 display_points_of(editor.all_text_background_highlights(cx)),
                 &[
-                    DisplayPoint::new(DisplayRow(0), 24)..DisplayPoint::new(DisplayRow(0), 26),
-                    DisplayPoint::new(DisplayRow(0), 41)..DisplayPoint::new(DisplayRow(0), 43),
-                    DisplayPoint::new(DisplayRow(2), 71)..DisplayPoint::new(DisplayRow(2), 73),
-                    DisplayPoint::new(DisplayRow(3), 1)..DisplayPoint::new(DisplayRow(3), 3),
-                    DisplayPoint::new(DisplayRow(3), 11)..DisplayPoint::new(DisplayRow(3), 13),
-                    DisplayPoint::new(DisplayRow(3), 56)..DisplayPoint::new(DisplayRow(3), 58),
-                    DisplayPoint::new(DisplayRow(3), 60)..DisplayPoint::new(DisplayRow(3), 62),
+                    DisplayPoint.new(DisplayRow(0), 24)..DisplayPoint.new(DisplayRow(0), 26),
+                    DisplayPoint.new(DisplayRow(0), 41)..DisplayPoint.new(DisplayRow(0), 43),
+                    DisplayPoint.new(DisplayRow(2), 71)..DisplayPoint.new(DisplayRow(2), 73),
+                    DisplayPoint.new(DisplayRow(3), 1)..DisplayPoint.new(DisplayRow(3), 3),
+                    DisplayPoint.new(DisplayRow(3), 11)..DisplayPoint.new(DisplayRow(3), 13),
+                    DisplayPoint.new(DisplayRow(3), 56)..DisplayPoint.new(DisplayRow(3), 58),
+                    DisplayPoint.new(DisplayRow(3), 60)..DisplayPoint.new(DisplayRow(3), 62),
                 ]
             );
         });
 
         // Switch to a whole word search.
         search_bar.update(cx, |search_bar, cx| {
-            search_bar.toggle_search_option(SearchOptions::WHOLE_WORD, cx);
+            search_bar.toggle_search_option(SearchOptions.WHOLE_WORD, cx);
         });
         let mut editor_notifications = cx.notifications(&editor);
         editor_notifications.next().await;
@@ -1263,9 +1263,9 @@ mod tests {
             assert_eq!(
                 display_points_of(editor.all_text_background_highlights(cx)),
                 &[
-                    DisplayPoint::new(DisplayRow(0), 41)..DisplayPoint::new(DisplayRow(0), 43),
-                    DisplayPoint::new(DisplayRow(3), 11)..DisplayPoint::new(DisplayRow(3), 13),
-                    DisplayPoint::new(DisplayRow(3), 56)..DisplayPoint::new(DisplayRow(3), 58),
+                    DisplayPoint.new(DisplayRow(0), 41)..DisplayPoint.new(DisplayRow(0), 43),
+                    DisplayPoint.new(DisplayRow(3), 11)..DisplayPoint.new(DisplayRow(3), 13),
+                    DisplayPoint.new(DisplayRow(3), 56)..DisplayPoint.new(DisplayRow(3), 58),
                 ]
             );
         });
@@ -1273,7 +1273,7 @@ mod tests {
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.select_display_ranges([
-                    DisplayPoint::new(DisplayRow(0), 0)..DisplayPoint::new(DisplayRow(0), 0)
+                    DisplayPoint.new(DisplayRow(0), 0)..DisplayPoint.new(DisplayRow(0), 0)
                 ])
             });
         });
@@ -1282,7 +1282,7 @@ mod tests {
             search_bar.select_next_match(&SelectNextMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(0), 41)..DisplayPoint::new(DisplayRow(0), 43)]
+                [DisplayPoint.new(DisplayRow(0), 41)..DisplayPoint.new(DisplayRow(0), 43)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1293,7 +1293,7 @@ mod tests {
             search_bar.select_next_match(&SelectNextMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(3), 11)..DisplayPoint::new(DisplayRow(3), 13)]
+                [DisplayPoint.new(DisplayRow(3), 11)..DisplayPoint.new(DisplayRow(3), 13)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1304,7 +1304,7 @@ mod tests {
             search_bar.select_next_match(&SelectNextMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(3), 56)..DisplayPoint::new(DisplayRow(3), 58)]
+                [DisplayPoint.new(DisplayRow(3), 56)..DisplayPoint.new(DisplayRow(3), 58)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1315,7 +1315,7 @@ mod tests {
             search_bar.select_next_match(&SelectNextMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(0), 41)..DisplayPoint::new(DisplayRow(0), 43)]
+                [DisplayPoint.new(DisplayRow(0), 41)..DisplayPoint.new(DisplayRow(0), 43)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1326,7 +1326,7 @@ mod tests {
             search_bar.select_prev_match(&SelectPrevMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(3), 56)..DisplayPoint::new(DisplayRow(3), 58)]
+                [DisplayPoint.new(DisplayRow(3), 56)..DisplayPoint.new(DisplayRow(3), 58)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1337,7 +1337,7 @@ mod tests {
             search_bar.select_prev_match(&SelectPrevMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(3), 11)..DisplayPoint::new(DisplayRow(3), 13)]
+                [DisplayPoint.new(DisplayRow(3), 11)..DisplayPoint.new(DisplayRow(3), 13)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1348,7 +1348,7 @@ mod tests {
             search_bar.select_prev_match(&SelectPrevMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(0), 41)..DisplayPoint::new(DisplayRow(0), 43)]
+                [DisplayPoint.new(DisplayRow(0), 41)..DisplayPoint.new(DisplayRow(0), 43)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1360,7 +1360,7 @@ mod tests {
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.select_display_ranges([
-                    DisplayPoint::new(DisplayRow(1), 0)..DisplayPoint::new(DisplayRow(1), 0)
+                    DisplayPoint.new(DisplayRow(1), 0)..DisplayPoint.new(DisplayRow(1), 0)
                 ])
             });
         });
@@ -1369,7 +1369,7 @@ mod tests {
             search_bar.select_prev_match(&SelectPrevMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(0), 41)..DisplayPoint::new(DisplayRow(0), 43)]
+                [DisplayPoint.new(DisplayRow(0), 41)..DisplayPoint.new(DisplayRow(0), 43)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1381,7 +1381,7 @@ mod tests {
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.select_display_ranges([
-                    DisplayPoint::new(DisplayRow(1), 0)..DisplayPoint::new(DisplayRow(1), 0)
+                    DisplayPoint.new(DisplayRow(1), 0)..DisplayPoint.new(DisplayRow(1), 0)
                 ])
             });
         });
@@ -1390,7 +1390,7 @@ mod tests {
             search_bar.select_next_match(&SelectNextMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(3), 11)..DisplayPoint::new(DisplayRow(3), 13)]
+                [DisplayPoint.new(DisplayRow(3), 11)..DisplayPoint.new(DisplayRow(3), 13)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1402,7 +1402,7 @@ mod tests {
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.select_display_ranges([
-                    DisplayPoint::new(DisplayRow(3), 60)..DisplayPoint::new(DisplayRow(3), 60)
+                    DisplayPoint.new(DisplayRow(3), 60)..DisplayPoint.new(DisplayRow(3), 60)
                 ])
             });
         });
@@ -1411,7 +1411,7 @@ mod tests {
             search_bar.select_prev_match(&SelectPrevMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(3), 56)..DisplayPoint::new(DisplayRow(3), 58)]
+                [DisplayPoint.new(DisplayRow(3), 56)..DisplayPoint.new(DisplayRow(3), 58)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1423,7 +1423,7 @@ mod tests {
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.select_display_ranges([
-                    DisplayPoint::new(DisplayRow(3), 60)..DisplayPoint::new(DisplayRow(3), 60)
+                    DisplayPoint.new(DisplayRow(3), 60)..DisplayPoint.new(DisplayRow(3), 60)
                 ])
             });
         });
@@ -1432,7 +1432,7 @@ mod tests {
             search_bar.select_next_match(&SelectNextMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(0), 41)..DisplayPoint::new(DisplayRow(0), 43)]
+                [DisplayPoint.new(DisplayRow(0), 41)..DisplayPoint.new(DisplayRow(0), 43)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1444,7 +1444,7 @@ mod tests {
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.select_display_ranges([
-                    DisplayPoint::new(DisplayRow(0), 0)..DisplayPoint::new(DisplayRow(0), 0)
+                    DisplayPoint.new(DisplayRow(0), 0)..DisplayPoint.new(DisplayRow(0), 0)
                 ])
             });
         });
@@ -1453,7 +1453,7 @@ mod tests {
             search_bar.select_prev_match(&SelectPrevMatch, cx);
             assert_eq!(
                 editor.update(cx, |editor, cx| editor.selections.display_ranges(cx)),
-                [DisplayPoint::new(DisplayRow(3), 56)..DisplayPoint::new(DisplayRow(3), 58)]
+                [DisplayPoint.new(DisplayRow(3), 56)..DisplayPoint.new(DisplayRow(3), 58)]
             );
         });
         search_bar.update(cx, |search_bar, _| {
@@ -1467,10 +1467,10 @@ mod tests {
         background_highlights
             .into_iter()
             .map(|(range, _)| range)
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_search_option_handling(cx: &mut TestAppContext) {
         let (editor, search_bar, cx) = init_test(cx);
 
@@ -1478,39 +1478,39 @@ mod tests {
         search_bar
             .update(cx, |search_bar, cx| {
                 search_bar.show(cx);
-                search_bar.search("us", Some(SearchOptions::CASE_SENSITIVE), cx)
+                search_bar.search("us", Some(SearchOptions.CASE_SENSITIVE), cx)
             })
             .await
             .unwrap();
         editor.update(cx, |editor, cx| {
             assert_eq!(
                 display_points_of(editor.all_text_background_highlights(cx)),
-                &[DisplayPoint::new(DisplayRow(2), 43)..DisplayPoint::new(DisplayRow(2), 45),]
+                &[DisplayPoint.new(DisplayRow(2), 43)..DisplayPoint.new(DisplayRow(2), 45),]
             );
         });
 
         // search_suggested should restore default options
         search_bar.update(cx, |search_bar, cx| {
             search_bar.search_suggested(cx);
-            assert_eq!(search_bar.search_options, SearchOptions::NONE)
+            assert_eq!(search_bar.search_options, SearchOptions.NONE)
         });
 
         // toggling a search option should update the defaults
         search_bar
             .update(cx, |search_bar, cx| {
-                search_bar.search("regex", Some(SearchOptions::CASE_SENSITIVE), cx)
+                search_bar.search("regex", Some(SearchOptions.CASE_SENSITIVE), cx)
             })
             .await
             .unwrap();
         search_bar.update(cx, |search_bar, cx| {
-            search_bar.toggle_search_option(SearchOptions::WHOLE_WORD, cx)
+            search_bar.toggle_search_option(SearchOptions.WHOLE_WORD, cx)
         });
         let mut editor_notifications = cx.notifications(&editor);
         editor_notifications.next().await;
         editor.update(cx, |editor, cx| {
             assert_eq!(
                 display_points_of(editor.all_text_background_highlights(cx)),
-                &[DisplayPoint::new(DisplayRow(0), 35)..DisplayPoint::new(DisplayRow(0), 40),]
+                &[DisplayPoint.new(DisplayRow(0), 35)..DisplayPoint.new(DisplayRow(0), 40),]
             );
         });
 
@@ -1519,12 +1519,12 @@ mod tests {
             search_bar.search_suggested(cx);
             assert_eq!(
                 search_bar.search_options,
-                SearchOptions::CASE_SENSITIVE | SearchOptions::WHOLE_WORD
+                SearchOptions.CASE_SENSITIVE | SearchOptions.WHOLE_WORD
             )
         });
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_search_select_all_matches(cx: &mut TestAppContext) {
         init_globals(cx);
         let buffer_text = r#"
@@ -1542,13 +1542,13 @@ mod tests {
             expected_query_matches_count > 1,
             "Should pick a query with multiple results"
         );
-        let buffer = cx.new_model(|cx| Buffer::local(buffer_text, cx));
-        let window = cx.add_window(|_| gpui::Empty);
+        let buffer = cx.new_model(|cx| Buffer.local(buffer_text, cx));
+        let window = cx.add_window(|_| gpui.Empty);
 
-        let editor = window.build_view(cx, |cx| Editor::for_buffer(buffer.clone(), None, cx));
+        let editor = window.build_view(cx, |cx| Editor.for_buffer(buffer.clone(), None, cx));
 
         let search_bar = window.build_view(cx, |cx| {
-            let mut search_bar = BufferSearchBar::new(cx);
+            let mut search_bar = BufferSearchBar.new(cx);
             search_bar.set_active_pane_item(Some(&editor), cx);
             search_bar.show(cx);
             search_bar
@@ -1728,7 +1728,7 @@ mod tests {
             .unwrap();
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_search_query_history(cx: &mut TestAppContext) {
         init_globals(cx);
         let buffer_text = r#"
@@ -1738,13 +1738,13 @@ mod tests {
         for "find" or "find and replace" operations on strings, or for input validation.
         "#
         .unindent();
-        let buffer = cx.new_model(|cx| Buffer::local(buffer_text, cx));
+        let buffer = cx.new_model(|cx| Buffer.local(buffer_text, cx));
         let cx = cx.add_empty_window();
 
-        let editor = cx.new_view(|cx| Editor::for_buffer(buffer.clone(), None, cx));
+        let editor = cx.new_view(|cx| Editor.for_buffer(buffer.clone(), None, cx));
 
         let search_bar = cx.new_view(|cx| {
-            let mut search_bar = BufferSearchBar::new(cx);
+            let mut search_bar = BufferSearchBar.new(cx);
             search_bar.set_active_pane_item(Some(&editor), cx);
             search_bar.show(cx);
             search_bar
@@ -1761,14 +1761,14 @@ mod tests {
             .unwrap();
         search_bar
             .update(cx, |search_bar, cx| {
-                search_bar.search("c", Some(SearchOptions::CASE_SENSITIVE), cx)
+                search_bar.search("c", Some(SearchOptions.CASE_SENSITIVE), cx)
             })
             .await
             .unwrap();
         // Ensure that the latest search is active.
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "c");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
 
         // Next history query after the latest should set the query to the empty string.
@@ -1777,14 +1777,14 @@ mod tests {
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
         search_bar.update(cx, |search_bar, cx| {
             search_bar.next_history_query(&NextHistoryQuery, cx);
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
 
         // First previous query for empty current query should set the query to the latest.
@@ -1793,7 +1793,7 @@ mod tests {
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "c");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
 
         // Further previous items should go over the history in reverse order.
@@ -1802,7 +1802,7 @@ mod tests {
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "b");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
 
         // Previous items should never go behind the first history item.
@@ -1811,14 +1811,14 @@ mod tests {
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "a");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
         search_bar.update(cx, |search_bar, cx| {
             search_bar.previous_history_query(&PreviousHistoryQuery, cx);
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "a");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
 
         // Next items should go over the history in the original order.
@@ -1827,7 +1827,7 @@ mod tests {
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "b");
-            assert_eq!(search_bar.search_options, SearchOptions::CASE_SENSITIVE);
+            assert_eq!(search_bar.search_options, SearchOptions.CASE_SENSITIVE);
         });
 
         search_bar
@@ -1836,7 +1836,7 @@ mod tests {
             .unwrap();
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "ba");
-            assert_eq!(search_bar.search_options, SearchOptions::NONE);
+            assert_eq!(search_bar.search_options, SearchOptions.NONE);
         });
 
         // New search input should add another entry to history and move the selection to the end of the history.
@@ -1845,39 +1845,39 @@ mod tests {
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "c");
-            assert_eq!(search_bar.search_options, SearchOptions::NONE);
+            assert_eq!(search_bar.search_options, SearchOptions.NONE);
         });
         search_bar.update(cx, |search_bar, cx| {
             search_bar.previous_history_query(&PreviousHistoryQuery, cx);
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "b");
-            assert_eq!(search_bar.search_options, SearchOptions::NONE);
+            assert_eq!(search_bar.search_options, SearchOptions.NONE);
         });
         search_bar.update(cx, |search_bar, cx| {
             search_bar.next_history_query(&NextHistoryQuery, cx);
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "c");
-            assert_eq!(search_bar.search_options, SearchOptions::NONE);
+            assert_eq!(search_bar.search_options, SearchOptions.NONE);
         });
         search_bar.update(cx, |search_bar, cx| {
             search_bar.next_history_query(&NextHistoryQuery, cx);
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "ba");
-            assert_eq!(search_bar.search_options, SearchOptions::NONE);
+            assert_eq!(search_bar.search_options, SearchOptions.NONE);
         });
         search_bar.update(cx, |search_bar, cx| {
             search_bar.next_history_query(&NextHistoryQuery, cx);
         });
         search_bar.update(cx, |search_bar, cx| {
             assert_eq!(search_bar.query(cx), "");
-            assert_eq!(search_bar.search_options, SearchOptions::NONE);
+            assert_eq!(search_bar.search_options, SearchOptions.NONE);
         });
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_replace_simple(cx: &mut TestAppContext) {
         let (editor, search_bar, cx) = init_test(cx);
 
@@ -1909,7 +1909,7 @@ mod tests {
         // Search for word boundaries and replace just a single one.
         search_bar
             .update(cx, |search_bar, cx| {
-                search_bar.search("or", Some(SearchOptions::WHOLE_WORD), cx)
+                search_bar.search("or", Some(SearchOptions.WHOLE_WORD), cx)
             })
             .await
             .unwrap();
@@ -1934,7 +1934,7 @@ mod tests {
         // Let's turn on regex mode.
         search_bar
             .update(cx, |search_bar, cx| {
-                search_bar.search("\\[([^\\]]+)\\]", Some(SearchOptions::REGEX), cx)
+                search_bar.search("\\[([^\\]]+)\\]", Some(SearchOptions.REGEX), cx)
             })
             .await
             .unwrap();
@@ -1959,7 +1959,7 @@ mod tests {
             .update(cx, |search_bar, cx| {
                 search_bar.search(
                     "a\\w+s",
-                    Some(SearchOptions::REGEX | SearchOptions::WHOLE_WORD),
+                    Some(SearchOptions.REGEX | SearchOptions.WHOLE_WORD),
                     cx,
                 )
             })
@@ -2028,7 +2028,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_replace_special_characters(cx: &mut TestAppContext) {
         let (editor, search_bar, cx) = init_test(cx);
 
@@ -2055,7 +2055,7 @@ mod tests {
             search_bar: &search_bar,
             cx,
             search_text: "or",
-            search_options: Some(SearchOptions::WHOLE_WORD | SearchOptions::REGEX),
+            search_options: Some(SearchOptions.WHOLE_WORD | SearchOptions.REGEX),
             replacement_text: r"\\\n\\\\",
             replace_all: false,
             expected_text: r#"
@@ -2074,7 +2074,7 @@ mod tests {
             search_bar: &search_bar,
             cx,
             search_text: r"(that|used) ",
-            search_options: Some(SearchOptions::REGEX),
+            search_options: Some(SearchOptions.REGEX),
             replacement_text: r"$1\n",
             replace_all: true,
             expected_text: r#"
@@ -2091,13 +2091,13 @@ mod tests {
         .await;
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_find_matches_in_selections_singleton_buffer_multiple_selections(
         cx: &mut TestAppContext,
     ) {
         init_globals(cx);
         let buffer = cx.new_model(|cx| {
-            Buffer::local(
+            Buffer.local(
                 r#"
                 aaa bbb aaa ccc
                 aaa bbb aaa ccc
@@ -2111,10 +2111,10 @@ mod tests {
             )
         });
         let cx = cx.add_empty_window();
-        let editor = cx.new_view(|cx| Editor::for_buffer(buffer.clone(), None, cx));
+        let editor = cx.new_view(|cx| Editor.for_buffer(buffer.clone(), None, cx));
 
         let search_bar = cx.new_view(|cx| {
-            let mut search_bar = BufferSearchBar::new(cx);
+            let mut search_bar = BufferSearchBar.new(cx);
             search_bar.set_active_pane_item(Some(&editor), cx);
             search_bar.show(cx);
             search_bar
@@ -2122,7 +2122,7 @@ mod tests {
 
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
-                s.select_ranges(vec![Point::new(1, 0)..Point::new(2, 4)])
+                s.select_ranges(vec![Point.new(1, 0)..Point.new(2, 4)])
             })
         });
 
@@ -2146,15 +2146,15 @@ mod tests {
             assert_eq!(
                 editor.search_background_highlights(cx),
                 &[
-                    Point::new(1, 0)..Point::new(1, 3),
-                    Point::new(1, 8)..Point::new(1, 11),
-                    Point::new(2, 0)..Point::new(2, 3),
+                    Point.new(1, 0)..Point.new(1, 3),
+                    Point.new(1, 8)..Point.new(1, 11),
+                    Point.new(2, 0)..Point.new(2, 3),
                 ]
             );
         });
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_find_matches_in_selections_multiple_excerpts_buffer_multiple_selections(
         cx: &mut TestAppContext,
     ) {
@@ -2178,24 +2178,24 @@ mod tests {
 
         let cx = cx.add_empty_window();
         let editor = cx.new_view(|cx| {
-            let multibuffer = MultiBuffer::build_multi(
+            let multibuffer = MultiBuffer.build_multi(
                 [
                     (
                         &text,
                         vec![
-                            Point::new(0, 0)..Point::new(2, 0),
-                            Point::new(4, 0)..Point::new(5, 0),
+                            Point.new(0, 0)..Point.new(2, 0),
+                            Point.new(4, 0)..Point.new(5, 0),
                         ],
                     ),
-                    (&text, vec![Point::new(9, 0)..Point::new(11, 0)]),
+                    (&text, vec![Point.new(9, 0)..Point.new(11, 0)]),
                 ],
                 cx,
             );
-            Editor::for_multibuffer(multibuffer, None, false, cx)
+            Editor.for_multibuffer(multibuffer, None, false, cx)
         });
 
         let search_bar = cx.new_view(|cx| {
-            let mut search_bar = BufferSearchBar::new(cx);
+            let mut search_bar = BufferSearchBar.new(cx);
             search_bar.set_active_pane_item(Some(&editor), cx);
             search_bar.show(cx);
             search_bar
@@ -2204,8 +2204,8 @@ mod tests {
         editor.update(cx, |editor, cx| {
             editor.change_selections(None, cx, |s| {
                 s.select_ranges(vec![
-                    Point::new(1, 0)..Point::new(1, 4),
-                    Point::new(5, 3)..Point::new(6, 4),
+                    Point.new(1, 0)..Point.new(1, 4),
+                    Point.new(5, 3)..Point.new(6, 4),
                 ])
             })
         });
@@ -2230,21 +2230,21 @@ mod tests {
             assert_eq!(
                 editor.search_background_highlights(cx),
                 &[
-                    Point::new(1, 0)..Point::new(1, 3),
-                    Point::new(5, 8)..Point::new(5, 11),
-                    Point::new(6, 0)..Point::new(6, 3),
+                    Point.new(1, 0)..Point.new(1, 3),
+                    Point.new(5, 8)..Point.new(5, 11),
+                    Point.new(6, 0)..Point.new(6, 3),
                 ]
             );
         });
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_invalid_regexp_search_after_valid(cx: &mut TestAppContext) {
         let (editor, search_bar, cx) = init_test(cx);
         // Search using valid regexp
         search_bar
             .update(cx, |search_bar, cx| {
-                search_bar.enable_search_option(SearchOptions::REGEX, cx);
+                search_bar.enable_search_option(SearchOptions.REGEX, cx);
                 search_bar.search("expression", None, cx)
             })
             .await
@@ -2253,8 +2253,8 @@ mod tests {
             assert_eq!(
                 display_points_of(editor.all_text_background_highlights(cx)),
                 &[
-                    DisplayPoint::new(DisplayRow(0), 10)..DisplayPoint::new(DisplayRow(0), 20),
-                    DisplayPoint::new(DisplayRow(1), 9)..DisplayPoint::new(DisplayRow(1), 19),
+                    DisplayPoint.new(DisplayRow(0), 10)..DisplayPoint.new(DisplayRow(0), 20),
+                    DisplayPoint.new(DisplayRow(1), 9)..DisplayPoint.new(DisplayRow(1), 19),
                 ],
             );
         });

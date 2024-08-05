@@ -1,21 +1,21 @@
 pub mod parser;
 
-use crate::parser::CodeBlockKind;
-use futures::FutureExt;
-use gpui::{
+use crate.parser.CodeBlockKind;
+use futures.FutureExt;
+use gpui.{
     actions, point, quad, AnyElement, AppContext, Bounds, ClipboardItem, CursorStyle,
     DispatchPhase, Edges, FocusHandle, FocusableView, FontStyle, FontWeight, GlobalElementId,
     Hitbox, Hsla, KeyContext, Length, MouseDownEvent, MouseEvent, MouseMoveEvent, MouseUpEvent,
     Point, Render, StrikethroughStyle, StyleRefinement, StyledText, Task, TextLayout, TextRun,
     TextStyle, TextStyleRefinement, View,
 };
-use language::{Language, LanguageRegistry, Rope};
-use parser::{parse_links_only, parse_markdown, MarkdownEvent, MarkdownTag, MarkdownTagEnd};
+use language.{Language, LanguageRegistry, Rope};
+use parser.{parse_links_only, parse_markdown, MarkdownEvent, MarkdownTag, MarkdownTagEnd};
 
-use std::{iter, mem, ops::Range, rc::Rc, sync::Arc};
-use theme::SyntaxTheme;
-use ui::prelude::*;
-use util::{ResultExt, TryFutureExt};
+use std.{iter, mem, ops.Range, rc.Rc, sync.Arc};
+use theme.SyntaxTheme;
+use ui.prelude.*;
+use util.{ResultExt, TryFutureExt};
 
 #[derive(Clone)]
 pub struct MarkdownStyle {
@@ -35,17 +35,17 @@ pub struct MarkdownStyle {
 impl Default for MarkdownStyle {
     fn default() -> Self {
         Self {
-            base_text_style: Default::default(),
-            code_block: Default::default(),
-            inline_code: Default::default(),
-            block_quote: Default::default(),
-            link: Default::default(),
-            rule_color: Default::default(),
-            block_quote_border_color: Default::default(),
-            syntax: Arc::new(SyntaxTheme::default()),
-            selection_background_color: Default::default(),
-            break_style: Default::default(),
-            heading: Default::default(),
+            base_text_style: Default.default(),
+            code_block: Default.default(),
+            inline_code: Default.default(),
+            block_quote: Default.default(),
+            link: Default.default(),
+            rule_color: Default.default(),
+            block_quote_border_color: Default.default(),
+            syntax: Arc.new(SyntaxTheme.default()),
+            selection_background_color: Default.default(),
+            break_style: Default.default(),
+            heading: Default.default(),
         }
     }
 }
@@ -77,12 +77,12 @@ impl Markdown {
         let focus_handle = cx.focus_handle();
         let mut this = Self {
             source,
-            selection: Selection::default(),
+            selection: Selection.default(),
             pressed_link: None,
             autoscroll_request: None,
             style,
             should_reparse: false,
-            parsed_markdown: ParsedMarkdown::default(),
+            parsed_markdown: ParsedMarkdown.default(),
             pending_parse: None,
             focus_handle,
             language_registry,
@@ -103,12 +103,12 @@ impl Markdown {
         let focus_handle = cx.focus_handle();
         let mut this = Self {
             source,
-            selection: Selection::default(),
+            selection: Selection.default(),
             pressed_link: None,
             autoscroll_request: None,
             style,
             should_reparse: false,
-            parsed_markdown: ParsedMarkdown::default(),
+            parsed_markdown: ParsedMarkdown.default(),
             pending_parse: None,
             focus_handle,
             language_registry,
@@ -129,11 +129,11 @@ impl Markdown {
             return;
         }
         self.source = source;
-        self.selection = Selection::default();
+        self.selection = Selection.default();
         self.autoscroll_request = None;
         self.pending_parse = None;
         self.should_reparse = false;
-        self.parsed_markdown = ParsedMarkdown::default();
+        self.parsed_markdown = ParsedMarkdown.default();
         self.parse(cx);
     }
 
@@ -150,7 +150,7 @@ impl Markdown {
             return;
         }
         let text = text.text_for_range(self.selection.start..self.selection.end);
-        cx.write_to_clipboard(ClipboardItem::new(text));
+        cx.write_to_clipboard(ClipboardItem.new(text));
     }
 
     fn parse(&mut self, cx: &mut ViewContext<Self>) {
@@ -166,12 +166,12 @@ impl Markdown {
         let text = self.source.clone();
         let parse_text_only = self.parse_links_only;
         let parsed = cx.background_executor().spawn(async move {
-            let text = SharedString::from(text);
+            let text = SharedString.from(text);
             let events = match parse_text_only {
-                true => Arc::from(parse_links_only(text.as_ref())),
-                false => Arc::from(parse_markdown(text.as_ref())),
+                true => Arc.from(parse_links_only(text.as_ref())),
+                false => Arc.from(parse_markdown(text.as_ref())),
             };
-            anyhow::Ok(ParsedMarkdown {
+            anyhow.Ok(ParsedMarkdown {
                 source: text,
                 events,
             })
@@ -190,7 +190,7 @@ impl Markdown {
                     cx.notify();
                 })
                 .ok();
-                anyhow::Ok(())
+                anyhow.Ok(())
             }
             .log_err()
         }));
@@ -199,7 +199,7 @@ impl Markdown {
 
 impl Render for Markdown {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        MarkdownElement::new(
+        MarkdownElement.new(
             cx.view().clone(),
             self.style.clone(),
             self.language_registry.clone(),
@@ -290,11 +290,11 @@ impl MarkdownElement {
         let language_test = self.language_registry.as_ref()?.language_for_name(name);
 
         let language_name = match language_test.now_or_never() {
-            Some(Ok(_)) => String::from(name),
+            Some(Ok(_)) => String.from(name),
             Some(Err(_)) if !name.is_empty() && self.fallback_code_block_language.is_some() => {
                 self.fallback_code_block_language.clone().unwrap()
             }
-            _ => String::new(),
+            _ => String.new(),
         };
 
         let language = self
@@ -333,49 +333,49 @@ impl MarkdownElement {
         {
             if start_position.y == end_position.y {
                 cx.paint_quad(quad(
-                    Bounds::from_corners(
+                    Bounds.from_corners(
                         start_position,
                         point(end_position.x, end_position.y + end_line_height),
                     ),
-                    Pixels::ZERO,
+                    Pixels.ZERO,
                     self.style.selection_background_color,
-                    Edges::default(),
-                    Hsla::transparent_black(),
+                    Edges.default(),
+                    Hsla.transparent_black(),
                 ));
             } else {
                 cx.paint_quad(quad(
-                    Bounds::from_corners(
+                    Bounds.from_corners(
                         start_position,
                         point(bounds.right(), start_position.y + start_line_height),
                     ),
-                    Pixels::ZERO,
+                    Pixels.ZERO,
                     self.style.selection_background_color,
-                    Edges::default(),
-                    Hsla::transparent_black(),
+                    Edges.default(),
+                    Hsla.transparent_black(),
                 ));
 
                 if end_position.y > start_position.y + start_line_height {
                     cx.paint_quad(quad(
-                        Bounds::from_corners(
+                        Bounds.from_corners(
                             point(bounds.left(), start_position.y + start_line_height),
                             point(bounds.right(), end_position.y),
                         ),
-                        Pixels::ZERO,
+                        Pixels.ZERO,
                         self.style.selection_background_color,
-                        Edges::default(),
-                        Hsla::transparent_black(),
+                        Edges.default(),
+                        Hsla.transparent_black(),
                     ));
                 }
 
                 cx.paint_quad(quad(
-                    Bounds::from_corners(
+                    Bounds.from_corners(
                         point(bounds.left(), end_position.y),
                         point(end_position.x, end_position.y + end_line_height),
                     ),
-                    Pixels::ZERO,
+                    Pixels.ZERO,
                     self.style.selection_background_color,
-                    Edges::default(),
-                    Hsla::transparent_black(),
+                    Edges.default(),
+                    Hsla.transparent_black(),
                 ));
             }
         }
@@ -394,9 +394,9 @@ impl MarkdownElement {
                 .is_some();
 
         if is_hovering_link {
-            cx.set_cursor_style(CursorStyle::PointingHand, hitbox);
+            cx.set_cursor_style(CursorStyle.PointingHand, hitbox);
         } else {
-            cx.set_cursor_style(CursorStyle::IBeam, hitbox);
+            cx.set_cursor_style(CursorStyle.IBeam, hitbox);
         }
 
         self.on_mouse_event(cx, {
@@ -432,7 +432,7 @@ impl MarkdownElement {
                         cx.notify();
                     }
                 } else if phase.capture() {
-                    markdown.selection = Selection::default();
+                    markdown.selection = Selection.default();
                     markdown.pressed_link = None;
                     cx.notify();
                 }
@@ -480,7 +480,7 @@ impl MarkdownElement {
                         {
                             let text = rendered_text
                                 .text_for_range(markdown.selection.start..markdown.selection.end);
-                            cx.write_to_primary(ClipboardItem::new(text))
+                            cx.write_to_primary(ClipboardItem.new(text))
                         }
                         cx.notify();
                     }
@@ -504,7 +504,7 @@ impl MarkdownElement {
             .unwrap()
             .size
             .width;
-        cx.request_autoscroll(Bounds::from_corners(
+        cx.request_autoscroll(Bounds.from_corners(
             point(position.x - 3. * em_width, position.y - 3. * line_height),
             point(position.x + 3. * em_width, position.y + 3. * line_height),
         ));
@@ -539,8 +539,8 @@ impl Element for MarkdownElement {
         &mut self,
         _id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
-        let mut builder = MarkdownElementBuilder::new(
+    ) -> (gpui.LayoutId, Self.RequestLayoutState) {
+        let mut builder = MarkdownElementBuilder.new(
             self.style.base_text_style.clone(),
             self.style.syntax.clone(),
         );
@@ -552,22 +552,22 @@ impl Element for MarkdownElement {
         };
         for (range, event) in parsed_markdown.events.iter() {
             match event {
-                MarkdownEvent::Start(tag) => {
+                MarkdownEvent.Start(tag) => {
                     match tag {
-                        MarkdownTag::Paragraph => {
+                        MarkdownTag.Paragraph => {
                             builder.push_div(
                                 div().mb_2().line_height(rems(1.3)),
                                 range,
                                 markdown_end,
                             );
                         }
-                        MarkdownTag::Heading { level, .. } => {
+                        MarkdownTag.Heading { level, .. } => {
                             let mut heading = div().mb_2();
                             heading = match level {
-                                pulldown_cmark::HeadingLevel::H1 => heading.text_3xl(),
-                                pulldown_cmark::HeadingLevel::H2 => heading.text_2xl(),
-                                pulldown_cmark::HeadingLevel::H3 => heading.text_xl(),
-                                pulldown_cmark::HeadingLevel::H4 => heading.text_lg(),
+                                pulldown_cmark.HeadingLevel.H1 => heading.text_3xl(),
+                                pulldown_cmark.HeadingLevel.H2 => heading.text_2xl(),
+                                pulldown_cmark.HeadingLevel.H3 => heading.text_xl(),
+                                pulldown_cmark.HeadingLevel.H4 => heading.text_lg(),
                                 _ => heading,
                             };
                             heading.style().refine(&self.style.heading);
@@ -576,7 +576,7 @@ impl Element for MarkdownElement {
                             );
                             builder.push_div(heading, range, markdown_end);
                         }
-                        MarkdownTag::BlockQuote => {
+                        MarkdownTag.BlockQuote => {
                             builder.push_text_style(self.style.block_quote.clone());
                             builder.push_div(
                                 div()
@@ -588,8 +588,8 @@ impl Element for MarkdownElement {
                                 markdown_end,
                             );
                         }
-                        MarkdownTag::CodeBlock(kind) => {
-                            let language = if let CodeBlockKind::Fenced(language) = kind {
+                        MarkdownTag.CodeBlock(kind) => {
+                            let language = if let CodeBlockKind.Fenced(language) = kind {
                                 self.load_language(language.as_ref(), cx)
                             } else {
                                 None
@@ -603,12 +603,12 @@ impl Element for MarkdownElement {
                             builder.push_code_block(language);
                             builder.push_div(d, range, markdown_end);
                         }
-                        MarkdownTag::HtmlBlock => builder.push_div(div(), range, markdown_end),
-                        MarkdownTag::List(bullet_index) => {
+                        MarkdownTag.HtmlBlock => builder.push_div(div(), range, markdown_end),
+                        MarkdownTag.List(bullet_index) => {
                             builder.push_list(*bullet_index);
                             builder.push_div(div().pl_4(), range, markdown_end);
                         }
-                        MarkdownTag::Item => {
+                        MarkdownTag.Item => {
                             let bullet = if let Some(bullet_index) = builder.next_bullet_index() {
                                 format!("{}.", bullet_index)
                             } else {
@@ -628,46 +628,46 @@ impl Element for MarkdownElement {
                             // Without `w_0`, text doesn't wrap to the width of the container.
                             builder.push_div(div().flex_1().w_0(), range, markdown_end);
                         }
-                        MarkdownTag::Emphasis => builder.push_text_style(TextStyleRefinement {
-                            font_style: Some(FontStyle::Italic),
-                            ..Default::default()
+                        MarkdownTag.Emphasis => builder.push_text_style(TextStyleRefinement {
+                            font_style: Some(FontStyle.Italic),
+                            ..Default.default()
                         }),
-                        MarkdownTag::Strong => builder.push_text_style(TextStyleRefinement {
-                            font_weight: Some(FontWeight::BOLD),
-                            ..Default::default()
+                        MarkdownTag.Strong => builder.push_text_style(TextStyleRefinement {
+                            font_weight: Some(FontWeight.BOLD),
+                            ..Default.default()
                         }),
-                        MarkdownTag::Strikethrough => {
+                        MarkdownTag.Strikethrough => {
                             builder.push_text_style(TextStyleRefinement {
                                 strikethrough: Some(StrikethroughStyle {
                                     thickness: px(1.),
                                     color: None,
                                 }),
-                                ..Default::default()
+                                ..Default.default()
                             })
                         }
-                        MarkdownTag::Link { dest_url, .. } => {
+                        MarkdownTag.Link { dest_url, .. } => {
                             if builder.code_block_stack.is_empty() {
                                 builder.push_link(dest_url.clone(), range.clone());
                                 builder.push_text_style(self.style.link.clone())
                             }
                         }
-                        MarkdownTag::MetadataBlock(_) => {}
-                        _ => log::error!("unsupported markdown tag {:?}", tag),
+                        MarkdownTag.MetadataBlock(_) => {}
+                        _ => log.error!("unsupported markdown tag {:?}", tag),
                     }
                 }
-                MarkdownEvent::End(tag) => match tag {
-                    MarkdownTagEnd::Paragraph => {
+                MarkdownEvent.End(tag) => match tag {
+                    MarkdownTagEnd.Paragraph => {
                         builder.pop_div();
                     }
-                    MarkdownTagEnd::Heading(_) => {
+                    MarkdownTagEnd.Heading(_) => {
                         builder.pop_div();
                         builder.pop_text_style()
                     }
-                    MarkdownTagEnd::BlockQuote => {
+                    MarkdownTagEnd.BlockQuote => {
                         builder.pop_text_style();
                         builder.pop_div()
                     }
-                    MarkdownTagEnd::CodeBlock => {
+                    MarkdownTagEnd.CodeBlock => {
                         builder.trim_trailing_newline();
                         builder.pop_div();
                         builder.pop_code_block();
@@ -675,40 +675,40 @@ impl Element for MarkdownElement {
                             builder.pop_text_style();
                         }
                     }
-                    MarkdownTagEnd::HtmlBlock => builder.pop_div(),
-                    MarkdownTagEnd::List(_) => {
+                    MarkdownTagEnd.HtmlBlock => builder.pop_div(),
+                    MarkdownTagEnd.List(_) => {
                         builder.pop_list();
                         builder.pop_div();
                     }
-                    MarkdownTagEnd::Item => {
+                    MarkdownTagEnd.Item => {
                         builder.pop_div();
                         builder.pop_div();
                     }
-                    MarkdownTagEnd::Emphasis => builder.pop_text_style(),
-                    MarkdownTagEnd::Strong => builder.pop_text_style(),
-                    MarkdownTagEnd::Strikethrough => builder.pop_text_style(),
-                    MarkdownTagEnd::Link => {
+                    MarkdownTagEnd.Emphasis => builder.pop_text_style(),
+                    MarkdownTagEnd.Strong => builder.pop_text_style(),
+                    MarkdownTagEnd.Strikethrough => builder.pop_text_style(),
+                    MarkdownTagEnd.Link => {
                         if builder.code_block_stack.is_empty() {
                             builder.pop_text_style()
                         }
                     }
-                    _ => log::error!("unsupported markdown tag end: {:?}", tag),
+                    _ => log.error!("unsupported markdown tag end: {:?}", tag),
                 },
-                MarkdownEvent::Text => {
+                MarkdownEvent.Text => {
                     builder.push_text(&parsed_markdown.source[range.clone()], range.start);
                 }
-                MarkdownEvent::Code => {
+                MarkdownEvent.Code => {
                     builder.push_text_style(self.style.inline_code.clone());
                     builder.push_text(&parsed_markdown.source[range.clone()], range.start);
                     builder.pop_text_style();
                 }
-                MarkdownEvent::Html => {
+                MarkdownEvent.Html => {
                     builder.push_text(&parsed_markdown.source[range.clone()], range.start);
                 }
-                MarkdownEvent::InlineHtml => {
+                MarkdownEvent.InlineHtml => {
                     builder.push_text(&parsed_markdown.source[range.clone()], range.start);
                 }
-                MarkdownEvent::Rule => {
+                MarkdownEvent.Rule => {
                     builder.push_div(
                         div()
                             .border_b_1()
@@ -719,19 +719,19 @@ impl Element for MarkdownElement {
                     );
                     builder.pop_div()
                 }
-                MarkdownEvent::SoftBreak => builder.push_text(" ", range.start),
-                MarkdownEvent::HardBreak => {
+                MarkdownEvent.SoftBreak => builder.push_text(" ", range.start),
+                MarkdownEvent.HardBreak => {
                     let mut d = div().py_3();
                     d.style().refine(&self.style.break_style);
                     builder.push_div(d, range, markdown_end);
                     builder.pop_div()
                 }
-                _ => log::error!("unsupported markdown event {:?}", event),
+                _ => log.error!("unsupported markdown event {:?}", event),
             }
         }
         let mut rendered_markdown = builder.build();
         let child_layout_id = rendered_markdown.element.request_layout(cx);
-        let layout_id = cx.request_layout(gpui::Style::default(), [child_layout_id]);
+        let layout_id = cx.request_layout(gpui.Style.default(), [child_layout_id]);
         (layout_id, rendered_markdown)
     }
 
@@ -739,9 +739,9 @@ impl Element for MarkdownElement {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        rendered_markdown: &mut Self::RequestLayoutState,
+        rendered_markdown: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
-    ) -> Self::PrepaintState {
+    ) -> Self.PrepaintState {
         let focus_handle = self.markdown.read(cx).focus_handle.clone();
         cx.set_focus_handle(&focus_handle);
 
@@ -755,19 +755,19 @@ impl Element for MarkdownElement {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        rendered_markdown: &mut Self::RequestLayoutState,
-        hitbox: &mut Self::PrepaintState,
+        rendered_markdown: &mut Self.RequestLayoutState,
+        hitbox: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
-        let mut context = KeyContext::default();
+        let mut context = KeyContext.default();
         context.add("Markdown");
         cx.set_key_context(context);
         let view = self.markdown.clone();
-        cx.on_action(std::any::TypeId::of::<crate::Copy>(), {
+        cx.on_action(std.any.TypeId.of.<crate.Copy>(), {
             let text = rendered_markdown.text.clone();
             move |_, phase, cx| {
                 let text = text.clone();
-                if phase == DispatchPhase::Bubble {
+                if phase == DispatchPhase.Bubble {
                     view.update(cx, move |this, cx| this.copy(&text, cx))
                 }
             }
@@ -782,7 +782,7 @@ impl Element for MarkdownElement {
 impl IntoElement for MarkdownElement {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }
@@ -815,14 +815,14 @@ impl MarkdownElementBuilder {
     fn new(base_text_style: TextStyle, syntax_theme: Arc<SyntaxTheme>) -> Self {
         Self {
             div_stack: vec![div().debug_selector(|| "inner".into())],
-            rendered_lines: Vec::new(),
-            pending_line: PendingLine::default(),
-            rendered_links: Vec::new(),
+            rendered_lines: Vec.new(),
+            pending_line: PendingLine.default(),
+            rendered_links: Vec.new(),
             current_source_index: 0,
             base_text_style,
-            text_style_stack: Vec::new(),
-            code_block_stack: Vec::new(),
-            list_stack: Vec::new(),
+            text_style_stack: Vec.new(),
+            code_block_stack: Vec.new(),
+            list_stack: Vec.new(),
             syntax_theme,
         }
     }
@@ -849,24 +849,24 @@ impl MarkdownElementBuilder {
         if range.start == 0 {
             //first element, remove top margin
             div.style().refine(&StyleRefinement {
-                margin: gpui::EdgesRefinement {
-                    top: Some(Length::Definite(px(0.).into())),
+                margin: gpui.EdgesRefinement {
+                    top: Some(Length.Definite(px(0.).into())),
                     left: None,
                     right: None,
                     bottom: None,
                 },
-                ..Default::default()
+                ..Default.default()
             });
         }
         if range.end == markdown_end {
             div.style().refine(&StyleRefinement {
-                margin: gpui::EdgesRefinement {
+                margin: gpui.EdgesRefinement {
                     top: None,
                     left: None,
                     right: None,
-                    bottom: Some(Length::Definite(rems(0.).into())),
+                    bottom: Some(Length.Definite(rems(0.).into())),
                 },
-                ..Default::default()
+                ..Default.default()
             });
         }
         self.div_stack.push(div);
@@ -875,7 +875,7 @@ impl MarkdownElementBuilder {
     fn pop_div(&mut self) {
         self.flush_text();
         let div = self.div_stack.pop().unwrap().into_any();
-        self.div_stack.last_mut().unwrap().extend(iter::once(div));
+        self.div_stack.last_mut().unwrap().extend(iter.once(div));
     }
 
     fn push_list(&mut self, bullet_index: Option<u64>) {
@@ -919,7 +919,7 @@ impl MarkdownElementBuilder {
 
         if let Some(Some(language)) = self.code_block_stack.last() {
             let mut offset = 0;
-            for (range, highlight_id) in language.highlight_text(&Rope::from(text), 0..text.len()) {
+            for (range, highlight_id) in language.highlight_text(&Rope.from(text), 0..text.len()) {
                 if range.start > offset {
                     self.pending_line
                         .runs
@@ -957,12 +957,12 @@ impl MarkdownElementBuilder {
     }
 
     fn flush_text(&mut self) {
-        let line = mem::take(&mut self.pending_line);
+        let line = mem.take(&mut self.pending_line);
         if line.text.is_empty() {
             return;
         }
 
-        let text = StyledText::new(line.text).with_runs(line.runs);
+        let text = StyledText.new(line.text).with_runs(line.runs);
         self.rendered_lines.push(RenderedLine {
             layout: text.layout().clone(),
             source_mappings: line.source_mappings,

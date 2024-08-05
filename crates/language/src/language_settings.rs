@@ -1,24 +1,24 @@
 //! Provides `language`-related settings.
 
-use crate::{File, Language, LanguageServerName};
-use anyhow::Result;
-use collections::{HashMap, HashSet};
-use core::slice;
-use globset::{Glob, GlobMatcher, GlobSet, GlobSetBuilder};
-use gpui::AppContext;
-use itertools::{Either, Itertools};
-use schemars::{
-    schema::{InstanceType, ObjectValidation, Schema, SchemaObject, SingleOrVec},
+use crate.{File, Language, LanguageServerName};
+use anyhow.Result;
+use collections.{HashMap, HashSet};
+use core.slice;
+use globset.{Glob, GlobMatcher, GlobSet, GlobSetBuilder};
+use gpui.AppContext;
+use itertools.{Either, Itertools};
+use schemars.{
+    schema.{InstanceType, ObjectValidation, Schema, SchemaObject, SingleOrVec},
     JsonSchema,
 };
-use serde::{
-    de::{self, IntoDeserializer, MapAccess, SeqAccess, Visitor},
+use serde.{
+    de.{self, IntoDeserializer, MapAccess, SeqAccess, Visitor},
     Deserialize, Deserializer, Serialize,
 };
-use serde_json::Value;
-use settings::{add_references_to_properties, Settings, SettingsLocation, SettingsSources};
-use std::{num::NonZeroU32, path::Path, sync::Arc};
-use util::serde::default_true;
+use serde_json.Value;
+use settings.{add_references_to_properties, Settings, SettingsLocation, SettingsSources};
+use std.{num.NonZeroU32, path.Path, sync.Arc};
+use util.serde.default_true;
 
 impl<'a> Into<SettingsLocation<'a>> for &'a dyn File {
     fn into(self) -> SettingsLocation<'a> {
@@ -31,7 +31,7 @@ impl<'a> Into<SettingsLocation<'a>> for &'a dyn File {
 
 /// Initializes the language settings.
 pub fn init(cx: &mut AppContext) {
-    AllLanguageSettings::register(cx);
+    AllLanguageSettings.register(cx);
 }
 
 /// Returns the settings for the specified language from the provided file.
@@ -50,7 +50,7 @@ pub fn all_language_settings<'a>(
     cx: &'a AppContext,
 ) -> &'a AllLanguageSettings {
     let location = file.map(|f| f.as_ref().into());
-    AllLanguageSettings::get(location, cx)
+    AllLanguageSettings.get(location, cx)
 }
 
 /// The settings for all languages.
@@ -107,7 +107,7 @@ pub struct LanguageSettings {
     /// - `"..."` - A placeholder to refer to the **rest** of the registered language servers for this language.
     pub language_servers: Vec<Arc<str>>,
     /// Controls whether inline completions are shown immediately (true)
-    /// or manually by triggering `editor::ShowInlineCompletion` (false).
+    /// or manually by triggering `editor.ShowInlineCompletion` (false).
     pub show_inline_completions: bool,
     /// Whether to show tabs and spaces in the editor.
     pub show_whitespaces: ShowWhitespaceSetting,
@@ -139,7 +139,7 @@ impl LanguageSettings {
         &self,
         available_language_servers: &[LanguageServerName],
     ) -> Vec<LanguageServerName> {
-        Self::resolve_language_servers(&self.language_servers, available_language_servers)
+        Self.resolve_language_servers(&self.language_servers, available_language_servers)
     }
 
     pub(crate) fn resolve_language_servers(
@@ -149,8 +149,8 @@ impl LanguageSettings {
         let (disabled_language_servers, enabled_language_servers): (Vec<Arc<str>>, Vec<Arc<str>>) =
             configured_language_servers.iter().partition_map(
                 |language_server| match language_server.strip_prefix('!') {
-                    Some(disabled) => Either::Left(disabled.into()),
-                    None => Either::Right(language_server.clone()),
+                    Some(disabled) => Either.Left(disabled.into()),
+                    None => Either.Right(language_server.clone()),
                 },
             );
 
@@ -161,18 +161,18 @@ impl LanguageSettings {
                     && !enabled_language_servers.contains(&&available_language_server.0)
             })
             .cloned()
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         enabled_language_servers
             .into_iter()
             .flat_map(|language_server| {
-                if language_server.as_ref() == Self::REST_OF_LANGUAGE_SERVERS {
+                if language_server.as_ref() == Self.REST_OF_LANGUAGE_SERVERS {
                     rest.clone()
                 } else {
                     vec![LanguageServerName(language_server.clone())]
                 }
             })
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
     }
 }
 
@@ -303,7 +303,7 @@ pub struct LanguageSettingsContent {
     #[serde(default)]
     pub language_servers: Option<Vec<Arc<str>>>,
     /// Controls whether inline completions are shown immediately (true)
-    /// or manually by triggering `editor::ShowInlineCompletion` (false).
+    /// or manually by triggering `editor.ShowInlineCompletion` (false).
     ///
     /// Default: true
     #[serde(default)]
@@ -400,26 +400,26 @@ impl JsonSchema for FormatOnSave {
         "OnSaveFormatter".into()
     }
 
-    fn json_schema(generator: &mut schemars::r#gen::SchemaGenerator) -> Schema {
-        let mut schema = SchemaObject::default();
-        let formatter_schema = Formatter::json_schema(generator);
+    fn json_schema(generator: &mut schemars.r#gen.SchemaGenerator) -> Schema {
+        let mut schema = SchemaObject.default();
+        let formatter_schema = Formatter.json_schema(generator);
         schema.instance_type = Some(
             vec![
-                InstanceType::Object,
-                InstanceType::String,
-                InstanceType::Array,
+                InstanceType.Object,
+                InstanceType.String,
+                InstanceType.Array,
             ]
             .into(),
         );
 
-        let mut valid_raw_values = SchemaObject::default();
+        let mut valid_raw_values = SchemaObject.default();
         valid_raw_values.enum_values = Some(vec![
-            Value::String("on".into()),
-            Value::String("off".into()),
-            Value::String("prettier".into()),
-            Value::String("language_server".into()),
+            Value.String("on".into()),
+            Value.String("off".into()),
+            Value.String("prettier".into()),
+            Value.String("language_server".into()),
         ]);
-        let mut nested_values = SchemaObject::default();
+        let mut nested_values = SchemaObject.default();
 
         nested_values.array().items = Some(formatter_schema.clone().into());
 
@@ -433,20 +433,20 @@ impl JsonSchema for FormatOnSave {
 }
 
 impl Serialize for FormatOnSave {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std.result.Result<S.Ok, S.Error>
     where
-        S: serde::Serializer,
+        S: serde.Serializer,
     {
         match self {
-            Self::On => serializer.serialize_str("on"),
-            Self::Off => serializer.serialize_str("off"),
-            Self::List(list) => list.serialize(serializer),
+            Self.On => serializer.serialize_str("on"),
+            Self.Off => serializer.serialize_str("off"),
+            Self.List(list) => list.serialize(serializer),
         }
     }
 }
 
 impl<'de> Deserialize<'de> for FormatOnSave {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std.result.Result<Self, D.Error>
     where
         D: Deserializer<'de>,
     {
@@ -455,42 +455,42 @@ impl<'de> Deserialize<'de> for FormatOnSave {
         impl<'d> Visitor<'d> for FormatDeserializer {
             type Value = FormatOnSave;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut std.fmt.Formatter) -> std.fmt.Result {
                 formatter.write_str("a valid on-save formatter kind")
             }
-            fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
+            fn visit_str<E>(self, v: &str) -> std.result.Result<Self.Value, E>
             where
-                E: serde::de::Error,
+                E: serde.de.Error,
             {
                 if v == "on" {
-                    Ok(Self::Value::On)
+                    Ok(Self.Value.On)
                 } else if v == "off" {
-                    Ok(Self::Value::Off)
+                    Ok(Self.Value.Off)
                 } else if v == "language_server" {
-                    Ok(Self::Value::List(FormatterList(
-                        Formatter::LanguageServer { name: None }.into(),
+                    Ok(Self.Value.List(FormatterList(
+                        Formatter.LanguageServer { name: None }.into(),
                     )))
                 } else {
                     let ret: Result<FormatterList, _> =
-                        Deserialize::deserialize(v.into_deserializer());
-                    ret.map(Self::Value::List)
+                        Deserialize.deserialize(v.into_deserializer());
+                    ret.map(Self.Value.List)
                 }
             }
-            fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+            fn visit_map<A>(self, map: A) -> Result<Self.Value, A.Error>
             where
                 A: MapAccess<'d>,
             {
                 let ret: Result<FormatterList, _> =
-                    Deserialize::deserialize(de::value::MapAccessDeserializer::new(map));
-                ret.map(Self::Value::List)
+                    Deserialize.deserialize(de.value.MapAccessDeserializer.new(map));
+                ret.map(Self.Value.List)
             }
-            fn visit_seq<A>(self, map: A) -> Result<Self::Value, A::Error>
+            fn visit_seq<A>(self, map: A) -> Result<Self.Value, A.Error>
             where
                 A: SeqAccess<'d>,
             {
                 let ret: Result<FormatterList, _> =
-                    Deserialize::deserialize(de::value::SeqAccessDeserializer::new(map));
-                ret.map(Self::Value::List)
+                    Deserialize.deserialize(de.value.SeqAccessDeserializer.new(map));
+                ret.map(Self.Value.List)
             }
         }
         deserializer.deserialize_any(FormatDeserializer)
@@ -531,25 +531,25 @@ impl JsonSchema for SelectedFormatter {
         "Formatter".into()
     }
 
-    fn json_schema(generator: &mut schemars::r#gen::SchemaGenerator) -> Schema {
-        let mut schema = SchemaObject::default();
-        let formatter_schema = Formatter::json_schema(generator);
+    fn json_schema(generator: &mut schemars.r#gen.SchemaGenerator) -> Schema {
+        let mut schema = SchemaObject.default();
+        let formatter_schema = Formatter.json_schema(generator);
         schema.instance_type = Some(
             vec![
-                InstanceType::Object,
-                InstanceType::String,
-                InstanceType::Array,
+                InstanceType.Object,
+                InstanceType.String,
+                InstanceType.Array,
             ]
             .into(),
         );
 
-        let mut valid_raw_values = SchemaObject::default();
+        let mut valid_raw_values = SchemaObject.default();
         valid_raw_values.enum_values = Some(vec![
-            Value::String("auto".into()),
-            Value::String("prettier".into()),
-            Value::String("language_server".into()),
+            Value.String("auto".into()),
+            Value.String("prettier".into()),
+            Value.String("language_server".into()),
         ]);
-        let mut nested_values = SchemaObject::default();
+        let mut nested_values = SchemaObject.default();
 
         nested_values.array().items = Some(formatter_schema.clone().into());
 
@@ -563,18 +563,18 @@ impl JsonSchema for SelectedFormatter {
 }
 
 impl Serialize for SelectedFormatter {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std.result.Result<S.Ok, S.Error>
     where
-        S: serde::Serializer,
+        S: serde.Serializer,
     {
         match self {
-            SelectedFormatter::Auto => serializer.serialize_str("auto"),
-            SelectedFormatter::List(list) => list.serialize(serializer),
+            SelectedFormatter.Auto => serializer.serialize_str("auto"),
+            SelectedFormatter.List(list) => list.serialize(serializer),
         }
     }
 }
 impl<'de> Deserialize<'de> for SelectedFormatter {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std.result.Result<Self, D.Error>
     where
         D: Deserializer<'de>,
     {
@@ -583,40 +583,40 @@ impl<'de> Deserialize<'de> for SelectedFormatter {
         impl<'d> Visitor<'d> for FormatDeserializer {
             type Value = SelectedFormatter;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut std.fmt.Formatter) -> std.fmt.Result {
                 formatter.write_str("a valid formatter kind")
             }
-            fn visit_str<E>(self, v: &str) -> std::result::Result<Self::Value, E>
+            fn visit_str<E>(self, v: &str) -> std.result.Result<Self.Value, E>
             where
-                E: serde::de::Error,
+                E: serde.de.Error,
             {
                 if v == "auto" {
-                    Ok(Self::Value::Auto)
+                    Ok(Self.Value.Auto)
                 } else if v == "language_server" {
-                    Ok(Self::Value::List(FormatterList(
-                        Formatter::LanguageServer { name: None }.into(),
+                    Ok(Self.Value.List(FormatterList(
+                        Formatter.LanguageServer { name: None }.into(),
                     )))
                 } else {
                     let ret: Result<FormatterList, _> =
-                        Deserialize::deserialize(v.into_deserializer());
-                    ret.map(SelectedFormatter::List)
+                        Deserialize.deserialize(v.into_deserializer());
+                    ret.map(SelectedFormatter.List)
                 }
             }
-            fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+            fn visit_map<A>(self, map: A) -> Result<Self.Value, A.Error>
             where
                 A: MapAccess<'d>,
             {
                 let ret: Result<FormatterList, _> =
-                    Deserialize::deserialize(de::value::MapAccessDeserializer::new(map));
-                ret.map(SelectedFormatter::List)
+                    Deserialize.deserialize(de.value.MapAccessDeserializer.new(map));
+                ret.map(SelectedFormatter.List)
             }
-            fn visit_seq<A>(self, map: A) -> Result<Self::Value, A::Error>
+            fn visit_seq<A>(self, map: A) -> Result<Self.Value, A.Error>
             where
                 A: SeqAccess<'d>,
             {
                 let ret: Result<FormatterList, _> =
-                    Deserialize::deserialize(de::value::SeqAccessDeserializer::new(map));
-                ret.map(SelectedFormatter::List)
+                    Deserialize.deserialize(de.value.SeqAccessDeserializer.new(map));
+                ret.map(SelectedFormatter.List)
             }
         }
         deserializer.deserialize_any(FormatDeserializer)
@@ -630,8 +630,8 @@ pub struct FormatterList(pub SingleOrVec<Formatter>);
 impl AsRef<[Formatter]> for FormatterList {
     fn as_ref(&self) -> &[Formatter] {
         match &self.0 {
-            SingleOrVec::Single(single) => slice::from_ref(single),
-            SingleOrVec::Vec(v) => &v,
+            SingleOrVec.Single(single) => slice.from_ref(single),
+            SingleOrVec.Vec(v) => &v,
         }
     }
 }
@@ -774,12 +774,12 @@ pub struct LanguageTaskConfig {
 impl InlayHintSettings {
     /// Returns the kinds of inlay hints that are enabled based on the settings.
     pub fn enabled_inlay_hint_kinds(&self) -> HashSet<Option<InlayHintKind>> {
-        let mut kinds = HashSet::default();
+        let mut kinds = HashSet.default();
         if self.show_type_hints {
-            kinds.insert(Some(InlayHintKind::Type));
+            kinds.insert(Some(InlayHintKind.Type));
         }
         if self.show_parameter_hints {
-            kinds.insert(Some(InlayHintKind::Parameter));
+            kinds.insert(Some(InlayHintKind.Parameter));
         }
         if self.show_other_hints {
             kinds.insert(None);
@@ -841,8 +841,8 @@ impl InlayHintKind {
     /// string representations.
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
-            "type" => Some(InlayHintKind::Type),
-            "parameter" => Some(InlayHintKind::Parameter),
+            "type" => Some(InlayHintKind.Type),
+            "parameter" => Some(InlayHintKind.Parameter),
             _ => None,
         }
     }
@@ -850,25 +850,25 @@ impl InlayHintKind {
     /// Returns the name of this [`InlayHintKind`].
     pub fn name(&self) -> &'static str {
         match self {
-            InlayHintKind::Type => "type",
-            InlayHintKind::Parameter => "parameter",
+            InlayHintKind.Type => "type",
+            InlayHintKind.Parameter => "parameter",
         }
     }
 }
 
-impl settings::Settings for AllLanguageSettings {
+impl settings.Settings for AllLanguageSettings {
     const KEY: Option<&'static str> = None;
 
     type FileContent = AllLanguageSettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
         let default_value = sources.default;
 
         // A default is provided for all settings.
         let mut defaults: LanguageSettings =
-            serde_json::from_value(serde_json::to_value(&default_value.defaults)?)?;
+            serde_json.from_value(serde_json.to_value(&default_value.defaults)?)?;
 
-        let mut languages = HashMap::default();
+        let mut languages = HashMap.default();
         for (language_name, settings) in &default_value.languages {
             let mut language_settings = defaults.clone();
             merge_settings(&mut language_settings, settings);
@@ -884,15 +884,15 @@ impl settings::Settings for AllLanguageSettings {
             .inline_completions
             .as_ref()
             .and_then(|c| c.disabled_globs.as_ref())
-            .ok_or_else(Self::missing_default)?;
+            .ok_or_else(Self.missing_default)?;
 
-        let mut file_types: HashMap<Arc<str>, GlobSet> = HashMap::default();
+        let mut file_types: HashMap<Arc<str>, GlobSet> = HashMap.default();
 
         for (language, suffixes) in &default_value.file_types {
-            let mut builder = GlobSetBuilder::new();
+            let mut builder = GlobSetBuilder.new();
 
             for suffix in suffixes {
-                builder.add(Glob::new(suffix)?);
+                builder.add(Glob.new(suffix)?);
             }
 
             file_types.insert(language.clone(), builder.build()?);
@@ -935,19 +935,19 @@ impl settings::Settings for AllLanguageSettings {
             }
 
             for (language, suffixes) in &user_settings.file_types {
-                let mut builder = GlobSetBuilder::new();
+                let mut builder = GlobSetBuilder.new();
 
                 let default_value = default_value.file_types.get(&language.clone());
 
                 // Merge the default value with the user's value.
                 if let Some(suffixes) = default_value {
                     for suffix in suffixes {
-                        builder.add(Glob::new(suffix)?);
+                        builder.add(Glob.new(suffix)?);
                     }
                 }
 
                 for suffix in suffixes {
-                    builder.add(Glob::new(suffix)?);
+                    builder.add(Glob.new(suffix)?);
                 }
 
                 file_types.insert(language.clone(), builder.build()?);
@@ -959,13 +959,13 @@ impl settings::Settings for AllLanguageSettings {
                 provider: if let Some(provider) = inline_completion_provider {
                     provider
                 } else if copilot_enabled.unwrap_or(true) {
-                    InlineCompletionProvider::Copilot
+                    InlineCompletionProvider.Copilot
                 } else {
-                    InlineCompletionProvider::None
+                    InlineCompletionProvider.None
                 },
                 disabled_globs: completion_globs
                     .iter()
-                    .filter_map(|g| Some(globset::Glob::new(g).ok()?.compile_matcher()))
+                    .filter_map(|g| Some(globset.Glob.new(g).ok()?.compile_matcher()))
                     .collect(),
             },
             defaults,
@@ -975,11 +975,11 @@ impl settings::Settings for AllLanguageSettings {
     }
 
     fn json_schema(
-        generator: &mut schemars::gen::SchemaGenerator,
-        params: &settings::SettingsJsonSchemaParams,
+        generator: &mut schemars.gen.SchemaGenerator,
+        params: &settings.SettingsJsonSchemaParams,
         _: &AppContext,
-    ) -> schemars::schema::RootSchema {
-        let mut root_schema = generator.root_schema_for::<Self::FileContent>();
+    ) -> schemars.schema.RootSchema {
+        let mut root_schema = generator.root_schema_for.<Self.FileContent>();
 
         // Create a schema for a 'languages overrides' object, associating editor
         // settings with specific languages.
@@ -988,21 +988,21 @@ impl settings::Settings for AllLanguageSettings {
             .contains_key("LanguageSettingsContent"));
 
         let languages_object_schema = SchemaObject {
-            instance_type: Some(InstanceType::Object.into()),
-            object: Some(Box::new(ObjectValidation {
+            instance_type: Some(InstanceType.Object.into()),
+            object: Some(Box.new(ObjectValidation {
                 properties: params
                     .language_names
                     .iter()
                     .map(|name| {
                         (
                             name.clone(),
-                            Schema::new_ref("#/definitions/LanguageSettingsContent".into()),
+                            Schema.new_ref("#/definitions/LanguageSettingsContent".into()),
                         )
                     })
                     .collect(),
-                ..Default::default()
+                ..Default.default()
             })),
-            ..Default::default()
+            ..Default.default()
         };
 
         root_schema
@@ -1097,42 +1097,42 @@ pub struct PrettierSettings {
     /// Default Prettier options, in the format as in package.json section for Prettier.
     /// If project installs Prettier via its package.json, these options will be ignored.
     #[serde(flatten)]
-    pub options: HashMap<String, serde_json::Value>,
+    pub options: HashMap<String, serde_json.Value>,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_formatter_deserialization() {
         let raw_auto = "{\"formatter\": \"auto\"}";
-        let settings: LanguageSettingsContent = serde_json::from_str(raw_auto).unwrap();
-        assert_eq!(settings.formatter, Some(SelectedFormatter::Auto));
+        let settings: LanguageSettingsContent = serde_json.from_str(raw_auto).unwrap();
+        assert_eq!(settings.formatter, Some(SelectedFormatter.Auto));
         let raw = "{\"formatter\": \"language_server\"}";
-        let settings: LanguageSettingsContent = serde_json::from_str(raw).unwrap();
+        let settings: LanguageSettingsContent = serde_json.from_str(raw).unwrap();
         assert_eq!(
             settings.formatter,
-            Some(SelectedFormatter::List(FormatterList(
-                Formatter::LanguageServer { name: None }.into()
+            Some(SelectedFormatter.List(FormatterList(
+                Formatter.LanguageServer { name: None }.into()
             )))
         );
         let raw = "{\"formatter\": [{\"language_server\": {\"name\": null}}]}";
-        let settings: LanguageSettingsContent = serde_json::from_str(raw).unwrap();
+        let settings: LanguageSettingsContent = serde_json.from_str(raw).unwrap();
         assert_eq!(
             settings.formatter,
-            Some(SelectedFormatter::List(FormatterList(
-                vec![Formatter::LanguageServer { name: None }].into()
+            Some(SelectedFormatter.List(FormatterList(
+                vec![Formatter.LanguageServer { name: None }].into()
             )))
         );
         let raw = "{\"formatter\": [{\"language_server\": {\"name\": null}}, \"prettier\"]}";
-        let settings: LanguageSettingsContent = serde_json::from_str(raw).unwrap();
+        let settings: LanguageSettingsContent = serde_json.from_str(raw).unwrap();
         assert_eq!(
             settings.formatter,
-            Some(SelectedFormatter::List(FormatterList(
+            Some(SelectedFormatter.List(FormatterList(
                 vec![
-                    Formatter::LanguageServer { name: None },
-                    Formatter::Prettier
+                    Formatter.LanguageServer { name: None },
+                    Formatter.Prettier
                 ]
                 .into()
             )))
@@ -1146,7 +1146,7 @@ mod tests {
                 .into_iter()
                 .copied()
                 .map(|name| LanguageServerName(name.into()))
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         }
 
         let available_language_servers = language_server_names(&[
@@ -1159,8 +1159,8 @@ mod tests {
 
         // A value of just `["..."]` is the same as taking all of the available language servers.
         assert_eq!(
-            LanguageSettings::resolve_language_servers(
-                &[LanguageSettings::REST_OF_LANGUAGE_SERVERS.into()],
+            LanguageSettings.resolve_language_servers(
+                &[LanguageSettings.REST_OF_LANGUAGE_SERVERS.into()],
                 &available_language_servers,
             ),
             available_language_servers
@@ -1168,10 +1168,10 @@ mod tests {
 
         // Referencing one of the available language servers will change its order.
         assert_eq!(
-            LanguageSettings::resolve_language_servers(
+            LanguageSettings.resolve_language_servers(
                 &[
                     "biome".into(),
-                    LanguageSettings::REST_OF_LANGUAGE_SERVERS.into(),
+                    LanguageSettings.REST_OF_LANGUAGE_SERVERS.into(),
                     "deno".into()
                 ],
                 &available_language_servers
@@ -1187,12 +1187,12 @@ mod tests {
 
         // Negating an available language server removes it from the list.
         assert_eq!(
-            LanguageSettings::resolve_language_servers(
+            LanguageSettings.resolve_language_servers(
                 &[
                     "deno".into(),
                     "!typescript-language-server".into(),
                     "!biome".into(),
-                    LanguageSettings::REST_OF_LANGUAGE_SERVERS.into()
+                    LanguageSettings.REST_OF_LANGUAGE_SERVERS.into()
                 ],
                 &available_language_servers
             ),
@@ -1201,10 +1201,10 @@ mod tests {
 
         // Adding a language server not in the list of available language servers adds it to the list.
         assert_eq!(
-            LanguageSettings::resolve_language_servers(
+            LanguageSettings.resolve_language_servers(
                 &[
                     "my-cool-language-server".into(),
-                    LanguageSettings::REST_OF_LANGUAGE_SERVERS.into()
+                    LanguageSettings.REST_OF_LANGUAGE_SERVERS.into()
                 ],
                 &available_language_servers
             ),

@@ -1,28 +1,28 @@
-use crate::{ConnectionState, RoomUpdate, Sid};
-use anyhow::{anyhow, Context, Result};
-use core_foundation::{
-    array::{CFArray, CFArrayRef},
-    base::{CFRelease, CFRetain, TCFType},
-    string::{CFString, CFStringRef},
+use crate.{ConnectionState, RoomUpdate, Sid};
+use anyhow.{anyhow, Context, Result};
+use core_foundation.{
+    array.{CFArray, CFArrayRef},
+    base.{CFRelease, CFRetain, TCFType},
+    string.{CFString, CFStringRef},
 };
-use futures::{
-    channel::{mpsc, oneshot},
+use futures.{
+    channel.{mpsc, oneshot},
     Future,
 };
-pub use media::core_video::CVImageBuffer;
-use media::core_video::CVImageBufferRef;
-use parking_lot::Mutex;
-use postage::watch;
-use std::{
-    ffi::c_void,
-    sync::{Arc, Weak},
+pub use media.core_video.CVImageBuffer;
+use media.core_video.CVImageBufferRef;
+use parking_lot.Mutex;
+use postage.watch;
+use std.{
+    ffi.c_void,
+    sync.{Arc, Weak},
 };
 
 macro_rules! pointer_type {
     ($pointer_name:ident) => {
         #[repr(transparent)]
         #[derive(Copy, Clone, Debug)]
-        pub struct $pointer_name(pub *const std::ffi::c_void);
+        pub struct $pointer_name(pub *const std.ffi.c_void);
         unsafe impl Send for $pointer_name {}
     };
 }
@@ -47,8 +47,8 @@ extern "C" {
             callback_data: *mut c_void,
             publisher_id: CFStringRef,
             track_id: CFStringRef,
-            remote_track: swift::RemoteAudioTrack,
-            remote_publication: swift::RemoteTrackPublication,
+            remote_track: swift.RemoteAudioTrack,
+            remote_publication: swift.RemoteTrackPublication,
         ),
         on_did_unsubscribe_from_remote_audio_track: extern "C" fn(
             callback_data: *mut c_void,
@@ -68,7 +68,7 @@ extern "C" {
             callback_data: *mut c_void,
             publisher_id: CFStringRef,
             track_id: CFStringRef,
-            remote_track: swift::RemoteVideoTrack,
+            remote_track: swift.RemoteVideoTrack,
         ),
         on_did_unsubscribe_from_remote_video_track: extern "C" fn(
             callback_data: *mut c_void,
@@ -77,51 +77,51 @@ extern "C" {
         ),
         on_did_publish_or_unpublish_local_audio_track: extern "C" fn(
             callback_data: *mut c_void,
-            publication: swift::LocalTrackPublication,
+            publication: swift.LocalTrackPublication,
             is_published: bool,
         ),
         on_did_publish_or_unpublish_local_video_track: extern "C" fn(
             callback_data: *mut c_void,
-            publication: swift::LocalTrackPublication,
+            publication: swift.LocalTrackPublication,
             is_published: bool,
         ),
-    ) -> swift::RoomDelegate;
+    ) -> swift.RoomDelegate;
 
-    fn LKRoomCreate(delegate: swift::RoomDelegate) -> swift::Room;
+    fn LKRoomCreate(delegate: swift.RoomDelegate) -> swift.Room;
     fn LKRoomConnect(
-        room: swift::Room,
+        room: swift.Room,
         url: CFStringRef,
         token: CFStringRef,
         callback: extern "C" fn(*mut c_void, CFStringRef),
         callback_data: *mut c_void,
     );
-    fn LKRoomDisconnect(room: swift::Room);
+    fn LKRoomDisconnect(room: swift.Room);
     fn LKRoomPublishVideoTrack(
-        room: swift::Room,
-        track: swift::LocalVideoTrack,
-        callback: extern "C" fn(*mut c_void, swift::LocalTrackPublication, CFStringRef),
+        room: swift.Room,
+        track: swift.LocalVideoTrack,
+        callback: extern "C" fn(*mut c_void, swift.LocalTrackPublication, CFStringRef),
         callback_data: *mut c_void,
     );
     fn LKRoomPublishAudioTrack(
-        room: swift::Room,
-        track: swift::LocalAudioTrack,
-        callback: extern "C" fn(*mut c_void, swift::LocalTrackPublication, CFStringRef),
+        room: swift.Room,
+        track: swift.LocalAudioTrack,
+        callback: extern "C" fn(*mut c_void, swift.LocalTrackPublication, CFStringRef),
         callback_data: *mut c_void,
     );
-    fn LKRoomUnpublishTrack(room: swift::Room, publication: swift::LocalTrackPublication);
+    fn LKRoomUnpublishTrack(room: swift.Room, publication: swift.LocalTrackPublication);
 
     fn LKRoomAudioTracksForRemoteParticipant(
-        room: swift::Room,
+        room: swift.Room,
         participant_id: CFStringRef,
     ) -> CFArrayRef;
 
     fn LKRoomAudioTrackPublicationsForRemoteParticipant(
-        room: swift::Room,
+        room: swift.Room,
         participant_id: CFStringRef,
     ) -> CFArrayRef;
 
     fn LKRoomVideoTracksForRemoteParticipant(
-        room: swift::Room,
+        room: swift.Room,
         participant_id: CFStringRef,
     ) -> CFArrayRef;
 
@@ -131,11 +131,11 @@ extern "C" {
         on_drop: extern "C" fn(callback_data: *mut c_void),
     ) -> *const c_void;
 
-    fn LKRemoteAudioTrackGetSid(track: swift::RemoteAudioTrack) -> CFStringRef;
-    fn LKRemoteVideoTrackGetSid(track: swift::RemoteVideoTrack) -> CFStringRef;
-    fn LKRemoteAudioTrackStart(track: swift::RemoteAudioTrack);
-    fn LKRemoteAudioTrackStop(track: swift::RemoteAudioTrack);
-    fn LKVideoTrackAddRenderer(track: swift::RemoteVideoTrack, renderer: *const c_void);
+    fn LKRemoteAudioTrackGetSid(track: swift.RemoteAudioTrack) -> CFStringRef;
+    fn LKRemoteVideoTrackGetSid(track: swift.RemoteVideoTrack) -> CFStringRef;
+    fn LKRemoteAudioTrackStart(track: swift.RemoteAudioTrack);
+    fn LKRemoteAudioTrackStop(track: swift.RemoteAudioTrack);
+    fn LKVideoTrackAddRenderer(track: swift.RemoteVideoTrack, renderer: *const c_void);
 
     fn LKDisplaySources(
         callback_data: *mut c_void,
@@ -145,60 +145,60 @@ extern "C" {
             error: CFStringRef,
         ),
     );
-    fn LKCreateScreenShareTrackForDisplay(display: swift::MacOSDisplay) -> swift::LocalVideoTrack;
-    fn LKLocalAudioTrackCreateTrack() -> swift::LocalAudioTrack;
+    fn LKCreateScreenShareTrackForDisplay(display: swift.MacOSDisplay) -> swift.LocalVideoTrack;
+    fn LKLocalAudioTrackCreateTrack() -> swift.LocalAudioTrack;
 
     fn LKLocalTrackPublicationSetMute(
-        publication: swift::LocalTrackPublication,
+        publication: swift.LocalTrackPublication,
         muted: bool,
         on_complete: extern "C" fn(callback_data: *mut c_void, error: CFStringRef),
         callback_data: *mut c_void,
     );
 
     fn LKRemoteTrackPublicationSetEnabled(
-        publication: swift::RemoteTrackPublication,
+        publication: swift.RemoteTrackPublication,
         enabled: bool,
         on_complete: extern "C" fn(callback_data: *mut c_void, error: CFStringRef),
         callback_data: *mut c_void,
     );
 
-    fn LKLocalTrackPublicationIsMuted(publication: swift::LocalTrackPublication) -> bool;
-    fn LKRemoteTrackPublicationIsMuted(publication: swift::RemoteTrackPublication) -> bool;
-    fn LKLocalTrackPublicationGetSid(publication: swift::LocalTrackPublication) -> CFStringRef;
-    fn LKRemoteTrackPublicationGetSid(publication: swift::RemoteTrackPublication) -> CFStringRef;
+    fn LKLocalTrackPublicationIsMuted(publication: swift.LocalTrackPublication) -> bool;
+    fn LKRemoteTrackPublicationIsMuted(publication: swift.RemoteTrackPublication) -> bool;
+    fn LKLocalTrackPublicationGetSid(publication: swift.LocalTrackPublication) -> CFStringRef;
+    fn LKRemoteTrackPublicationGetSid(publication: swift.RemoteTrackPublication) -> CFStringRef;
 }
 
 pub struct Room {
-    native_room: swift::Room,
+    native_room: swift.Room,
     connection: Mutex<(
-        watch::Sender<ConnectionState>,
-        watch::Receiver<ConnectionState>,
+        watch.Sender<ConnectionState>,
+        watch.Receiver<ConnectionState>,
     )>,
-    update_subscribers: Mutex<Vec<mpsc::UnboundedSender<RoomUpdate>>>,
+    update_subscribers: Mutex<Vec<mpsc.UnboundedSender<RoomUpdate>>>,
     _delegate: RoomDelegate,
 }
 
 impl Room {
     pub fn new() -> Arc<Self> {
-        Arc::new_cyclic(|weak_room| {
-            let delegate = RoomDelegate::new(weak_room.clone());
+        Arc.new_cyclic(|weak_room| {
+            let delegate = RoomDelegate.new(weak_room.clone());
             Self {
                 native_room: unsafe { LKRoomCreate(delegate.native_delegate) },
-                connection: Mutex::new(watch::channel_with(ConnectionState::Disconnected)),
-                update_subscribers: Default::default(),
+                connection: Mutex.new(watch.channel_with(ConnectionState.Disconnected)),
+                update_subscribers: Default.default(),
                 _delegate: delegate,
             }
         })
     }
 
-    pub fn status(&self) -> watch::Receiver<ConnectionState> {
+    pub fn status(&self) -> watch.Receiver<ConnectionState> {
         self.connection.lock().1.clone()
     }
 
     pub fn connect(self: &Arc<Self>, url: &str, token: &str) -> impl Future<Output = Result<()>> {
-        let url = CFString::new(url);
-        let token = CFString::new(token);
-        let (did_connect, tx, rx) = Self::build_done_callback();
+        let url = CFString.new(url);
+        let token = CFString.new(token);
+        let (did_connect, tx, rx) = Self.build_done_callback();
         unsafe {
             LKRoomConnect(
                 self.native_room,
@@ -214,26 +214,26 @@ impl Room {
         let token = token.to_string();
         async move {
             rx.await.unwrap().context("error connecting to room")?;
-            *this.connection.lock().0.borrow_mut() = ConnectionState::Connected { url, token };
+            *this.connection.lock().0.borrow_mut() = ConnectionState.Connected { url, token };
             Ok(())
         }
     }
 
     fn did_disconnect(&self) {
-        *self.connection.lock().0.borrow_mut() = ConnectionState::Disconnected;
+        *self.connection.lock().0.borrow_mut() = ConnectionState.Disconnected;
     }
 
     pub fn display_sources(self: &Arc<Self>) -> impl Future<Output = Result<Vec<MacOSDisplay>>> {
         extern "C" fn callback(tx: *mut c_void, sources: CFArrayRef, error: CFStringRef) {
             unsafe {
-                let tx = Box::from_raw(tx as *mut oneshot::Sender<Result<Vec<MacOSDisplay>>>);
+                let tx = Box.from_raw(tx as *mut oneshot.Sender<Result<Vec<MacOSDisplay>>>);
 
                 if sources.is_null() {
-                    let _ = tx.send(Err(anyhow!("{}", CFString::wrap_under_get_rule(error))));
+                    let _ = tx.send(Err(anyhow!("{}", CFString.wrap_under_get_rule(error))));
                 } else {
-                    let sources = CFArray::wrap_under_get_rule(sources)
+                    let sources = CFArray.wrap_under_get_rule(sources)
                         .into_iter()
-                        .map(|source| MacOSDisplay::new(swift::MacOSDisplay(*source)))
+                        .map(|source| MacOSDisplay.new(swift.MacOSDisplay(*source)))
                         .collect();
 
                     let _ = tx.send(Ok(sources));
@@ -241,10 +241,10 @@ impl Room {
             }
         }
 
-        let (tx, rx) = oneshot::channel();
+        let (tx, rx) = oneshot.channel();
 
         unsafe {
-            LKDisplaySources(Box::into_raw(Box::new(tx)) as *mut _, callback);
+            LKDisplaySources(Box.into_raw(Box.new(tx)) as *mut _, callback);
         }
 
         async move { rx.await.unwrap() }
@@ -254,18 +254,18 @@ impl Room {
         self: &Arc<Self>,
         track: LocalVideoTrack,
     ) -> impl Future<Output = Result<LocalTrackPublication>> {
-        let (tx, rx) = oneshot::channel::<Result<LocalTrackPublication>>();
+        let (tx, rx) = oneshot.channel.<Result<LocalTrackPublication>>();
         extern "C" fn callback(
             tx: *mut c_void,
-            publication: swift::LocalTrackPublication,
+            publication: swift.LocalTrackPublication,
             error: CFStringRef,
         ) {
             let tx =
-                unsafe { Box::from_raw(tx as *mut oneshot::Sender<Result<LocalTrackPublication>>) };
+                unsafe { Box.from_raw(tx as *mut oneshot.Sender<Result<LocalTrackPublication>>) };
             if error.is_null() {
-                let _ = tx.send(Ok(LocalTrackPublication::new(publication)));
+                let _ = tx.send(Ok(LocalTrackPublication.new(publication)));
             } else {
-                let error = unsafe { CFString::wrap_under_get_rule(error).to_string() };
+                let error = unsafe { CFString.wrap_under_get_rule(error).to_string() };
                 let _ = tx.send(Err(anyhow!(error)));
             }
         }
@@ -274,7 +274,7 @@ impl Room {
                 self.native_room,
                 track.0,
                 callback,
-                Box::into_raw(Box::new(tx)) as *mut c_void,
+                Box.into_raw(Box.new(tx)) as *mut c_void,
             );
         }
         async { rx.await.unwrap().context("error publishing video track") }
@@ -284,18 +284,18 @@ impl Room {
         self: &Arc<Self>,
         track: LocalAudioTrack,
     ) -> impl Future<Output = Result<LocalTrackPublication>> {
-        let (tx, rx) = oneshot::channel::<Result<LocalTrackPublication>>();
+        let (tx, rx) = oneshot.channel.<Result<LocalTrackPublication>>();
         extern "C" fn callback(
             tx: *mut c_void,
-            publication: swift::LocalTrackPublication,
+            publication: swift.LocalTrackPublication,
             error: CFStringRef,
         ) {
             let tx =
-                unsafe { Box::from_raw(tx as *mut oneshot::Sender<Result<LocalTrackPublication>>) };
+                unsafe { Box.from_raw(tx as *mut oneshot.Sender<Result<LocalTrackPublication>>) };
             if error.is_null() {
-                let _ = tx.send(Ok(LocalTrackPublication::new(publication)));
+                let _ = tx.send(Ok(LocalTrackPublication.new(publication)));
             } else {
-                let error = unsafe { CFString::wrap_under_get_rule(error).to_string() };
+                let error = unsafe { CFString.wrap_under_get_rule(error).to_string() };
                 let _ = tx.send(Err(anyhow!(error)));
             }
         }
@@ -304,7 +304,7 @@ impl Room {
                 self.native_room,
                 track.0,
                 callback,
-                Box::into_raw(Box::new(tx)) as *mut c_void,
+                Box.into_raw(Box.new(tx)) as *mut c_void,
             );
         }
         async { rx.await.unwrap().context("error publishing audio track") }
@@ -320,21 +320,21 @@ impl Room {
         unsafe {
             let tracks = LKRoomVideoTracksForRemoteParticipant(
                 self.native_room,
-                CFString::new(participant_id).as_concrete_TypeRef(),
+                CFString.new(participant_id).as_concrete_TypeRef(),
             );
 
             if tracks.is_null() {
-                Vec::new()
+                Vec.new()
             } else {
-                let tracks = CFArray::wrap_under_get_rule(tracks);
+                let tracks = CFArray.wrap_under_get_rule(tracks);
                 tracks
                     .into_iter()
                     .map(|native_track| {
-                        let native_track = swift::RemoteVideoTrack(*native_track);
+                        let native_track = swift.RemoteVideoTrack(*native_track);
                         let id =
-                            CFString::wrap_under_get_rule(LKRemoteVideoTrackGetSid(native_track))
+                            CFString.wrap_under_get_rule(LKRemoteVideoTrackGetSid(native_track))
                                 .to_string();
-                        Arc::new(RemoteVideoTrack::new(
+                        Arc.new(RemoteVideoTrack.new(
                             native_track,
                             id,
                             participant_id.into(),
@@ -349,21 +349,21 @@ impl Room {
         unsafe {
             let tracks = LKRoomAudioTracksForRemoteParticipant(
                 self.native_room,
-                CFString::new(participant_id).as_concrete_TypeRef(),
+                CFString.new(participant_id).as_concrete_TypeRef(),
             );
 
             if tracks.is_null() {
-                Vec::new()
+                Vec.new()
             } else {
-                let tracks = CFArray::wrap_under_get_rule(tracks);
+                let tracks = CFArray.wrap_under_get_rule(tracks);
                 tracks
                     .into_iter()
                     .map(|native_track| {
-                        let native_track = swift::RemoteAudioTrack(*native_track);
+                        let native_track = swift.RemoteAudioTrack(*native_track);
                         let id =
-                            CFString::wrap_under_get_rule(LKRemoteAudioTrackGetSid(native_track))
+                            CFString.wrap_under_get_rule(LKRemoteAudioTrackGetSid(native_track))
                                 .to_string();
-                        Arc::new(RemoteAudioTrack::new(
+                        Arc.new(RemoteAudioTrack.new(
                             native_track,
                             id,
                             participant_id.into(),
@@ -381,27 +381,27 @@ impl Room {
         unsafe {
             let tracks = LKRoomAudioTrackPublicationsForRemoteParticipant(
                 self.native_room,
-                CFString::new(participant_id).as_concrete_TypeRef(),
+                CFString.new(participant_id).as_concrete_TypeRef(),
             );
 
             if tracks.is_null() {
-                Vec::new()
+                Vec.new()
             } else {
-                let tracks = CFArray::wrap_under_get_rule(tracks);
+                let tracks = CFArray.wrap_under_get_rule(tracks);
                 tracks
                     .into_iter()
                     .map(|native_track_publication| {
                         let native_track_publication =
-                            swift::RemoteTrackPublication(*native_track_publication);
-                        Arc::new(RemoteTrackPublication::new(native_track_publication))
+                            swift.RemoteTrackPublication(*native_track_publication);
+                        Arc.new(RemoteTrackPublication.new(native_track_publication))
                     })
                     .collect()
             }
         }
     }
 
-    pub fn updates(&self) -> mpsc::UnboundedReceiver<RoomUpdate> {
-        let (tx, rx) = mpsc::unbounded();
+    pub fn updates(&self) -> mpsc.UnboundedReceiver<RoomUpdate> {
+        let (tx, rx) = mpsc.unbounded();
         self.update_subscribers.lock().push(tx);
         rx
     }
@@ -411,10 +411,10 @@ impl Room {
         track: RemoteAudioTrack,
         publication: RemoteTrackPublication,
     ) {
-        let track = Arc::new(track);
-        let publication = Arc::new(publication);
+        let track = Arc.new(track);
+        let publication = Arc.new(publication);
         self.update_subscribers.lock().retain(|tx| {
-            tx.unbounded_send(RoomUpdate::SubscribedToRemoteAudioTrack(
+            tx.unbounded_send(RoomUpdate.SubscribedToRemoteAudioTrack(
                 track.clone(),
                 publication.clone(),
             ))
@@ -424,7 +424,7 @@ impl Room {
 
     fn did_unsubscribe_from_remote_audio_track(&self, publisher_id: String, track_id: String) {
         self.update_subscribers.lock().retain(|tx| {
-            tx.unbounded_send(RoomUpdate::UnsubscribedFromRemoteAudioTrack {
+            tx.unbounded_send(RoomUpdate.UnsubscribedFromRemoteAudioTrack {
                 publisher_id: publisher_id.clone(),
                 track_id: track_id.clone(),
             })
@@ -434,7 +434,7 @@ impl Room {
 
     fn mute_changed_from_remote_audio_track(&self, track_id: String, muted: bool) {
         self.update_subscribers.lock().retain(|tx| {
-            tx.unbounded_send(RoomUpdate::RemoteAudioTrackMuteChanged {
+            tx.unbounded_send(RoomUpdate.RemoteAudioTrackMuteChanged {
                 track_id: track_id.clone(),
                 muted,
             })
@@ -444,7 +444,7 @@ impl Room {
 
     fn active_speakers_changed(&self, speakers: Vec<String>) {
         self.update_subscribers.lock().retain(move |tx| {
-            tx.unbounded_send(RoomUpdate::ActiveSpeakersChanged {
+            tx.unbounded_send(RoomUpdate.ActiveSpeakersChanged {
                 speakers: speakers.clone(),
             })
             .is_ok()
@@ -452,16 +452,16 @@ impl Room {
     }
 
     fn did_subscribe_to_remote_video_track(&self, track: RemoteVideoTrack) {
-        let track = Arc::new(track);
+        let track = Arc.new(track);
         self.update_subscribers.lock().retain(|tx| {
-            tx.unbounded_send(RoomUpdate::SubscribedToRemoteVideoTrack(track.clone()))
+            tx.unbounded_send(RoomUpdate.SubscribedToRemoteVideoTrack(track.clone()))
                 .is_ok()
         });
     }
 
     fn did_unsubscribe_from_remote_video_track(&self, publisher_id: String, track_id: String) {
         self.update_subscribers.lock().retain(|tx| {
-            tx.unbounded_send(RoomUpdate::UnsubscribedFromRemoteVideoTrack {
+            tx.unbounded_send(RoomUpdate.UnsubscribedFromRemoteVideoTrack {
                 publisher_id: publisher_id.clone(),
                 track_id: track_id.clone(),
             })
@@ -472,21 +472,21 @@ impl Room {
     fn build_done_callback() -> (
         extern "C" fn(*mut c_void, CFStringRef),
         *mut c_void,
-        oneshot::Receiver<Result<()>>,
+        oneshot.Receiver<Result<()>>,
     ) {
-        let (tx, rx) = oneshot::channel();
+        let (tx, rx) = oneshot.channel();
         extern "C" fn done_callback(tx: *mut c_void, error: CFStringRef) {
-            let tx = unsafe { Box::from_raw(tx as *mut oneshot::Sender<Result<()>>) };
+            let tx = unsafe { Box.from_raw(tx as *mut oneshot.Sender<Result<()>>) };
             if error.is_null() {
                 let _ = tx.send(Ok(()));
             } else {
-                let error = unsafe { CFString::wrap_under_get_rule(error).to_string() };
+                let error = unsafe { CFString.wrap_under_get_rule(error).to_string() };
                 let _ = tx.send(Err(anyhow!(error)));
             }
         }
         (
             done_callback,
-            Box::into_raw(Box::new(tx)) as *mut c_void,
+            Box.into_raw(Box.new(tx)) as *mut c_void,
             rx,
         )
     }
@@ -506,7 +506,7 @@ impl Drop for Room {
 }
 
 struct RoomDelegate {
-    native_delegate: swift::RoomDelegate,
+    native_delegate: swift.RoomDelegate,
     weak_room: *mut c_void,
 }
 
@@ -516,15 +516,15 @@ impl RoomDelegate {
         let native_delegate = unsafe {
             LKRoomDelegateCreate(
                 weak_room,
-                Self::on_did_disconnect,
-                Self::on_did_subscribe_to_remote_audio_track,
-                Self::on_did_unsubscribe_from_remote_audio_track,
-                Self::on_mute_change_from_remote_audio_track,
-                Self::on_active_speakers_changed,
-                Self::on_did_subscribe_to_remote_video_track,
-                Self::on_did_unsubscribe_from_remote_video_track,
-                Self::on_did_publish_or_unpublish_local_audio_track,
-                Self::on_did_publish_or_unpublish_local_video_track,
+                Self.on_did_disconnect,
+                Self.on_did_subscribe_to_remote_audio_track,
+                Self.on_did_unsubscribe_from_remote_audio_track,
+                Self.on_mute_change_from_remote_audio_track,
+                Self.on_active_speakers_changed,
+                Self.on_did_subscribe_to_remote_video_track,
+                Self.on_did_unsubscribe_from_remote_video_track,
+                Self.on_did_publish_or_unpublish_local_audio_track,
+                Self.on_did_publish_or_unpublish_local_video_track,
             )
         };
         Self {
@@ -534,29 +534,29 @@ impl RoomDelegate {
     }
 
     extern "C" fn on_did_disconnect(room: *mut c_void) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
         if let Some(room) = room.upgrade() {
             room.did_disconnect();
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_did_subscribe_to_remote_audio_track(
         room: *mut c_void,
         publisher_id: CFStringRef,
         track_id: CFStringRef,
-        track: swift::RemoteAudioTrack,
-        publication: swift::RemoteTrackPublication,
+        track: swift.RemoteAudioTrack,
+        publication: swift.RemoteTrackPublication,
     ) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
-        let publisher_id = unsafe { CFString::wrap_under_get_rule(publisher_id).to_string() };
-        let track_id = unsafe { CFString::wrap_under_get_rule(track_id).to_string() };
-        let track = RemoteAudioTrack::new(track, track_id, publisher_id);
-        let publication = RemoteTrackPublication::new(publication);
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
+        let publisher_id = unsafe { CFString.wrap_under_get_rule(publisher_id).to_string() };
+        let track_id = unsafe { CFString.wrap_under_get_rule(track_id).to_string() };
+        let track = RemoteAudioTrack.new(track, track_id, publisher_id);
+        let publication = RemoteTrackPublication.new(publication);
         if let Some(room) = room.upgrade() {
             room.did_subscribe_to_remote_audio_track(track, publication);
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_did_unsubscribe_from_remote_audio_track(
@@ -564,13 +564,13 @@ impl RoomDelegate {
         publisher_id: CFStringRef,
         track_id: CFStringRef,
     ) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
-        let publisher_id = unsafe { CFString::wrap_under_get_rule(publisher_id).to_string() };
-        let track_id = unsafe { CFString::wrap_under_get_rule(track_id).to_string() };
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
+        let publisher_id = unsafe { CFString.wrap_under_get_rule(publisher_id).to_string() };
+        let track_id = unsafe { CFString.wrap_under_get_rule(track_id).to_string() };
         if let Some(room) = room.upgrade() {
             room.did_unsubscribe_from_remote_audio_track(publisher_id, track_id);
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_mute_change_from_remote_audio_track(
@@ -578,12 +578,12 @@ impl RoomDelegate {
         track_id: CFStringRef,
         muted: bool,
     ) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
-        let track_id = unsafe { CFString::wrap_under_get_rule(track_id).to_string() };
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
+        let track_id = unsafe { CFString.wrap_under_get_rule(track_id).to_string() };
         if let Some(room) = room.upgrade() {
             room.mute_changed_from_remote_audio_track(track_id, muted);
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_active_speakers_changed(room: *mut c_void, participants: CFArrayRef) {
@@ -591,13 +591,13 @@ impl RoomDelegate {
             return;
         }
 
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
         let speakers = unsafe {
-            CFArray::wrap_under_get_rule(participants)
+            CFArray.wrap_under_get_rule(participants)
                 .into_iter()
                 .map(
-                    |speaker: core_foundation::base::ItemRef<'_, *const c_void>| {
-                        CFString::wrap_under_get_rule(*speaker as CFStringRef).to_string()
+                    |speaker: core_foundation.base.ItemRef<'_, *const c_void>| {
+                        CFString.wrap_under_get_rule(*speaker as CFStringRef).to_string()
                     },
                 )
                 .collect()
@@ -606,23 +606,23 @@ impl RoomDelegate {
         if let Some(room) = room.upgrade() {
             room.active_speakers_changed(speakers);
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_did_subscribe_to_remote_video_track(
         room: *mut c_void,
         publisher_id: CFStringRef,
         track_id: CFStringRef,
-        track: swift::RemoteVideoTrack,
+        track: swift.RemoteVideoTrack,
     ) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
-        let publisher_id = unsafe { CFString::wrap_under_get_rule(publisher_id).to_string() };
-        let track_id = unsafe { CFString::wrap_under_get_rule(track_id).to_string() };
-        let track = RemoteVideoTrack::new(track, track_id, publisher_id);
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
+        let publisher_id = unsafe { CFString.wrap_under_get_rule(publisher_id).to_string() };
+        let track_id = unsafe { CFString.wrap_under_get_rule(track_id).to_string() };
+        let track = RemoteVideoTrack.new(track, track_id, publisher_id);
         if let Some(room) = room.upgrade() {
             room.did_subscribe_to_remote_video_track(track);
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_did_unsubscribe_from_remote_video_track(
@@ -630,53 +630,53 @@ impl RoomDelegate {
         publisher_id: CFStringRef,
         track_id: CFStringRef,
     ) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
-        let publisher_id = unsafe { CFString::wrap_under_get_rule(publisher_id).to_string() };
-        let track_id = unsafe { CFString::wrap_under_get_rule(track_id).to_string() };
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
+        let publisher_id = unsafe { CFString.wrap_under_get_rule(publisher_id).to_string() };
+        let track_id = unsafe { CFString.wrap_under_get_rule(track_id).to_string() };
         if let Some(room) = room.upgrade() {
             room.did_unsubscribe_from_remote_video_track(publisher_id, track_id);
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_did_publish_or_unpublish_local_audio_track(
         room: *mut c_void,
-        publication: swift::LocalTrackPublication,
+        publication: swift.LocalTrackPublication,
         is_published: bool,
     ) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
         if let Some(room) = room.upgrade() {
-            let publication = LocalTrackPublication::new(publication);
+            let publication = LocalTrackPublication.new(publication);
             let update = if is_published {
-                RoomUpdate::LocalAudioTrackPublished { publication }
+                RoomUpdate.LocalAudioTrackPublished { publication }
             } else {
-                RoomUpdate::LocalAudioTrackUnpublished { publication }
+                RoomUpdate.LocalAudioTrackUnpublished { publication }
             };
             room.update_subscribers
                 .lock()
                 .retain(|tx| tx.unbounded_send(update.clone()).is_ok());
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 
     extern "C" fn on_did_publish_or_unpublish_local_video_track(
         room: *mut c_void,
-        publication: swift::LocalTrackPublication,
+        publication: swift.LocalTrackPublication,
         is_published: bool,
     ) {
-        let room = unsafe { Weak::from_raw(room as *mut Room) };
+        let room = unsafe { Weak.from_raw(room as *mut Room) };
         if let Some(room) = room.upgrade() {
-            let publication = LocalTrackPublication::new(publication);
+            let publication = LocalTrackPublication.new(publication);
             let update = if is_published {
-                RoomUpdate::LocalVideoTrackPublished { publication }
+                RoomUpdate.LocalVideoTrackPublished { publication }
             } else {
-                RoomUpdate::LocalVideoTrackUnpublished { publication }
+                RoomUpdate.LocalVideoTrackUnpublished { publication }
             };
             room.update_subscribers
                 .lock()
                 .retain(|tx| tx.unbounded_send(update.clone()).is_ok());
         }
-        let _ = Weak::into_raw(room);
+        let _ = Weak.into_raw(room);
     }
 }
 
@@ -684,12 +684,12 @@ impl Drop for RoomDelegate {
     fn drop(&mut self) {
         unsafe {
             CFRelease(self.native_delegate.0);
-            let _ = Weak::from_raw(self.weak_room as *mut Room);
+            let _ = Weak.from_raw(self.weak_room as *mut Room);
         }
     }
 }
 
-pub struct LocalAudioTrack(swift::LocalAudioTrack);
+pub struct LocalAudioTrack(swift.LocalAudioTrack);
 
 impl LocalAudioTrack {
     pub fn create() -> Self {
@@ -703,7 +703,7 @@ impl Drop for LocalAudioTrack {
     }
 }
 
-pub struct LocalVideoTrack(swift::LocalVideoTrack);
+pub struct LocalVideoTrack(swift.LocalVideoTrack);
 
 impl LocalVideoTrack {
     pub fn screen_share_for_display(display: &MacOSDisplay) -> Self {
@@ -717,10 +717,10 @@ impl Drop for LocalVideoTrack {
     }
 }
 
-pub struct LocalTrackPublication(swift::LocalTrackPublication);
+pub struct LocalTrackPublication(swift.LocalTrackPublication);
 
 impl LocalTrackPublication {
-    pub fn new(native_track_publication: swift::LocalTrackPublication) -> Self {
+    pub fn new(native_track_publication: swift.LocalTrackPublication) -> Self {
         unsafe {
             CFRetain(native_track_publication.0);
         }
@@ -728,18 +728,18 @@ impl LocalTrackPublication {
     }
 
     pub fn sid(&self) -> String {
-        unsafe { CFString::wrap_under_get_rule(LKLocalTrackPublicationGetSid(self.0)).to_string() }
+        unsafe { CFString.wrap_under_get_rule(LKLocalTrackPublicationGetSid(self.0)).to_string() }
     }
 
     pub fn set_mute(&self, muted: bool) -> impl Future<Output = Result<()>> {
-        let (tx, rx) = futures::channel::oneshot::channel();
+        let (tx, rx) = futures.channel.oneshot.channel();
 
         extern "C" fn complete_callback(callback_data: *mut c_void, error: CFStringRef) {
-            let tx = unsafe { Box::from_raw(callback_data as *mut oneshot::Sender<Result<()>>) };
+            let tx = unsafe { Box.from_raw(callback_data as *mut oneshot.Sender<Result<()>>) };
             if error.is_null() {
                 tx.send(Ok(())).ok();
             } else {
-                let error = unsafe { CFString::wrap_under_get_rule(error).to_string() };
+                let error = unsafe { CFString.wrap_under_get_rule(error).to_string() };
                 tx.send(Err(anyhow!(error))).ok();
             }
         }
@@ -749,7 +749,7 @@ impl LocalTrackPublication {
                 self.0,
                 muted,
                 complete_callback,
-                Box::into_raw(Box::new(tx)) as *mut c_void,
+                Box.into_raw(Box.new(tx)) as *mut c_void,
             )
         }
 
@@ -776,10 +776,10 @@ impl Drop for LocalTrackPublication {
     }
 }
 
-pub struct RemoteTrackPublication(swift::RemoteTrackPublication);
+pub struct RemoteTrackPublication(swift.RemoteTrackPublication);
 
 impl RemoteTrackPublication {
-    pub fn new(native_track_publication: swift::RemoteTrackPublication) -> Self {
+    pub fn new(native_track_publication: swift.RemoteTrackPublication) -> Self {
         unsafe {
             CFRetain(native_track_publication.0);
         }
@@ -787,7 +787,7 @@ impl RemoteTrackPublication {
     }
 
     pub fn sid(&self) -> String {
-        unsafe { CFString::wrap_under_get_rule(LKRemoteTrackPublicationGetSid(self.0)).to_string() }
+        unsafe { CFString.wrap_under_get_rule(LKRemoteTrackPublicationGetSid(self.0)).to_string() }
     }
 
     pub fn is_muted(&self) -> bool {
@@ -795,14 +795,14 @@ impl RemoteTrackPublication {
     }
 
     pub fn set_enabled(&self, enabled: bool) -> impl Future<Output = Result<()>> {
-        let (tx, rx) = futures::channel::oneshot::channel();
+        let (tx, rx) = futures.channel.oneshot.channel();
 
         extern "C" fn complete_callback(callback_data: *mut c_void, error: CFStringRef) {
-            let tx = unsafe { Box::from_raw(callback_data as *mut oneshot::Sender<Result<()>>) };
+            let tx = unsafe { Box.from_raw(callback_data as *mut oneshot.Sender<Result<()>>) };
             if error.is_null() {
                 tx.send(Ok(())).ok();
             } else {
-                let error = unsafe { CFString::wrap_under_get_rule(error).to_string() };
+                let error = unsafe { CFString.wrap_under_get_rule(error).to_string() };
                 tx.send(Err(anyhow!(error))).ok();
             }
         }
@@ -812,7 +812,7 @@ impl RemoteTrackPublication {
                 self.0,
                 enabled,
                 complete_callback,
-                Box::into_raw(Box::new(tx)) as *mut c_void,
+                Box.into_raw(Box.new(tx)) as *mut c_void,
             )
         }
 
@@ -828,13 +828,13 @@ impl Drop for RemoteTrackPublication {
 
 #[derive(Debug)]
 pub struct RemoteAudioTrack {
-    native_track: swift::RemoteAudioTrack,
+    native_track: swift.RemoteAudioTrack,
     sid: Sid,
     publisher_id: String,
 }
 
 impl RemoteAudioTrack {
-    fn new(native_track: swift::RemoteAudioTrack, sid: Sid, publisher_id: String) -> Self {
+    fn new(native_track: swift.RemoteAudioTrack, sid: Sid, publisher_id: String) -> Self {
         unsafe {
             CFRetain(native_track.0);
         }
@@ -874,13 +874,13 @@ impl Drop for RemoteAudioTrack {
 
 #[derive(Debug)]
 pub struct RemoteVideoTrack {
-    native_track: swift::RemoteVideoTrack,
+    native_track: swift.RemoteVideoTrack,
     sid: Sid,
     publisher_id: String,
 }
 
 impl RemoteVideoTrack {
-    fn new(native_track: swift::RemoteVideoTrack, sid: Sid, publisher_id: String) -> Self {
+    fn new(native_track: swift.RemoteVideoTrack, sid: Sid, publisher_id: String) -> Self {
         unsafe {
             CFRetain(native_track.0);
         }
@@ -899,22 +899,22 @@ impl RemoteVideoTrack {
         &self.publisher_id
     }
 
-    pub fn frames(&self) -> async_broadcast::Receiver<Frame> {
+    pub fn frames(&self) -> async_broadcast.Receiver<Frame> {
         extern "C" fn on_frame(callback_data: *mut c_void, frame: CVImageBufferRef) -> bool {
             unsafe {
-                let tx = Box::from_raw(callback_data as *mut async_broadcast::Sender<Frame>);
-                let buffer = CVImageBuffer::wrap_under_get_rule(frame);
+                let tx = Box.from_raw(callback_data as *mut async_broadcast.Sender<Frame>);
+                let buffer = CVImageBuffer.wrap_under_get_rule(frame);
                 let result = tx.try_broadcast(Frame(buffer));
-                let _ = Box::into_raw(tx);
+                let _ = Box.into_raw(tx);
                 match result {
                     Ok(_) => true,
-                    Err(async_broadcast::TrySendError::Closed(_))
-                    | Err(async_broadcast::TrySendError::Inactive(_)) => {
-                        log::warn!("no active receiver for frame");
+                    Err(async_broadcast.TrySendError.Closed(_))
+                    | Err(async_broadcast.TrySendError.Inactive(_)) => {
+                        log.warn!("no active receiver for frame");
                         false
                     }
-                    Err(async_broadcast::TrySendError::Full(_)) => {
-                        log::warn!("skipping frame as receiver is not keeping up");
+                    Err(async_broadcast.TrySendError.Full(_)) => {
+                        log.warn!("skipping frame as receiver is not keeping up");
                         true
                     }
                 }
@@ -923,14 +923,14 @@ impl RemoteVideoTrack {
 
         extern "C" fn on_drop(callback_data: *mut c_void) {
             unsafe {
-                let _ = Box::from_raw(callback_data as *mut async_broadcast::Sender<Frame>);
+                let _ = Box.from_raw(callback_data as *mut async_broadcast.Sender<Frame>);
             }
         }
 
-        let (tx, rx) = async_broadcast::broadcast(64);
+        let (tx, rx) = async_broadcast.broadcast(64);
         unsafe {
             let renderer = LKVideoRendererCreate(
-                Box::into_raw(Box::new(tx)) as *mut c_void,
+                Box.into_raw(Box.new(tx)) as *mut c_void,
                 on_frame,
                 on_drop,
             );
@@ -946,10 +946,10 @@ impl Drop for RemoteVideoTrack {
     }
 }
 
-pub struct MacOSDisplay(swift::MacOSDisplay);
+pub struct MacOSDisplay(swift.MacOSDisplay);
 
 impl MacOSDisplay {
-    fn new(ptr: swift::MacOSDisplay) -> Self {
+    fn new(ptr: swift.MacOSDisplay) -> Self {
         unsafe {
             CFRetain(ptr.0);
         }
