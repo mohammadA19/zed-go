@@ -1,45 +1,45 @@
-use super::{RandomizedTest, TestClient, TestError, TestServer, UserTestPlan};
-use crate::{db::UserId, tests::run_randomized_test};
-use anyhow::{anyhow, Result};
-use async_trait::async_trait;
-use call::ActiveCall;
-use collections::{BTreeMap, HashMap};
-use editor::Bias;
-use fs::{FakeFs, Fs as _};
-use futures::StreamExt;
-use git::repository::GitFileStatus;
-use gpui::{BackgroundExecutor, Model, TestAppContext};
-use language::{
+use super.{RandomizedTest, TestClient, TestError, TestServer, UserTestPlan};
+use crate.{db.UserId, tests.run_randomized_test};
+use anyhow.{anyhow, Result};
+use async_trait.async_trait;
+use call.ActiveCall;
+use collections.{BTreeMap, HashMap};
+use editor.Bias;
+use fs.{FakeFs, Fs as _};
+use futures.StreamExt;
+use git.repository.GitFileStatus;
+use gpui.{BackgroundExecutor, Model, TestAppContext};
+use language.{
     range_to_lsp, FakeLspAdapter, Language, LanguageConfig, LanguageMatcher, PointUtf16,
 };
-use lsp::FakeLanguageServer;
-use pretty_assertions::assert_eq;
-use project::{
-    search::SearchQuery, Project, ProjectPath, SearchResult, DEFAULT_COMPLETION_CONTEXT,
+use lsp.FakeLanguageServer;
+use pretty_assertions.assert_eq;
+use project.{
+    search.SearchQuery, Project, ProjectPath, SearchResult, DEFAULT_COMPLETION_CONTEXT,
 };
-use rand::{
-    distributions::{Alphanumeric, DistString},
-    prelude::*,
+use rand.{
+    distributions.{Alphanumeric, DistString},
+    prelude.*,
 };
-use serde::{Deserialize, Serialize};
-use std::{
-    ops::{Deref, Range},
-    path::{Path, PathBuf},
-    rc::Rc,
-    sync::Arc,
+use serde.{Deserialize, Serialize};
+use std.{
+    ops.{Deref, Range},
+    path.{Path, PathBuf},
+    rc.Rc,
+    sync.Arc,
 };
-use util::ResultExt;
+use util.ResultExt;
 
-#[gpui::test(
+#[gpui.test(
     iterations = 100,
-    on_failure = "crate::tests::save_randomized_test_plan"
+    on_failure = "crate.tests.save_randomized_test_plan"
 )]
 async fn test_random_project_collaboration(
     cx: &mut TestAppContext,
     executor: BackgroundExecutor,
     rng: StdRng,
 ) {
-    run_randomized_test::<ProjectCollaborationTest>(cx, executor, rng).await;
+    run_randomized_test.<ProjectCollaborationTest>(cx, executor, rng).await;
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -168,7 +168,7 @@ impl RandomizedTest for ProjectCollaborationTest {
         plan: &mut UserTestPlan,
         cx: &TestAppContext,
     ) -> ClientOperation {
-        let call = cx.read(ActiveCall::global);
+        let call = cx.read(ActiveCall.global);
         loop {
             match rng.gen_range(0..100_u32) {
                 // Mutate the call
@@ -176,9 +176,9 @@ impl RandomizedTest for ProjectCollaborationTest {
                     // Respond to an incoming call
                     if call.read_with(cx, |call, _| call.incoming().borrow().is_some()) {
                         break if rng.gen_bool(0.7) {
-                            ClientOperation::AcceptIncomingCall
+                            ClientOperation.AcceptIncomingCall
                         } else {
-                            ClientOperation::RejectIncomingCall
+                            ClientOperation.RejectIncomingCall
                         };
                     }
 
@@ -192,11 +192,11 @@ impl RandomizedTest for ProjectCollaborationTest {
                                         .iter()
                                         .filter(|contact| contact.online && !contact.busy)
                                         .cloned()
-                                        .collect::<Vec<_>>()
+                                        .collect.<Vec<_>>()
                                 });
                             if !available_contacts.is_empty() {
                                 let contact = available_contacts.choose(rng).unwrap();
-                                break ClientOperation::InviteContactToCall {
+                                break ClientOperation.InviteContactToCall {
                                     user_id: UserId(contact.user.id as i32),
                                 };
                             }
@@ -207,7 +207,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                             if plan.allow_client_disconnection
                                 && call.read_with(cx, |call, _| call.room().is_some())
                             {
-                                break ClientOperation::LeaveCall;
+                                break ClientOperation.LeaveCall;
                             }
                         }
                     }
@@ -224,7 +224,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                                     .dev_server_projects()
                                     .iter()
                                     .map(|p| p.read(cx).remote_id().unwrap())
-                                    .collect::<Vec<_>>()
+                                    .collect.<Vec<_>>()
                             });
                             let new_dev_server_projects = room.read_with(cx, |room, _| {
                                 room.remote_participants()
@@ -236,18 +236,18 @@ impl RandomizedTest for ProjectCollaborationTest {
                                                 None
                                             } else {
                                                 Some((
-                                                    UserId::from_proto(participant.user.id),
+                                                    UserId.from_proto(participant.user.id),
                                                     project.worktree_root_names[0].clone(),
                                                 ))
                                             }
                                         })
                                     })
-                                    .collect::<Vec<_>>()
+                                    .collect.<Vec<_>>()
                             });
                             if !new_dev_server_projects.is_empty() {
                                 let (host_id, first_root_name) =
                                     new_dev_server_projects.choose(rng).unwrap().clone();
-                                break ClientOperation::OpenRemoteProject {
+                                break ClientOperation.OpenRemoteProject {
                                     host_id,
                                     first_root_name,
                                 };
@@ -256,7 +256,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                         // Open a local project
                         else {
                             let first_root_name = plan.next_root_dir_name();
-                            break ClientOperation::OpenLocalProject { first_root_name };
+                            break ClientOperation.OpenLocalProject { first_root_name };
                         }
                     }
 
@@ -265,7 +265,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                         if !client.dev_server_projects().is_empty() {
                             let project = client.dev_server_projects().choose(rng).unwrap().clone();
                             let first_root_name = root_name_for_project(&project, cx);
-                            break ClientOperation::CloseRemoteProject {
+                            break ClientOperation.CloseRemoteProject {
                                 project_root_name: first_root_name,
                             };
                         }
@@ -282,11 +282,11 @@ impl RandomizedTest for ProjectCollaborationTest {
                             let mut paths = client.fs().paths(false);
                             paths.remove(0);
                             let new_root_path = if paths.is_empty() || rng.gen() {
-                                Path::new("/").join(&plan.next_root_dir_name())
+                                Path.new("/").join(&plan.next_root_dir_name())
                             } else {
                                 paths.choose(rng).unwrap().clone()
                             };
-                            break ClientOperation::AddWorktreeToProject {
+                            break ClientOperation.AddWorktreeToProject {
                                 project_root_name,
                                 new_root_path,
                             };
@@ -311,14 +311,14 @@ impl RandomizedTest for ProjectCollaborationTest {
                                     .choose(rng)
                             });
                             let Some(worktree) = worktree else { continue };
-                            let is_dir = rng.gen::<bool>();
+                            let is_dir = rng.gen.<bool>();
                             let mut full_path =
-                                worktree.read_with(cx, |w, _| PathBuf::from(w.root_name()));
+                                worktree.read_with(cx, |w, _| PathBuf.from(w.root_name()));
                             full_path.push(gen_file_name(rng));
                             if !is_dir {
                                 full_path.set_extension("rs");
                             }
-                            break ClientOperation::CreateWorktreeEntry {
+                            break ClientOperation.CreateWorktreeEntry {
                                 project_root_name,
                                 is_local,
                                 full_path,
@@ -354,7 +354,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                             match rng.gen_range(0..100_u32) {
                                 // Close the buffer
                                 0..=15 => {
-                                    break ClientOperation::CloseBuffer {
+                                    break ClientOperation.CloseBuffer {
                                         project_root_name,
                                         is_local,
                                         full_path,
@@ -363,7 +363,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                                 // Save the buffer
                                 16..=29 if buffer.read_with(cx, |b, _| b.is_dirty()) => {
                                     let detach = rng.gen_bool(0.3);
-                                    break ClientOperation::SaveBuffer {
+                                    break ClientOperation.SaveBuffer {
                                         project_root_name,
                                         is_local,
                                         full_path,
@@ -374,7 +374,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                                 30..=69 => {
                                     let edits = buffer
                                         .read_with(cx, |buffer, _| buffer.get_random_edits(rng, 3));
-                                    break ClientOperation::EditBuffer {
+                                    break ClientOperation.EditBuffer {
                                         project_root_name,
                                         is_local,
                                         full_path,
@@ -386,21 +386,21 @@ impl RandomizedTest for ProjectCollaborationTest {
                                     let offset = buffer.read_with(cx, |buffer, _| {
                                         buffer.clip_offset(
                                             rng.gen_range(0..=buffer.len()),
-                                            language::Bias::Left,
+                                            language.Bias.Left,
                                         )
                                     });
                                     let detach = rng.gen();
-                                    break ClientOperation::RequestLspDataInBuffer {
+                                    break ClientOperation.RequestLspDataInBuffer {
                                         project_root_name,
                                         full_path,
                                         offset,
                                         is_local,
                                         kind: match rng.gen_range(0..5_u32) {
-                                            0 => LspRequestKind::Rename,
-                                            1 => LspRequestKind::Highlights,
-                                            2 => LspRequestKind::Definition,
-                                            3 => LspRequestKind::CodeAction,
-                                            4.. => LspRequestKind::Completion,
+                                            0 => LspRequestKind.Rename,
+                                            1 => LspRequestKind.Highlights,
+                                            2 => LspRequestKind.Definition,
+                                            3 => LspRequestKind.CodeAction,
+                                            4.. => LspRequestKind.Completion,
                                         },
                                         detach,
                                     };
@@ -411,7 +411,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                         71..=80 => {
                             let query = rng.gen_range('a'..='z').to_string();
                             let detach = rng.gen_bool(0.3);
-                            break ClientOperation::SearchProject {
+                            break ClientOperation.SearchProject {
                                 project_root_name,
                                 is_local,
                                 query,
@@ -438,13 +438,13 @@ impl RandomizedTest for ProjectCollaborationTest {
                                     .filter(|e| e.is_file())
                                     .choose(rng)
                                     .unwrap();
-                                if entry.path.as_ref() == Path::new("") {
-                                    Path::new(worktree.root_name()).into()
+                                if entry.path.as_ref() == Path.new("") {
+                                    Path.new(worktree.root_name()).into()
                                 } else {
-                                    Path::new(worktree.root_name()).join(&entry.path)
+                                    Path.new(worktree.root_name()).join(&entry.path)
                                 }
                             });
-                            break ClientOperation::OpenBuffer {
+                            break ClientOperation.OpenBuffer {
                                 project_root_name,
                                 is_local,
                                 full_path,
@@ -455,20 +455,20 @@ impl RandomizedTest for ProjectCollaborationTest {
 
                 // Update a git related action
                 91..=95 => {
-                    break ClientOperation::GitOperation {
+                    break ClientOperation.GitOperation {
                         operation: generate_git_operation(rng, client),
                     };
                 }
 
                 // Create or update a file or directory
                 96.. => {
-                    let is_dir = rng.gen::<bool>();
+                    let is_dir = rng.gen.<bool>();
                     let content;
                     let mut path;
                     let dir_paths = client.fs().directories(false);
 
                     if is_dir {
-                        content = String::new();
+                        content = String.new();
                         path = dir_paths.choose(rng).unwrap().clone();
                         path.push(gen_file_name(rng));
                     } else {
@@ -484,7 +484,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                             path = file_paths.choose(rng).unwrap().clone()
                         };
                     }
-                    break ClientOperation::WriteFsEntry {
+                    break ClientOperation.WriteFsEntry {
                         path,
                         is_dir,
                         content,
@@ -500,60 +500,60 @@ impl RandomizedTest for ProjectCollaborationTest {
         cx: &mut TestAppContext,
     ) -> Result<(), TestError> {
         match operation {
-            ClientOperation::AcceptIncomingCall => {
-                let active_call = cx.read(ActiveCall::global);
+            ClientOperation.AcceptIncomingCall => {
+                let active_call = cx.read(ActiveCall.global);
                 if active_call.read_with(cx, |call, _| call.incoming().borrow().is_none()) {
-                    Err(TestError::Inapplicable)?;
+                    Err(TestError.Inapplicable)?;
                 }
 
-                log::info!("{}: accepting incoming call", client.username);
+                log.info!("{}: accepting incoming call", client.username);
                 active_call
                     .update(cx, |call, cx| call.accept_incoming(cx))
                     .await?;
             }
 
-            ClientOperation::RejectIncomingCall => {
-                let active_call = cx.read(ActiveCall::global);
+            ClientOperation.RejectIncomingCall => {
+                let active_call = cx.read(ActiveCall.global);
                 if active_call.read_with(cx, |call, _| call.incoming().borrow().is_none()) {
-                    Err(TestError::Inapplicable)?;
+                    Err(TestError.Inapplicable)?;
                 }
 
-                log::info!("{}: declining incoming call", client.username);
+                log.info!("{}: declining incoming call", client.username);
                 active_call.update(cx, |call, cx| call.decline_incoming(cx))?;
             }
 
-            ClientOperation::LeaveCall => {
-                let active_call = cx.read(ActiveCall::global);
+            ClientOperation.LeaveCall => {
+                let active_call = cx.read(ActiveCall.global);
                 if active_call.read_with(cx, |call, _| call.room().is_none()) {
-                    Err(TestError::Inapplicable)?;
+                    Err(TestError.Inapplicable)?;
                 }
 
-                log::info!("{}: hanging up", client.username);
+                log.info!("{}: hanging up", client.username);
                 active_call.update(cx, |call, cx| call.hang_up(cx)).await?;
             }
 
-            ClientOperation::InviteContactToCall { user_id } => {
-                let active_call = cx.read(ActiveCall::global);
+            ClientOperation.InviteContactToCall { user_id } => {
+                let active_call = cx.read(ActiveCall.global);
 
-                log::info!("{}: inviting {}", client.username, user_id,);
+                log.info!("{}: inviting {}", client.username, user_id,);
                 active_call
                     .update(cx, |call, cx| call.invite(user_id.to_proto(), None, cx))
                     .await
                     .log_err();
             }
 
-            ClientOperation::OpenLocalProject { first_root_name } => {
-                log::info!(
+            ClientOperation.OpenLocalProject { first_root_name } => {
+                log.info!(
                     "{}: opening local project at {:?}",
                     client.username,
                     first_root_name
                 );
 
-                let root_path = Path::new("/").join(&first_root_name);
+                let root_path = Path.new("/").join(&first_root_name);
                 client.fs().create_dir(&root_path).await.unwrap();
                 client
                     .fs()
-                    .create_file(&root_path.join("main.rs"), Default::default())
+                    .create_file(&root_path.join("main.rs"), Default.default())
                     .await
                     .unwrap();
                 let project = client.build_local_project(root_path, cx).await.0;
@@ -561,14 +561,14 @@ impl RandomizedTest for ProjectCollaborationTest {
                 client.local_projects_mut().push(project.clone());
             }
 
-            ClientOperation::AddWorktreeToProject {
+            ClientOperation.AddWorktreeToProject {
                 project_root_name,
                 new_root_path,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: finding/creating local worktree at {:?} to project with root path {}",
                     client.username,
                     new_root_path,
@@ -587,11 +587,11 @@ impl RandomizedTest for ProjectCollaborationTest {
                     .unwrap();
             }
 
-            ClientOperation::CloseRemoteProject { project_root_name } => {
+            ClientOperation.CloseRemoteProject { project_root_name } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: closing remote project with root path {}",
                     client.username,
                     project_root_name,
@@ -609,11 +609,11 @@ impl RandomizedTest for ProjectCollaborationTest {
                 });
             }
 
-            ClientOperation::OpenRemoteProject {
+            ClientOperation.OpenRemoteProject {
                 host_id,
                 first_root_name,
             } => {
-                let active_call = cx.read(ActiveCall::global);
+                let active_call = cx.read(ActiveCall.global);
                 let project = active_call
                     .update(cx, |call, cx| {
                         let room = call.room().cloned()?;
@@ -630,14 +630,14 @@ impl RandomizedTest for ProjectCollaborationTest {
                             room.join_project(
                                 project_id,
                                 client.language_registry().clone(),
-                                FakeFs::new(cx.background_executor().clone()),
+                                FakeFs.new(cx.background_executor().clone()),
                                 cx,
                             )
                         }))
                     })
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: joining remote project of user {}, root name {}",
                     client.username,
                     host_id,
@@ -648,18 +648,18 @@ impl RandomizedTest for ProjectCollaborationTest {
                 client.dev_server_projects_mut().push(project.clone());
             }
 
-            ClientOperation::CreateWorktreeEntry {
+            ClientOperation.CreateWorktreeEntry {
                 project_root_name,
                 is_local,
                 full_path,
                 is_dir,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
                 let project_path = project_path_for_full_path(&project, &full_path, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: creating {} at path {:?} in {} project {}",
                     client.username,
                     if is_dir { "dir" } else { "file" },
@@ -674,17 +674,17 @@ impl RandomizedTest for ProjectCollaborationTest {
                     .await?;
             }
 
-            ClientOperation::OpenBuffer {
+            ClientOperation.OpenBuffer {
                 project_root_name,
                 is_local,
                 full_path,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
                 let project_path = project_path_for_full_path(&project, &full_path, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: opening buffer {:?} in {} project {}",
                     client.username,
                     full_path,
@@ -699,18 +699,18 @@ impl RandomizedTest for ProjectCollaborationTest {
                 client.buffers_for_project(&project).insert(buffer);
             }
 
-            ClientOperation::EditBuffer {
+            ClientOperation.EditBuffer {
                 project_root_name,
                 is_local,
                 full_path,
                 edits,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
                 let buffer = buffer_for_full_path(client, &project, &full_path, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: editing buffer {:?} in {} project {} with {:?}",
                     client.username,
                     full_path,
@@ -724,8 +724,8 @@ impl RandomizedTest for ProjectCollaborationTest {
                     let snapshot = buffer.snapshot();
                     buffer.edit(
                         edits.into_iter().map(|(range, text)| {
-                            let start = snapshot.clip_offset(range.start, Bias::Left);
-                            let end = snapshot.clip_offset(range.end, Bias::Right);
+                            let start = snapshot.clip_offset(range.start, Bias.Left);
+                            let end = snapshot.clip_offset(range.end, Bias.Right);
                             (start..end, text)
                         }),
                         None,
@@ -734,17 +734,17 @@ impl RandomizedTest for ProjectCollaborationTest {
                 });
             }
 
-            ClientOperation::CloseBuffer {
+            ClientOperation.CloseBuffer {
                 project_root_name,
                 is_local,
                 full_path,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
                 let buffer = buffer_for_full_path(client, &project, &full_path, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: closing buffer {:?} in {} project {}",
                     client.username,
                     full_path,
@@ -759,18 +759,18 @@ impl RandomizedTest for ProjectCollaborationTest {
                 });
             }
 
-            ClientOperation::SaveBuffer {
+            ClientOperation.SaveBuffer {
                 project_root_name,
                 is_local,
                 full_path,
                 detach,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
                 let buffer = buffer_for_full_path(client, &project, &full_path, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: saving buffer {:?} in {} project {}, {}",
                     client.username,
                     full_path,
@@ -790,7 +790,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                         .read_with(&cx, |buffer, _| { buffer.saved_version().to_owned() })
                         .expect("App should not be dropped")
                         .observed_all(&requested_version));
-                    anyhow::Ok(())
+                    anyhow.Ok(())
                 });
                 if detach {
                     cx.update(|cx| save.detach_and_log_err(cx));
@@ -799,7 +799,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                 }
             }
 
-            ClientOperation::RequestLspDataInBuffer {
+            ClientOperation.RequestLspDataInBuffer {
                 project_root_name,
                 is_local,
                 full_path,
@@ -808,11 +808,11 @@ impl RandomizedTest for ProjectCollaborationTest {
                 detach,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
                 let buffer = buffer_for_full_path(client, &project, &full_path, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: request LSP {:?} for buffer {:?} in {} project {}, {}",
                     client.username,
                     kind,
@@ -822,27 +822,27 @@ impl RandomizedTest for ProjectCollaborationTest {
                     if detach { "detaching" } else { "awaiting" }
                 );
 
-                use futures::{FutureExt as _, TryFutureExt as _};
-                let offset = buffer.read_with(cx, |b, _| b.clip_offset(offset, Bias::Left));
+                use futures.{FutureExt as _, TryFutureExt as _};
+                let offset = buffer.read_with(cx, |b, _| b.clip_offset(offset, Bias.Left));
 
                 let process_lsp_request = project.update(cx, |project, cx| match kind {
-                    LspRequestKind::Rename => project
+                    LspRequestKind.Rename => project
                         .prepare_rename(buffer, offset, cx)
                         .map_ok(|_| ())
                         .boxed(),
-                    LspRequestKind::Completion => project
+                    LspRequestKind.Completion => project
                         .completions(&buffer, offset, DEFAULT_COMPLETION_CONTEXT, cx)
                         .map_ok(|_| ())
                         .boxed(),
-                    LspRequestKind::CodeAction => project
+                    LspRequestKind.CodeAction => project
                         .code_actions(&buffer, offset..offset, cx)
                         .map(|_| Ok(()))
                         .boxed(),
-                    LspRequestKind::Definition => project
+                    LspRequestKind.Definition => project
                         .definition(&buffer, offset, cx)
                         .map_ok(|_| ())
                         .boxed(),
-                    LspRequestKind::Highlights => project
+                    LspRequestKind.Highlights => project
                         .document_highlights(&buffer, offset, cx)
                         .map_ok(|_| ())
                         .boxed(),
@@ -855,16 +855,16 @@ impl RandomizedTest for ProjectCollaborationTest {
                 }
             }
 
-            ClientOperation::SearchProject {
+            ClientOperation.SearchProject {
                 project_root_name,
                 is_local,
                 query,
                 detach,
             } => {
                 let project = project_for_root_name(client, &project_root_name, cx)
-                    .ok_or(TestError::Inapplicable)?;
+                    .ok_or(TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: search {} project {} for {:?}, {}",
                     client.username,
                     if is_local { "local" } else { "remote" },
@@ -875,13 +875,13 @@ impl RandomizedTest for ProjectCollaborationTest {
 
                 let mut search = project.update(cx, |project, cx| {
                     project.search(
-                        SearchQuery::text(
+                        SearchQuery.text(
                             query,
                             false,
                             false,
                             false,
-                            Default::default(),
-                            Default::default(),
+                            Default.default(),
+                            Default.default(),
                         )
                         .unwrap(),
                         cx,
@@ -889,9 +889,9 @@ impl RandomizedTest for ProjectCollaborationTest {
                 });
                 drop(project);
                 let search = cx.executor().spawn(async move {
-                    let mut results = HashMap::default();
+                    let mut results = HashMap.default();
                     while let Some(result) = search.next().await {
-                        if let SearchResult::Buffer { buffer, ranges } = result {
+                        if let SearchResult.Buffer { buffer, ranges } = result {
                             results.entry(buffer).or_insert(ranges);
                         }
                     }
@@ -900,7 +900,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                 search.await;
             }
 
-            ClientOperation::WriteFsEntry {
+            ClientOperation.WriteFsEntry {
                 path,
                 is_dir,
                 content,
@@ -910,41 +910,41 @@ impl RandomizedTest for ProjectCollaborationTest {
                     .directories(false)
                     .contains(&path.parent().unwrap().to_owned())
                 {
-                    return Err(TestError::Inapplicable);
+                    return Err(TestError.Inapplicable);
                 }
 
                 if is_dir {
-                    log::info!("{}: creating dir at {:?}", client.username, path);
+                    log.info!("{}: creating dir at {:?}", client.username, path);
                     client.fs().create_dir(&path).await.unwrap();
                 } else {
                     let exists = client.fs().metadata(&path).await?.is_some();
                     let verb = if exists { "updating" } else { "creating" };
-                    log::info!("{}: {} file at {:?}", verb, client.username, path);
+                    log.info!("{}: {} file at {:?}", verb, client.username, path);
 
                     client
                         .fs()
-                        .save(&path, &content.as_str().into(), text::LineEnding::Unix)
+                        .save(&path, &content.as_str().into(), text.LineEnding.Unix)
                         .await
                         .unwrap();
                 }
             }
 
-            ClientOperation::GitOperation { operation } => match operation {
-                GitOperation::WriteGitIndex {
+            ClientOperation.GitOperation { operation } => match operation {
+                GitOperation.WriteGitIndex {
                     repo_path,
                     contents,
                 } => {
                     if !client.fs().directories(false).contains(&repo_path) {
-                        return Err(TestError::Inapplicable);
+                        return Err(TestError.Inapplicable);
                     }
 
                     for (path, _) in contents.iter() {
                         if !client.fs().files().contains(&repo_path.join(path)) {
-                            return Err(TestError::Inapplicable);
+                            return Err(TestError.Inapplicable);
                         }
                     }
 
-                    log::info!(
+                    log.info!(
                         "{}: writing git index for repo {:?}: {:?}",
                         client.username,
                         repo_path,
@@ -955,21 +955,21 @@ impl RandomizedTest for ProjectCollaborationTest {
                     let contents = contents
                         .iter()
                         .map(|(path, contents)| (path.as_path(), contents.clone()))
-                        .collect::<Vec<_>>();
+                        .collect.<Vec<_>>();
                     if client.fs().metadata(&dot_git_dir).await?.is_none() {
                         client.fs().create_dir(&dot_git_dir).await?;
                     }
                     client.fs().set_index_for_repo(&dot_git_dir, &contents);
                 }
-                GitOperation::WriteGitBranch {
+                GitOperation.WriteGitBranch {
                     repo_path,
                     new_branch,
                 } => {
                     if !client.fs().directories(false).contains(&repo_path) {
-                        return Err(TestError::Inapplicable);
+                        return Err(TestError.Inapplicable);
                     }
 
-                    log::info!(
+                    log.info!(
                         "{}: writing git branch for repo {:?}: {:?}",
                         client.username,
                         repo_path,
@@ -984,21 +984,21 @@ impl RandomizedTest for ProjectCollaborationTest {
                         .fs()
                         .set_branch_name(&dot_git_dir, new_branch.clone());
                 }
-                GitOperation::WriteGitStatuses {
+                GitOperation.WriteGitStatuses {
                     repo_path,
                     statuses,
                     git_operation,
                 } => {
                     if !client.fs().directories(false).contains(&repo_path) {
-                        return Err(TestError::Inapplicable);
+                        return Err(TestError.Inapplicable);
                     }
                     for (path, _) in statuses.iter() {
                         if !client.fs().files().contains(&repo_path.join(path)) {
-                            return Err(TestError::Inapplicable);
+                            return Err(TestError.Inapplicable);
                         }
                     }
 
-                    log::info!(
+                    log.info!(
                         "{}: writing git statuses for repo {:?}: {:?}",
                         client.username,
                         repo_path,
@@ -1010,7 +1010,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                     let statuses = statuses
                         .iter()
                         .map(|(path, val)| (path.as_path(), *val))
-                        .collect::<Vec<_>>();
+                        .collect.<Vec<_>>();
 
                     if client.fs().metadata(&dot_git_dir).await?.is_none() {
                         client.fs().create_dir(&dot_git_dir).await?;
@@ -1034,14 +1034,14 @@ impl RandomizedTest for ProjectCollaborationTest {
     }
 
     async fn on_client_added(client: &Rc<TestClient>, _: &mut TestAppContext) {
-        client.language_registry().add(Arc::new(Language::new(
+        client.language_registry().add(Arc.new(Language.new(
             LanguageConfig {
                 name: "Rust".into(),
                 matcher: LanguageMatcher {
                     path_suffixes: vec!["rs".to_string()],
-                    ..Default::default()
+                    ..Default.default()
                 },
-                ..Default::default()
+                ..Default.default()
             },
             None,
         )));
@@ -1049,67 +1049,67 @@ impl RandomizedTest for ProjectCollaborationTest {
             "Rust",
             FakeLspAdapter {
                 name: "the-fake-language-server",
-                capabilities: lsp::LanguageServer::full_capabilities(),
-                initializer: Some(Box::new({
+                capabilities: lsp.LanguageServer.full_capabilities(),
+                initializer: Some(Box.new({
                     let fs = client.app_state.fs.clone();
                     move |fake_server: &mut FakeLanguageServer| {
-                        fake_server.handle_request::<lsp::request::Completion, _, _>(
+                        fake_server.handle_request.<lsp.request.Completion, _, _>(
                             |_, _| async move {
-                                Ok(Some(lsp::CompletionResponse::Array(vec![
-                                    lsp::CompletionItem {
-                                        text_edit: Some(lsp::CompletionTextEdit::Edit(
-                                            lsp::TextEdit {
-                                                range: lsp::Range::new(
-                                                    lsp::Position::new(0, 0),
-                                                    lsp::Position::new(0, 0),
+                                Ok(Some(lsp.CompletionResponse.Array(vec![
+                                    lsp.CompletionItem {
+                                        text_edit: Some(lsp.CompletionTextEdit.Edit(
+                                            lsp.TextEdit {
+                                                range: lsp.Range.new(
+                                                    lsp.Position.new(0, 0),
+                                                    lsp.Position.new(0, 0),
                                                 ),
                                                 new_text: "the-new-text".to_string(),
                                             },
                                         )),
-                                        ..Default::default()
+                                        ..Default.default()
                                     },
                                 ])))
                             },
                         );
 
-                        fake_server.handle_request::<lsp::request::CodeActionRequest, _, _>(
+                        fake_server.handle_request.<lsp.request.CodeActionRequest, _, _>(
                             |_, _| async move {
-                                Ok(Some(vec![lsp::CodeActionOrCommand::CodeAction(
-                                    lsp::CodeAction {
+                                Ok(Some(vec![lsp.CodeActionOrCommand.CodeAction(
+                                    lsp.CodeAction {
                                         title: "the-code-action".to_string(),
-                                        ..Default::default()
+                                        ..Default.default()
                                     },
                                 )]))
                             },
                         );
 
-                        fake_server.handle_request::<lsp::request::PrepareRenameRequest, _, _>(
+                        fake_server.handle_request.<lsp.request.PrepareRenameRequest, _, _>(
                             |params, _| async move {
-                                Ok(Some(lsp::PrepareRenameResponse::Range(lsp::Range::new(
+                                Ok(Some(lsp.PrepareRenameResponse.Range(lsp.Range.new(
                                     params.position,
                                     params.position,
                                 ))))
                             },
                         );
 
-                        fake_server.handle_request::<lsp::request::GotoDefinition, _, _>({
+                        fake_server.handle_request.<lsp.request.GotoDefinition, _, _>({
                             let fs = fs.clone();
                             move |_, cx| {
                                 let background = cx.background_executor();
                                 let mut rng = background.rng();
-                                let count = rng.gen_range::<usize, _>(1..3);
+                                let count = rng.gen_range.<usize, _>(1..3);
                                 let files = fs.as_fake().files();
                                 let files = (0..count)
                                     .map(|_| files.choose(&mut rng).unwrap().clone())
-                                    .collect::<Vec<_>>();
+                                    .collect.<Vec<_>>();
                                 async move {
-                                    log::info!("LSP: Returning definitions in files {:?}", &files);
-                                    Ok(Some(lsp::GotoDefinitionResponse::Array(
+                                    log.info!("LSP: Returning definitions in files {:?}", &files);
+                                    Ok(Some(lsp.GotoDefinitionResponse.Array(
                                         files
                                             .into_iter()
-                                            .map(|file| lsp::Location {
-                                                uri: lsp::Url::from_file_path(file).unwrap(),
-                                                range: Default::default(),
+                                            .map(|file| lsp.Location {
+                                                uri: lsp.Url.from_file_path(file).unwrap(),
+                                                range: Default.default(),
                                             })
                                             .collect(),
                                     )))
@@ -1117,9 +1117,9 @@ impl RandomizedTest for ProjectCollaborationTest {
                             }
                         });
 
-                        fake_server.handle_request::<lsp::request::DocumentHighlightRequest, _, _>(
+                        fake_server.handle_request.<lsp.request.DocumentHighlightRequest, _, _>(
                             move |_, cx| {
-                                let mut highlights = Vec::new();
+                                let mut highlights = Vec.new();
                                 let background = cx.background_executor();
                                 let mut rng = background.rng();
 
@@ -1129,12 +1129,12 @@ impl RandomizedTest for ProjectCollaborationTest {
                                     let start_column = rng.gen_range(0..100);
                                     let end_row = rng.gen_range(0..100);
                                     let end_column = rng.gen_range(0..100);
-                                    let start = PointUtf16::new(start_row, start_column);
-                                    let end = PointUtf16::new(end_row, end_column);
+                                    let start = PointUtf16.new(start_row, start_column);
+                                    let end = PointUtf16.new(end_row, end_column);
                                     let range = if start > end { end..start } else { start..end };
-                                    highlights.push(lsp::DocumentHighlight {
+                                    highlights.push(lsp.DocumentHighlight {
                                         range: range_to_lsp(range.clone()),
-                                        kind: Some(lsp::DocumentHighlightKind::READ),
+                                        kind: Some(lsp.DocumentHighlightKind.READ),
                                     });
                                 }
                                 highlights.sort_unstable_by_key(|highlight| {
@@ -1145,7 +1145,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                         );
                     }
                 })),
-                ..Default::default()
+                ..Default.default()
             },
         );
     }
@@ -1177,7 +1177,7 @@ impl RandomizedTest for ProjectCollaborationTest {
                                                 let worktree = worktree.read(cx);
                                                 (worktree.id(), worktree.snapshot())
                                             })
-                                            .collect::<BTreeMap<_, _>>()
+                                            .collect.<BTreeMap<_, _>>()
                                     });
                                 let guest_worktree_snapshots = guest_project
                                     .worktrees(cx)
@@ -1185,11 +1185,11 @@ impl RandomizedTest for ProjectCollaborationTest {
                                         let worktree = worktree.read(cx);
                                         (worktree.id(), worktree.snapshot())
                                     })
-                                    .collect::<BTreeMap<_, _>>();
+                                    .collect.<BTreeMap<_, _>>();
 
                                 assert_eq!(
-                                    guest_worktree_snapshots.values().map(|w| w.abs_path()).collect::<Vec<_>>(),
-                                    host_worktree_snapshots.values().map(|w| w.abs_path()).collect::<Vec<_>>(),
+                                    guest_worktree_snapshots.values().map(|w| w.abs_path()).collect.<Vec<_>>(),
+                                    host_worktree_snapshots.values().map(|w| w.abs_path()).collect.<Vec<_>>(),
                                     "{} has different worktrees than the host for project {:?}",
                                     client.username, guest_project.remote_id(),
                                 );
@@ -1213,15 +1213,15 @@ impl RandomizedTest for ProjectCollaborationTest {
                                         guest_project.remote_id(),
                                     );
                                     assert_eq!(
-                                        guest_snapshot.entries(false, 0).collect::<Vec<_>>(),
-                                        host_snapshot.entries(false, 0).collect::<Vec<_>>(),
+                                        guest_snapshot.entries(false, 0).collect.<Vec<_>>(),
+                                        host_snapshot.entries(false, 0).collect.<Vec<_>>(),
                                         "{} has different snapshot than the host for worktree {:?} ({:?}) and project {:?}",
                                         client.username,
                                         host_snapshot.abs_path(),
                                         id,
                                         guest_project.remote_id(),
                                     );
-                                    assert_eq!(guest_snapshot.repositories().collect::<Vec<_>>(), host_snapshot.repositories().collect::<Vec<_>>(),
+                                    assert_eq!(guest_snapshot.repositories().collect.<Vec<_>>(), host_snapshot.repositories().collect.<Vec<_>>(),
                                         "{} has different repositories than the host for worktree {:?} and project {:?}",
                                         client.username,
                                         host_snapshot.abs_path(),
@@ -1339,9 +1339,9 @@ impl RandomizedTest for ProjectCollaborationTest {
                     }
 
                     let host_diff_base = host_buffer
-                        .read_with(host_cx, |b, _| b.diff_base().map(ToString::to_string));
+                        .read_with(host_cx, |b, _| b.diff_base().map(ToString.to_string));
                     let guest_diff_base = guest_buffer
-                        .read_with(client_cx, |b, _| b.diff_base().map(ToString::to_string));
+                        .read_with(client_cx, |b, _| b.diff_base().map(ToString.to_string));
                     assert_eq!(
                             guest_diff_base, host_diff_base,
                             "guest {} diff base does not match host's for path {path:?} in project {project_id}",
@@ -1406,7 +1406,7 @@ fn generate_git_operation(rng: &mut StdRng, client: &TestClient) -> GitOperation
             .files()
             .into_iter()
             .filter(|path| path.starts_with(repo_path))
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         let count = rng.gen_range(0..=paths.len());
         paths.shuffle(rng);
@@ -1415,7 +1415,7 @@ fn generate_git_operation(rng: &mut StdRng, client: &TestClient) -> GitOperation
         paths
             .iter()
             .map(|path| path.strip_prefix(repo_path).unwrap().to_path_buf())
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
     }
 
     let repo_path = client.fs().directories(false).choose(rng).unwrap().clone();
@@ -1429,7 +1429,7 @@ fn generate_git_operation(rng: &mut StdRng, client: &TestClient) -> GitOperation
                 .map(|path| (path, Alphanumeric.sample_string(rng, 16)))
                 .collect();
 
-            GitOperation::WriteGitIndex {
+            GitOperation.WriteGitIndex {
                 repo_path,
                 contents,
             }
@@ -1437,7 +1437,7 @@ fn generate_git_operation(rng: &mut StdRng, client: &TestClient) -> GitOperation
         26..=63 => {
             let new_branch = (rng.gen_range(0..10) > 3).then(|| Alphanumeric.sample_string(rng, 8));
 
-            GitOperation::WriteGitBranch {
+            GitOperation.WriteGitBranch {
                 repo_path,
                 new_branch,
             }
@@ -1451,18 +1451,18 @@ fn generate_git_operation(rng: &mut StdRng, client: &TestClient) -> GitOperation
                     (
                         paths,
                         match rng.gen_range(0..3_u32) {
-                            0 => GitFileStatus::Added,
-                            1 => GitFileStatus::Modified,
-                            2 => GitFileStatus::Conflict,
+                            0 => GitFileStatus.Added,
+                            1 => GitFileStatus.Modified,
+                            2 => GitFileStatus.Conflict,
                             _ => unreachable!(),
                         },
                     )
                 })
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
-            let git_operation = rng.gen::<bool>();
+            let git_operation = rng.gen.<bool>();
 
-            GitOperation::WriteGitStatuses {
+            GitOperation.WriteGitStatuses {
                 repo_path,
                 statuses,
                 git_operation,
@@ -1477,7 +1477,7 @@ fn buffer_for_full_path(
     project: &Model<Project>,
     full_path: &PathBuf,
     cx: &TestAppContext,
-) -> Option<Model<language::Buffer>> {
+) -> Option<Model<language.Buffer>> {
     client
         .buffers_for_project(project)
         .iter()
@@ -1556,7 +1556,7 @@ async fn ensure_project_shared(
     cx: &mut TestAppContext,
 ) {
     let first_root_name = root_name_for_project(project, cx);
-    let active_call = cx.read(ActiveCall::global);
+    let active_call = cx.read(ActiveCall.global);
     if active_call.read_with(cx, |call, _| call.room().is_some())
         && project.read_with(cx, |project, _| project.is_local() && !project.is_shared())
     {
@@ -1565,7 +1565,7 @@ async fn ensure_project_shared(
             .await
         {
             Ok(project_id) => {
-                log::info!(
+                log.info!(
                     "{}: shared project {} with id {}",
                     client.username,
                     first_root_name,
@@ -1573,7 +1573,7 @@ async fn ensure_project_shared(
                 );
             }
             Err(error) => {
-                log::error!(
+                log.error!(
                     "{}: error sharing project {}: {:?}",
                     client.username,
                     first_root_name,
@@ -1595,7 +1595,7 @@ fn choose_random_project(client: &TestClient, rng: &mut StdRng) -> Option<Model<
 }
 
 fn gen_file_name(rng: &mut StdRng) -> String {
-    let mut name = String::new();
+    let mut name = String.new();
     for _ in 0..10 {
         let letter = rng.gen_range('a'..='z');
         name.push(letter);

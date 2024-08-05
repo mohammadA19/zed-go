@@ -1,15 +1,15 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use gpui::{AppContext, FontFeatures, FontWeight};
-use project::project_settings::{InlineBlameSettings, ProjectSettings};
-use settings::{EditableSettingControl, Settings};
-use theme::{FontFamilyCache, ThemeSettings};
-use ui::{
-    prelude::*, CheckboxWithLabel, ContextMenu, DropdownMenu, NumericStepper, SettingsContainer,
+use gpui.{AppContext, FontFeatures, FontWeight};
+use project.project_settings.{InlineBlameSettings, ProjectSettings};
+use settings.{EditableSettingControl, Settings};
+use theme.{FontFamilyCache, ThemeSettings};
+use ui.{
+    prelude.*, CheckboxWithLabel, ContextMenu, DropdownMenu, NumericStepper, SettingsContainer,
     SettingsGroup,
 };
 
-use crate::EditorSettings;
+use crate.EditorSettings;
 
 #[derive(IntoElement)]
 pub struct EditorSettingsControls {}
@@ -22,9 +22,9 @@ impl EditorSettingsControls {
 
 impl RenderOnce for EditorSettingsControls {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        SettingsContainer::new()
+        SettingsContainer.new()
             .child(
-                SettingsGroup::new("Font")
+                SettingsGroup.new("Font")
                     .child(
                         h_flex()
                             .gap_2()
@@ -35,9 +35,9 @@ impl RenderOnce for EditorSettingsControls {
                     .child(BufferFontSizeControl)
                     .child(BufferFontLigaturesControl),
             )
-            .child(SettingsGroup::new("Editor").child(InlineGitBlameControl))
+            .child(SettingsGroup.new("Editor").child(InlineGitBlameControl))
             .child(
-                SettingsGroup::new("Gutter").child(
+                SettingsGroup.new("Gutter").child(
                     h_flex()
                         .gap_2()
                         .justify_between()
@@ -59,14 +59,14 @@ impl EditableSettingControl for BufferFontFamilyControl {
         "Buffer Font Family".into()
     }
 
-    fn read(cx: &AppContext) -> Self::Value {
-        let settings = ThemeSettings::get_global(cx);
+    fn read(cx: &AppContext) -> Self.Value {
+        let settings = ThemeSettings.get_global(cx);
         settings.buffer_font.family.clone()
     }
 
     fn apply(
-        settings: &mut <Self::Settings as Settings>::FileContent,
-        value: Self::Value,
+        settings: &mut <Self.Settings as Settings>.FileContent,
+        value: Self.Value,
         _cx: &AppContext,
     ) {
         settings.buffer_font_family = Some(value.to_string());
@@ -75,27 +75,27 @@ impl EditableSettingControl for BufferFontFamilyControl {
 
 impl RenderOnce for BufferFontFamilyControl {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let value = Self::read(cx);
+        let value = Self.read(cx);
 
         h_flex()
             .gap_2()
-            .child(Icon::new(IconName::Font))
-            .child(DropdownMenu::new(
+            .child(Icon.new(IconName.Font))
+            .child(DropdownMenu.new(
                 "buffer-font-family",
                 value.clone(),
-                ContextMenu::build(cx, |mut menu, cx| {
-                    let font_family_cache = FontFamilyCache::global(cx);
+                ContextMenu.build(cx, |mut menu, cx| {
+                    let font_family_cache = FontFamilyCache.global(cx);
 
                     for font_name in font_family_cache.list_font_families(cx) {
                         menu = menu.custom_entry(
                             {
                                 let font_name = font_name.clone();
-                                move |_cx| Label::new(font_name.clone()).into_any_element()
+                                move |_cx| Label.new(font_name.clone()).into_any_element()
                             },
                             {
                                 let font_name = font_name.clone();
                                 move |cx| {
-                                    Self::write(font_name.clone(), cx);
+                                    Self.write(font_name.clone(), cx);
                                 }
                             },
                         )
@@ -118,14 +118,14 @@ impl EditableSettingControl for BufferFontSizeControl {
         "Buffer Font Size".into()
     }
 
-    fn read(cx: &AppContext) -> Self::Value {
-        let settings = ThemeSettings::get_global(cx);
+    fn read(cx: &AppContext) -> Self.Value {
+        let settings = ThemeSettings.get_global(cx);
         settings.buffer_font_size
     }
 
     fn apply(
-        settings: &mut <Self::Settings as Settings>::FileContent,
-        value: Self::Value,
+        settings: &mut <Self.Settings as Settings>.FileContent,
+        value: Self.Value,
         _cx: &AppContext,
     ) {
         settings.buffer_font_size = Some(value.into());
@@ -134,19 +134,19 @@ impl EditableSettingControl for BufferFontSizeControl {
 
 impl RenderOnce for BufferFontSizeControl {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let value = Self::read(cx);
+        let value = Self.read(cx);
 
         h_flex()
             .gap_2()
-            .child(Icon::new(IconName::FontSize))
-            .child(NumericStepper::new(
+            .child(Icon.new(IconName.FontSize))
+            .child(NumericStepper.new(
                 "buffer-font-size",
                 value.to_string(),
                 move |_, cx| {
-                    Self::write(value - px(1.), cx);
+                    Self.write(value - px(1.), cx);
                 },
                 move |_, cx| {
-                    Self::write(value + px(1.), cx);
+                    Self.write(value + px(1.), cx);
                 },
             ))
     }
@@ -163,14 +163,14 @@ impl EditableSettingControl for BufferFontWeightControl {
         "Buffer Font Weight".into()
     }
 
-    fn read(cx: &AppContext) -> Self::Value {
-        let settings = ThemeSettings::get_global(cx);
+    fn read(cx: &AppContext) -> Self.Value {
+        let settings = ThemeSettings.get_global(cx);
         settings.buffer_font.weight
     }
 
     fn apply(
-        settings: &mut <Self::Settings as Settings>::FileContent,
-        value: Self::Value,
+        settings: &mut <Self.Settings as Settings>.FileContent,
+        value: Self.Value,
         _cx: &AppContext,
     ) {
         settings.buffer_font_weight = Some(value.0);
@@ -179,21 +179,21 @@ impl EditableSettingControl for BufferFontWeightControl {
 
 impl RenderOnce for BufferFontWeightControl {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let value = Self::read(cx);
+        let value = Self.read(cx);
 
         h_flex()
             .gap_2()
-            .child(Icon::new(IconName::FontWeight))
-            .child(DropdownMenu::new(
+            .child(Icon.new(IconName.FontWeight))
+            .child(DropdownMenu.new(
                 "buffer-font-weight",
                 value.0.to_string(),
-                ContextMenu::build(cx, |mut menu, _cx| {
-                    for weight in FontWeight::ALL {
+                ContextMenu.build(cx, |mut menu, _cx| {
+                    for weight in FontWeight.ALL {
                         menu = menu.custom_entry(
-                            move |_cx| Label::new(weight.0.to_string()).into_any_element(),
+                            move |_cx| Label.new(weight.0.to_string()).into_any_element(),
                             {
                                 move |cx| {
-                                    Self::write(weight, cx);
+                                    Self.write(weight, cx);
                                 }
                             },
                         )
@@ -216,8 +216,8 @@ impl EditableSettingControl for BufferFontLigaturesControl {
         "Buffer Font Ligatures".into()
     }
 
-    fn read(cx: &AppContext) -> Self::Value {
-        let settings = ThemeSettings::get_global(cx);
+    fn read(cx: &AppContext) -> Self.Value {
+        let settings = ThemeSettings.get_global(cx);
         settings
             .buffer_font
             .features
@@ -226,8 +226,8 @@ impl EditableSettingControl for BufferFontLigaturesControl {
     }
 
     fn apply(
-        settings: &mut <Self::Settings as Settings>::FileContent,
-        value: Self::Value,
+        settings: &mut <Self.Settings as Settings>.FileContent,
+        value: Self.Value,
         _cx: &AppContext,
     ) {
         let value = if value { 1 } else { 0 };
@@ -240,7 +240,7 @@ impl EditableSettingControl for BufferFontLigaturesControl {
                     .tag_value_list()
                     .into_iter()
                     .cloned()
-                    .collect::<Vec<_>>()
+                    .collect.<Vec<_>>()
             })
             .unwrap_or_default();
 
@@ -250,23 +250,23 @@ impl EditableSettingControl for BufferFontLigaturesControl {
             features.push(("calt".into(), value));
         }
 
-        settings.buffer_font_features = Some(FontFeatures(Arc::new(features)));
+        settings.buffer_font_features = Some(FontFeatures(Arc.new(features)));
     }
 }
 
 impl RenderOnce for BufferFontLigaturesControl {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let value = Self::read(cx);
+        let value = Self.read(cx);
 
-        CheckboxWithLabel::new(
+        CheckboxWithLabel.new(
             "buffer-font-ligatures",
-            Label::new(self.name()),
+            Label.new(self.name()),
             value.into(),
             |selection, cx| {
-                Self::write(
+                Self.write(
                     match selection {
-                        Selection::Selected => true,
-                        Selection::Unselected | Selection::Indeterminate => false,
+                        Selection.Selected => true,
+                        Selection.Unselected | Selection.Indeterminate => false,
                     },
                     cx,
                 );
@@ -286,14 +286,14 @@ impl EditableSettingControl for InlineGitBlameControl {
         "Inline Git Blame".into()
     }
 
-    fn read(cx: &AppContext) -> Self::Value {
-        let settings = ProjectSettings::get_global(cx);
+    fn read(cx: &AppContext) -> Self.Value {
+        let settings = ProjectSettings.get_global(cx);
         settings.git.inline_blame_enabled()
     }
 
     fn apply(
-        settings: &mut <Self::Settings as Settings>::FileContent,
-        value: Self::Value,
+        settings: &mut <Self.Settings as Settings>.FileContent,
+        value: Self.Value,
         _cx: &AppContext,
     ) {
         if let Some(inline_blame) = settings.git.inline_blame.as_mut() {
@@ -301,7 +301,7 @@ impl EditableSettingControl for InlineGitBlameControl {
         } else {
             settings.git.inline_blame = Some(InlineBlameSettings {
                 enabled: false,
-                ..Default::default()
+                ..Default.default()
             });
         }
     }
@@ -309,17 +309,17 @@ impl EditableSettingControl for InlineGitBlameControl {
 
 impl RenderOnce for InlineGitBlameControl {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let value = Self::read(cx);
+        let value = Self.read(cx);
 
-        CheckboxWithLabel::new(
+        CheckboxWithLabel.new(
             "inline-git-blame",
-            Label::new(self.name()),
+            Label.new(self.name()),
             value.into(),
             |selection, cx| {
-                Self::write(
+                Self.write(
                     match selection {
-                        Selection::Selected => true,
-                        Selection::Unselected | Selection::Indeterminate => false,
+                        Selection.Selected => true,
+                        Selection.Unselected | Selection.Indeterminate => false,
                     },
                     cx,
                 );
@@ -339,22 +339,22 @@ impl EditableSettingControl for LineNumbersControl {
         "Line Numbers".into()
     }
 
-    fn read(cx: &AppContext) -> Self::Value {
-        let settings = EditorSettings::get_global(cx);
+    fn read(cx: &AppContext) -> Self.Value {
+        let settings = EditorSettings.get_global(cx);
         settings.gutter.line_numbers
     }
 
     fn apply(
-        settings: &mut <Self::Settings as Settings>::FileContent,
-        value: Self::Value,
+        settings: &mut <Self.Settings as Settings>.FileContent,
+        value: Self.Value,
         _cx: &AppContext,
     ) {
         if let Some(gutter) = settings.gutter.as_mut() {
             gutter.line_numbers = Some(value);
         } else {
-            settings.gutter = Some(crate::editor_settings::GutterContent {
+            settings.gutter = Some(crate.editor_settings.GutterContent {
                 line_numbers: Some(value),
-                ..Default::default()
+                ..Default.default()
             });
         }
     }
@@ -362,17 +362,17 @@ impl EditableSettingControl for LineNumbersControl {
 
 impl RenderOnce for LineNumbersControl {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let value = Self::read(cx);
+        let value = Self.read(cx);
 
-        CheckboxWithLabel::new(
+        CheckboxWithLabel.new(
             "line-numbers",
-            Label::new(self.name()),
+            Label.new(self.name()),
             value.into(),
             |selection, cx| {
-                Self::write(
+                Self.write(
                     match selection {
-                        Selection::Selected => true,
-                        Selection::Unselected | Selection::Indeterminate => false,
+                        Selection.Selected => true,
+                        Selection.Unselected | Selection.Indeterminate => false,
                     },
                     cx,
                 );
@@ -392,14 +392,14 @@ impl EditableSettingControl for RelativeLineNumbersControl {
         "Relative Line Numbers".into()
     }
 
-    fn read(cx: &AppContext) -> Self::Value {
-        let settings = EditorSettings::get_global(cx);
+    fn read(cx: &AppContext) -> Self.Value {
+        let settings = EditorSettings.get_global(cx);
         settings.relative_line_numbers
     }
 
     fn apply(
-        settings: &mut <Self::Settings as Settings>::FileContent,
-        value: Self::Value,
+        settings: &mut <Self.Settings as Settings>.FileContent,
+        value: Self.Value,
         _cx: &AppContext,
     ) {
         settings.relative_line_numbers = Some(value);
@@ -408,19 +408,19 @@ impl EditableSettingControl for RelativeLineNumbersControl {
 
 impl RenderOnce for RelativeLineNumbersControl {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let value = Self::read(cx);
+        let value = Self.read(cx);
 
-        DropdownMenu::new(
+        DropdownMenu.new(
             "relative-line-numbers",
             if value { "Relative" } else { "Ascending" },
-            ContextMenu::build(cx, |menu, _cx| {
+            ContextMenu.build(cx, |menu, _cx| {
                 menu.custom_entry(
-                    |_cx| Label::new("Ascending").into_any_element(),
-                    move |cx| Self::write(false, cx),
+                    |_cx| Label.new("Ascending").into_any_element(),
+                    move |cx| Self.write(false, cx),
                 )
                 .custom_entry(
-                    |_cx| Label::new("Relative").into_any_element(),
-                    move |cx| Self::write(true, cx),
+                    |_cx| Label.new("Relative").into_any_element(),
+                    move |cx| Self.write(true, cx),
                 )
             }),
         )

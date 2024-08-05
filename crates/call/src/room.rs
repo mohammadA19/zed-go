@@ -1,28 +1,28 @@
-use crate::{
-    call_settings::CallSettings,
-    participant::{LocalParticipant, ParticipantLocation, RemoteParticipant},
+use crate.{
+    call_settings.CallSettings,
+    participant.{LocalParticipant, ParticipantLocation, RemoteParticipant},
 };
-use anyhow::{anyhow, Result};
-use audio::{Audio, Sound};
-use client::{
-    proto::{self, PeerId},
+use anyhow.{anyhow, Result};
+use audio.{Audio, Sound};
+use client.{
+    proto.{self, PeerId},
     ChannelId, Client, ParticipantIndex, TypedEnvelope, User, UserStore,
 };
-use collections::{BTreeMap, HashMap, HashSet};
-use fs::Fs;
-use futures::{FutureExt, StreamExt};
-use gpui::{
+use collections.{BTreeMap, HashMap, HashSet};
+use fs.Fs;
+use futures.{FutureExt, StreamExt};
+use gpui.{
     AppContext, AsyncAppContext, Context, EventEmitter, Model, ModelContext, Task, WeakModel,
 };
-use language::LanguageRegistry;
-use live_kit_client::{LocalAudioTrack, LocalTrackPublication, LocalVideoTrack, RoomUpdate};
-use postage::{sink::Sink, stream::Stream, watch};
-use project::Project;
-use settings::Settings as _;
-use std::{future::Future, mem, sync::Arc, time::Duration};
-use util::{post_inc, ResultExt, TryFutureExt};
+use language.LanguageRegistry;
+use live_kit_client.{LocalAudioTrack, LocalTrackPublication, LocalVideoTrack, RoomUpdate};
+use postage.{sink.Sink, stream.Stream, watch};
+use project.Project;
+use settings.Settings as _;
+use std.{future.Future, mem, sync.Arc, time.Duration};
+use util.{post_inc, ResultExt, TryFutureExt};
 
-pub const RECONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+pub const RECONNECT_TIMEOUT: Duration = Duration.from_secs(30);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Event {
@@ -30,13 +30,13 @@ pub enum Event {
         channel_id: Option<ChannelId>,
     },
     ParticipantLocationChanged {
-        participant_id: proto::PeerId,
+        participant_id: proto.PeerId,
     },
     RemoteVideoTracksChanged {
-        participant_id: proto::PeerId,
+        participant_id: proto.PeerId,
     },
     RemoteAudioTracksChanged {
-        participant_id: proto::PeerId,
+        participant_id: proto.PeerId,
     },
     RemoteProjectShared {
         owner: Arc<User>,
@@ -73,10 +73,10 @@ pub struct Room {
     client: Arc<Client>,
     user_store: Model<UserStore>,
     follows_by_leader_id_project_id: HashMap<(PeerId, u64), Vec<PeerId>>,
-    client_subscriptions: Vec<client::Subscription>,
-    _subscriptions: Vec<gpui::Subscription>,
-    room_update_completed_tx: watch::Sender<Option<()>>,
-    room_update_completed_rx: watch::Receiver<Option<()>>,
+    client_subscriptions: Vec<client.Subscription>,
+    _subscriptions: Vec<gpui.Subscription>,
+    room_update_completed_tx: watch.Sender<Option<()>>,
+    room_update_completed_rx: watch.Receiver<Option<()>>,
     pending_room_update: Option<Task<()>>,
     maintain_connection: Option<Task<Option<()>>>,
 }
@@ -97,7 +97,7 @@ impl Room {
         if let Some(live_kit) = self.live_kit.as_ref() {
             matches!(
                 *live_kit.room.status().borrow(),
-                live_kit_client::ConnectionState::Connected { .. }
+                live_kit_client.ConnectionState.Connected { .. }
             )
         } else {
             false
@@ -107,13 +107,13 @@ impl Room {
     fn new(
         id: u64,
         channel_id: Option<ChannelId>,
-        live_kit_connection_info: Option<proto::LiveKitConnectionInfo>,
+        live_kit_connection_info: Option<proto.LiveKitConnectionInfo>,
         client: Arc<Client>,
         user_store: Model<UserStore>,
         cx: &mut ModelContext<Self>,
     ) -> Self {
         let live_kit_room = if let Some(connection_info) = live_kit_connection_info {
-            let room = live_kit_client::Room::new();
+            let room = live_kit_client.Room.new();
             let mut status = room.status();
             // Consume the initial status of the room.
             let _ = status.try_recv();
@@ -125,7 +125,7 @@ impl Room {
                         break;
                     };
 
-                    if status == live_kit_client::ConnectionState::Disconnected {
+                    if status == live_kit_client.ConnectionState.Disconnected {
                         this.update(&mut cx, |this, cx| this.leave(cx).log_err())
                             .ok();
                         break;
@@ -163,7 +163,7 @@ impl Room {
                             }
                         }
                     }
-                    Task::ready(Ok(()))
+                    Task.ready(Ok(()))
                 })?
                 .await
             })
@@ -171,10 +171,10 @@ impl Room {
 
             Some(LiveKitRoom {
                 room,
-                screen_track: LocalTrack::None,
-                microphone_track: LocalTrack::None,
+                screen_track: LocalTrack.None,
+                microphone_track: LocalTrack.None,
                 next_publish_id: 0,
-                muted_by_user: Self::mute_on_join(cx),
+                muted_by_user: Self.mute_on_join(cx),
                 deafened: false,
                 speaking: false,
                 _maintain_room,
@@ -186,37 +186,37 @@ impl Room {
 
         let maintain_connection = cx.spawn({
             let client = client.clone();
-            move |this, cx| Self::maintain_connection(this, client.clone(), cx).log_err()
+            move |this, cx| Self.maintain_connection(this, client.clone(), cx).log_err()
         });
 
-        Audio::play_sound(Sound::Joined, cx);
+        Audio.play_sound(Sound.Joined, cx);
 
-        let (room_update_completed_tx, room_update_completed_rx) = watch::channel();
+        let (room_update_completed_tx, room_update_completed_rx) = watch.channel();
 
         Self {
             id,
             channel_id,
             live_kit: live_kit_room,
-            status: RoomStatus::Online,
-            shared_projects: Default::default(),
-            joined_projects: Default::default(),
-            participant_user_ids: Default::default(),
-            local_participant: Default::default(),
-            remote_participants: Default::default(),
-            pending_participants: Default::default(),
+            status: RoomStatus.Online,
+            shared_projects: Default.default(),
+            joined_projects: Default.default(),
+            participant_user_ids: Default.default(),
+            local_participant: Default.default(),
+            remote_participants: Default.default(),
+            pending_participants: Default.default(),
             pending_call_count: 0,
             client_subscriptions: vec![
-                client.add_message_handler(cx.weak_model(), Self::handle_room_updated)
+                client.add_message_handler(cx.weak_model(), Self.handle_room_updated)
             ],
             _subscriptions: vec![
-                cx.on_release(Self::released),
-                cx.on_app_quit(Self::app_will_quit),
+                cx.on_release(Self.released),
+                cx.on_app_quit(Self.app_will_quit),
             ],
             leave_when_empty: false,
             pending_room_update: None,
             client,
             user_store,
-            follows_by_leader_id_project_id: Default::default(),
+            follows_by_leader_id_project_id: Default.default(),
             maintain_connection: Some(maintain_connection),
             room_update_completed_tx,
             room_update_completed_rx,
@@ -231,10 +231,10 @@ impl Room {
         cx: &mut AppContext,
     ) -> Task<Result<Model<Self>>> {
         cx.spawn(move |mut cx| async move {
-            let response = client.request(proto::CreateRoom {}).await?;
+            let response = client.request(proto.CreateRoom {}).await?;
             let room_proto = response.room.ok_or_else(|| anyhow!("invalid room"))?;
             let room = cx.new_model(|cx| {
-                let mut room = Self::new(
+                let mut room = Self.new(
                     room_proto.id,
                     None,
                     response.live_kit_connection_info,
@@ -278,9 +278,9 @@ impl Room {
         user_store: Model<UserStore>,
         cx: AsyncAppContext,
     ) -> Result<Model<Self>> {
-        Self::from_join_response(
+        Self.from_join_response(
             client
-                .request(proto::JoinChannel {
+                .request(proto.JoinChannel {
                     channel_id: channel_id.0,
                 })
                 .await?,
@@ -296,8 +296,8 @@ impl Room {
         user_store: Model<UserStore>,
         cx: AsyncAppContext,
     ) -> Result<Model<Self>> {
-        Self::from_join_response(
-            client.request(proto::JoinRoom { id: room_id }).await?,
+        Self.from_join_response(
+            client.request(proto.JoinRoom { id: room_id }).await?,
             client,
             user_store,
             cx,
@@ -328,18 +328,18 @@ impl Room {
     }
 
     pub fn mute_on_join(cx: &AppContext) -> bool {
-        CallSettings::get_global(cx).mute_on_join || client::IMPERSONATE_LOGIN.is_some()
+        CallSettings.get_global(cx).mute_on_join || client.IMPERSONATE_LOGIN.is_some()
     }
 
     fn from_join_response(
-        response: proto::JoinRoomResponse,
+        response: proto.JoinRoomResponse,
         client: Arc<Client>,
         user_store: Model<UserStore>,
         mut cx: AsyncAppContext,
     ) -> Result<Model<Self>> {
         let room_proto = response.room.ok_or_else(|| anyhow!("invalid room"))?;
         let room = cx.new_model(|cx| {
-            Self::new(
+            Self.new(
                 room_proto.id,
                 response.channel_id.map(ChannelId),
                 response.live_kit_connection_info,
@@ -351,7 +351,7 @@ impl Room {
         room.update(&mut cx, |room, cx| {
             room.leave_when_empty = room.channel_id.is_none();
             room.apply_room_update(room_proto, cx)?;
-            anyhow::Ok(())
+            anyhow.Ok(())
         })??;
         Ok(room)
     }
@@ -371,18 +371,18 @@ impl Room {
 
     fn leave_internal(&mut self, cx: &mut AppContext) -> Task<Result<()>> {
         if self.status.is_offline() {
-            return Task::ready(Err(anyhow!("room is offline")));
+            return Task.ready(Err(anyhow!("room is offline")));
         }
 
-        log::info!("leaving room");
-        Audio::play_sound(Sound::Leave, cx);
+        log.info!("leaving room");
+        Audio.play_sound(Sound.Leave, cx);
 
         self.clear_state(cx);
 
-        let leave_room = self.client.request(proto::LeaveRoom {});
+        let leave_room = self.client.request(proto.LeaveRoom {});
         cx.background_executor().spawn(async move {
             leave_room.await?;
-            anyhow::Ok(())
+            anyhow.Ok(())
         })
     }
 
@@ -403,7 +403,7 @@ impl Room {
             }
         }
 
-        self.status = RoomStatus::Offline;
+        self.status = RoomStatus.Offline;
         self.remote_participants.clear();
         self.pending_participants.clear();
         self.participant_user_ids.clear();
@@ -424,12 +424,12 @@ impl Room {
             let is_connected = client_status.borrow().is_connected();
             // Even if we're initially connected, any future change of the status means we momentarily disconnected.
             if !is_connected || client_status.next().await.is_some() {
-                log::info!("detected client disconnection");
+                log.info!("detected client disconnection");
 
                 this.upgrade()
                     .ok_or_else(|| anyhow!("room was dropped"))?
                     .update(&mut cx, |this, cx| {
-                        this.status = RoomStatus::Rejoining;
+                        this.status = RoomStatus.Rejoining;
                         cx.notify();
                     })?;
 
@@ -441,7 +441,7 @@ impl Room {
                         let mut remaining_attempts = 3;
                         while remaining_attempts > 0 {
                             if client_status.borrow().is_connected() {
-                                log::info!("client reconnected, attempting to rejoin room");
+                                log.info!("client reconnected, attempting to rejoin room");
 
                                 let Some(this) = this.upgrade() else { break };
                                 match this.update(&mut cx, |this, cx| this.rejoin(cx)) {
@@ -458,7 +458,7 @@ impl Room {
                                 return false;
                             }
 
-                            log::info!(
+                            log.info!(
                                 "waiting for client status change, remaining attempts {}",
                                 remaining_attempts
                             );
@@ -467,19 +467,19 @@ impl Room {
                         false
                     }
                     .fuse();
-                    futures::pin_mut!(client_reconnection);
+                    futures.pin_mut!(client_reconnection);
 
-                    futures::select_biased! {
+                    futures.select_biased! {
                         reconnected = client_reconnection => {
                             if reconnected {
-                                log::info!("successfully reconnected to room");
+                                log.info!("successfully reconnected to room");
                                 // If we successfully joined the room, go back around the loop
                                 // waiting for future connection status changes.
                                 continue;
                             }
                         }
                         _ = reconnection_timeout => {
-                            log::info!("room reconnection timeout expired");
+                            log.info!("room reconnection timeout expired");
                         }
                     }
                 }
@@ -492,7 +492,7 @@ impl Room {
         // or an error occurred while trying to re-join the room. Either way
         // we leave the room and return an error.
         if let Some(this) = this.upgrade() {
-            log::info!("reconnection failed, leaving room");
+            log.info!("reconnection failed, leaving room");
             let _ = this.update(&mut cx, |this, cx| this.leave(cx))?.await?;
         }
         Err(anyhow!(
@@ -501,15 +501,15 @@ impl Room {
     }
 
     fn rejoin(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<()>> {
-        let mut projects = HashMap::default();
-        let mut reshared_projects = Vec::new();
-        let mut rejoined_projects = Vec::new();
+        let mut projects = HashMap.default();
+        let mut reshared_projects = Vec.new();
+        let mut rejoined_projects = Vec.new();
         self.shared_projects.retain(|project| {
             if let Some(handle) = project.upgrade() {
                 let project = handle.read(cx);
                 if let Some(project_id) = project.remote_id() {
                     projects.insert(project_id, handle.clone());
-                    reshared_projects.push(proto::UpdateProject {
+                    reshared_projects.push(proto.UpdateProject {
                         project_id,
                         worktrees: project.worktree_metadata_protos(cx),
                     });
@@ -523,13 +523,13 @@ impl Room {
                 let project = handle.read(cx);
                 if let Some(project_id) = project.remote_id() {
                     projects.insert(project_id, handle.clone());
-                    rejoined_projects.push(proto::RejoinProject {
+                    rejoined_projects.push(proto.RejoinProject {
                         id: project_id,
                         worktrees: project
                             .worktrees(cx)
                             .map(|worktree| {
                                 let worktree = worktree.read(cx);
-                                proto::RejoinWorktree {
+                                proto.RejoinWorktree {
                                     id: worktree.id().to_proto(),
                                     scan_id: worktree.completed_scan_id() as u64,
                                 }
@@ -542,7 +542,7 @@ impl Room {
             false
         });
 
-        let response = self.client.request_envelope(proto::RejoinRoom {
+        let response = self.client.request_envelope(proto.RejoinRoom {
             id: self.id,
             reshared_projects,
             rejoined_projects,
@@ -554,7 +554,7 @@ impl Room {
             let response = response.payload;
             let room_proto = response.room.ok_or_else(|| anyhow!("invalid room"))?;
             this.update(&mut cx, |this, cx| {
-                this.status = RoomStatus::Online;
+                this.status = RoomStatus.Online;
                 this.apply_room_update(room_proto, cx)?;
 
                 for reshared_project in response.reshared_projects {
@@ -573,7 +573,7 @@ impl Room {
                     }
                 }
 
-                anyhow::Ok(())
+                anyhow.Ok(())
             })?
         })
     }
@@ -600,32 +600,32 @@ impl Room {
             .find(|p| p.peer_id == peer_id)
     }
 
-    pub fn role_for_user(&self, user_id: u64) -> Option<proto::ChannelRole> {
+    pub fn role_for_user(&self, user_id: u64) -> Option<proto.ChannelRole> {
         self.remote_participants
             .get(&user_id)
             .map(|participant| participant.role)
     }
 
     pub fn contains_guests(&self) -> bool {
-        self.local_participant.role == proto::ChannelRole::Guest
+        self.local_participant.role == proto.ChannelRole.Guest
             || self
                 .remote_participants
                 .values()
-                .any(|p| p.role == proto::ChannelRole::Guest)
+                .any(|p| p.role == proto.ChannelRole.Guest)
     }
 
     pub fn local_participant_is_admin(&self) -> bool {
-        self.local_participant.role == proto::ChannelRole::Admin
+        self.local_participant.role == proto.ChannelRole.Admin
     }
 
     pub fn local_participant_is_guest(&self) -> bool {
-        self.local_participant.role == proto::ChannelRole::Guest
+        self.local_participant.role == proto.ChannelRole.Guest
     }
 
     pub fn set_participant_role(
         &mut self,
         user_id: u64,
-        role: proto::ChannelRole,
+        role: proto.ChannelRole,
         cx: &ModelContext<Self>,
     ) -> Task<Result<()>> {
         let client = self.client.clone();
@@ -633,7 +633,7 @@ impl Room {
         let role = role.into();
         cx.spawn(|_, _| async move {
             client
-                .request(proto::SetRoomParticipantRole {
+                .request(proto.SetRoomParticipantRole {
                     room_id,
                     user_id,
                     role,
@@ -659,16 +659,16 @@ impl Room {
 
     /// Returns the most 'active' projects, defined as most people in the project
     pub fn most_active_project(&self, cx: &AppContext) -> Option<(u64, u64)> {
-        let mut project_hosts_and_guest_counts = HashMap::<u64, (Option<u64>, u32)>::default();
+        let mut project_hosts_and_guest_counts = HashMap.<u64, (Option<u64>, u32)>.default();
         for participant in self.remote_participants.values() {
             match participant.location {
-                ParticipantLocation::SharedProject { project_id } => {
+                ParticipantLocation.SharedProject { project_id } => {
                     project_hosts_and_guest_counts
                         .entry(project_id)
                         .or_default()
                         .1 += 1;
                 }
-                ParticipantLocation::External | ParticipantLocation::UnsharedProject => {}
+                ParticipantLocation.External | ParticipantLocation.UnsharedProject => {}
             }
             for project in &participant.projects {
                 project_hosts_and_guest_counts
@@ -696,7 +696,7 @@ impl Room {
 
     async fn handle_room_updated(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::RoomUpdated>,
+        envelope: TypedEnvelope<proto.RoomUpdated>,
         mut cx: AsyncAppContext,
     ) -> Result<()> {
         let room = envelope
@@ -708,7 +708,7 @@ impl Room {
 
     fn apply_room_update(
         &mut self,
-        mut room: proto::Room,
+        mut room: proto.Room,
         cx: &mut ModelContext<Self>,
     ) -> Result<()> {
         // Filter ourselves out from the room's participants.
@@ -722,13 +722,13 @@ impl Room {
             .pending_participants
             .iter()
             .map(|p| p.user_id)
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         let remote_participant_user_ids = room
             .participants
             .iter()
             .map(|p| p.user_id)
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         let (remote_participants, pending_participants) =
             self.user_store.update(cx, move |user_store, cx| {
@@ -740,7 +740,7 @@ impl Room {
 
         self.pending_room_update = Some(cx.spawn(|this, mut cx| async move {
             let (remote_participants, pending_participants) =
-                futures::join!(remote_participants, pending_participants);
+                futures.join!(remote_participants, pending_participants);
 
             this.update(&mut cx, |this, cx| {
                 this.participant_user_ids.clear();
@@ -751,8 +751,8 @@ impl Room {
                     if this.local_participant.role != role {
                         this.local_participant.role = role;
 
-                        if role == proto::ChannelRole::Guest {
-                            for project in mem::take(&mut this.shared_projects) {
+                        if role == proto.ChannelRole.Guest {
+                            for project in mem.take(&mut this.shared_projects) {
                                 if let Some(project) = project.upgrade() {
                                     this.unshare_project(project, cx).log_err();
                                 }
@@ -790,16 +790,16 @@ impl Room {
                             .into_iter()
                             .flat_map(|existing| &existing.projects)
                             .map(|project| project.id)
-                            .collect::<HashSet<_>>();
+                            .collect.<HashSet<_>>();
                         let new_projects = participant
                             .projects
                             .iter()
                             .map(|project| project.id)
-                            .collect::<HashSet<_>>();
+                            .collect.<HashSet<_>>();
 
                         for project in &participant.projects {
                             if !old_projects.contains(&project.id) {
-                                cx.emit(Event::RemoteProjectShared {
+                                cx.emit(Event.RemoteProjectShared {
                                     owner: user.clone(),
                                     project_id: project.id,
                                     worktree_root_names: project.worktree_root_names.clone(),
@@ -822,14 +822,14 @@ impl Room {
                                     false
                                 }
                             });
-                            cx.emit(Event::RemoteProjectUnshared {
+                            cx.emit(Event.RemoteProjectUnshared {
                                 project_id: *unshared_project_id,
                             });
                         }
 
                         let role = participant.role();
-                        let location = ParticipantLocation::from_proto(participant.location)
-                            .unwrap_or(ParticipantLocation::External);
+                        let location = ParticipantLocation.from_proto(participant.location)
+                            .unwrap_or(ParticipantLocation.External);
                         if let Some(remote_participant) =
                             this.remote_participants.get_mut(&participant.user_id)
                         {
@@ -841,7 +841,7 @@ impl Room {
                             {
                                 remote_participant.location = location;
                                 remote_participant.role = role;
-                                cx.emit(Event::ParticipantLocationChanged {
+                                cx.emit(Event.ParticipantLocationChanged {
                                     participant_id: peer_id,
                                 });
                             }
@@ -857,12 +857,12 @@ impl Room {
                                     role,
                                     muted: true,
                                     speaking: false,
-                                    video_tracks: Default::default(),
-                                    audio_tracks: Default::default(),
+                                    video_tracks: Default.default(),
+                                    audio_tracks: Default.default(),
                                 },
                             );
 
-                            Audio::play_sound(Sound::Joined, cx);
+                            Audio.play_sound(Sound.Joined, cx);
 
                             if let Some(live_kit) = this.live_kit.as_ref() {
                                 let video_tracks =
@@ -875,7 +875,7 @@ impl Room {
 
                                 for track in video_tracks {
                                     this.live_kit_room_updated(
-                                        RoomUpdate::SubscribedToRemoteVideoTrack(track),
+                                        RoomUpdate.SubscribedToRemoteVideoTrack(track),
                                         cx,
                                     )
                                     .log_err();
@@ -885,7 +885,7 @@ impl Room {
                                     audio_tracks.iter().zip(publications.iter())
                                 {
                                     this.live_kit_room_updated(
-                                        RoomUpdate::SubscribedToRemoteAudioTrack(
+                                        RoomUpdate.SubscribedToRemoteAudioTrack(
                                             track.clone(),
                                             publication.clone(),
                                         ),
@@ -902,7 +902,7 @@ impl Room {
                             true
                         } else {
                             for project in &participant.projects {
-                                cx.emit(Event::RemoteProjectUnshared {
+                                cx.emit(Event.RemoteProjectUnshared {
                                     project_id: project.id,
                                 });
                             }
@@ -925,7 +925,7 @@ impl Room {
                         (Some(leader), Some(follower)) => (leader, follower),
 
                         _ => {
-                            log::error!("Follower message {follower:?} missing some state");
+                            log.error!("Follower message {follower:?} missing some state");
                             continue;
                         }
                     };
@@ -933,7 +933,7 @@ impl Room {
                     let list = this
                         .follows_by_leader_id_project_id
                         .entry((leader, project_id))
-                        .or_insert(Vec::new());
+                        .or_insert(Vec.new());
                     if !list.contains(&follower) {
                         list.push(follower);
                     }
@@ -941,7 +941,7 @@ impl Room {
 
                 this.pending_room_update.take();
                 if this.should_leave() {
-                    log::info!("room is empty, leaving");
+                    log.info!("room is empty, leaving");
                     let _ = this.leave(cx).detach();
                 }
 
@@ -982,7 +982,7 @@ impl Room {
         cx: &mut ModelContext<Self>,
     ) -> Result<()> {
         match update {
-            RoomUpdate::SubscribedToRemoteVideoTrack(track) => {
+            RoomUpdate.SubscribedToRemoteVideoTrack(track) => {
                 let user_id = track.publisher_id().parse()?;
                 let track_id = track.sid().to_string();
                 let participant = self
@@ -990,12 +990,12 @@ impl Room {
                     .get_mut(&user_id)
                     .ok_or_else(|| anyhow!("subscribed to track by unknown participant"))?;
                 participant.video_tracks.insert(track_id.clone(), track);
-                cx.emit(Event::RemoteVideoTracksChanged {
+                cx.emit(Event.RemoteVideoTracksChanged {
                     participant_id: participant.peer_id,
                 });
             }
 
-            RoomUpdate::UnsubscribedFromRemoteVideoTrack {
+            RoomUpdate.UnsubscribedFromRemoteVideoTrack {
                 publisher_id,
                 track_id,
             } => {
@@ -1005,16 +1005,16 @@ impl Room {
                     .get_mut(&user_id)
                     .ok_or_else(|| anyhow!("unsubscribed from track by unknown participant"))?;
                 participant.video_tracks.remove(&track_id);
-                cx.emit(Event::RemoteVideoTracksChanged {
+                cx.emit(Event.RemoteVideoTracksChanged {
                     participant_id: participant.peer_id,
                 });
             }
 
-            RoomUpdate::ActiveSpeakersChanged { speakers } => {
+            RoomUpdate.ActiveSpeakersChanged { speakers } => {
                 let mut speaker_ids = speakers
                     .into_iter()
                     .filter_map(|speaker_sid| speaker_sid.parse().ok())
-                    .collect::<Vec<u64>>();
+                    .collect.<Vec<u64>>();
                 speaker_ids.sort_unstable();
                 for (sid, participant) in &mut self.remote_participants {
                     if let Ok(_) = speaker_ids.binary_search(sid) {
@@ -1034,7 +1034,7 @@ impl Room {
                 }
             }
 
-            RoomUpdate::RemoteAudioTrackMuteChanged { track_id, muted } => {
+            RoomUpdate.RemoteAudioTrackMuteChanged { track_id, muted } => {
                 let mut found = false;
                 for participant in &mut self.remote_participants.values_mut() {
                     for track in participant.audio_tracks.values() {
@@ -1050,7 +1050,7 @@ impl Room {
                 }
             }
 
-            RoomUpdate::SubscribedToRemoteAudioTrack(track, publication) => {
+            RoomUpdate.SubscribedToRemoteAudioTrack(track, publication) => {
                 if let Some(live_kit) = &self.live_kit {
                     if live_kit.deafened {
                         track.stop();
@@ -1069,12 +1069,12 @@ impl Room {
                 participant.audio_tracks.insert(track_id.clone(), track);
                 participant.muted = publication.is_muted();
 
-                cx.emit(Event::RemoteAudioTracksChanged {
+                cx.emit(Event.RemoteAudioTracksChanged {
                     participant_id: participant.peer_id,
                 });
             }
 
-            RoomUpdate::UnsubscribedFromRemoteAudioTrack {
+            RoomUpdate.UnsubscribedFromRemoteAudioTrack {
                 publisher_id,
                 track_id,
             } => {
@@ -1084,31 +1084,31 @@ impl Room {
                     .get_mut(&user_id)
                     .ok_or_else(|| anyhow!("unsubscribed from track by unknown participant"))?;
                 participant.audio_tracks.remove(&track_id);
-                cx.emit(Event::RemoteAudioTracksChanged {
+                cx.emit(Event.RemoteAudioTracksChanged {
                     participant_id: participant.peer_id,
                 });
             }
 
-            RoomUpdate::LocalAudioTrackUnpublished { publication } => {
-                log::info!("unpublished audio track {}", publication.sid());
+            RoomUpdate.LocalAudioTrackUnpublished { publication } => {
+                log.info!("unpublished audio track {}", publication.sid());
                 if let Some(room) = &mut self.live_kit {
-                    room.microphone_track = LocalTrack::None;
+                    room.microphone_track = LocalTrack.None;
                 }
             }
 
-            RoomUpdate::LocalVideoTrackUnpublished { publication } => {
-                log::info!("unpublished video track {}", publication.sid());
+            RoomUpdate.LocalVideoTrackUnpublished { publication } => {
+                log.info!("unpublished video track {}", publication.sid());
                 if let Some(room) = &mut self.live_kit {
-                    room.screen_track = LocalTrack::None;
+                    room.screen_track = LocalTrack.None;
                 }
             }
 
-            RoomUpdate::LocalAudioTrackPublished { publication } => {
-                log::info!("published audio track {}", publication.sid());
+            RoomUpdate.LocalAudioTrackPublished { publication } => {
+                log.info!("published audio track {}", publication.sid());
             }
 
-            RoomUpdate::LocalVideoTrackPublished { publication } => {
-                log::info!("published video track {}", publication.sid());
+            RoomUpdate.LocalVideoTrackPublished { publication } => {
+                log.info!("published video track {}", publication.sid());
             }
         }
 
@@ -1143,7 +1143,7 @@ impl Room {
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<()>> {
         if self.status.is_offline() {
-            return Task::ready(Err(anyhow!("room is offline")));
+            return Task.ready(Err(anyhow!("room is offline")));
         }
 
         cx.notify();
@@ -1152,7 +1152,7 @@ impl Room {
         self.pending_call_count += 1;
         cx.spawn(move |this, mut cx| async move {
             let result = client
-                .request(proto::Call {
+                .request(proto.Call {
                     room_id,
                     called_user_id,
                     initial_project_id,
@@ -1178,10 +1178,10 @@ impl Room {
     ) -> Task<Result<Model<Project>>> {
         let client = self.client.clone();
         let user_store = self.user_store.clone();
-        cx.emit(Event::RemoteProjectJoined { project_id: id });
+        cx.emit(Event.RemoteProjectJoined { project_id: id });
         cx.spawn(move |this, mut cx| async move {
             let project =
-                Project::in_room(id, client, user_store, language_registry, fs, cx.clone()).await?;
+                Project.in_room(id, client, user_store, language_registry, fs, cx.clone()).await?;
 
             this.update(&mut cx, |this, cx| {
                 this.joined_projects.retain(|project| {
@@ -1204,17 +1204,17 @@ impl Room {
     ) -> Task<Result<u64>> {
         let request = if let Some(dev_server_project_id) = project.read(cx).dev_server_project_id()
         {
-            self.client.request(proto::ShareProject {
+            self.client.request(proto.ShareProject {
                 room_id: self.id(),
                 worktrees: vec![],
                 dev_server_project_id: Some(dev_server_project_id.0),
             })
         } else {
             if let Some(project_id) = project.read(cx).remote_id() {
-                return Task::ready(Ok(project_id));
+                return Task.ready(Ok(project_id));
             }
 
-            self.client.request(proto::ShareProject {
+            self.client.request(proto.ShareProject {
                 room_id: self.id(),
                 worktrees: project.read(cx).worktree_metadata_protos(cx),
                 dev_server_project_id: None,
@@ -1235,7 +1235,7 @@ impl Room {
                 if active_project.map_or(false, |location| *location == project) {
                     this.set_location(Some(&project), cx)
                 } else {
-                    Task::ready(Ok(()))
+                    Task.ready(Ok(()))
                 }
             })?
             .await?;
@@ -1254,7 +1254,7 @@ impl Room {
             None => return Ok(()),
         };
 
-        self.client.send(proto::UnshareProject { project_id })?;
+        self.client.send(proto.UnshareProject { project_id })?;
         project.update(cx, |this, cx| this.unshare(cx))?;
 
         if self.local_participant.active_project == Some(project.downgrade()) {
@@ -1269,7 +1269,7 @@ impl Room {
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<()>> {
         if self.status.is_offline() {
-            return Task::ready(Err(anyhow!("room is offline")));
+            return Task.ready(Err(anyhow!("room is offline")));
         }
 
         let client = self.client.clone();
@@ -1277,25 +1277,25 @@ impl Room {
         let location = if let Some(project) = project {
             self.local_participant.active_project = Some(project.downgrade());
             if let Some(project_id) = project.read(cx).remote_id() {
-                proto::participant_location::Variant::SharedProject(
-                    proto::participant_location::SharedProject { id: project_id },
+                proto.participant_location.Variant.SharedProject(
+                    proto.participant_location.SharedProject { id: project_id },
                 )
             } else {
-                proto::participant_location::Variant::UnsharedProject(
-                    proto::participant_location::UnsharedProject {},
+                proto.participant_location.Variant.UnsharedProject(
+                    proto.participant_location.UnsharedProject {},
                 )
             }
         } else {
             self.local_participant.active_project = None;
-            proto::participant_location::Variant::External(proto::participant_location::External {})
+            proto.participant_location.Variant.External(proto.participant_location.External {})
         };
 
         cx.notify();
         cx.background_executor().spawn(async move {
             client
-                .request(proto::UpdateParticipantLocation {
+                .request(proto.UpdateParticipantLocation {
                     room_id,
-                    location: Some(proto::ParticipantLocation {
+                    location: Some(proto.ParticipantLocation {
                         variant: Some(location),
                     }),
                 })
@@ -1306,19 +1306,19 @@ impl Room {
 
     pub fn is_screen_sharing(&self) -> bool {
         self.live_kit.as_ref().map_or(false, |live_kit| {
-            !matches!(live_kit.screen_track, LocalTrack::None)
+            !matches!(live_kit.screen_track, LocalTrack.None)
         })
     }
 
     pub fn is_sharing_mic(&self) -> bool {
         self.live_kit.as_ref().map_or(false, |live_kit| {
-            !matches!(live_kit.microphone_track, LocalTrack::None)
+            !matches!(live_kit.microphone_track, LocalTrack.None)
         })
     }
 
     pub fn is_muted(&self) -> bool {
         self.live_kit.as_ref().map_or(false, |live_kit| {
-            matches!(live_kit.microphone_track, LocalTrack::None)
+            matches!(live_kit.microphone_track, LocalTrack.None)
                 || live_kit.muted_by_user
                 || live_kit.deafened
         })
@@ -1335,7 +1335,7 @@ impl Room {
     }
 
     pub fn can_use_microphone(&self) -> bool {
-        use proto::ChannelRole::*;
+        use proto.ChannelRole.*;
         match self.local_participant.role {
             Admin | Member | Talker => true,
             Guest | Banned => false,
@@ -1343,7 +1343,7 @@ impl Room {
     }
 
     pub fn can_share_projects(&self) -> bool {
-        use proto::ChannelRole::*;
+        use proto.ChannelRole.*;
         match self.local_participant.role {
             Admin | Member => true,
             Guest | Banned | Talker => false,
@@ -1353,21 +1353,21 @@ impl Room {
     #[track_caller]
     pub fn share_microphone(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<()>> {
         if self.status.is_offline() {
-            return Task::ready(Err(anyhow!("room is offline")));
+            return Task.ready(Err(anyhow!("room is offline")));
         }
 
         let publish_id = if let Some(live_kit) = self.live_kit.as_mut() {
             let publish_id = post_inc(&mut live_kit.next_publish_id);
-            live_kit.microphone_track = LocalTrack::Pending { publish_id };
+            live_kit.microphone_track = LocalTrack.Pending { publish_id };
             cx.notify();
             publish_id
         } else {
-            return Task::ready(Err(anyhow!("live-kit was not initialized")));
+            return Task.ready(Err(anyhow!("live-kit was not initialized")));
         };
 
         cx.spawn(move |this, mut cx| async move {
             let publish_track = async {
-                let track = LocalAudioTrack::create();
+                let track = LocalAudioTrack.create();
                 this.upgrade()
                     .ok_or_else(|| anyhow!("room was dropped"))?
                     .update(&mut cx, |this, _| {
@@ -1387,7 +1387,7 @@ impl Room {
                         .as_mut()
                         .ok_or_else(|| anyhow!("live-kit was not initialized"))?;
 
-                    let canceled = if let LocalTrack::Pending {
+                    let canceled = if let LocalTrack.Pending {
                         publish_id: cur_publish_id,
                     } = &live_kit.microphone_track
                     {
@@ -1406,7 +1406,7 @@ impl Room {
                                         .spawn(publication.set_mute(true))
                                         .detach();
                                 }
-                                live_kit.microphone_track = LocalTrack::Published {
+                                live_kit.microphone_track = LocalTrack.Published {
                                     track_publication: publication,
                                 };
                                 cx.notify();
@@ -1417,7 +1417,7 @@ impl Room {
                             if canceled {
                                 Ok(())
                             } else {
-                                live_kit.microphone_track = LocalTrack::None;
+                                live_kit.microphone_track = LocalTrack.None;
                                 cx.notify();
                                 Err(error)
                             }
@@ -1429,18 +1429,18 @@ impl Room {
 
     pub fn share_screen(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<()>> {
         if self.status.is_offline() {
-            return Task::ready(Err(anyhow!("room is offline")));
+            return Task.ready(Err(anyhow!("room is offline")));
         } else if self.is_screen_sharing() {
-            return Task::ready(Err(anyhow!("screen was already shared")));
+            return Task.ready(Err(anyhow!("screen was already shared")));
         }
 
         let (displays, publish_id) = if let Some(live_kit) = self.live_kit.as_mut() {
             let publish_id = post_inc(&mut live_kit.next_publish_id);
-            live_kit.screen_track = LocalTrack::Pending { publish_id };
+            live_kit.screen_track = LocalTrack.Pending { publish_id };
             cx.notify();
             (live_kit.room.display_sources(), publish_id)
         } else {
-            return Task::ready(Err(anyhow!("live-kit was not initialized")));
+            return Task.ready(Err(anyhow!("live-kit was not initialized")));
         };
 
         cx.spawn(move |this, mut cx| async move {
@@ -1449,7 +1449,7 @@ impl Room {
                 let display = displays
                     .first()
                     .ok_or_else(|| anyhow!("no display found"))?;
-                let track = LocalVideoTrack::screen_share_for_display(display);
+                let track = LocalVideoTrack.screen_share_for_display(display);
                 this.upgrade()
                     .ok_or_else(|| anyhow!("room was dropped"))?
                     .update(&mut cx, |this, _| {
@@ -1470,7 +1470,7 @@ impl Room {
                         .as_mut()
                         .ok_or_else(|| anyhow!("live-kit was not initialized"))?;
 
-                    let canceled = if let LocalTrack::Pending {
+                    let canceled = if let LocalTrack.Pending {
                         publish_id: cur_publish_id,
                     } = &live_kit.screen_track
                     {
@@ -1484,13 +1484,13 @@ impl Room {
                             if canceled {
                                 live_kit.room.unpublish_track(publication);
                             } else {
-                                live_kit.screen_track = LocalTrack::Published {
+                                live_kit.screen_track = LocalTrack.Published {
                                     track_publication: publication,
                                 };
                                 cx.notify();
                             }
 
-                            Audio::play_sound(Sound::StartScreenshare, cx);
+                            Audio.play_sound(Sound.StartScreenshare, cx);
 
                             Ok(())
                         }
@@ -1498,7 +1498,7 @@ impl Room {
                             if canceled {
                                 Ok(())
                             } else {
-                                live_kit.screen_track = LocalTrack::None;
+                                live_kit.screen_track = LocalTrack.None;
                                 cx.notify();
                                 Err(error)
                             }
@@ -1514,7 +1514,7 @@ impl Room {
             let was_deafened = live_kit.deafened;
             if live_kit.muted_by_user
                 || live_kit.deafened
-                || matches!(live_kit.microphone_track, LocalTrack::None)
+                || matches!(live_kit.microphone_track, LocalTrack.None)
             {
                 live_kit.muted_by_user = false;
                 live_kit.deafened = false;
@@ -1565,19 +1565,19 @@ impl Room {
             .live_kit
             .as_mut()
             .ok_or_else(|| anyhow!("live-kit was not initialized"))?;
-        match mem::take(&mut live_kit.screen_track) {
-            LocalTrack::None => Err(anyhow!("screen was not shared")),
-            LocalTrack::Pending { .. } => {
+        match mem.take(&mut live_kit.screen_track) {
+            LocalTrack.None => Err(anyhow!("screen was not shared")),
+            LocalTrack.Pending { .. } => {
                 cx.notify();
                 Ok(())
             }
-            LocalTrack::Published {
+            LocalTrack.Published {
                 track_publication, ..
             } => {
                 live_kit.room.unpublish_track(track_publication);
                 cx.notify();
 
-                Audio::play_sound(Sound::StopScreenshare, cx);
+                Audio.play_sound(Sound.StopScreenshare, cx);
                 Ok(())
             }
         }
@@ -1591,7 +1591,7 @@ impl Room {
         let live_kit = self.live_kit.as_mut()?;
         cx.notify();
 
-        let mut track_updates = Vec::new();
+        let mut track_updates = Vec.new();
         for participant in self.remote_participants.values() {
             for publication in live_kit
                 .room
@@ -1610,7 +1610,7 @@ impl Room {
         }
 
         Some(cx.foreground_executor().spawn(async move {
-            for result in futures::future::join_all(track_updates).await {
+            for result in futures.future.join_all(track_updates).await {
                 result?;
             }
             Ok(())
@@ -1626,21 +1626,21 @@ impl Room {
         cx.notify();
 
         if should_mute {
-            Audio::play_sound(Sound::Mute, cx);
+            Audio.play_sound(Sound.Mute, cx);
         } else {
-            Audio::play_sound(Sound::Unmute, cx);
+            Audio.play_sound(Sound.Unmute, cx);
         }
 
         match &mut live_kit.microphone_track {
-            LocalTrack::None => {
+            LocalTrack.None => {
                 if should_mute {
                     None
                 } else {
                     Some(self.share_microphone(cx))
                 }
             }
-            LocalTrack::Pending { .. } => None,
-            LocalTrack::Published { track_publication } => Some(
+            LocalTrack.Pending { .. } => None,
+            LocalTrack.Published { track_publication } => Some(
                 cx.foreground_executor()
                     .spawn(track_publication.set_mute(should_mute)),
             ),
@@ -1648,7 +1648,7 @@ impl Room {
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn set_display_sources(&self, sources: Vec<live_kit_client::MacOSDisplay>) {
+    pub fn set_display_sources(&self, sources: Vec<live_kit_client.MacOSDisplay>) {
         self.live_kit
             .as_ref()
             .unwrap()
@@ -1658,7 +1658,7 @@ impl Room {
 }
 
 struct LiveKitRoom {
-    room: Arc<live_kit_client::Room>,
+    room: Arc<live_kit_client.Room>,
     screen_track: LocalTrack,
     microphone_track: LocalTrack,
     /// Tracks whether we're currently in a muted state due to auto-mute from deafening or manual mute performed by user.
@@ -1672,17 +1672,17 @@ struct LiveKitRoom {
 
 impl LiveKitRoom {
     fn stop_publishing(&mut self, cx: &mut ModelContext<Room>) {
-        if let LocalTrack::Published {
+        if let LocalTrack.Published {
             track_publication, ..
-        } = mem::replace(&mut self.microphone_track, LocalTrack::None)
+        } = mem.replace(&mut self.microphone_track, LocalTrack.None)
         {
             self.room.unpublish_track(track_publication);
             cx.notify();
         }
 
-        if let LocalTrack::Published {
+        if let LocalTrack.Published {
             track_publication, ..
-        } = mem::replace(&mut self.screen_track, LocalTrack::None)
+        } = mem.replace(&mut self.screen_track, LocalTrack.None)
         {
             self.room.unpublish_track(track_publication);
             cx.notify();
@@ -1702,7 +1702,7 @@ enum LocalTrack {
 
 impl Default for LocalTrack {
     fn default() -> Self {
-        Self::None
+        Self.None
     }
 }
 
@@ -1715,10 +1715,10 @@ pub enum RoomStatus {
 
 impl RoomStatus {
     pub fn is_offline(&self) -> bool {
-        matches!(self, RoomStatus::Offline)
+        matches!(self, RoomStatus.Offline)
     }
 
     pub fn is_online(&self) -> bool {
-        matches!(self, RoomStatus::Online)
+        matches!(self, RoomStatus.Online)
     }
 }

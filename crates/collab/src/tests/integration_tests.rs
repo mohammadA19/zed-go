@@ -1,61 +1,61 @@
-use crate::{
-    rpc::{CLEANUP_TIMEOUT, RECONNECT_TIMEOUT},
-    tests::{
-        channel_id, following_tests::join_channel, room_participants, rust_lang, RoomParticipants,
+use crate.{
+    rpc.{CLEANUP_TIMEOUT, RECONNECT_TIMEOUT},
+    tests.{
+        channel_id, following_tests.join_channel, room_participants, rust_lang, RoomParticipants,
         TestClient, TestServer,
     },
 };
-use anyhow::{anyhow, Result};
-use assistant::ContextStore;
-use call::{room, ActiveCall, ParticipantLocation, Room};
-use client::{User, RECEIVE_TIMEOUT};
-use collections::{HashMap, HashSet};
-use fs::{FakeFs, Fs as _, RemoveOptions};
-use futures::{channel::mpsc, StreamExt as _};
-use git::repository::GitFileStatus;
-use gpui::{
+use anyhow.{anyhow, Result};
+use assistant.ContextStore;
+use call.{room, ActiveCall, ParticipantLocation, Room};
+use client.{User, RECEIVE_TIMEOUT};
+use collections.{HashMap, HashSet};
+use fs.{FakeFs, Fs as _, RemoveOptions};
+use futures.{channel.mpsc, StreamExt as _};
+use git.repository.GitFileStatus;
+use gpui.{
     px, size, AppContext, BackgroundExecutor, Model, Modifiers, MouseButton, MouseDownEvent,
     TestAppContext, UpdateGlobal,
 };
-use language::{
-    language_settings::{
+use language.{
+    language_settings.{
         AllLanguageSettings, Formatter, FormatterList, PrettierSettings, SelectedFormatter,
     },
     tree_sitter_rust, Diagnostic, DiagnosticEntry, FakeLspAdapter, Language, LanguageConfig,
     LanguageMatcher, LineEnding, OffsetRangeExt, Point, Rope,
 };
-use live_kit_client::MacOSDisplay;
-use lsp::LanguageServerId;
-use parking_lot::Mutex;
-use project::{
-    search::SearchQuery, DiagnosticSummary, FormatTrigger, HoverBlockKind, Project, ProjectPath,
+use live_kit_client.MacOSDisplay;
+use lsp.LanguageServerId;
+use parking_lot.Mutex;
+use project.{
+    search.SearchQuery, DiagnosticSummary, FormatTrigger, HoverBlockKind, Project, ProjectPath,
     SearchResult,
 };
-use rand::prelude::*;
-use serde_json::json;
-use settings::SettingsStore;
-use std::{
-    cell::{Cell, RefCell},
+use rand.prelude.*;
+use serde_json.json;
+use settings.SettingsStore;
+use std.{
+    cell.{Cell, RefCell},
     env, future, mem,
-    path::{Path, PathBuf},
-    rc::Rc,
-    sync::{
-        atomic::{AtomicBool, Ordering::SeqCst},
+    path.{Path, PathBuf},
+    rc.Rc,
+    sync.{
+        atomic.{AtomicBool, Ordering.SeqCst},
         Arc,
     },
-    time::Duration,
+    time.Duration,
 };
-use unindent::Unindent as _;
-use workspace::Pane;
+use unindent.Unindent as _;
+use workspace.Pane;
 
-#[ctor::ctor]
+#[ctor.ctor]
 fn init_logger() {
-    if std::env::var("RUST_LOG").is_ok() {
-        env_logger::init();
+    if std.env.var("RUST_LOG").is_ok() {
+        env_logger.init();
     }
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_basic_calls(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
@@ -63,7 +63,7 @@ async fn test_basic_calls(
     cx_b2: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
 
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
@@ -72,9 +72,9 @@ async fn test_basic_calls(
         .make_contacts(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
-    let active_call_c = cx_c.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
+    let active_call_c = cx_c.read(ActiveCall.global);
 
     // Call user B from client A.
     active_call_a
@@ -88,7 +88,7 @@ async fn test_basic_calls(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
+            remote: Default.default(),
             pending: vec!["user_b".to_string()]
         }
     );
@@ -101,7 +101,7 @@ async fn test_basic_calls(
 
     // User B connects via another client and also receives a ring on the newly-connected client.
     let _client_b2 = server.create_client(cx_b2, "user_b").await;
-    let active_call_b2 = cx_b2.read(ActiveCall::global);
+    let active_call_b2 = cx_b2.read(ActiveCall.global);
 
     let mut incoming_call_b2 = active_call_b2.read_with(cx_b2, |call, _| call.incoming());
     executor.run_until_parked();
@@ -122,14 +122,14 @@ async fn test_basic_calls(
         room_participants(&room_a, cx_a),
         RoomParticipants {
             remote: vec!["user_b".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
             remote: vec!["user_a".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 
@@ -170,14 +170,14 @@ async fn test_basic_calls(
         room_participants(&room_a, cx_a),
         RoomParticipants {
             remote: vec!["user_b".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
             remote: vec!["user_a".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 
@@ -221,26 +221,26 @@ async fn test_basic_calls(
         room_participants(&room_a, cx_a),
         RoomParticipants {
             remote: vec!["user_b".to_string(), "user_c".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
             remote: vec!["user_a".to_string(), "user_c".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_c, cx_c),
         RoomParticipants {
             remote: vec!["user_a".to_string(), "user_b".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 
     // User A shares their screen
-    let display = MacOSDisplay::new();
+    let display = MacOSDisplay.new();
     let events_b = active_call_events(cx_b);
     let events_c = active_call_events(cx_c);
     active_call_a
@@ -258,7 +258,7 @@ async fn test_basic_calls(
     // User B observes the remote screen sharing track.
     assert_eq!(events_b.borrow().len(), 1);
     let event_b = events_b.borrow().first().unwrap().clone();
-    if let call::room::Event::RemoteVideoTracksChanged { participant_id } = event_b {
+    if let call.room.Event.RemoteVideoTracksChanged { participant_id } = event_b {
         assert_eq!(participant_id, client_a.peer_id().unwrap());
 
         room_b.read_with(cx_b, |room, _| {
@@ -276,7 +276,7 @@ async fn test_basic_calls(
     // User C observes the remote screen sharing track.
     assert_eq!(events_c.borrow().len(), 1);
     let event_c = events_c.borrow().first().unwrap().clone();
-    if let call::room::Event::RemoteVideoTracksChanged { participant_id } = event_c {
+    if let call.room.Event.RemoteVideoTracksChanged { participant_id } = event_c {
         assert_eq!(participant_id, client_a.peer_id().unwrap());
 
         room_c.read_with(cx_c, |room, _| {
@@ -304,22 +304,22 @@ async fn test_basic_calls(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
             remote: vec!["user_c".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_c, cx_c),
         RoomParticipants {
             remote: vec!["user_b".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 
@@ -338,27 +338,27 @@ async fn test_basic_calls(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_c, cx_c),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_calling_multiple_users_simultaneously(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
@@ -366,7 +366,7 @@ async fn test_calling_multiple_users_simultaneously(
     cx_c: &mut TestAppContext,
     cx_d: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
 
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
@@ -381,10 +381,10 @@ async fn test_calling_multiple_users_simultaneously(
         ])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
-    let active_call_c = cx_c.read(ActiveCall::global);
-    let active_call_d = cx_d.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
+    let active_call_c = cx_c.read(ActiveCall.global);
+    let active_call_d = cx_d.read(ActiveCall.global);
 
     // Simultaneously call user B and user C from client A.
     let b_invite = active_call_a.update(cx_a, |call, cx| {
@@ -401,7 +401,7 @@ async fn test_calling_multiple_users_simultaneously(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
+            remote: Default.default(),
             pending: vec!["user_b".to_string(), "user_c".to_string()]
         }
     );
@@ -417,7 +417,7 @@ async fn test_calling_multiple_users_simultaneously(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
+            remote: Default.default(),
             pending: vec![
                 "user_b".to_string(),
                 "user_c".to_string(),
@@ -449,7 +449,7 @@ async fn test_calling_multiple_users_simultaneously(
                 "user_c".to_string(),
                 "user_d".to_string(),
             ],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
@@ -460,7 +460,7 @@ async fn test_calling_multiple_users_simultaneously(
                 "user_c".to_string(),
                 "user_d".to_string(),
             ],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
@@ -471,7 +471,7 @@ async fn test_calling_multiple_users_simultaneously(
                 "user_b".to_string(),
                 "user_d".to_string(),
             ],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
@@ -482,19 +482,19 @@ async fn test_calling_multiple_users_simultaneously(
                 "user_b".to_string(),
                 "user_c".to_string(),
             ],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_joining_channels_and_calling_multiple_users_simultaneously(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
 
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
@@ -521,7 +521,7 @@ async fn test_joining_channels_and_calling_multiple_users_simultaneously(
         )
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     // Simultaneously join channel 1 and then channel 2
     active_call_a
@@ -565,7 +565,7 @@ async fn test_joining_channels_and_calling_multiple_users_simultaneously(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
+            remote: Default.default(),
             pending: vec!["user_b".to_string(), "user_c".to_string()]
         }
     );
@@ -599,7 +599,7 @@ async fn test_joining_channels_and_calling_multiple_users_simultaneously(
     executor.run_until_parked();
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_room_uniqueness(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
@@ -608,7 +608,7 @@ async fn test_room_uniqueness(
     cx_b2: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let _client_a2 = server.create_client(cx_a2, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
@@ -618,11 +618,11 @@ async fn test_room_uniqueness(
         .make_contacts(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_a2 = cx_a2.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
-    let active_call_b2 = cx_b2.read(ActiveCall::global);
-    let active_call_c = cx_c.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_a2 = cx_a2.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
+    let active_call_b2 = cx_b2.read(ActiveCall.global);
+    let active_call_c = cx_c.read(ActiveCall.global);
 
     // Call user B from client A.
     active_call_a
@@ -711,21 +711,21 @@ async fn test_room_uniqueness(
     assert_eq!(call_b2.calling_user.github_login, "user_c");
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_client_disconnecting_from_room(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .make_contacts(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     // Call user B from client A.
     active_call_a
@@ -752,14 +752,14 @@ async fn test_client_disconnecting_from_room(
         room_participants(&room_a, cx_a),
         RoomParticipants {
             remote: vec!["user_b".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
             remote: vec!["user_a".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 
@@ -771,14 +771,14 @@ async fn test_client_disconnecting_from_room(
         room_participants(&room_a, cx_a),
         RoomParticipants {
             remote: vec!["user_b".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
             remote: vec!["user_a".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 
@@ -793,15 +793,15 @@ async fn test_client_disconnecting_from_room(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
 
@@ -834,14 +834,14 @@ async fn test_client_disconnecting_from_room(
         room_participants(&room_a, cx_a),
         RoomParticipants {
             remote: vec!["user_b".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
             remote: vec!["user_a".to_string()],
-            pending: Default::default()
+            pending: Default.default()
         }
     );
 
@@ -857,20 +857,20 @@ async fn test_client_disconnecting_from_room(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
     assert_eq!(
         room_participants(&room_b, cx_b),
         RoomParticipants {
-            remote: Default::default(),
-            pending: Default::default()
+            remote: Default.default(),
+            pending: Default.default()
         }
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_server_restarts(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
@@ -878,7 +878,7 @@ async fn test_server_restarts(
     cx_c: &mut TestAppContext,
     cx_d: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     client_a
         .fs()
@@ -900,10 +900,10 @@ async fn test_server_restarts(
         ])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
-    let active_call_c = cx_c.read(ActiveCall::global);
-    let active_call_d = cx_d.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
+    let active_call_c = cx_c.read(ActiveCall.global);
+    let active_call_d = cx_d.read(ActiveCall.global);
 
     // User A calls users B, C, and D.
     active_call_a
@@ -981,7 +981,7 @@ async fn test_server_restarts(
     server.reset().await;
 
     // Users A and B reconnect to the call. User C has troubles reconnecting, so it leaves the room.
-    client_c.override_establish_connection(|_, cx| cx.spawn(|_| future::pending()));
+    client_c.override_establish_connection(|_, cx| cx.spawn(|_| future.pending()));
     executor.advance_clock(RECONNECT_TIMEOUT);
     assert_eq!(
         room_participants(&room_a, cx_a),
@@ -1154,9 +1154,9 @@ async fn test_server_restarts(
     server.reset().await;
 
     // Users A and B have troubles reconnecting, so they leave the room.
-    client_a.override_establish_connection(|_, cx| cx.spawn(|_| future::pending()));
-    client_b.override_establish_connection(|_, cx| cx.spawn(|_| future::pending()));
-    client_c.override_establish_connection(|_, cx| cx.spawn(|_| future::pending()));
+    client_a.override_establish_connection(|_, cx| cx.spawn(|_| future.pending()));
+    client_b.override_establish_connection(|_, cx| cx.spawn(|_| future.pending()));
+    client_c.override_establish_connection(|_, cx| cx.spawn(|_| future.pending()));
     executor.advance_clock(RECONNECT_TIMEOUT);
     assert_eq!(
         room_participants(&room_a, cx_a),
@@ -1183,14 +1183,14 @@ async fn test_server_restarts(
     assert!(incoming_call_d.next().await.unwrap().is_none());
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_calls_on_multiple_connections(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b1: &mut TestAppContext,
     cx_b2: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b1 = server.create_client(cx_b1, "user_b").await;
     let client_b2 = server.create_client(cx_b2, "user_b").await;
@@ -1198,9 +1198,9 @@ async fn test_calls_on_multiple_connections(
         .make_contacts(&mut [(&client_a, cx_a), (&client_b1, cx_b1)])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b1 = cx_b1.read(ActiveCall::global);
-    let active_call_b2 = cx_b2.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b1 = cx_b1.read(ActiveCall.global);
+    let active_call_b2 = cx_b2.read(ActiveCall.global);
 
     let mut incoming_call_b1 = active_call_b1.read_with(cx_b1, |call, _| call.incoming());
 
@@ -1342,14 +1342,14 @@ async fn test_calls_on_multiple_connections(
     active_call_a.read_with(cx_a, |call, _| assert!(call.room().is_none()));
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_unshare_project(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -1357,8 +1357,8 @@ async fn test_unshare_project(
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -1439,20 +1439,20 @@ async fn test_unshare_project(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_project_reconnect(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
 
-    cx_b.update(editor::init);
+    cx_b.update(editor.init);
 
     client_a
         .fs()
@@ -1501,7 +1501,7 @@ async fn test_project_reconnect(
         )
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
     let (project_a1, _) = client_a.build_local_project("/root-1/dir1", cx_a).await;
     let (project_a2, _) = client_a.build_local_project("/root-2", cx_a).await;
     let (project_a3, _) = client_a.build_local_project("/root-3", cx_a).await;
@@ -1592,7 +1592,7 @@ async fn test_project_reconnect(
             "/root-1/dir1/subdir1".as_ref(),
             RemoveOptions {
                 recursive: true,
-                ..Default::default()
+                ..Default.default()
             },
         )
         .await
@@ -1643,7 +1643,7 @@ async fn test_project_reconnect(
                 .snapshot()
                 .paths()
                 .map(|p| p.to_str().unwrap())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             vec![
                 "a.txt",
                 "b.txt",
@@ -1661,7 +1661,7 @@ async fn test_project_reconnect(
                 .snapshot()
                 .paths()
                 .map(|p| p.to_str().unwrap())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             vec!["w.txt", "x.txt", "y.txt"]
         );
     });
@@ -1676,7 +1676,7 @@ async fn test_project_reconnect(
                 .snapshot()
                 .paths()
                 .map(|p| p.to_str().unwrap())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             vec![
                 "a.txt",
                 "b.txt",
@@ -1696,7 +1696,7 @@ async fn test_project_reconnect(
                 .snapshot()
                 .paths()
                 .map(|p| p.to_str().unwrap())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             vec!["w.txt", "x.txt", "y.txt"]
         );
     });
@@ -1721,7 +1721,7 @@ async fn test_project_reconnect(
         .await;
     client_a
         .fs()
-        .remove_file("/root-1/dir1/subdir2/i.txt".as_ref(), Default::default())
+        .remove_file("/root-1/dir1/subdir2/i.txt".as_ref(), Default.default())
         .await
         .unwrap();
 
@@ -1769,7 +1769,7 @@ async fn test_project_reconnect(
                 .snapshot()
                 .paths()
                 .map(|p| p.to_str().unwrap())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             vec![
                 "a.txt",
                 "b.txt",
@@ -1789,7 +1789,7 @@ async fn test_project_reconnect(
                 .snapshot()
                 .paths()
                 .map(|p| p.to_str().unwrap())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             vec!["z.txt"]
         );
     });
@@ -1801,13 +1801,13 @@ async fn test_project_reconnect(
     buffer_b1.read_with(cx_b, |buffer, _| assert_eq!(buffer.text(), "WXaYZ"));
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_active_call_events(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     client_a.fs().insert_tree("/a", json!({})).await;
@@ -1819,8 +1819,8 @@ async fn test_active_call_events(
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     let events_a = active_call_events(cx_a);
     let events_b = active_call_events(cx_b);
@@ -1830,11 +1830,11 @@ async fn test_active_call_events(
         .await
         .unwrap();
     executor.run_until_parked();
-    assert_eq!(mem::take(&mut *events_a.borrow_mut()), vec![]);
+    assert_eq!(mem.take(&mut *events_a.borrow_mut()), vec![]);
     assert_eq!(
-        mem::take(&mut *events_b.borrow_mut()),
-        vec![room::Event::RemoteProjectShared {
-            owner: Arc::new(User {
+        mem.take(&mut *events_b.borrow_mut()),
+        vec![room.Event.RemoteProjectShared {
+            owner: Arc.new(User {
                 id: client_a.user_id().unwrap(),
                 github_login: "user_a".to_string(),
                 avatar_uri: "avatar_a".into(),
@@ -1850,9 +1850,9 @@ async fn test_active_call_events(
         .unwrap();
     executor.run_until_parked();
     assert_eq!(
-        mem::take(&mut *events_a.borrow_mut()),
-        vec![room::Event::RemoteProjectShared {
-            owner: Arc::new(User {
+        mem.take(&mut *events_a.borrow_mut()),
+        vec![room.Event.RemoteProjectShared {
+            owner: Arc.new(User {
                 id: client_b.user_id().unwrap(),
                 github_login: "user_b".to_string(),
                 avatar_uri: "avatar_b".into(),
@@ -1861,7 +1861,7 @@ async fn test_active_call_events(
             worktree_root_names: vec!["b".to_string()]
         }]
     );
-    assert_eq!(mem::take(&mut *events_b.borrow_mut()), vec![]);
+    assert_eq!(mem.take(&mut *events_b.borrow_mut()), vec![]);
 
     // Sharing a project twice is idempotent.
     let project_b_id_2 = active_call_b
@@ -1870,8 +1870,8 @@ async fn test_active_call_events(
         .unwrap();
     assert_eq!(project_b_id_2, project_b_id);
     executor.run_until_parked();
-    assert_eq!(mem::take(&mut *events_a.borrow_mut()), vec![]);
-    assert_eq!(mem::take(&mut *events_b.borrow_mut()), vec![]);
+    assert_eq!(mem.take(&mut *events_a.borrow_mut()), vec![]);
+    assert_eq!(mem.take(&mut *events_b.borrow_mut()), vec![]);
 
     // Unsharing a project should dispatch the RemoteProjectUnshared event.
     active_call_a
@@ -1881,20 +1881,20 @@ async fn test_active_call_events(
     executor.run_until_parked();
 
     assert_eq!(
-        mem::take(&mut *events_a.borrow_mut()),
-        vec![room::Event::RoomLeft { channel_id: None }]
+        mem.take(&mut *events_a.borrow_mut()),
+        vec![room.Event.RoomLeft { channel_id: None }]
     );
     assert_eq!(
-        mem::take(&mut *events_b.borrow_mut()),
-        vec![room::Event::RemoteProjectUnshared {
+        mem.take(&mut *events_b.borrow_mut()),
+        vec![room.Event.RemoteProjectUnshared {
             project_id: project_a_id,
         }]
     );
 }
 
-fn active_call_events(cx: &mut TestAppContext) -> Rc<RefCell<Vec<room::Event>>> {
-    let events = Rc::new(RefCell::new(Vec::new()));
-    let active_call = cx.read(ActiveCall::global);
+fn active_call_events(cx: &mut TestAppContext) -> Rc<RefCell<Vec<room.Event>>> {
+    let events = Rc.new(RefCell.new(Vec.new()));
+    let active_call = cx.read(ActiveCall.global);
     cx.update({
         let events = events.clone();
         |cx| {
@@ -1907,14 +1907,14 @@ fn active_call_events(cx: &mut TestAppContext) -> Rc<RefCell<Vec<room::Event>>> 
     events
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_mute_deafen(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -1923,9 +1923,9 @@ async fn test_mute_deafen(
         .make_contacts(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
-    let active_call_c = cx_c.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
+    let active_call_c = cx_c.read(ActiveCall.global);
 
     // User A calls user B, B answers.
     active_call_a
@@ -2082,27 +2082,27 @@ async fn test_mute_deafen(
                         .map(|track| track.is_playing())
                         .collect(),
                 })
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         })
     }
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_room_location(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     client_a.fs().insert_tree("/a", json!({})).await;
     client_b.fs().insert_tree("/b", json!({})).await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
-    let a_notified = Rc::new(Cell::new(false));
+    let a_notified = Rc.new(Cell.new(false));
     cx_a.update({
         let notified = a_notified.clone();
         |cx| {
@@ -2111,7 +2111,7 @@ async fn test_room_location(
         }
     });
 
-    let b_notified = Rc::new(Cell::new(false));
+    let b_notified = Rc.new(Cell.new(false));
     cx_b.update({
         let b_notified = b_notified.clone();
         |cx| {
@@ -2138,12 +2138,12 @@ async fn test_room_location(
     assert!(a_notified.take());
     assert_eq!(
         participant_locations(&room_a, cx_a),
-        vec![("user_b".to_string(), ParticipantLocation::External)]
+        vec![("user_b".to_string(), ParticipantLocation.External)]
     );
     assert!(b_notified.take());
     assert_eq!(
         participant_locations(&room_b, cx_b),
-        vec![("user_a".to_string(), ParticipantLocation::UnsharedProject)]
+        vec![("user_a".to_string(), ParticipantLocation.UnsharedProject)]
     );
 
     let project_a_id = active_call_a
@@ -2154,14 +2154,14 @@ async fn test_room_location(
     assert!(a_notified.take());
     assert_eq!(
         participant_locations(&room_a, cx_a),
-        vec![("user_b".to_string(), ParticipantLocation::External)]
+        vec![("user_b".to_string(), ParticipantLocation.External)]
     );
     assert!(b_notified.take());
     assert_eq!(
         participant_locations(&room_b, cx_b),
         vec![(
             "user_a".to_string(),
-            ParticipantLocation::SharedProject {
+            ParticipantLocation.SharedProject {
                 project_id: project_a_id
             }
         )]
@@ -2175,14 +2175,14 @@ async fn test_room_location(
     assert!(a_notified.take());
     assert_eq!(
         participant_locations(&room_a, cx_a),
-        vec![("user_b".to_string(), ParticipantLocation::External)]
+        vec![("user_b".to_string(), ParticipantLocation.External)]
     );
     assert!(b_notified.take());
     assert_eq!(
         participant_locations(&room_b, cx_b),
         vec![(
             "user_a".to_string(),
-            ParticipantLocation::SharedProject {
+            ParticipantLocation.SharedProject {
                 project_id: project_a_id
             }
         )]
@@ -2198,7 +2198,7 @@ async fn test_room_location(
         participant_locations(&room_a, cx_a),
         vec![(
             "user_b".to_string(),
-            ParticipantLocation::SharedProject {
+            ParticipantLocation.SharedProject {
                 project_id: project_b_id
             }
         )]
@@ -2208,7 +2208,7 @@ async fn test_room_location(
         participant_locations(&room_b, cx_b),
         vec![(
             "user_a".to_string(),
-            ParticipantLocation::SharedProject {
+            ParticipantLocation.SharedProject {
                 project_id: project_a_id
             }
         )]
@@ -2222,14 +2222,14 @@ async fn test_room_location(
     assert!(a_notified.take());
     assert_eq!(
         participant_locations(&room_a, cx_a),
-        vec![("user_b".to_string(), ParticipantLocation::External)]
+        vec![("user_b".to_string(), ParticipantLocation.External)]
     );
     assert!(b_notified.take());
     assert_eq!(
         participant_locations(&room_b, cx_b),
         vec![(
             "user_a".to_string(),
-            ParticipantLocation::SharedProject {
+            ParticipantLocation.SharedProject {
                 project_id: project_a_id
             }
         )]
@@ -2253,14 +2253,14 @@ async fn test_room_location(
     }
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_propagate_saves_and_fs_changes(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -2268,29 +2268,29 @@ async fn test_propagate_saves_and_fs_changes(
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
-    let rust = Arc::new(Language::new(
+    let rust = Arc.new(Language.new(
         LanguageConfig {
             name: "Rust".into(),
             matcher: LanguageMatcher {
                 path_suffixes: vec!["rs".to_string()],
-                ..Default::default()
+                ..Default.default()
             },
-            ..Default::default()
+            ..Default.default()
         },
-        Some(tree_sitter_rust::language()),
+        Some(tree_sitter_rust.language()),
     ));
-    let javascript = Arc::new(Language::new(
+    let javascript = Arc.new(Language.new(
         LanguageConfig {
             name: "JavaScript".into(),
             matcher: LanguageMatcher {
                 path_suffixes: vec!["js".to_string()],
-                ..Default::default()
+                ..Default.default()
             },
-            ..Default::default()
+            ..Default.default()
         },
-        Some(tree_sitter_rust::language()),
+        Some(tree_sitter_rust.language()),
     ));
     for client in [&client_a, &client_b, &client_c] {
         client.language_registry().add(rust.clone());
@@ -2395,13 +2395,13 @@ async fn test_propagate_saves_and_fs_changes(
         .rename(
             "/a/file1.rs".as_ref(),
             "/a/file1.js".as_ref(),
-            Default::default(),
+            Default.default(),
         )
         .await
         .unwrap();
     client_a
         .fs()
-        .rename("/a/file2".as_ref(), "/a/file3".as_ref(), Default::default())
+        .rename("/a/file2".as_ref(), "/a/file3".as_ref(), Default.default())
         .await
         .unwrap();
     client_a.fs().insert_file("/a/file4", "4".into()).await;
@@ -2411,7 +2411,7 @@ async fn test_propagate_saves_and_fs_changes(
         assert_eq!(
             tree.paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["file1.js", "file3", "file4"]
         )
     });
@@ -2420,7 +2420,7 @@ async fn test_propagate_saves_and_fs_changes(
         assert_eq!(
             tree.paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["file1.js", "file3", "file4"]
         )
     });
@@ -2429,7 +2429,7 @@ async fn test_propagate_saves_and_fs_changes(
         assert_eq!(
             tree.paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["file1.js", "file3", "file4"]
         )
     });
@@ -2472,7 +2472,7 @@ async fn test_propagate_saves_and_fs_changes(
     project_a
         .update(cx_a, |project, cx| {
             let path = ProjectPath {
-                path: Arc::from(Path::new("file3.rs")),
+                path: Arc.from(Path.new("file3.rs")),
                 worktree_id: worktree_a.read(cx).id(),
             };
 
@@ -2486,7 +2486,7 @@ async fn test_propagate_saves_and_fs_changes(
     new_buffer_b.read_with(cx_b, |buffer_b, _| {
         assert_eq!(
             buffer_b.file().unwrap().path().as_ref(),
-            Path::new("file3.rs")
+            Path.new("file3.rs")
         );
 
         new_buffer_a.read_with(cx_a, |buffer_a, _| {
@@ -2496,19 +2496,19 @@ async fn test_propagate_saves_and_fs_changes(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_git_diff_base_change(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -2556,8 +2556,8 @@ async fn test_git_diff_base_change(
     .unindent();
 
     client_a.fs().set_index_for_repo(
-        Path::new("/dir/.git"),
-        &[(Path::new("a.txt"), diff_base.clone())],
+        Path.new("/dir/.git"),
+        &[(Path.new("a.txt"), diff_base.clone())],
     );
 
     // Create the buffer
@@ -2576,7 +2576,7 @@ async fn test_git_diff_base_change(
             buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2600,7 +2600,7 @@ async fn test_git_diff_base_change(
             buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2609,8 +2609,8 @@ async fn test_git_diff_base_change(
     });
 
     client_a.fs().set_index_for_repo(
-        Path::new("/dir/.git"),
-        &[(Path::new("a.txt"), new_diff_base.clone())],
+        Path.new("/dir/.git"),
+        &[(Path.new("a.txt"), new_diff_base.clone())],
     );
 
     // Wait for buffer_local_a to receive it
@@ -2624,7 +2624,7 @@ async fn test_git_diff_base_change(
             Some(new_diff_base.as_str())
         );
 
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2639,7 +2639,7 @@ async fn test_git_diff_base_change(
             buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(new_diff_base.as_str())
         );
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2662,8 +2662,8 @@ async fn test_git_diff_base_change(
     .unindent();
 
     client_a.fs().set_index_for_repo(
-        Path::new("/dir/sub/.git"),
-        &[(Path::new("b.txt"), diff_base.clone())],
+        Path.new("/dir/sub/.git"),
+        &[(Path.new("b.txt"), diff_base.clone())],
     );
 
     // Create the buffer
@@ -2682,7 +2682,7 @@ async fn test_git_diff_base_change(
             buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2706,7 +2706,7 @@ async fn test_git_diff_base_change(
             buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2715,8 +2715,8 @@ async fn test_git_diff_base_change(
     });
 
     client_a.fs().set_index_for_repo(
-        Path::new("/dir/sub/.git"),
-        &[(Path::new("b.txt"), new_diff_base.clone())],
+        Path.new("/dir/sub/.git"),
+        &[(Path.new("b.txt"), new_diff_base.clone())],
     );
 
     // Wait for buffer_local_b to receive it
@@ -2736,10 +2736,10 @@ async fn test_git_diff_base_change(
             buffer
                 .snapshot()
                 .git_diff_hunks_in_row_range(0..4)
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         );
 
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2754,7 +2754,7 @@ async fn test_git_diff_base_change(
             buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(new_diff_base.as_str())
         );
-        git::diff::assert_hunks(
+        git.diff.assert_hunks(
             buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             &buffer,
             &diff_base,
@@ -2763,21 +2763,21 @@ async fn test_git_diff_base_change(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_git_branch_name(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -2800,19 +2800,19 @@ async fn test_git_branch_name(
     let project_remote = client_b.build_dev_server_project(project_id, cx_b).await;
     client_a
         .fs()
-        .set_branch_name(Path::new("/dir/.git"), Some("branch-1"));
+        .set_branch_name(Path.new("/dir/.git"), Some("branch-1"));
 
     // Wait for it to catch up to the new branch
     executor.run_until_parked();
 
     #[track_caller]
     fn assert_branch(branch_name: Option<impl Into<String>>, project: &Project, cx: &AppContext) {
-        let branch_name = branch_name.map(Into::into);
-        let worktrees = project.visible_worktrees(cx).collect::<Vec<_>>();
+        let branch_name = branch_name.map(Into.into);
+        let worktrees = project.visible_worktrees(cx).collect.<Vec<_>>();
         assert_eq!(worktrees.len(), 1);
         let worktree = worktrees[0].clone();
         let root_entry = worktree.read(cx).snapshot().root_git_entry().unwrap();
-        assert_eq!(root_entry.branch(), branch_name.map(Into::into));
+        assert_eq!(root_entry.branch(), branch_name.map(Into.into));
     }
 
     // Smoke test branch reading
@@ -2827,7 +2827,7 @@ async fn test_git_branch_name(
 
     client_a
         .fs()
-        .set_branch_name(Path::new("/dir/.git"), Some("branch-2"));
+        .set_branch_name(Path.new("/dir/.git"), Some("branch-2"));
 
     // Wait for buffer_local_a to receive it
     executor.run_until_parked();
@@ -2850,21 +2850,21 @@ async fn test_git_branch_name(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_git_status_sync(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -2882,10 +2882,10 @@ async fn test_git_status_sync(
     const B_TXT: &str = "b.txt";
 
     client_a.fs().set_status_for_repo_via_git_operation(
-        Path::new("/dir/.git"),
+        Path.new("/dir/.git"),
         &[
-            (&Path::new(A_TXT), GitFileStatus::Added),
-            (&Path::new(B_TXT), GitFileStatus::Added),
+            (&Path.new(A_TXT), GitFileStatus.Added),
+            (&Path.new(B_TXT), GitFileStatus.Added),
         ],
     );
 
@@ -2910,7 +2910,7 @@ async fn test_git_status_sync(
         cx: &AppContext,
     ) {
         let file = file.as_ref();
-        let worktrees = project.visible_worktrees(cx).collect::<Vec<_>>();
+        let worktrees = project.visible_worktrees(cx).collect.<Vec<_>>();
         assert_eq!(worktrees.len(), 1);
         let worktree = worktrees[0].clone();
         let snapshot = worktree.read(cx).snapshot();
@@ -2920,20 +2920,20 @@ async fn test_git_status_sync(
     // Smoke test status reading
 
     project_local.read_with(cx_a, |project, cx| {
-        assert_status(&Path::new(A_TXT), Some(GitFileStatus::Added), project, cx);
-        assert_status(&Path::new(B_TXT), Some(GitFileStatus::Added), project, cx);
+        assert_status(&Path.new(A_TXT), Some(GitFileStatus.Added), project, cx);
+        assert_status(&Path.new(B_TXT), Some(GitFileStatus.Added), project, cx);
     });
 
     project_remote.read_with(cx_b, |project, cx| {
-        assert_status(&Path::new(A_TXT), Some(GitFileStatus::Added), project, cx);
-        assert_status(&Path::new(B_TXT), Some(GitFileStatus::Added), project, cx);
+        assert_status(&Path.new(A_TXT), Some(GitFileStatus.Added), project, cx);
+        assert_status(&Path.new(B_TXT), Some(GitFileStatus.Added), project, cx);
     });
 
     client_a.fs().set_status_for_repo_via_working_copy_change(
-        Path::new("/dir/.git"),
+        Path.new("/dir/.git"),
         &[
-            (&Path::new(A_TXT), GitFileStatus::Modified),
-            (&Path::new(B_TXT), GitFileStatus::Modified),
+            (&Path.new(A_TXT), GitFileStatus.Modified),
+            (&Path.new(B_TXT), GitFileStatus.Modified),
         ],
     );
 
@@ -2944,14 +2944,14 @@ async fn test_git_status_sync(
 
     project_local.read_with(cx_a, |project, cx| {
         assert_status(
-            &Path::new(A_TXT),
-            Some(GitFileStatus::Modified),
+            &Path.new(A_TXT),
+            Some(GitFileStatus.Modified),
             project,
             cx,
         );
         assert_status(
-            &Path::new(B_TXT),
-            Some(GitFileStatus::Modified),
+            &Path.new(B_TXT),
+            Some(GitFileStatus.Modified),
             project,
             cx,
         );
@@ -2959,14 +2959,14 @@ async fn test_git_status_sync(
 
     project_remote.read_with(cx_b, |project, cx| {
         assert_status(
-            &Path::new(A_TXT),
-            Some(GitFileStatus::Modified),
+            &Path.new(A_TXT),
+            Some(GitFileStatus.Modified),
             project,
             cx,
         );
         assert_status(
-            &Path::new(B_TXT),
-            Some(GitFileStatus::Modified),
+            &Path.new(B_TXT),
+            Some(GitFileStatus.Modified),
             project,
             cx,
         );
@@ -2978,33 +2978,33 @@ async fn test_git_status_sync(
 
     project_remote_c.read_with(cx_c, |project, cx| {
         assert_status(
-            &Path::new(A_TXT),
-            Some(GitFileStatus::Modified),
+            &Path.new(A_TXT),
+            Some(GitFileStatus.Modified),
             project,
             cx,
         );
         assert_status(
-            &Path::new(B_TXT),
-            Some(GitFileStatus::Modified),
+            &Path.new(B_TXT),
+            Some(GitFileStatus.Modified),
             project,
             cx,
         );
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_fs_operations(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -3040,7 +3040,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "c.txt"]
         );
     });
@@ -3050,14 +3050,14 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "c.txt"]
         );
     });
 
     project_b
         .update(cx_b, |project, cx| {
-            project.rename_entry(entry.id, Path::new("d.txt"), cx)
+            project.rename_entry(entry.id, Path.new("d.txt"), cx)
         })
         .await
         .unwrap()
@@ -3069,7 +3069,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "d.txt"]
         );
     });
@@ -3079,7 +3079,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "d.txt"]
         );
     });
@@ -3098,7 +3098,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["DIR", "a.txt", "b.txt", "d.txt"]
         );
     });
@@ -3108,7 +3108,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["DIR", "a.txt", "b.txt", "d.txt"]
         );
     });
@@ -3145,7 +3145,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             [
                 "DIR",
                 "DIR/SUBDIR",
@@ -3163,7 +3163,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             [
                 "DIR",
                 "DIR/SUBDIR",
@@ -3178,7 +3178,7 @@ async fn test_fs_operations(
 
     project_b
         .update(cx_b, |project, cx| {
-            project.copy_entry(entry.id, Path::new("f.txt"), cx)
+            project.copy_entry(entry.id, Path.new("f.txt"), cx)
         })
         .await
         .unwrap()
@@ -3189,7 +3189,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             [
                 "DIR",
                 "DIR/SUBDIR",
@@ -3208,7 +3208,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             [
                 "DIR",
                 "DIR/SUBDIR",
@@ -3235,7 +3235,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "d.txt", "f.txt"]
         );
     });
@@ -3245,7 +3245,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "d.txt", "f.txt"]
         );
     });
@@ -3262,7 +3262,7 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "f.txt"]
         );
     });
@@ -3272,25 +3272,25 @@ async fn test_fs_operations(
             worktree
                 .paths()
                 .map(|p| p.to_string_lossy())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             ["a.txt", "b.txt", "f.txt"]
         );
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_local_settings(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     // As client A, open a project that contains some local settings files
     client_a
@@ -3327,14 +3327,14 @@ async fn test_local_settings(
     let worktree_b = project_b.read_with(cx_b, |project, cx| project.worktrees(cx).next().unwrap());
     executor.run_until_parked();
     cx_b.read(|cx| {
-        let store = cx.global::<SettingsStore>();
+        let store = cx.global.<SettingsStore>();
         assert_eq!(
             store
                 .local_settings(worktree_b.entity_id().as_u64() as _)
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             &[
-                (Path::new("").into(), r#"{"tab_size":2}"#.to_string()),
-                (Path::new("a").into(), r#"{"tab_size":8}"#.to_string()),
+                (Path.new("").into(), r#"{"tab_size":2}"#.to_string()),
+                (Path.new("a").into(), r#"{"tab_size":8}"#.to_string()),
             ]
         )
     });
@@ -3346,14 +3346,14 @@ async fn test_local_settings(
         .await;
     executor.run_until_parked();
     cx_b.read(|cx| {
-        let store = cx.global::<SettingsStore>();
+        let store = cx.global.<SettingsStore>();
         assert_eq!(
             store
                 .local_settings(worktree_b.entity_id().as_u64() as _)
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             &[
-                (Path::new("").into(), r#"{}"#.to_string()),
-                (Path::new("a").into(), r#"{"tab_size":8}"#.to_string()),
+                (Path.new("").into(), r#"{}"#.to_string()),
+                (Path.new("a").into(), r#"{"tab_size":8}"#.to_string()),
             ]
         )
     });
@@ -3361,7 +3361,7 @@ async fn test_local_settings(
     // As client A, create and remove some settings files. As client B, see the changed settings.
     client_a
         .fs()
-        .remove_file("/dir/.zed/settings.json".as_ref(), Default::default())
+        .remove_file("/dir/.zed/settings.json".as_ref(), Default.default())
         .await
         .unwrap();
     client_a
@@ -3375,14 +3375,14 @@ async fn test_local_settings(
         .await;
     executor.run_until_parked();
     cx_b.read(|cx| {
-        let store = cx.global::<SettingsStore>();
+        let store = cx.global.<SettingsStore>();
         assert_eq!(
             store
                 .local_settings(worktree_b.entity_id().as_u64() as _)
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             &[
-                (Path::new("a").into(), r#"{"tab_size":8}"#.to_string()),
-                (Path::new("b").into(), r#"{"tab_size":4}"#.to_string()),
+                (Path.new("a").into(), r#"{"tab_size":8}"#.to_string()),
+                (Path.new("b").into(), r#"{"tab_size":4}"#.to_string()),
             ]
         )
     });
@@ -3398,7 +3398,7 @@ async fn test_local_settings(
         .await;
     client_a
         .fs()
-        .remove_file("/dir/b/.zed/settings.json".as_ref(), Default::default())
+        .remove_file("/dir/b/.zed/settings.json".as_ref(), Default.default())
         .await
         .unwrap();
     executor.run_until_parked();
@@ -3407,29 +3407,29 @@ async fn test_local_settings(
     server.allow_connections();
     executor.advance_clock(RECEIVE_TIMEOUT);
     cx_b.read(|cx| {
-        let store = cx.global::<SettingsStore>();
+        let store = cx.global.<SettingsStore>();
         assert_eq!(
             store
                 .local_settings(worktree_b.entity_id().as_u64() as _)
-                .collect::<Vec<_>>(),
-            &[(Path::new("a").into(), r#"{"hard_tabs":true}"#.to_string()),]
+                .collect.<Vec<_>>(),
+            &[(Path.new("a").into(), r#"{"hard_tabs":true}"#.to_string()),]
         )
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_buffer_conflict_after_save(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -3481,19 +3481,19 @@ async fn test_buffer_conflict_after_save(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_buffer_reloading(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -3520,13 +3520,13 @@ async fn test_buffer_reloading(
     buffer_b.read_with(cx_b, |buf, _| {
         assert!(!buf.is_dirty());
         assert!(!buf.has_conflict());
-        assert_eq!(buf.line_ending(), LineEnding::Unix);
+        assert_eq!(buf.line_ending(), LineEnding.Unix);
     });
 
-    let new_contents = Rope::from("d\ne\nf");
+    let new_contents = Rope.from("d\ne\nf");
     client_a
         .fs()
-        .save("/dir/a.txt".as_ref(), &new_contents, LineEnding::Windows)
+        .save("/dir/a.txt".as_ref(), &new_contents, LineEnding.Windows)
         .await
         .unwrap();
 
@@ -3536,23 +3536,23 @@ async fn test_buffer_reloading(
         assert_eq!(buf.text(), new_contents.to_string());
         assert!(!buf.is_dirty());
         assert!(!buf.has_conflict());
-        assert_eq!(buf.line_ending(), LineEnding::Windows);
+        assert_eq!(buf.line_ending(), LineEnding.Windows);
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_editing_while_guest_opens_buffer(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -3588,19 +3588,19 @@ async fn test_editing_while_guest_opens_buffer(
     buffer_b.read_with(cx_b, |buf, _| assert_eq!(buf.text(), text));
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_leaving_worktree_while_opening_buffer(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -3630,19 +3630,19 @@ async fn test_leaving_worktree_while_opening_buffer(
     project_a.read_with(cx_a, |p, _| assert!(p.collaborators().is_empty()));
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_canceling_buffer_opening(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -3684,21 +3684,21 @@ async fn test_canceling_buffer_opening(
     buffer_b.read_with(cx_b, |buf, _| assert_eq!(buf.text(), "abc"));
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_leaving_project(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -3804,12 +3804,12 @@ async fn test_leaving_project(
 
     // Client B can't join the project, unless they re-join the room.
     cx_b.spawn(|cx| {
-        Project::in_room(
+        Project.in_room(
             project_id,
             client_b.app_state.client.clone(),
             client_b.user_store().clone(),
             client_b.language_registry().clone(),
-            FakeFs::new(cx.background_executor().clone()),
+            FakeFs.new(cx.background_executor().clone()),
             cx,
         )
     })
@@ -3836,36 +3836,36 @@ async fn test_leaving_project(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_collaborating_with_diagnostics(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
-    client_a.language_registry().add(Arc::new(Language::new(
+    client_a.language_registry().add(Arc.new(Language.new(
         LanguageConfig {
             name: "Rust".into(),
             matcher: LanguageMatcher {
                 path_suffixes: vec!["rs".to_string()],
-                ..Default::default()
+                ..Default.default()
             },
-            ..Default::default()
+            ..Default.default()
         },
-        Some(tree_sitter_rust::language()),
+        Some(tree_sitter_rust.language()),
     )));
     let mut fake_language_servers = client_a
         .language_registry()
-        .register_fake_lsp_adapter("Rust", Default::default());
+        .register_fake_lsp_adapter("Rust", Default.default());
 
     // Share a project as client A
     client_a
@@ -3886,7 +3886,7 @@ async fn test_collaborating_with_diagnostics(
             project.open_buffer(
                 ProjectPath {
                     worktree_id,
-                    path: Path::new("other.rs").into(),
+                    path: Path.new("other.rs").into(),
                 },
                 cx,
             )
@@ -3897,17 +3897,17 @@ async fn test_collaborating_with_diagnostics(
     // Simulate a language server reporting errors for a file.
     let mut fake_language_server = fake_language_servers.next().await.unwrap();
     fake_language_server
-        .receive_notification::<lsp::notification::DidOpenTextDocument>()
+        .receive_notification.<lsp.notification.DidOpenTextDocument>()
         .await;
-    fake_language_server.notify::<lsp::notification::PublishDiagnostics>(
-        lsp::PublishDiagnosticsParams {
-            uri: lsp::Url::from_file_path("/a/a.rs").unwrap(),
+    fake_language_server.notify.<lsp.notification.PublishDiagnostics>(
+        lsp.PublishDiagnosticsParams {
+            uri: lsp.Url.from_file_path("/a/a.rs").unwrap(),
             version: None,
-            diagnostics: vec![lsp::Diagnostic {
-                severity: Some(lsp::DiagnosticSeverity::WARNING),
-                range: lsp::Range::new(lsp::Position::new(0, 4), lsp::Position::new(0, 7)),
+            diagnostics: vec![lsp.Diagnostic {
+                severity: Some(lsp.DiagnosticSeverity.WARNING),
+                range: lsp.Range.new(lsp.Position.new(0, 4), lsp.Position.new(0, 7)),
                 message: "message 0".to_string(),
-                ..Default::default()
+                ..Default.default()
             }],
         },
     );
@@ -3919,15 +3919,15 @@ async fn test_collaborating_with_diagnostics(
         .update(cx_a, |call, cx| call.share_project(project_a.clone(), cx))
         .await
         .unwrap();
-    fake_language_server.notify::<lsp::notification::PublishDiagnostics>(
-        lsp::PublishDiagnosticsParams {
-            uri: lsp::Url::from_file_path("/a/a.rs").unwrap(),
+    fake_language_server.notify.<lsp.notification.PublishDiagnostics>(
+        lsp.PublishDiagnosticsParams {
+            uri: lsp.Url.from_file_path("/a/a.rs").unwrap(),
             version: None,
-            diagnostics: vec![lsp::Diagnostic {
-                severity: Some(lsp::DiagnosticSeverity::ERROR),
-                range: lsp::Range::new(lsp::Position::new(0, 4), lsp::Position::new(0, 7)),
+            diagnostics: vec![lsp.Diagnostic {
+                severity: Some(lsp.DiagnosticSeverity.ERROR),
+                range: lsp.Range.new(lsp.Position.new(0, 4), lsp.Position.new(0, 7)),
                 message: "message 1".to_string(),
-                ..Default::default()
+                ..Default.default()
             }],
         },
     );
@@ -3942,11 +3942,11 @@ async fn test_collaborating_with_diagnostics(
 
     project_b.read_with(cx_b, |project, cx| {
         assert_eq!(
-            project.diagnostic_summaries(false, cx).collect::<Vec<_>>(),
+            project.diagnostic_summaries(false, cx).collect.<Vec<_>>(),
             &[(
                 ProjectPath {
                     worktree_id,
-                    path: Arc::from(Path::new("a.rs")),
+                    path: Arc.from(Path.new("a.rs")),
                 },
                 LanguageServerId(0),
                 DiagnosticSummary {
@@ -3961,14 +3961,14 @@ async fn test_collaborating_with_diagnostics(
     let project_c = client_c.build_dev_server_project(project_id, cx_c).await;
     executor.run_until_parked();
     let project_c_diagnostic_summaries =
-        Rc::new(RefCell::new(project_c.read_with(cx_c, |project, cx| {
-            project.diagnostic_summaries(false, cx).collect::<Vec<_>>()
+        Rc.new(RefCell.new(project_c.read_with(cx_c, |project, cx| {
+            project.diagnostic_summaries(false, cx).collect.<Vec<_>>()
         })));
     project_c.update(cx_c, |_, cx| {
         let summaries = project_c_diagnostic_summaries.clone();
         cx.subscribe(&project_c, {
             move |p, _, event, cx| {
-                if let project::Event::DiskBasedDiagnosticsFinished { .. } = event {
+                if let project.Event.DiskBasedDiagnosticsFinished { .. } = event {
                     *summaries.borrow_mut() = p.diagnostic_summaries(false, cx).collect();
                 }
             }
@@ -3982,7 +3982,7 @@ async fn test_collaborating_with_diagnostics(
         &[(
             ProjectPath {
                 worktree_id,
-                path: Arc::from(Path::new("a.rs")),
+                path: Arc.from(Path.new("a.rs")),
             },
             LanguageServerId(0),
             DiagnosticSummary {
@@ -3993,22 +3993,22 @@ async fn test_collaborating_with_diagnostics(
     );
 
     // Simulate a language server reporting more errors for a file.
-    fake_language_server.notify::<lsp::notification::PublishDiagnostics>(
-        lsp::PublishDiagnosticsParams {
-            uri: lsp::Url::from_file_path("/a/a.rs").unwrap(),
+    fake_language_server.notify.<lsp.notification.PublishDiagnostics>(
+        lsp.PublishDiagnosticsParams {
+            uri: lsp.Url.from_file_path("/a/a.rs").unwrap(),
             version: None,
             diagnostics: vec![
-                lsp::Diagnostic {
-                    severity: Some(lsp::DiagnosticSeverity::ERROR),
-                    range: lsp::Range::new(lsp::Position::new(0, 4), lsp::Position::new(0, 7)),
+                lsp.Diagnostic {
+                    severity: Some(lsp.DiagnosticSeverity.ERROR),
+                    range: lsp.Range.new(lsp.Position.new(0, 4), lsp.Position.new(0, 7)),
                     message: "message 1".to_string(),
-                    ..Default::default()
+                    ..Default.default()
                 },
-                lsp::Diagnostic {
-                    severity: Some(lsp::DiagnosticSeverity::WARNING),
-                    range: lsp::Range::new(lsp::Position::new(0, 10), lsp::Position::new(0, 13)),
+                lsp.Diagnostic {
+                    severity: Some(lsp.DiagnosticSeverity.WARNING),
+                    range: lsp.Range.new(lsp.Position.new(0, 10), lsp.Position.new(0, 13)),
                     message: "message 2".to_string(),
-                    ..Default::default()
+                    ..Default.default()
                 },
             ],
         },
@@ -4019,11 +4019,11 @@ async fn test_collaborating_with_diagnostics(
 
     project_b.read_with(cx_b, |project, cx| {
         assert_eq!(
-            project.diagnostic_summaries(false, cx).collect::<Vec<_>>(),
+            project.diagnostic_summaries(false, cx).collect.<Vec<_>>(),
             [(
                 ProjectPath {
                     worktree_id,
-                    path: Arc::from(Path::new("a.rs")),
+                    path: Arc.from(Path.new("a.rs")),
                 },
                 LanguageServerId(0),
                 DiagnosticSummary {
@@ -4036,11 +4036,11 @@ async fn test_collaborating_with_diagnostics(
 
     project_c.read_with(cx_c, |project, cx| {
         assert_eq!(
-            project.diagnostic_summaries(false, cx).collect::<Vec<_>>(),
+            project.diagnostic_summaries(false, cx).collect.<Vec<_>>(),
             [(
                 ProjectPath {
                     worktree_id,
-                    path: Arc::from(Path::new("a.rs")),
+                    path: Arc.from(Path.new("a.rs")),
                 },
                 LanguageServerId(0),
                 DiagnosticSummary {
@@ -4059,27 +4059,27 @@ async fn test_collaborating_with_diagnostics(
         assert_eq!(
             buffer
                 .snapshot()
-                .diagnostics_in_range::<_, Point>(0..buffer.len(), false)
-                .collect::<Vec<_>>(),
+                .diagnostics_in_range.<_, Point>(0..buffer.len(), false)
+                .collect.<Vec<_>>(),
             &[
                 DiagnosticEntry {
-                    range: Point::new(0, 4)..Point::new(0, 7),
+                    range: Point.new(0, 4)..Point.new(0, 7),
                     diagnostic: Diagnostic {
                         group_id: 2,
                         message: "message 1".to_string(),
-                        severity: lsp::DiagnosticSeverity::ERROR,
+                        severity: lsp.DiagnosticSeverity.ERROR,
                         is_primary: true,
-                        ..Default::default()
+                        ..Default.default()
                     }
                 },
                 DiagnosticEntry {
-                    range: Point::new(0, 10)..Point::new(0, 13),
+                    range: Point.new(0, 10)..Point.new(0, 13),
                     diagnostic: Diagnostic {
                         group_id: 3,
-                        severity: lsp::DiagnosticSeverity::WARNING,
+                        severity: lsp.DiagnosticSeverity.WARNING,
                         message: "message 2".to_string(),
                         is_primary: true,
-                        ..Default::default()
+                        ..Default.default()
                     }
                 }
             ]
@@ -4087,9 +4087,9 @@ async fn test_collaborating_with_diagnostics(
     });
 
     // Simulate a language server reporting no errors for a file.
-    fake_language_server.notify::<lsp::notification::PublishDiagnostics>(
-        lsp::PublishDiagnosticsParams {
-            uri: lsp::Url::from_file_path("/a/a.rs").unwrap(),
+    fake_language_server.notify.<lsp.notification.PublishDiagnostics>(
+        lsp.PublishDiagnosticsParams {
+            uri: lsp.Url.from_file_path("/a/a.rs").unwrap(),
             version: None,
             diagnostics: vec![],
         },
@@ -4098,33 +4098,33 @@ async fn test_collaborating_with_diagnostics(
 
     project_a.read_with(cx_a, |project, cx| {
         assert_eq!(
-            project.diagnostic_summaries(false, cx).collect::<Vec<_>>(),
+            project.diagnostic_summaries(false, cx).collect.<Vec<_>>(),
             []
         )
     });
 
     project_b.read_with(cx_b, |project, cx| {
         assert_eq!(
-            project.diagnostic_summaries(false, cx).collect::<Vec<_>>(),
+            project.diagnostic_summaries(false, cx).collect.<Vec<_>>(),
             []
         )
     });
 
     project_c.read_with(cx_c, |project, cx| {
         assert_eq!(
-            project.diagnostic_summaries(false, cx).collect::<Vec<_>>(),
+            project.diagnostic_summaries(false, cx).collect.<Vec<_>>(),
             []
         )
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_collaborating_with_lsp_progress_updates_and_diagnostics_ordering(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
@@ -4137,7 +4137,7 @@ async fn test_collaborating_with_lsp_progress_updates_and_diagnostics_ordering(
         FakeLspAdapter {
             disk_based_diagnostics_progress_token: Some("the-disk-based-token".into()),
             disk_based_diagnostics_sources: vec!["the-disk-based-diagnostics-source".into()],
-            ..Default::default()
+            ..Default.default()
         },
     );
 
@@ -4159,7 +4159,7 @@ async fn test_collaborating_with_lsp_progress_updates_and_diagnostics_ordering(
     let (project_a, worktree_id) = client_a.build_local_project("/test", cx_a).await;
 
     // Share a project as client A
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
     let project_id = active_call_a
         .update(cx_a, |call, cx| call.share_project(project_a.clone(), cx))
         .await
@@ -4167,7 +4167,7 @@ async fn test_collaborating_with_lsp_progress_updates_and_diagnostics_ordering(
 
     // Join the project as client B and open all three files.
     let project_b = client_b.build_dev_server_project(project_id, cx_b).await;
-    let guest_buffers = futures::future::try_join_all(file_names.iter().map(|file_name| {
+    let guest_buffers = futures.future.try_join_all(file_names.iter().map(|file_name| {
         project_b.update(cx_b, |p, cx| p.open_buffer((worktree_id, file_name), cx))
     }))
     .await
@@ -4176,58 +4176,58 @@ async fn test_collaborating_with_lsp_progress_updates_and_diagnostics_ordering(
     // Simulate a language server reporting errors for a file.
     let fake_language_server = fake_language_servers.next().await.unwrap();
     fake_language_server
-        .request::<lsp::request::WorkDoneProgressCreate>(lsp::WorkDoneProgressCreateParams {
-            token: lsp::NumberOrString::String("the-disk-based-token".to_string()),
+        .request.<lsp.request.WorkDoneProgressCreate>(lsp.WorkDoneProgressCreateParams {
+            token: lsp.NumberOrString.String("the-disk-based-token".to_string()),
         })
         .await
         .unwrap();
-    fake_language_server.notify::<lsp::notification::Progress>(lsp::ProgressParams {
-        token: lsp::NumberOrString::String("the-disk-based-token".to_string()),
-        value: lsp::ProgressParamsValue::WorkDone(lsp::WorkDoneProgress::Begin(
-            lsp::WorkDoneProgressBegin {
+    fake_language_server.notify.<lsp.notification.Progress>(lsp.ProgressParams {
+        token: lsp.NumberOrString.String("the-disk-based-token".to_string()),
+        value: lsp.ProgressParamsValue.WorkDone(lsp.WorkDoneProgress.Begin(
+            lsp.WorkDoneProgressBegin {
                 title: "Progress Began".into(),
-                ..Default::default()
+                ..Default.default()
             },
         )),
     });
     for file_name in file_names {
-        fake_language_server.notify::<lsp::notification::PublishDiagnostics>(
-            lsp::PublishDiagnosticsParams {
-                uri: lsp::Url::from_file_path(Path::new("/test").join(file_name)).unwrap(),
+        fake_language_server.notify.<lsp.notification.PublishDiagnostics>(
+            lsp.PublishDiagnosticsParams {
+                uri: lsp.Url.from_file_path(Path.new("/test").join(file_name)).unwrap(),
                 version: None,
-                diagnostics: vec![lsp::Diagnostic {
-                    severity: Some(lsp::DiagnosticSeverity::WARNING),
+                diagnostics: vec![lsp.Diagnostic {
+                    severity: Some(lsp.DiagnosticSeverity.WARNING),
                     source: Some("the-disk-based-diagnostics-source".into()),
-                    range: lsp::Range::new(lsp::Position::new(0, 0), lsp::Position::new(0, 0)),
+                    range: lsp.Range.new(lsp.Position.new(0, 0), lsp.Position.new(0, 0)),
                     message: "message one".to_string(),
-                    ..Default::default()
+                    ..Default.default()
                 }],
             },
         );
     }
-    fake_language_server.notify::<lsp::notification::Progress>(lsp::ProgressParams {
-        token: lsp::NumberOrString::String("the-disk-based-token".to_string()),
-        value: lsp::ProgressParamsValue::WorkDone(lsp::WorkDoneProgress::End(
-            lsp::WorkDoneProgressEnd { message: None },
+    fake_language_server.notify.<lsp.notification.Progress>(lsp.ProgressParams {
+        token: lsp.NumberOrString.String("the-disk-based-token".to_string()),
+        value: lsp.ProgressParamsValue.WorkDone(lsp.WorkDoneProgress.End(
+            lsp.WorkDoneProgressEnd { message: None },
         )),
     });
 
     // When the "disk base diagnostics finished" message is received, the buffers'
     // diagnostics are expected to be present.
-    let disk_based_diagnostics_finished = Arc::new(AtomicBool::new(false));
+    let disk_based_diagnostics_finished = Arc.new(AtomicBool.new(false));
     project_b.update(cx_b, {
         let project_b = project_b.clone();
         let disk_based_diagnostics_finished = disk_based_diagnostics_finished.clone();
         move |_, cx| {
             cx.subscribe(&project_b, move |_, _, event, cx| {
-                if let project::Event::DiskBasedDiagnosticsFinished { .. } = event {
+                if let project.Event.DiskBasedDiagnosticsFinished { .. } = event {
                     disk_based_diagnostics_finished.store(true, SeqCst);
                     for buffer in &guest_buffers {
                         assert_eq!(
                             buffer
                                 .read(cx)
                                 .snapshot()
-                                .diagnostics_in_range::<_, usize>(0..5, false)
+                                .diagnostics_in_range.<_, usize>(0..5, false)
                                 .count(),
                             1,
                             "expected a diagnostic for buffer {:?}",
@@ -4244,19 +4244,19 @@ async fn test_collaborating_with_lsp_progress_updates_and_diagnostics_ordering(
     assert!(disk_based_diagnostics_finished.load(SeqCst));
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_reloading_buffer_manually(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -4291,8 +4291,8 @@ async fn test_reloading_buffer_manually(
         .fs()
         .save(
             "/a/a.rs".as_ref(),
-            &Rope::from("let seven = 7;"),
-            LineEnding::Unix,
+            &Rope.from("let seven = 7;"),
+            LineEnding.Unix,
         )
         .await
         .unwrap();
@@ -4304,7 +4304,7 @@ async fn test_reloading_buffer_manually(
 
     project_b
         .update(cx_b, |project, cx| {
-            project.reload_buffers(HashSet::from_iter([buffer_b.clone()]), true, cx)
+            project.reload_buffers(HashSet.from_iter([buffer_b.clone()]), true, cx)
         })
         .await
         .unwrap();
@@ -4337,30 +4337,30 @@ async fn test_reloading_buffer_manually(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_formatting_buffer(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
     executor.allow_parking();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a.language_registry().add(rust_lang());
     let mut fake_language_servers = client_a
         .language_registry()
-        .register_fake_lsp_adapter("Rust", FakeLspAdapter::default());
+        .register_fake_lsp_adapter("Rust", FakeLspAdapter.default());
 
     // Here we insert a fake tree with a directory that exists on disk. This is needed
     // because later we'll invoke a command, which requires passing a working directory
     // that points to a valid location on disk.
-    let directory = env::current_dir().unwrap();
+    let directory = env.current_dir().unwrap();
     client_a
         .fs()
         .insert_tree(&directory, json!({ "a.rs": "let one = \"two\"" }))
@@ -4376,14 +4376,14 @@ async fn test_formatting_buffer(
     let buffer_b = cx_b.executor().spawn(open_buffer).await.unwrap();
 
     let fake_language_server = fake_language_servers.next().await.unwrap();
-    fake_language_server.handle_request::<lsp::request::Formatting, _, _>(|_, _| async move {
+    fake_language_server.handle_request.<lsp.request.Formatting, _, _>(|_, _| async move {
         Ok(Some(vec![
-            lsp::TextEdit {
-                range: lsp::Range::new(lsp::Position::new(0, 4), lsp::Position::new(0, 4)),
+            lsp.TextEdit {
+                range: lsp.Range.new(lsp.Position.new(0, 4), lsp.Position.new(0, 4)),
                 new_text: "h".to_string(),
             },
-            lsp::TextEdit {
-                range: lsp::Range::new(lsp::Position::new(0, 7), lsp::Position::new(0, 7)),
+            lsp.TextEdit {
+                range: lsp.Range.new(lsp.Position.new(0, 7), lsp.Position.new(0, 7)),
                 new_text: "y".to_string(),
             },
         ]))
@@ -4392,9 +4392,9 @@ async fn test_formatting_buffer(
     project_b
         .update(cx_b, |project, cx| {
             project.format(
-                HashSet::from_iter([buffer_b.clone()]),
+                HashSet.from_iter([buffer_b.clone()]),
                 true,
-                FormatTrigger::Save,
+                FormatTrigger.Save,
                 cx,
             )
         })
@@ -4410,10 +4410,10 @@ async fn test_formatting_buffer(
     // Ensure buffer can be formatted using an external command. Notice how the
     // host's configuration is honored as opposed to using the guest's settings.
     cx_a.update(|cx| {
-        SettingsStore::update_global(cx, |store, cx| {
-            store.update_user_settings::<AllLanguageSettings>(cx, |file| {
-                file.defaults.formatter = Some(SelectedFormatter::List(FormatterList(
-                    vec![Formatter::External {
+        SettingsStore.update_global(cx, |store, cx| {
+            store.update_user_settings.<AllLanguageSettings>(cx, |file| {
+                file.defaults.formatter = Some(SelectedFormatter.List(FormatterList(
+                    vec![Formatter.External {
                         command: "awk".into(),
                         arguments: vec!["{sub(/two/,\"{buffer_path}\")}1".to_string()].into(),
                     }]
@@ -4425,9 +4425,9 @@ async fn test_formatting_buffer(
     project_b
         .update(cx_b, |project, cx| {
             project.format(
-                HashSet::from_iter([buffer_b.clone()]),
+                HashSet.from_iter([buffer_b.clone()]),
                 true,
-                FormatTrigger::Save,
+                FormatTrigger.Save,
                 cx,
             )
         })
@@ -4439,52 +4439,52 @@ async fn test_formatting_buffer(
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_prettier_formatting_buffer(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     let test_plugin = "test_plugin";
 
-    client_a.language_registry().add(Arc::new(Language::new(
+    client_a.language_registry().add(Arc.new(Language.new(
         LanguageConfig {
             name: "TypeScript".into(),
             matcher: LanguageMatcher {
                 path_suffixes: vec!["ts".to_string()],
-                ..Default::default()
+                ..Default.default()
             },
-            ..Default::default()
+            ..Default.default()
         },
-        Some(tree_sitter_rust::language()),
+        Some(tree_sitter_rust.language()),
     )));
     let mut fake_language_servers = client_a.language_registry().register_fake_lsp_adapter(
         "TypeScript",
         FakeLspAdapter {
             prettier_plugins: vec![test_plugin],
-            ..Default::default()
+            ..Default.default()
         },
     );
 
     // Here we insert a fake tree with a directory that exists on disk. This is needed
     // because later we'll invoke a command, which requires passing a working directory
     // that points to a valid location on disk.
-    let directory = env::current_dir().unwrap();
+    let directory = env.current_dir().unwrap();
     let buffer_text = "let one = \"two\"";
     client_a
         .fs()
         .insert_tree(&directory, json!({ "a.ts": buffer_text }))
         .await;
     let (project_a, worktree_id) = client_a.build_local_project(&directory, cx_a).await;
-    let prettier_format_suffix = project::TEST_PRETTIER_FORMAT_SUFFIX;
+    let prettier_format_suffix = project.TEST_PRETTIER_FORMAT_SUFFIX;
     let open_buffer = project_a.update(cx_a, |p, cx| p.open_buffer((worktree_id, "a.ts"), cx));
     let buffer_a = cx_a.executor().spawn(open_buffer).await.unwrap();
 
@@ -4497,31 +4497,31 @@ async fn test_prettier_formatting_buffer(
     let buffer_b = cx_b.executor().spawn(open_buffer).await.unwrap();
 
     cx_a.update(|cx| {
-        SettingsStore::update_global(cx, |store, cx| {
-            store.update_user_settings::<AllLanguageSettings>(cx, |file| {
-                file.defaults.formatter = Some(SelectedFormatter::Auto);
+        SettingsStore.update_global(cx, |store, cx| {
+            store.update_user_settings.<AllLanguageSettings>(cx, |file| {
+                file.defaults.formatter = Some(SelectedFormatter.Auto);
                 file.defaults.prettier = Some(PrettierSettings {
                     allowed: true,
-                    ..PrettierSettings::default()
+                    ..PrettierSettings.default()
                 });
             });
         });
     });
     cx_b.update(|cx| {
-        SettingsStore::update_global(cx, |store, cx| {
-            store.update_user_settings::<AllLanguageSettings>(cx, |file| {
-                file.defaults.formatter = Some(SelectedFormatter::List(FormatterList(
-                    vec![Formatter::LanguageServer { name: None }].into(),
+        SettingsStore.update_global(cx, |store, cx| {
+            store.update_user_settings.<AllLanguageSettings>(cx, |file| {
+                file.defaults.formatter = Some(SelectedFormatter.List(FormatterList(
+                    vec![Formatter.LanguageServer { name: None }].into(),
                 )));
                 file.defaults.prettier = Some(PrettierSettings {
                     allowed: true,
-                    ..PrettierSettings::default()
+                    ..PrettierSettings.default()
                 });
             });
         });
     });
     let fake_language_server = fake_language_servers.next().await.unwrap();
-    fake_language_server.handle_request::<lsp::request::Formatting, _, _>(|_, _| async move {
+    fake_language_server.handle_request.<lsp.request.Formatting, _, _>(|_, _| async move {
         panic!(
             "Unexpected: prettier should be preferred since it's enabled and language supports it"
         )
@@ -4530,9 +4530,9 @@ async fn test_prettier_formatting_buffer(
     project_b
         .update(cx_b, |project, cx| {
             project.format(
-                HashSet::from_iter([buffer_b.clone()]),
+                HashSet.from_iter([buffer_b.clone()]),
                 true,
-                FormatTrigger::Save,
+                FormatTrigger.Save,
                 cx,
             )
         })
@@ -4549,9 +4549,9 @@ async fn test_prettier_formatting_buffer(
     project_a
         .update(cx_a, |project, cx| {
             project.format(
-                HashSet::from_iter([buffer_a.clone()]),
+                HashSet.from_iter([buffer_a.clone()]),
                 true,
-                FormatTrigger::Manual,
+                FormatTrigger.Manual,
                 cx,
             )
         })
@@ -4566,23 +4566,23 @@ async fn test_prettier_formatting_buffer(
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_definition(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     let mut fake_language_servers = client_a
         .language_registry()
-        .register_fake_lsp_adapter("Rust", Default::default());
+        .register_fake_lsp_adapter("Rust", Default.default());
     client_a.language_registry().add(rust_lang());
 
     client_a
@@ -4591,10 +4591,10 @@ async fn test_definition(
             "/root",
             json!({
                 "dir-1": {
-                    "a.rs": "const ONE: usize = b::TWO + b::THREE;",
+                    "a.rs": "const ONE: usize = b.TWO + b.THREE;",
                 },
                 "dir-2": {
-                    "b.rs": "const TWO: c::T2 = 2;\nconst THREE: usize = 3;",
+                    "b.rs": "const TWO: c.T2 = 2;\nconst THREE: usize = 3;",
                     "c.rs": "type T2 = usize;",
                 }
             }),
@@ -4613,11 +4613,11 @@ async fn test_definition(
 
     // Request the definition of a symbol as the guest.
     let fake_language_server = fake_language_servers.next().await.unwrap();
-    fake_language_server.handle_request::<lsp::request::GotoDefinition, _, _>(|_, _| async move {
-        Ok(Some(lsp::GotoDefinitionResponse::Scalar(
-            lsp::Location::new(
-                lsp::Url::from_file_path("/root/dir-2/b.rs").unwrap(),
-                lsp::Range::new(lsp::Position::new(0, 6), lsp::Position::new(0, 9)),
+    fake_language_server.handle_request.<lsp.request.GotoDefinition, _, _>(|_, _| async move {
+        Ok(Some(lsp.GotoDefinitionResponse.Scalar(
+            lsp.Location.new(
+                lsp.Url.from_file_path("/root/dir-2/b.rs").unwrap(),
+                lsp.Range.new(lsp.Position.new(0, 6), lsp.Position.new(0, 9)),
             ),
         )))
     });
@@ -4632,21 +4632,21 @@ async fn test_definition(
         let target_buffer = definitions_1[0].target.buffer.read(cx);
         assert_eq!(
             target_buffer.text(),
-            "const TWO: c::T2 = 2;\nconst THREE: usize = 3;"
+            "const TWO: c.T2 = 2;\nconst THREE: usize = 3;"
         );
         assert_eq!(
             definitions_1[0].target.range.to_point(target_buffer),
-            Point::new(0, 6)..Point::new(0, 9)
+            Point.new(0, 6)..Point.new(0, 9)
         );
     });
 
     // Try getting more definitions for the same buffer, ensuring the buffer gets reused from
     // the previous call to `definition`.
-    fake_language_server.handle_request::<lsp::request::GotoDefinition, _, _>(|_, _| async move {
-        Ok(Some(lsp::GotoDefinitionResponse::Scalar(
-            lsp::Location::new(
-                lsp::Url::from_file_path("/root/dir-2/b.rs").unwrap(),
-                lsp::Range::new(lsp::Position::new(1, 6), lsp::Position::new(1, 11)),
+    fake_language_server.handle_request.<lsp.request.GotoDefinition, _, _>(|_, _| async move {
+        Ok(Some(lsp.GotoDefinitionResponse.Scalar(
+            lsp.Location.new(
+                lsp.Url.from_file_path("/root/dir-2/b.rs").unwrap(),
+                lsp.Range.new(lsp.Position.new(1, 6), lsp.Position.new(1, 11)),
             ),
         )))
     });
@@ -4661,11 +4661,11 @@ async fn test_definition(
         let target_buffer = definitions_2[0].target.buffer.read(cx);
         assert_eq!(
             target_buffer.text(),
-            "const TWO: c::T2 = 2;\nconst THREE: usize = 3;"
+            "const TWO: c.T2 = 2;\nconst THREE: usize = 3;"
         );
         assert_eq!(
             definitions_2[0].target.range.to_point(target_buffer),
-            Point::new(1, 6)..Point::new(1, 11)
+            Point.new(1, 6)..Point.new(1, 11)
         );
     });
     assert_eq!(
@@ -4673,16 +4673,16 @@ async fn test_definition(
         definitions_2[0].target.buffer
     );
 
-    fake_language_server.handle_request::<lsp::request::GotoTypeDefinition, _, _>(
+    fake_language_server.handle_request.<lsp.request.GotoTypeDefinition, _, _>(
         |req, _| async move {
             assert_eq!(
                 req.text_document_position_params.position,
-                lsp::Position::new(0, 7)
+                lsp.Position.new(0, 7)
             );
-            Ok(Some(lsp::GotoDefinitionResponse::Scalar(
-                lsp::Location::new(
-                    lsp::Url::from_file_path("/root/dir-2/c.rs").unwrap(),
-                    lsp::Range::new(lsp::Position::new(0, 5), lsp::Position::new(0, 7)),
+            Ok(Some(lsp.GotoDefinitionResponse.Scalar(
+                lsp.Location.new(
+                    lsp.Url.from_file_path("/root/dir-2/c.rs").unwrap(),
+                    lsp.Range.new(lsp.Position.new(0, 5), lsp.Position.new(0, 7)),
                 ),
             )))
         },
@@ -4698,35 +4698,35 @@ async fn test_definition(
         assert_eq!(target_buffer.text(), "type T2 = usize;");
         assert_eq!(
             type_definitions[0].target.range.to_point(target_buffer),
-            Point::new(0, 5)..Point::new(0, 7)
+            Point.new(0, 5)..Point.new(0, 7)
         );
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_references(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a.language_registry().add(rust_lang());
     let mut fake_language_servers = client_a.language_registry().register_fake_lsp_adapter(
         "Rust",
         FakeLspAdapter {
             name: "my-fake-lsp-adapter",
-            capabilities: lsp::ServerCapabilities {
-                references_provider: Some(lsp::OneOf::Left(true)),
-                ..Default::default()
+            capabilities: lsp.ServerCapabilities {
+                references_provider: Some(lsp.OneOf.Left(true)),
+                ..Default.default()
             },
-            ..Default::default()
+            ..Default.default()
         },
     );
 
@@ -4737,10 +4737,10 @@ async fn test_references(
             json!({
                 "dir-1": {
                     "one.rs": "const ONE: usize = 1;",
-                    "two.rs": "const TWO: usize = one::ONE + one::ONE;",
+                    "two.rs": "const TWO: usize = one.ONE + one.ONE;",
                 },
                 "dir-2": {
-                    "three.rs": "const THREE: usize = two::TWO + one::ONE;",
+                    "three.rs": "const THREE: usize = two.TWO + one.ONE;",
                 }
             }),
         )
@@ -4758,9 +4758,9 @@ async fn test_references(
 
     // Request references to a symbol as the guest.
     let fake_language_server = fake_language_servers.next().await.unwrap();
-    let (lsp_response_tx, rx) = mpsc::unbounded::<Result<Option<Vec<lsp::Location>>>>();
-    fake_language_server.handle_request::<lsp::request::References, _, _>({
-        let rx = Arc::new(Mutex::new(Some(rx)));
+    let (lsp_response_tx, rx) = mpsc.unbounded.<Result<Option<Vec<lsp.Location>>>>();
+    fake_language_server.handle_request.<lsp.request.References, _, _>({
+        let rx = Arc.new(Mutex.new(Some(rx)));
         move |params, _| {
             assert_eq!(
                 params.text_document_position.text_document.uri.as_str(),
@@ -4792,17 +4792,17 @@ async fn test_references(
     // Cause the language server to respond.
     lsp_response_tx
         .unbounded_send(Ok(Some(vec![
-            lsp::Location {
-                uri: lsp::Url::from_file_path("/root/dir-1/two.rs").unwrap(),
-                range: lsp::Range::new(lsp::Position::new(0, 24), lsp::Position::new(0, 27)),
+            lsp.Location {
+                uri: lsp.Url.from_file_path("/root/dir-1/two.rs").unwrap(),
+                range: lsp.Range.new(lsp.Position.new(0, 24), lsp.Position.new(0, 27)),
             },
-            lsp::Location {
-                uri: lsp::Url::from_file_path("/root/dir-1/two.rs").unwrap(),
-                range: lsp::Range::new(lsp::Position::new(0, 35), lsp::Position::new(0, 38)),
+            lsp.Location {
+                uri: lsp.Url.from_file_path("/root/dir-1/two.rs").unwrap(),
+                range: lsp.Range.new(lsp.Position.new(0, 35), lsp.Position.new(0, 38)),
             },
-            lsp::Location {
-                uri: lsp::Url::from_file_path("/root/dir-2/three.rs").unwrap(),
-                range: lsp::Range::new(lsp::Position::new(0, 37), lsp::Position::new(0, 40)),
+            lsp.Location {
+                uri: lsp.Url.from_file_path("/root/dir-2/three.rs").unwrap(),
+                range: lsp.Range.new(lsp.Position.new(0, 37), lsp.Position.new(0, 40)),
             },
         ])))
         .unwrap();
@@ -4821,12 +4821,12 @@ async fn test_references(
         let three_buffer = references[2].buffer.read(cx);
         assert_eq!(
             two_buffer.file().unwrap().path().as_ref(),
-            Path::new("two.rs")
+            Path.new("two.rs")
         );
         assert_eq!(references[1].buffer, references[0].buffer);
         assert_eq!(
             three_buffer.file().unwrap().full_path(cx),
-            Path::new("/root/dir-2/three.rs")
+            Path.new("/root/dir-2/three.rs")
         );
 
         assert_eq!(references[0].range.to_offset(two_buffer), 24..27);
@@ -4861,19 +4861,19 @@ async fn test_references(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_project_search(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -4910,16 +4910,16 @@ async fn test_project_search(
     let project_b = client_b.build_dev_server_project(project_id, cx_b).await;
 
     // Perform a search as the guest.
-    let mut results = HashMap::default();
+    let mut results = HashMap.default();
     let mut search_rx = project_b.update(cx_b, |project, cx| {
         project.search(
-            SearchQuery::text(
+            SearchQuery.text(
                 "world",
                 false,
                 false,
                 false,
-                Default::default(),
-                Default::default(),
+                Default.default(),
+                Default.default(),
             )
             .unwrap(),
             cx,
@@ -4927,10 +4927,10 @@ async fn test_project_search(
     });
     while let Some(result) = search_rx.next().await {
         match result {
-            SearchResult::Buffer { buffer, ranges } => {
+            SearchResult.Buffer { buffer, ranges } => {
                 results.entry(buffer).or_insert(ranges);
             }
-            SearchResult::LimitReached => {
+            SearchResult.LimitReached => {
                 panic!("Unexpectedly reached search limit in tests. If you do want to assert limit-reached, change this panic call.")
             }
         };
@@ -4944,37 +4944,37 @@ async fn test_project_search(
                 let offset_ranges = ranges
                     .into_iter()
                     .map(|range| range.to_offset(buffer))
-                    .collect::<Vec<_>>();
+                    .collect.<Vec<_>>();
                 (path, offset_ranges)
             })
         })
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     ranges_by_path.sort_by_key(|(path, _)| path.clone());
 
     assert_eq!(
         ranges_by_path,
         &[
-            (PathBuf::from("dir-1/a"), vec![6..11]),
-            (PathBuf::from("dir-1/c"), vec![2..7]),
-            (PathBuf::from("dir-1/d"), vec![0..5, 24..29]),
-            (PathBuf::from("dir-2/e"), vec![7..12]),
+            (PathBuf.from("dir-1/a"), vec![6..11]),
+            (PathBuf.from("dir-1/c"), vec![2..7]),
+            (PathBuf.from("dir-1/d"), vec![0..5, 24..29]),
+            (PathBuf.from("dir-2/e"), vec![7..12]),
         ]
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_document_highlights(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
@@ -4988,7 +4988,7 @@ async fn test_document_highlights(
 
     let mut fake_language_servers = client_a
         .language_registry()
-        .register_fake_lsp_adapter("Rust", Default::default());
+        .register_fake_lsp_adapter("Rust", Default.default());
     client_a.language_registry().add(rust_lang());
 
     let (project_a, worktree_id) = client_a.build_local_project("/root-1", cx_a).await;
@@ -5004,7 +5004,7 @@ async fn test_document_highlights(
 
     // Request document highlights as the guest.
     let fake_language_server = fake_language_servers.next().await.unwrap();
-    fake_language_server.handle_request::<lsp::request::DocumentHighlightRequest, _, _>(
+    fake_language_server.handle_request.<lsp.request.DocumentHighlightRequest, _, _>(
         |params, _| async move {
             assert_eq!(
                 params
@@ -5016,20 +5016,20 @@ async fn test_document_highlights(
             );
             assert_eq!(
                 params.text_document_position_params.position,
-                lsp::Position::new(0, 34)
+                lsp.Position.new(0, 34)
             );
             Ok(Some(vec![
-                lsp::DocumentHighlight {
-                    kind: Some(lsp::DocumentHighlightKind::WRITE),
-                    range: lsp::Range::new(lsp::Position::new(0, 10), lsp::Position::new(0, 16)),
+                lsp.DocumentHighlight {
+                    kind: Some(lsp.DocumentHighlightKind.WRITE),
+                    range: lsp.Range.new(lsp.Position.new(0, 10), lsp.Position.new(0, 16)),
                 },
-                lsp::DocumentHighlight {
-                    kind: Some(lsp::DocumentHighlightKind::READ),
-                    range: lsp::Range::new(lsp::Position::new(0, 32), lsp::Position::new(0, 38)),
+                lsp.DocumentHighlight {
+                    kind: Some(lsp.DocumentHighlightKind.READ),
+                    range: lsp.Range.new(lsp.Position.new(0, 32), lsp.Position.new(0, 38)),
                 },
-                lsp::DocumentHighlight {
-                    kind: Some(lsp::DocumentHighlightKind::READ),
-                    range: lsp::Range::new(lsp::Position::new(0, 41), lsp::Position::new(0, 47)),
+                lsp.DocumentHighlight {
+                    kind: Some(lsp.DocumentHighlightKind.READ),
+                    range: lsp.Range.new(lsp.Position.new(0, 41), lsp.Position.new(0, 47)),
                 },
             ]))
         },
@@ -5046,38 +5046,38 @@ async fn test_document_highlights(
         let highlights = highlights
             .into_iter()
             .map(|highlight| (highlight.kind, highlight.range.to_offset(&snapshot)))
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         assert_eq!(
             highlights,
             &[
-                (lsp::DocumentHighlightKind::WRITE, 10..16),
-                (lsp::DocumentHighlightKind::READ, 32..38),
-                (lsp::DocumentHighlightKind::READ, 41..47)
+                (lsp.DocumentHighlightKind.WRITE, 10..16),
+                (lsp.DocumentHighlightKind.READ, 32..38),
+                (lsp.DocumentHighlightKind.READ, 41..47)
             ]
         )
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_lsp_hover(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a
         .fs()
         .insert_tree(
             "/root-1",
             json!({
-                "main.rs": "use std::collections::HashMap;",
+                "main.rs": "use std.collections.HashMap;",
             }),
         )
         .await;
@@ -5088,22 +5088,22 @@ async fn test_lsp_hover(
         "Rust",
         FakeLspAdapter {
             name: "rust-analyzer",
-            capabilities: lsp::ServerCapabilities {
-                hover_provider: Some(lsp::HoverProviderCapability::Simple(true)),
-                ..lsp::ServerCapabilities::default()
+            capabilities: lsp.ServerCapabilities {
+                hover_provider: Some(lsp.HoverProviderCapability.Simple(true)),
+                ..lsp.ServerCapabilities.default()
             },
-            ..FakeLspAdapter::default()
+            ..FakeLspAdapter.default()
         },
     );
     let _other_server = client_a.language_registry().register_fake_lsp_adapter(
         "Rust",
         FakeLspAdapter {
             name: "CrabLang-ls",
-            capabilities: lsp::ServerCapabilities {
-                hover_provider: Some(lsp::HoverProviderCapability::Simple(true)),
-                ..lsp::ServerCapabilities::default()
+            capabilities: lsp.ServerCapabilities {
+                hover_provider: Some(lsp.HoverProviderCapability.Simple(true)),
+                ..lsp.ServerCapabilities.default()
             },
-            ..FakeLspAdapter::default()
+            ..FakeLspAdapter.default()
         },
     );
 
@@ -5118,7 +5118,7 @@ async fn test_lsp_hover(
     let open_buffer = project_b.update(cx_b, |p, cx| p.open_buffer((worktree_id, "main.rs"), cx));
     let buffer_b = cx_b.executor().spawn(open_buffer).await.unwrap();
 
-    let mut servers_with_hover_requests = HashMap::default();
+    let mut servers_with_hover_requests = HashMap.default();
     for i in 0..language_server_names.len() {
         let new_server = fake_language_servers.next().await.unwrap_or_else(|| {
             panic!(
@@ -5136,7 +5136,7 @@ async fn test_lsp_hover(
             "CrabLang-ls" => {
                 servers_with_hover_requests.insert(
                     new_server_name.clone(),
-                    new_server.handle_request::<lsp::request::HoverRequest, _, _>(
+                    new_server.handle_request.<lsp.request.HoverRequest, _, _>(
                         move |params, _| {
                             assert_eq!(
                                 params
@@ -5148,9 +5148,9 @@ async fn test_lsp_hover(
                             );
                             let name = new_server_name.clone();
                             async move {
-                                Ok(Some(lsp::Hover {
-                                    contents: lsp::HoverContents::Scalar(
-                                        lsp::MarkedString::String(format!("{name} hover")),
+                                Ok(Some(lsp.Hover {
+                                    contents: lsp.HoverContents.Scalar(
+                                        lsp.MarkedString.String(format!("{name} hover")),
                                     ),
                                     range: None,
                                 }))
@@ -5162,7 +5162,7 @@ async fn test_lsp_hover(
             "rust-analyzer" => {
                 servers_with_hover_requests.insert(
                     new_server_name.clone(),
-                    new_server.handle_request::<lsp::request::HoverRequest, _, _>(
+                    new_server.handle_request.<lsp.request.HoverRequest, _, _>(
                         |params, _| async move {
                             assert_eq!(
                                 params
@@ -5174,19 +5174,19 @@ async fn test_lsp_hover(
                             );
                             assert_eq!(
                                 params.text_document_position_params.position,
-                                lsp::Position::new(0, 22)
+                                lsp.Position.new(0, 22)
                             );
-                            Ok(Some(lsp::Hover {
-                                contents: lsp::HoverContents::Array(vec![
-                                    lsp::MarkedString::String("Test hover content.".to_string()),
-                                    lsp::MarkedString::LanguageString(lsp::LanguageString {
+                            Ok(Some(lsp.Hover {
+                                contents: lsp.HoverContents.Array(vec![
+                                    lsp.MarkedString.String("Test hover content.".to_string()),
+                                    lsp.MarkedString.LanguageString(lsp.LanguageString {
                                         language: "Rust".to_string(),
                                         value: "let foo = 42;".to_string(),
                                     }),
                                 ]),
-                                range: Some(lsp::Range::new(
-                                    lsp::Position::new(0, 22),
-                                    lsp::Position::new(0, 29),
+                                range: Some(lsp.Range.new(
+                                    lsp.Position.new(0, 22),
+                                    lsp.Position.new(0, 29),
                                 )),
                             }))
                         },
@@ -5207,7 +5207,7 @@ async fn test_lsp_hover(
         "Expected two hovers from both language servers, but got: {hovers:?}"
     );
 
-    let _: Vec<()> = futures::future::join_all(servers_with_hover_requests.into_values().map(
+    let _: Vec<()> = futures.future.join_all(servers_with_hover_requests.into_values().map(
         |mut hover_request| async move {
             hover_request
                 .next()
@@ -5221,22 +5221,22 @@ async fn test_lsp_hover(
     let first_hover = hovers.first().cloned().unwrap();
     assert_eq!(
         first_hover.contents,
-        vec![project::HoverBlock {
+        vec![project.HoverBlock {
             text: "CrabLang-ls hover".to_string(),
-            kind: HoverBlockKind::Markdown,
+            kind: HoverBlockKind.Markdown,
         },]
     );
     let second_hover = hovers.last().cloned().unwrap();
     assert_eq!(
         second_hover.contents,
         vec![
-            project::HoverBlock {
+            project.HoverBlock {
                 text: "Test hover content.".to_string(),
-                kind: HoverBlockKind::Markdown,
+                kind: HoverBlockKind.Markdown,
             },
-            project::HoverBlock {
+            project.HoverBlock {
                 text: "let foo = 42;".to_string(),
-                kind: HoverBlockKind::Code {
+                kind: HoverBlockKind.Code {
                     language: "Rust".to_string()
                 },
             }
@@ -5248,24 +5248,24 @@ async fn test_lsp_hover(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_project_symbols(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a.language_registry().add(rust_lang());
     let mut fake_language_servers = client_a
         .language_registry()
-        .register_fake_lsp_adapter("Rust", Default::default());
+        .register_fake_lsp_adapter("Rust", Default.default());
 
     client_a
         .fs()
@@ -5297,16 +5297,16 @@ async fn test_project_symbols(
     let _buffer = cx_b.executor().spawn(open_buffer_task).await.unwrap();
 
     let fake_language_server = fake_language_servers.next().await.unwrap();
-    fake_language_server.handle_request::<lsp::WorkspaceSymbolRequest, _, _>(|_, _| async move {
-        Ok(Some(lsp::WorkspaceSymbolResponse::Flat(vec![
+    fake_language_server.handle_request.<lsp.WorkspaceSymbolRequest, _, _>(|_, _| async move {
+        Ok(Some(lsp.WorkspaceSymbolResponse.Flat(vec![
             #[allow(deprecated)]
-            lsp::SymbolInformation {
+            lsp.SymbolInformation {
                 name: "TWO".into(),
-                location: lsp::Location {
-                    uri: lsp::Url::from_file_path("/code/crate-2/two.rs").unwrap(),
-                    range: lsp::Range::new(lsp::Position::new(0, 6), lsp::Position::new(0, 9)),
+                location: lsp.Location {
+                    uri: lsp.Url.from_file_path("/code/crate-2/two.rs").unwrap(),
+                    range: lsp.Range.new(lsp.Position.new(0, 6), lsp.Position.new(0, 9)),
                 },
-                kind: lsp::SymbolKind::CONSTANT,
+                kind: lsp.SymbolKind.CONSTANT,
                 tags: None,
                 container_name: None,
                 deprecated: None,
@@ -5333,13 +5333,13 @@ async fn test_project_symbols(
     buffer_b_2.read_with(cx_b, |buffer, cx| {
         assert_eq!(
             buffer.file().unwrap().full_path(cx),
-            Path::new("/code/crate-2/two.rs")
+            Path.new("/code/crate-2/two.rs")
         );
     });
 
     // Attempt to craft a symbol and violate host's privacy by opening an arbitrary file.
     let mut fake_symbol = symbols[0].clone();
-    fake_symbol.path.path = Path::new("/code/secrets").into();
+    fake_symbol.path.path = Path.new("/code/secrets").into();
     let error = project_b
         .update(cx_b, |project, cx| {
             project.open_buffer_for_symbol(&fake_symbol, cx)
@@ -5349,32 +5349,32 @@ async fn test_project_symbols(
     assert!(error.to_string().contains("invalid symbol signature"));
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_open_buffer_while_getting_definition_pointing_to_it(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     mut rng: StdRng,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     client_a.language_registry().add(rust_lang());
     let mut fake_language_servers = client_a
         .language_registry()
-        .register_fake_lsp_adapter("Rust", Default::default());
+        .register_fake_lsp_adapter("Rust", Default.default());
 
     client_a
         .fs()
         .insert_tree(
             "/root",
             json!({
-                "a.rs": "const ONE: usize = b::TWO;",
+                "a.rs": "const ONE: usize = b.TWO;",
                 "b.rs": "const TWO: usize = 2",
             }),
         )
@@ -5390,11 +5390,11 @@ async fn test_open_buffer_while_getting_definition_pointing_to_it(
     let buffer_b1 = cx_b.executor().spawn(open_buffer_task).await.unwrap();
 
     let fake_language_server = fake_language_servers.next().await.unwrap();
-    fake_language_server.handle_request::<lsp::request::GotoDefinition, _, _>(|_, _| async move {
-        Ok(Some(lsp::GotoDefinitionResponse::Scalar(
-            lsp::Location::new(
-                lsp::Url::from_file_path("/root/b.rs").unwrap(),
-                lsp::Range::new(lsp::Position::new(0, 6), lsp::Position::new(0, 9)),
+    fake_language_server.handle_request.<lsp.request.GotoDefinition, _, _>(|_, _| async move {
+        Ok(Some(lsp.GotoDefinitionResponse.Scalar(
+            lsp.Location.new(
+                lsp.Url.from_file_path("/root/b.rs").unwrap(),
+                lsp.Range.new(lsp.Position.new(0, 6), lsp.Position.new(0, 9)),
             ),
         )))
     });
@@ -5415,7 +5415,7 @@ async fn test_open_buffer_while_getting_definition_pointing_to_it(
     assert_eq!(definitions[0].target.buffer, buffer_b2);
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_contacts(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
@@ -5423,7 +5423,7 @@ async fn test_contacts(
     cx_c: &mut TestAppContext,
     cx_d: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -5431,10 +5431,10 @@ async fn test_contacts(
     server
         .make_contacts(&mut [(&client_a, cx_a), (&client_b, cx_b), (&client_c, cx_c)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
-    let active_call_c = cx_c.read(ActiveCall::global);
-    let _active_call_d = cx_d.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
+    let active_call_c = cx_c.read(ActiveCall.global);
+    let _active_call_d = cx_d.read(ActiveCall.global);
 
     executor.run_until_parked();
     assert_eq!(
@@ -5832,7 +5832,7 @@ async fn test_contacts(
     }
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_contact_requests(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
@@ -5843,7 +5843,7 @@ async fn test_contact_requests(
     cx_c2: &mut TestAppContext,
 ) {
     // Connect to a server as 3 clients.
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_a2 = server.create_client(cx_a2, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
@@ -6014,13 +6014,13 @@ async fn test_contact_requests(
     }
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_join_call_after_screen_was_shared(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
 
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
@@ -6028,8 +6028,8 @@ async fn test_join_call_after_screen_was_shared(
         .make_contacts(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     // Call users B and C from client A.
     active_call_a
@@ -6044,7 +6044,7 @@ async fn test_join_call_after_screen_was_shared(
     assert_eq!(
         room_participants(&room_a, cx_a),
         RoomParticipants {
-            remote: Default::default(),
+            remote: Default.default(),
             pending: vec!["user_b".to_string()]
         }
     );
@@ -6056,7 +6056,7 @@ async fn test_join_call_after_screen_was_shared(
     assert_eq!(call_b.calling_user.github_login, "user_a");
 
     // User A shares their screen
-    let display = MacOSDisplay::new();
+    let display = MacOSDisplay.new();
     active_call_a
         .update(cx_a, |call, cx| {
             call.room().unwrap().update(cx, |room, cx| {
@@ -6110,9 +6110,9 @@ async fn test_join_call_after_screen_was_shared(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_right_click_menu_behind_collab_panel(cx: &mut TestAppContext) {
-    let mut server = TestServer::start(cx.executor().clone()).await;
+    let mut server = TestServer.start(cx.executor().clone()).await;
     let client_a = server.create_client(cx, "user_a").await;
     let (_workspace_a, cx) = client_a.build_test_workspace(cx).await;
 
@@ -6130,9 +6130,9 @@ async fn test_right_click_menu_behind_collab_panel(cx: &mut TestAppContext) {
     );
 
     cx.simulate_event(MouseDownEvent {
-        button: MouseButton::Right,
+        button: MouseButton.Right,
         position: new_tab_button_bounds.center(),
-        modifiers: Modifiers::default(),
+        modifiers: Modifiers.default(),
         click_count: 1,
         first_mouse: false,
     });
@@ -6142,41 +6142,41 @@ async fn test_right_click_menu_behind_collab_panel(cx: &mut TestAppContext) {
 
     let tab_bounds = cx.debug_bounds("TAB-1").unwrap();
     cx.simulate_event(MouseDownEvent {
-        button: MouseButton::Right,
+        button: MouseButton.Right,
         position: tab_bounds.center(),
-        modifiers: Modifiers::default(),
+        modifiers: Modifiers.default(),
         click_count: 1,
         first_mouse: false,
     });
     assert!(cx.debug_bounds("MENU_ITEM-Close").is_some());
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_pane_split_left(cx: &mut TestAppContext) {
-    let (_, client) = TestServer::start1(cx).await;
+    let (_, client) = TestServer.start1(cx).await;
     let (workspace, cx) = client.build_test_workspace(cx).await;
 
     cx.simulate_keystrokes("cmd-n");
     workspace.update(cx, |workspace, cx| {
-        assert!(workspace.items(cx).collect::<Vec<_>>().len() == 1);
+        assert!(workspace.items(cx).collect.<Vec<_>>().len() == 1);
     });
     cx.simulate_keystrokes("cmd-k left");
     workspace.update(cx, |workspace, cx| {
-        assert!(workspace.items(cx).collect::<Vec<_>>().len() == 2);
+        assert!(workspace.items(cx).collect.<Vec<_>>().len() == 2);
     });
     cx.simulate_keystrokes("cmd-k");
     // sleep for longer than the timeout in keyboard shortcut handling
     // to verify that it doesn't fire in this case.
-    cx.executor().advance_clock(Duration::from_secs(2));
+    cx.executor().advance_clock(Duration.from_secs(2));
     cx.simulate_keystrokes("left");
     workspace.update(cx, |workspace, cx| {
-        assert!(workspace.items(cx).collect::<Vec<_>>().len() == 2);
+        assert!(workspace.items(cx).collect.<Vec<_>>().len() == 2);
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_join_after_restart(cx1: &mut TestAppContext, cx2: &mut TestAppContext) {
-    let (mut server, client) = TestServer::start1(cx1).await;
+    let (mut server, client) = TestServer.start1(cx1).await;
     let channel1 = server.make_public_channel("channel1", &client, cx1).await;
     let channel2 = server.make_public_channel("channel2", &client, cx1).await;
 
@@ -6187,9 +6187,9 @@ async fn test_join_after_restart(cx1: &mut TestAppContext, cx2: &mut TestAppCont
     join_channel(channel2, &client2, cx2).await.unwrap();
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_preview_tabs(cx: &mut TestAppContext) {
-    let (_server, client) = TestServer::start1(cx).await;
+    let (_server, client) = TestServer.start1(cx).await;
     let (workspace, cx) = client.build_test_workspace(cx).await;
     let project = workspace.update(cx, |workspace, _| workspace.project().clone());
 
@@ -6199,15 +6199,15 @@ async fn test_preview_tabs(cx: &mut TestAppContext) {
 
     let path_1 = ProjectPath {
         worktree_id,
-        path: Path::new("1.txt").into(),
+        path: Path.new("1.txt").into(),
     };
     let path_2 = ProjectPath {
         worktree_id,
-        path: Path::new("2.js").into(),
+        path: Path.new("2.js").into(),
     };
     let path_3 = ProjectPath {
         worktree_id,
-        path: Path::new("3.rs").into(),
+        path: Path.new("3.rs").into(),
     };
 
     let pane = workspace.update(cx, |workspace, _| workspace.active_pane().clone());
@@ -6298,7 +6298,7 @@ async fn test_preview_tabs(cx: &mut TestAppContext) {
     pane.update(cx, |pane, cx| {
         pane.close_item_by_id(
             pane.active_item().unwrap().item_id(),
-            workspace::SaveIntent::Skip,
+            workspace.SaveIntent.Skip,
             cx,
         )
     })
@@ -6336,7 +6336,7 @@ async fn test_preview_tabs(cx: &mut TestAppContext) {
     // Close permanent tab
     pane.update(cx, |pane, cx| {
         let id = pane.items().nth(0).unwrap().item_id();
-        pane.close_item_by_id(id, workspace::SaveIntent::Skip, cx)
+        pane.close_item_by_id(id, workspace.SaveIntent.Skip, cx)
     })
     .await
     .unwrap();
@@ -6355,7 +6355,7 @@ async fn test_preview_tabs(cx: &mut TestAppContext) {
 
     // Split pane to the right
     pane.update(cx, |pane, cx| {
-        pane.split(workspace::SplitDirection::Right, cx);
+        pane.split(workspace.SplitDirection.Right, cx);
     });
 
     let right_pane = workspace.update(cx, |workspace, _| workspace.active_pane().clone());
@@ -6416,7 +6416,7 @@ async fn test_preview_tabs(cx: &mut TestAppContext) {
 
     // Focus left pane
     workspace.update(cx, |workspace, cx| {
-        workspace.activate_pane_in_direction(workspace::SplitDirection::Left, cx)
+        workspace.activate_pane_in_direction(workspace.SplitDirection.Left, cx)
     });
 
     // Open item 2 as preview in left pane
@@ -6453,21 +6453,21 @@ async fn test_preview_tabs(cx: &mut TestAppContext) {
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_context_collaboration_with_reconnect(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
-    client_a.fs().insert_tree("/a", Default::default()).await;
+    client_a.fs().insert_tree("/a", Default.default()).await;
     let (project_a, _) = client_a.build_local_project("/a", cx_a).await;
     let project_id = active_call_a
         .update(cx_a, |call, cx| call.share_project(project_a.clone(), cx))
@@ -6486,11 +6486,11 @@ async fn test_context_collaboration_with_reconnect(
     });
 
     let context_store_a = cx_a
-        .update(|cx| ContextStore::new(project_a.clone(), cx))
+        .update(|cx| ContextStore.new(project_a.clone(), cx))
         .await
         .unwrap();
     let context_store_b = cx_b
-        .update(|cx| ContextStore::new(project_b.clone(), cx))
+        .update(|cx| ContextStore.new(project_b.clone(), cx))
         .await
         .unwrap();
 

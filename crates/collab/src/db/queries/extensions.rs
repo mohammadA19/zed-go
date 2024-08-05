@@ -1,10 +1,10 @@
-use std::str::FromStr;
+use std.str.FromStr;
 
-use chrono::Utc;
-use sea_orm::sea_query::IntoCondition;
-use util::ResultExt;
+use chrono.Utc;
+use sea_orm.sea_query.IntoCondition;
+use util.ResultExt;
 
-use super::*;
+use super.*;
 
 impl Database {
     pub async fn get_extensions(
@@ -14,16 +14,16 @@ impl Database {
         limit: usize,
     ) -> Result<Vec<ExtensionMetadata>> {
         self.transaction(|tx| async move {
-            let mut condition = Condition::all()
+            let mut condition = Condition.all()
                 .add(
-                    extension::Column::LatestVersion
+                    extension.Column.LatestVersion
                         .into_expr()
-                        .eq(extension_version::Column::Version.into_expr()),
+                        .eq(extension_version.Column.Version.into_expr()),
                 )
-                .add(extension_version::Column::SchemaVersion.lte(max_schema_version));
+                .add(extension_version.Column.SchemaVersion.lte(max_schema_version));
             if let Some(filter) = filter {
-                let fuzzy_name_filter = Self::fuzzy_like_string(filter);
-                condition = condition.add(Expr::cust_with_expr("name ILIKE $1", fuzzy_name_filter));
+                let fuzzy_name_filter = Self.fuzzy_like_string(filter);
+                condition = condition.add(Expr.cust_with_expr("name ILIKE $1", fuzzy_name_filter));
             }
 
             self.get_extensions_where(condition, Some(limit as u64), &tx)
@@ -38,8 +38,8 @@ impl Database {
         constraints: Option<&ExtensionVersionConstraints>,
     ) -> Result<Vec<ExtensionMetadata>> {
         self.transaction(|tx| async move {
-            let extensions = extension::Entity::find()
-                .filter(extension::Column::ExternalId.is_in(ids.iter().copied()))
+            let extensions = extension.Entity.find()
+                .filter(extension.Column.ExternalId.is_in(ids.iter().copied()))
                 .all(&*tx)
                 .await?;
 
@@ -60,23 +60,23 @@ impl Database {
 
     async fn get_latest_versions_for_extensions(
         &self,
-        extensions: &[extension::Model],
+        extensions: &[extension.Model],
         constraints: Option<&ExtensionVersionConstraints>,
         tx: &DatabaseTransaction,
-    ) -> Result<HashMap<ExtensionId, (extension_version::Model, SemanticVersion)>> {
-        let mut versions = extension_version::Entity::find()
+    ) -> Result<HashMap<ExtensionId, (extension_version.Model, SemanticVersion)>> {
+        let mut versions = extension_version.Entity.find()
             .filter(
-                extension_version::Column::ExtensionId
+                extension_version.Column.ExtensionId
                     .is_in(extensions.iter().map(|extension| extension.id)),
             )
             .stream(tx)
             .await?;
 
         let mut max_versions =
-            HashMap::<ExtensionId, (extension_version::Model, SemanticVersion)>::default();
+            HashMap.<ExtensionId, (extension_version.Model, SemanticVersion)>.default();
         while let Some(version) = versions.next().await {
             let version = version?;
-            let Some(extension_version) = SemanticVersion::from_str(&version.version).log_err()
+            let Some(extension_version) = SemanticVersion.from_str(&version.version).log_err()
             else {
                 continue;
             };
@@ -96,7 +96,7 @@ impl Database {
                 }
 
                 if let Some(wasm_api_version) = version.wasm_api_version.as_ref() {
-                    if let Some(version) = SemanticVersion::from_str(wasm_api_version).log_err() {
+                    if let Some(version) = SemanticVersion.from_str(wasm_api_version).log_err() {
                         if !constraints.wasm_api_versions.contains(&version) {
                             continue;
                         }
@@ -118,7 +118,7 @@ impl Database {
         extension_id: &str,
     ) -> Result<Vec<ExtensionMetadata>> {
         self.transaction(|tx| async move {
-            let condition = extension::Column::ExternalId
+            let condition = extension.Column.ExternalId
                 .eq(extension_id)
                 .into_condition();
 
@@ -133,12 +133,12 @@ impl Database {
         limit: Option<u64>,
         tx: &DatabaseTransaction,
     ) -> Result<Vec<ExtensionMetadata>> {
-        let extensions = extension::Entity::find()
-            .inner_join(extension_version::Entity)
-            .select_also(extension_version::Entity)
+        let extensions = extension.Entity.find()
+            .inner_join(extension_version.Entity)
+            .select_also(extension_version.Entity)
             .filter(condition)
-            .order_by_desc(extension::Column::TotalDownloadCount)
-            .order_by_asc(extension::Column::Name)
+            .order_by_desc(extension.Column.TotalDownloadCount)
+            .order_by_asc(extension.Column.Name)
             .limit(limit)
             .all(tx)
             .await?;
@@ -157,8 +157,8 @@ impl Database {
         constraints: Option<&ExtensionVersionConstraints>,
     ) -> Result<Option<ExtensionMetadata>> {
         self.transaction(|tx| async move {
-            let extension = extension::Entity::find()
-                .filter(extension::Column::ExternalId.eq(extension_id))
+            let extension = extension.Entity.find()
+                .filter(extension.Column.ExternalId.eq(extension_id))
                 .one(&*tx)
                 .await?
                 .ok_or_else(|| anyhow!("no such extension: {extension_id}"))?;
@@ -182,11 +182,11 @@ impl Database {
         version: &str,
     ) -> Result<Option<ExtensionMetadata>> {
         self.transaction(|tx| async move {
-            let extension = extension::Entity::find()
-                .filter(extension::Column::ExternalId.eq(extension_id))
-                .filter(extension_version::Column::Version.eq(version))
-                .inner_join(extension_version::Entity)
-                .select_also(extension_version::Entity)
+            let extension = extension.Entity.find()
+                .filter(extension.Column.ExternalId.eq(extension_id))
+                .filter(extension_version.Column.Version.eq(version))
+                .inner_join(extension_version.Entity)
+                .select_also(extension_version.Entity)
                 .one(&*tx)
                 .await?;
 
@@ -199,9 +199,9 @@ impl Database {
 
     pub async fn get_known_extension_versions<'a>(&self) -> Result<HashMap<String, Vec<String>>> {
         self.transaction(|tx| async move {
-            let mut extension_external_ids_by_id = HashMap::default();
+            let mut extension_external_ids_by_id = HashMap.default();
 
-            let mut rows = extension::Entity::find().stream(&*tx).await?;
+            let mut rows = extension.Entity.find().stream(&*tx).await?;
             while let Some(row) = rows.next().await {
                 let row = row?;
                 extension_external_ids_by_id.insert(row.id, row.external_id);
@@ -209,8 +209,8 @@ impl Database {
             drop(rows);
 
             let mut known_versions_by_extension_id: HashMap<String, Vec<String>> =
-                HashMap::default();
-            let mut rows = extension_version::Entity::find().stream(&*tx).await?;
+                HashMap.default();
+            let mut rows = extension_version.Entity.find().stream(&*tx).await?;
             while let Some(row) = rows.next().await {
                 let row = row?;
 
@@ -247,16 +247,16 @@ impl Database {
                     .max_by_key(|version| &version.version)
                     .unwrap();
 
-                let insert = extension::Entity::insert(extension::ActiveModel {
-                    name: ActiveValue::Set(latest_version.name.clone()),
-                    external_id: ActiveValue::Set(external_id.to_string()),
-                    id: ActiveValue::NotSet,
-                    latest_version: ActiveValue::Set(latest_version.version.to_string()),
-                    total_download_count: ActiveValue::NotSet,
+                let insert = extension.Entity.insert(extension.ActiveModel {
+                    name: ActiveValue.Set(latest_version.name.clone()),
+                    external_id: ActiveValue.Set(external_id.to_string()),
+                    id: ActiveValue.NotSet,
+                    latest_version: ActiveValue.Set(latest_version.version.to_string()),
+                    total_download_count: ActiveValue.NotSet,
                 })
                 .on_conflict(
-                    OnConflict::columns([extension::Column::ExternalId])
-                        .update_column(extension::Column::ExternalId)
+                    OnConflict.columns([extension.Column.ExternalId])
+                        .update_column(extension.Column.ExternalId)
                         .to_owned(),
                 );
 
@@ -265,40 +265,40 @@ impl Database {
                 } else {
                     // Sqlite
                     insert.exec_without_returning(&*tx).await?;
-                    extension::Entity::find()
-                        .filter(extension::Column::ExternalId.eq(*external_id))
+                    extension.Entity.find()
+                        .filter(extension.Column.ExternalId.eq(*external_id))
                         .one(&*tx)
                         .await?
                         .ok_or_else(|| anyhow!("failed to insert extension"))?
                 };
 
-                extension_version::Entity::insert_many(versions.iter().map(|version| {
-                    extension_version::ActiveModel {
-                        extension_id: ActiveValue::Set(extension.id),
-                        published_at: ActiveValue::Set(version.published_at),
-                        version: ActiveValue::Set(version.version.to_string()),
-                        authors: ActiveValue::Set(version.authors.join(", ")),
-                        repository: ActiveValue::Set(version.repository.clone()),
-                        description: ActiveValue::Set(version.description.clone()),
-                        schema_version: ActiveValue::Set(version.schema_version),
-                        wasm_api_version: ActiveValue::Set(version.wasm_api_version.clone()),
-                        download_count: ActiveValue::NotSet,
+                extension_version.Entity.insert_many(versions.iter().map(|version| {
+                    extension_version.ActiveModel {
+                        extension_id: ActiveValue.Set(extension.id),
+                        published_at: ActiveValue.Set(version.published_at),
+                        version: ActiveValue.Set(version.version.to_string()),
+                        authors: ActiveValue.Set(version.authors.join(", ")),
+                        repository: ActiveValue.Set(version.repository.clone()),
+                        description: ActiveValue.Set(version.description.clone()),
+                        schema_version: ActiveValue.Set(version.schema_version),
+                        wasm_api_version: ActiveValue.Set(version.wasm_api_version.clone()),
+                        download_count: ActiveValue.NotSet,
                     }
                 }))
-                .on_conflict(OnConflict::new().do_nothing().to_owned())
+                .on_conflict(OnConflict.new().do_nothing().to_owned())
                 .exec_without_returning(&*tx)
                 .await?;
 
-                if let Ok(db_version) = semver::Version::parse(&extension.latest_version) {
+                if let Ok(db_version) = semver.Version.parse(&extension.latest_version) {
                     if db_version >= latest_version.version {
                         continue;
                     }
                 }
 
                 let mut extension = extension.into_active_model();
-                extension.latest_version = ActiveValue::Set(latest_version.version.to_string());
-                extension.name = ActiveValue::set(latest_version.name.clone());
-                extension::Entity::update(extension).exec(&*tx).await?;
+                extension.latest_version = ActiveValue.Set(latest_version.version.to_string());
+                extension.name = ActiveValue.set(latest_version.name.clone());
+                extension.Entity.update(extension).exec(&*tx).await?;
             }
 
             Ok(())
@@ -313,36 +313,36 @@ impl Database {
                 Id,
             }
 
-            let extension_id: Option<ExtensionId> = extension::Entity::find()
-                .filter(extension::Column::ExternalId.eq(extension))
+            let extension_id: Option<ExtensionId> = extension.Entity.find()
+                .filter(extension.Column.ExternalId.eq(extension))
                 .select_only()
-                .column(extension::Column::Id)
-                .into_values::<_, QueryId>()
+                .column(extension.Column.Id)
+                .into_values.<_, QueryId>()
                 .one(&*tx)
                 .await?;
             let Some(extension_id) = extension_id else {
                 return Ok(false);
             };
 
-            extension_version::Entity::update_many()
+            extension_version.Entity.update_many()
                 .col_expr(
-                    extension_version::Column::DownloadCount,
-                    extension_version::Column::DownloadCount.into_expr().add(1),
+                    extension_version.Column.DownloadCount,
+                    extension_version.Column.DownloadCount.into_expr().add(1),
                 )
                 .filter(
-                    extension_version::Column::ExtensionId
+                    extension_version.Column.ExtensionId
                         .eq(extension_id)
-                        .and(extension_version::Column::Version.eq(version)),
+                        .and(extension_version.Column.Version.eq(version)),
                 )
                 .exec(&*tx)
                 .await?;
 
-            extension::Entity::update_many()
+            extension.Entity.update_many()
                 .col_expr(
-                    extension::Column::TotalDownloadCount,
-                    extension::Column::TotalDownloadCount.into_expr().add(1),
+                    extension.Column.TotalDownloadCount,
+                    extension.Column.TotalDownloadCount.into_expr().add(1),
                 )
-                .filter(extension::Column::Id.eq(extension_id))
+                .filter(extension.Column.Id.eq(extension_id))
                 .exec(&*tx)
                 .await?;
 
@@ -353,19 +353,19 @@ impl Database {
 }
 
 fn metadata_from_extension_and_version(
-    extension: extension::Model,
-    version: extension_version::Model,
+    extension: extension.Model,
+    version: extension_version.Model,
 ) -> ExtensionMetadata {
     ExtensionMetadata {
         id: extension.external_id.into(),
-        manifest: rpc::ExtensionApiManifest {
+        manifest: rpc.ExtensionApiManifest {
             name: extension.name,
             version: version.version.into(),
             authors: version
                 .authors
                 .split(',')
                 .map(|author| author.trim().to_string())
-                .collect::<Vec<_>>(),
+                .collect.<Vec<_>>(),
             description: Some(version.description),
             repository: version.repository,
             schema_version: Some(version.schema_version),
@@ -377,10 +377,10 @@ fn metadata_from_extension_and_version(
     }
 }
 
-pub fn convert_time_to_chrono(time: time::PrimitiveDateTime) -> chrono::DateTime<Utc> {
-    chrono::DateTime::from_naive_utc_and_offset(
+pub fn convert_time_to_chrono(time: time.PrimitiveDateTime) -> chrono.DateTime<Utc> {
+    chrono.DateTime.from_naive_utc_and_offset(
         #[allow(deprecated)]
-        chrono::NaiveDateTime::from_timestamp_opt(time.assume_utc().unix_timestamp(), 0).unwrap(),
+        chrono.NaiveDateTime.from_timestamp_opt(time.assume_utc().unix_timestamp(), 0).unwrap(),
         Utc,
     )
 }

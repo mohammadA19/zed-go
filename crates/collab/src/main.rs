@@ -1,37 +1,37 @@
-use anyhow::anyhow;
-use axum::{
-    extract::MatchedPath,
-    http::{Request, Response},
-    routing::get,
+use anyhow.anyhow;
+use axum.{
+    extract.MatchedPath,
+    http.{Request, Response},
+    routing.get,
     Extension, Router,
 };
-use collab::api::billing::poll_stripe_events_periodically;
-use collab::{
-    api::fetch_extensions_from_blob_store_periodically, db, env, executor::Executor,
-    rpc::ResultExt, AppState, Config, RateLimiter, Result,
+use collab.api.billing.poll_stripe_events_periodically;
+use collab.{
+    api.fetch_extensions_from_blob_store_periodically, db, env, executor.Executor,
+    rpc.ResultExt, AppState, Config, RateLimiter, Result,
 };
-use db::Database;
-use std::{
-    env::args,
-    net::{SocketAddr, TcpListener},
-    path::Path,
-    sync::Arc,
-    time::Duration,
+use db.Database;
+use std.{
+    env.args,
+    net.{SocketAddr, TcpListener},
+    path.Path,
+    sync.Arc,
+    time.Duration,
 };
 #[cfg(unix)]
-use tokio::signal::unix::SignalKind;
-use tower_http::trace::TraceLayer;
-use tracing_subscriber::{
-    filter::EnvFilter, fmt::format::JsonFields, util::SubscriberInitExt, Layer,
+use tokio.signal.unix.SignalKind;
+use tower_http.trace.TraceLayer;
+use tracing_subscriber.{
+    filter.EnvFilter, fmt.format.JsonFields, util.SubscriberInitExt, Layer,
 };
-use util::ResultExt as _;
+use util.ResultExt as _;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const REVISION: Option<&'static str> = option_env!("GITHUB_SHA");
 
-#[tokio::main]
+#[tokio.main]
 async fn main() -> Result<()> {
-    if let Err(error) = env::load_dotenv() {
+    if let Err(error) = env.load_dotenv() {
         eprintln!(
             "error loading .env.toml (this is expected in production): {}",
             error
@@ -44,16 +44,16 @@ async fn main() -> Result<()> {
             println!("collab v{} ({})", VERSION, REVISION.unwrap_or("unknown"));
         }
         Some("migrate") => {
-            let config = envy::from_env::<Config>().expect("error loading config");
+            let config = envy.from_env.<Config>().expect("error loading config");
             run_migrations(&config).await?;
         }
         Some("seed") => {
-            let config = envy::from_env::<Config>().expect("error loading config");
-            let db_options = db::ConnectOptions::new(config.database_url.clone());
-            let mut db = Database::new(db_options, Executor::Production).await?;
+            let config = envy.from_env.<Config>().expect("error loading config");
+            let db_options = db.ConnectOptions.new(config.database_url.clone());
+            let mut db = Database.new(db_options, Executor.Production).await?;
             db.initialize_notification_kinds().await?;
 
-            collab::seed::seed(&config, &db, true).await?;
+            collab.seed.seed(&config, &db, true).await?;
         }
         Some("serve") => {
             let (is_api, is_collab) = if let Some(next) = args.next() {
@@ -67,14 +67,14 @@ async fn main() -> Result<()> {
                 ))?;
             }
 
-            let config = envy::from_env::<Config>().expect("error loading config");
+            let config = envy.from_env.<Config>().expect("error loading config");
             init_tracing(&config);
 
             run_migrations(&config).await?;
 
-            let state = AppState::new(config, Executor::Production).await?;
+            let state = AppState.new(config, Executor.Production).await?;
 
-            let listener = TcpListener::bind(&format!("0.0.0.0:{}", state.config.http_port))
+            let listener = TcpListener.bind(&format!("0.0.0.0:{}", state.config.http_port))
                 .expect("failed to bind TCP listener");
 
             let rpc_server = if is_collab {
@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
                     .db
                     .create_server(&state.config.zed_environment)
                     .await?;
-                let rpc_server = collab::rpc::Server::new(epoch, state.clone());
+                let rpc_server = collab.rpc.Server.new(epoch, state.clone());
                 rpc_server.start().await?;
 
                 Some(rpc_server)
@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
 
             if is_collab {
                 state.db.purge_old_embeddings().await.trace_err();
-                RateLimiter::save_periodically(state.rate_limiter.clone(), state.executor.clone());
+                RateLimiter.save_periodically(state.rate_limiter.clone(), state.executor.clone());
             }
 
             if is_api {
@@ -100,37 +100,37 @@ async fn main() -> Result<()> {
                 fetch_extensions_from_blob_store_periodically(state.clone());
             }
 
-            let mut app = collab::api::routes(rpc_server.clone(), state.clone());
+            let mut app = collab.api.routes(rpc_server.clone(), state.clone());
             if let Some(rpc_server) = rpc_server.clone() {
-                app = app.merge(collab::rpc::routes(rpc_server))
+                app = app.merge(collab.rpc.routes(rpc_server))
             }
             app = app
                 .merge(
-                    Router::new()
+                    Router.new()
                         .route("/", get(handle_root))
                         .route("/healthz", get(handle_liveness_probe))
-                        .merge(collab::api::extensions::router())
-                        .merge(collab::api::events::router())
+                        .merge(collab.api.extensions.router())
+                        .merge(collab.api.events.router())
                         .layer(Extension(state.clone())),
                 )
                 .layer(
-                    TraceLayer::new_for_http()
+                    TraceLayer.new_for_http()
                         .make_span_with(|request: &Request<_>| {
                             let matched_path = request
                                 .extensions()
-                                .get::<MatchedPath>()
-                                .map(MatchedPath::as_str);
+                                .get.<MatchedPath>()
+                                .map(MatchedPath.as_str);
 
-                            tracing::info_span!(
+                            tracing.info_span!(
                                 "http_request",
                                 method = ?request.method(),
                                 matched_path,
                             )
                         })
                         .on_response(
-                            |response: &Response<_>, latency: Duration, _: &tracing::Span| {
+                            |response: &Response<_>, latency: Duration, _: &tracing.Span| {
                                 let duration_ms = latency.as_micros() as f64 / 1000.;
-                                tracing::info!(
+                                tracing.info!(
                                     duration_ms,
                                     status = response.status().as_u16(),
                                     "finished processing request"
@@ -141,14 +141,14 @@ async fn main() -> Result<()> {
 
             #[cfg(unix)]
             let signal = async move {
-                let mut sigterm = tokio::signal::unix::signal(SignalKind::terminate())
+                let mut sigterm = tokio.signal.unix.signal(SignalKind.terminate())
                     .expect("failed to listen for interrupt signal");
-                let mut sigint = tokio::signal::unix::signal(SignalKind::interrupt())
+                let mut sigint = tokio.signal.unix.signal(SignalKind.interrupt())
                     .expect("failed to listen for interrupt signal");
                 let sigterm = sigterm.recv();
                 let sigint = sigint.recv();
-                futures::pin_mut!(sigterm, sigint);
-                futures::future::select(sigterm, sigint).await;
+                futures.pin_mut!(sigterm, sigint);
+                futures.future.select(sigterm, sigint).await;
             };
 
             #[cfg(windows)]
@@ -157,22 +157,22 @@ async fn main() -> Result<()> {
                 // `ctrl_close` does not work well, because tokio's signal handler always returns soon,
                 // but system terminates the application soon after returning CTRL+CLOSE handler.
                 // So we should implement blocking handler to treat CTRL+CLOSE signal.
-                let mut ctrl_break = tokio::signal::windows::ctrl_break()
+                let mut ctrl_break = tokio.signal.windows.ctrl_break()
                     .expect("failed to listen for interrupt signal");
-                let mut ctrl_c = tokio::signal::windows::ctrl_c()
+                let mut ctrl_c = tokio.signal.windows.ctrl_c()
                     .expect("failed to listen for interrupt signal");
                 let ctrl_break = ctrl_break.recv();
                 let ctrl_c = ctrl_c.recv();
-                futures::pin_mut!(ctrl_break, ctrl_c);
-                futures::future::select(ctrl_break, ctrl_c).await;
+                futures.pin_mut!(ctrl_break, ctrl_c);
+                futures.future.select(ctrl_break, ctrl_c).await;
             };
 
-            axum::Server::from_tcp(listener)
+            axum.Server.from_tcp(listener)
                 .map_err(|e| anyhow!(e))?
-                .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+                .serve(app.into_make_service_with_connect_info.<SocketAddr>())
                 .with_graceful_shutdown(async move {
                     signal.await;
-                    tracing::info!("Received interrupt signal");
+                    tracing.info!("Received interrupt signal");
 
                     if let Some(rpc_server) = rpc_server {
                         rpc_server.teardown();
@@ -191,8 +191,8 @@ async fn main() -> Result<()> {
 }
 
 async fn run_migrations(config: &Config) -> Result<()> {
-    let db_options = db::ConnectOptions::new(config.database_url.clone());
-    let mut db = Database::new(db_options, Executor::Production).await?;
+    let db_options = db.ConnectOptions.new(config.database_url.clone());
+    let mut db = Database.new(db_options, Executor.Production).await?;
 
     let migrations_path = config.migrations_path.as_deref().unwrap_or_else(|| {
         #[cfg(feature = "sqlite")]
@@ -200,12 +200,12 @@ async fn run_migrations(config: &Config) -> Result<()> {
         #[cfg(not(feature = "sqlite"))]
         let default_migrations = concat!(env!("CARGO_MANIFEST_DIR"), "/migrations");
 
-        Path::new(default_migrations)
+        Path.new(default_migrations)
     });
 
     let migrations = db.migrate(&migrations_path, false).await?;
     for (migration, duration) in migrations {
-        log::info!(
+        log.info!(
             "Migrated {} {} {:?}",
             migration.version,
             migration.description,
@@ -216,7 +216,7 @@ async fn run_migrations(config: &Config) -> Result<()> {
     db.initialize_notification_kinds().await?;
 
     if config.seed_path.is_some() {
-        collab::seed::seed(&config, &db, false).await?;
+        collab.seed.seed(&config, &db, false).await?;
     }
 
     return Ok(());
@@ -232,18 +232,18 @@ async fn handle_liveness_probe(Extension(state): Extension<Arc<AppState>>) -> Re
 }
 
 pub fn init_tracing(config: &Config) -> Option<()> {
-    use std::str::FromStr;
-    use tracing_subscriber::layer::SubscriberExt;
+    use std.str.FromStr;
+    use tracing_subscriber.layer.SubscriberExt;
 
-    let filter = EnvFilter::from_str(config.rust_log.as_deref()?).log_err()?;
+    let filter = EnvFilter.from_str(config.rust_log.as_deref()?).log_err()?;
 
-    tracing_subscriber::registry()
+    tracing_subscriber.registry()
         .with(if config.log_json.unwrap_or(false) {
-            Box::new(
-                tracing_subscriber::fmt::layer()
-                    .fmt_fields(JsonFields::default())
+            Box.new(
+                tracing_subscriber.fmt.layer()
+                    .fmt_fields(JsonFields.default())
                     .event_format(
-                        tracing_subscriber::fmt::format()
+                        tracing_subscriber.fmt.format()
                             .json()
                             .flatten_event(true)
                             .with_span_list(false),
@@ -251,9 +251,9 @@ pub fn init_tracing(config: &Config) -> Option<()> {
                     .with_filter(filter),
             ) as Box<dyn Layer<_> + Send + Sync>
         } else {
-            Box::new(
-                tracing_subscriber::fmt::layer()
-                    .event_format(tracing_subscriber::fmt::format().pretty())
+            Box.new(
+                tracing_subscriber.fmt.layer()
+                    .event_format(tracing_subscriber.fmt.format().pretty())
                     .with_filter(filter),
             )
         })

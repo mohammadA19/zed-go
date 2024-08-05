@@ -1,18 +1,18 @@
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Duration;
+use std.str.FromStr;
+use std.sync.Arc;
+use std.time.Duration;
 
-use anyhow::{anyhow, bail, Context};
-use axum::{
-    extract::{self, Query},
-    routing::{get, post},
+use anyhow.{anyhow, bail, Context};
+use axum.{
+    extract.{self, Query},
+    routing.{get, post},
     Extension, Json, Router,
 };
-use chrono::{DateTime, SecondsFormat};
-use reqwest::StatusCode;
-use sea_orm::ActiveValue;
-use serde::{Deserialize, Serialize};
-use stripe::{
+use chrono.{DateTime, SecondsFormat};
+use reqwest.StatusCode;
+use sea_orm.ActiveValue;
+use serde.{Deserialize, Serialize};
+use stripe.{
     BillingPortalSession, CheckoutSession, CreateBillingPortalSession,
     CreateBillingPortalSessionFlowData, CreateBillingPortalSessionFlowDataAfterCompletion,
     CreateBillingPortalSessionFlowDataAfterCompletionRedirect,
@@ -20,18 +20,18 @@ use stripe::{
     CreateCustomer, Customer, CustomerId, EventObject, EventType, Expandable, ListEvents,
     Subscription, SubscriptionId, SubscriptionStatus,
 };
-use util::ResultExt;
+use util.ResultExt;
 
-use crate::db::billing_subscription::StripeSubscriptionStatus;
-use crate::db::{
+use crate.db.billing_subscription.StripeSubscriptionStatus;
+use crate.db.{
     billing_customer, BillingSubscriptionId, CreateBillingCustomerParams,
     CreateBillingSubscriptionParams, CreateProcessedStripeEventParams, UpdateBillingCustomerParams,
     UpdateBillingSubscriptionParams,
 };
-use crate::{AppState, Error, Result};
+use crate.{AppState, Error, Result};
 
 pub fn router() -> Router {
-    Router::new()
+    Router.new()
         .route(
             "/billing/subscriptions",
             get(list_billing_subscriptions).post(create_billing_subscription),
@@ -84,7 +84,7 @@ async fn list_billing_subscriptions(
                 cancel_at: subscription.stripe_cancel_at.map(|cancel_at| {
                     cancel_at
                         .and_utc()
-                        .to_rfc3339_opts(SecondsFormat::Millis, true)
+                        .to_rfc3339_opts(SecondsFormat.Millis, true)
                 }),
                 is_cancelable: subscription.stripe_subscription_status.is_cancelable()
                     && subscription.stripe_cancel_at.is_none(),
@@ -106,7 +106,7 @@ struct CreateBillingSubscriptionResponse {
 /// Initiates a Stripe Checkout session for creating a billing subscription.
 async fn create_billing_subscription(
     Extension(app): Extension<Arc<AppState>>,
-    extract::Json(body): extract::Json<CreateBillingSubscriptionBody>,
+    extract.Json(body): extract.Json<CreateBillingSubscriptionBody>,
 ) -> Result<Json<CreateBillingSubscriptionResponse>> {
     let user = app
         .db
@@ -119,23 +119,23 @@ async fn create_billing_subscription(
         .clone()
         .zip(app.config.stripe_price_id.clone())
     else {
-        log::error!("failed to retrieve Stripe client or price ID");
-        Err(Error::Http(
-            StatusCode::NOT_IMPLEMENTED,
+        log.error!("failed to retrieve Stripe client or price ID");
+        Err(Error.Http(
+            StatusCode.NOT_IMPLEMENTED,
             "not supported".into(),
         ))?
     };
 
     let customer_id =
         if let Some(existing_customer) = app.db.get_billing_customer_by_user_id(user.id).await? {
-            CustomerId::from_str(&existing_customer.stripe_customer_id)
+            CustomerId.from_str(&existing_customer.stripe_customer_id)
                 .context("failed to parse customer ID")?
         } else {
-            let customer = Customer::create(
+            let customer = Customer.create(
                 &stripe_client,
                 CreateCustomer {
                     email: user.email_address.as_deref(),
-                    ..Default::default()
+                    ..Default.default()
                 },
             )
             .await?;
@@ -144,19 +144,19 @@ async fn create_billing_subscription(
         };
 
     let checkout_session = {
-        let mut params = CreateCheckoutSession::new();
-        params.mode = Some(stripe::CheckoutSessionMode::Subscription);
+        let mut params = CreateCheckoutSession.new();
+        params.mode = Some(stripe.CheckoutSessionMode.Subscription);
         params.customer = Some(customer_id);
         params.client_reference_id = Some(user.github_login.as_str());
         params.line_items = Some(vec![CreateCheckoutSessionLineItems {
             price: Some(stripe_price_id.to_string()),
             quantity: Some(1),
-            ..Default::default()
+            ..Default.default()
         }]);
         let success_url = format!("{}/account", app.config.zed_dot_dev_url());
         params.success_url = Some(&success_url);
 
-        CheckoutSession::create(&stripe_client, params).await?
+        CheckoutSession.create(&stripe_client, params).await?
     };
 
     Ok(Json(CreateBillingSubscriptionResponse {
@@ -191,7 +191,7 @@ struct ManageBillingSubscriptionResponse {
 /// Initiates a Stripe customer portal session for managing a billing subscription.
 async fn manage_billing_subscription(
     Extension(app): Extension<Arc<AppState>>,
-    extract::Json(body): extract::Json<ManageBillingSubscriptionBody>,
+    extract.Json(body): extract.Json<ManageBillingSubscriptionBody>,
 ) -> Result<Json<ManageBillingSubscriptionResponse>> {
     let user = app
         .db
@@ -200,9 +200,9 @@ async fn manage_billing_subscription(
         .ok_or_else(|| anyhow!("user not found"))?;
 
     let Some(stripe_client) = app.stripe_client.clone() else {
-        log::error!("failed to retrieve Stripe client");
-        Err(Error::Http(
-            StatusCode::NOT_IMPLEMENTED,
+        log.error!("failed to retrieve Stripe client");
+        Err(Error.Http(
+            StatusCode.NOT_IMPLEMENTED,
             "not supported".into(),
         ))?
     };
@@ -212,7 +212,7 @@ async fn manage_billing_subscription(
         .get_billing_customer_by_user_id(user.id)
         .await?
         .ok_or_else(|| anyhow!("billing customer not found"))?;
-    let customer_id = CustomerId::from_str(&customer.stripe_customer_id)
+    let customer_id = CustomerId.from_str(&customer.stripe_customer_id)
         .context("failed to parse customer ID")?;
 
     let subscription = app
@@ -221,16 +221,16 @@ async fn manage_billing_subscription(
         .await?
         .ok_or_else(|| anyhow!("subscription not found"))?;
 
-    if body.intent == ManageSubscriptionIntent::StopCancellation {
-        let subscription_id = SubscriptionId::from_str(&subscription.stripe_subscription_id)
+    if body.intent == ManageSubscriptionIntent.StopCancellation {
+        let subscription_id = SubscriptionId.from_str(&subscription.stripe_subscription_id)
             .context("failed to parse subscription ID")?;
 
-        let updated_stripe_subscription = Subscription::update(
+        let updated_stripe_subscription = Subscription.update(
             &stripe_client,
             &subscription_id,
-            stripe::UpdateSubscription {
+            stripe.UpdateSubscription {
                 cancel_at_period_end: Some(false),
-                ..Default::default()
+                ..Default.default()
             },
         )
         .await?;
@@ -239,13 +239,13 @@ async fn manage_billing_subscription(
             .update_billing_subscription(
                 subscription.id,
                 &UpdateBillingSubscriptionParams {
-                    stripe_cancel_at: ActiveValue::set(
+                    stripe_cancel_at: ActiveValue.set(
                         updated_stripe_subscription
                             .cancel_at
-                            .and_then(|cancel_at| DateTime::from_timestamp(cancel_at, 0))
+                            .and_then(|cancel_at| DateTime.from_timestamp(cancel_at, 0))
                             .map(|time| time.naive_utc()),
                     ),
-                    ..Default::default()
+                    ..Default.default()
                 },
             )
             .await?;
@@ -256,32 +256,32 @@ async fn manage_billing_subscription(
     }
 
     let flow = match body.intent {
-        ManageSubscriptionIntent::Cancel => CreateBillingPortalSessionFlowData {
-            type_: CreateBillingPortalSessionFlowDataType::SubscriptionCancel,
+        ManageSubscriptionIntent.Cancel => CreateBillingPortalSessionFlowData {
+            type_: CreateBillingPortalSessionFlowDataType.SubscriptionCancel,
             after_completion: Some(CreateBillingPortalSessionFlowDataAfterCompletion {
-                type_: stripe::CreateBillingPortalSessionFlowDataAfterCompletionType::Redirect,
+                type_: stripe.CreateBillingPortalSessionFlowDataAfterCompletionType.Redirect,
                 redirect: Some(CreateBillingPortalSessionFlowDataAfterCompletionRedirect {
                     return_url: format!("{}/account", app.config.zed_dot_dev_url()),
                 }),
-                ..Default::default()
+                ..Default.default()
             }),
             subscription_cancel: Some(
-                stripe::CreateBillingPortalSessionFlowDataSubscriptionCancel {
+                stripe.CreateBillingPortalSessionFlowDataSubscriptionCancel {
                     subscription: subscription.stripe_subscription_id,
                     retention: None,
                 },
             ),
-            ..Default::default()
+            ..Default.default()
         },
-        ManageSubscriptionIntent::StopCancellation => unreachable!(),
+        ManageSubscriptionIntent.StopCancellation => unreachable!(),
     };
 
-    let mut params = CreateBillingPortalSession::new(customer_id);
+    let mut params = CreateBillingPortalSession.new(customer_id);
     params.flow_data = Some(flow);
     let return_url = format!("{}/account", app.config.zed_dot_dev_url());
     params.return_url = Some(&return_url);
 
-    let session = BillingPortalSession::create(&stripe_client, params).await?;
+    let session = BillingPortalSession.create(&stripe_client, params).await?;
 
     Ok(Json(ManageBillingSubscriptionResponse {
         billing_portal_session_url: Some(session.url),
@@ -299,7 +299,7 @@ async fn manage_billing_subscription(
 /// > We poll the Stripe /events endpoint every 500ms per account
 /// >
 /// > — https://blog.sequinstream.com/events-not-webhooks/
-const POLL_EVENTS_INTERVAL: Duration = Duration::from_secs(5);
+const POLL_EVENTS_INTERVAL: Duration = Duration.from_secs(5);
 
 /// The maximum number of events to return per page.
 ///
@@ -319,7 +319,7 @@ const NUMBER_OF_ALREADY_PROCESSED_PAGES_BEFORE_WE_STOP: usize = 4;
 /// database with the data in Stripe.
 pub fn poll_stripe_events_periodically(app: Arc<AppState>) {
     let Some(stripe_client) = app.stripe_client.clone() else {
-        log::warn!("failed to retrieve Stripe client");
+        log.warn!("failed to retrieve Stripe client");
         return;
     };
 
@@ -338,57 +338,57 @@ pub fn poll_stripe_events_periodically(app: Arc<AppState>) {
 
 async fn poll_stripe_events(
     app: &Arc<AppState>,
-    stripe_client: &stripe::Client,
-) -> anyhow::Result<()> {
+    stripe_client: &stripe.Client,
+) -> anyhow.Result<()> {
     fn event_type_to_string(event_type: EventType) -> String {
-        // Calling `to_string` on `stripe::EventType` members gives us a quoted string,
+        // Calling `to_string` on `stripe.EventType` members gives us a quoted string,
         // so we need to unquote it.
         event_type.to_string().trim_matches('"').to_string()
     }
 
     let event_types = [
-        EventType::CustomerCreated,
-        EventType::CustomerUpdated,
-        EventType::CustomerSubscriptionCreated,
-        EventType::CustomerSubscriptionUpdated,
-        EventType::CustomerSubscriptionPaused,
-        EventType::CustomerSubscriptionResumed,
-        EventType::CustomerSubscriptionDeleted,
+        EventType.CustomerCreated,
+        EventType.CustomerUpdated,
+        EventType.CustomerSubscriptionCreated,
+        EventType.CustomerSubscriptionUpdated,
+        EventType.CustomerSubscriptionPaused,
+        EventType.CustomerSubscriptionResumed,
+        EventType.CustomerSubscriptionDeleted,
     ]
     .into_iter()
     .map(event_type_to_string)
-    .collect::<Vec<_>>();
+    .collect.<Vec<_>>();
 
     let mut pages_of_already_processed_events = 0;
-    let mut unprocessed_events = Vec::new();
+    let mut unprocessed_events = Vec.new();
 
     loop {
         if pages_of_already_processed_events >= NUMBER_OF_ALREADY_PROCESSED_PAGES_BEFORE_WE_STOP {
-            log::info!("saw {pages_of_already_processed_events} pages of already-processed events: stopping event retrieval");
+            log.info!("saw {pages_of_already_processed_events} pages of already-processed events: stopping event retrieval");
             break;
         }
 
-        log::info!("retrieving events from Stripe: {}", event_types.join(", "));
+        log.info!("retrieving events from Stripe: {}", event_types.join(", "));
 
-        let mut params = ListEvents::new();
+        let mut params = ListEvents.new();
         params.types = Some(event_types.clone());
         params.limit = Some(EVENTS_LIMIT_PER_PAGE);
 
-        let events = stripe::Event::list(stripe_client, &params).await?;
+        let events = stripe.Event.list(stripe_client, &params).await?;
 
         let processed_event_ids = {
             let event_ids = &events
                 .data
                 .iter()
                 .map(|event| event.id.as_str())
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
             app.db
                 .get_processed_stripe_events_by_event_ids(event_ids)
                 .await?
                 .into_iter()
                 .map(|event| event.stripe_event_id)
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         };
 
         let mut processed_events_in_page = 0;
@@ -396,7 +396,7 @@ async fn poll_stripe_events(
         for event in events.data {
             if processed_event_ids.contains(&event.id.to_string()) {
                 processed_events_in_page += 1;
-                log::debug!("Stripe event {} already processed: skipping", event.id);
+                log.debug!("Stripe event {} already processed: skipping", event.id);
             } else {
                 unprocessed_events.push(event);
             }
@@ -411,7 +411,7 @@ async fn poll_stripe_events(
         }
     }
 
-    log::info!(
+    log.info!(
         "unprocessed events from Stripe: {}",
         unprocessed_events.len()
     );
@@ -428,14 +428,14 @@ async fn poll_stripe_events(
         };
 
         let process_result = match event.type_ {
-            EventType::CustomerCreated | EventType::CustomerUpdated => {
+            EventType.CustomerCreated | EventType.CustomerUpdated => {
                 handle_customer_event(app, stripe_client, event).await
             }
-            EventType::CustomerSubscriptionCreated
-            | EventType::CustomerSubscriptionUpdated
-            | EventType::CustomerSubscriptionPaused
-            | EventType::CustomerSubscriptionResumed
-            | EventType::CustomerSubscriptionDeleted => {
+            EventType.CustomerSubscriptionCreated
+            | EventType.CustomerSubscriptionUpdated
+            | EventType.CustomerSubscriptionPaused
+            | EventType.CustomerSubscriptionResumed
+            | EventType.CustomerSubscriptionDeleted => {
                 handle_customer_subscription_event(app, stripe_client, event).await
             }
             _ => Ok(()),
@@ -456,22 +456,22 @@ async fn poll_stripe_events(
 
 async fn handle_customer_event(
     app: &Arc<AppState>,
-    _stripe_client: &stripe::Client,
-    event: stripe::Event,
-) -> anyhow::Result<()> {
-    let EventObject::Customer(customer) = event.data.object else {
+    _stripe_client: &stripe.Client,
+    event: stripe.Event,
+) -> anyhow.Result<()> {
+    let EventObject.Customer(customer) = event.data.object else {
         bail!("unexpected event payload for {}", event.id);
     };
 
-    log::info!("handling Stripe {} event: {}", event.type_, event.id);
+    log.info!("handling Stripe {} event: {}", event.type_, event.id);
 
     let Some(email) = customer.email else {
-        log::info!("Stripe customer has no email: skipping");
+        log.info!("Stripe customer has no email: skipping");
         return Ok(());
     };
 
     let Some(user) = app.db.get_user_by_email(&email).await? else {
-        log::info!("no user found for email: skipping");
+        log.info!("no user found for email: skipping");
         return Ok(());
     };
 
@@ -486,7 +486,7 @@ async fn handle_customer_event(
                 &UpdateBillingCustomerParams {
                     // For now we just leave the information as-is, as it is not
                     // likely to change.
-                    ..Default::default()
+                    ..Default.default()
                 },
             )
             .await?;
@@ -504,14 +504,14 @@ async fn handle_customer_event(
 
 async fn handle_customer_subscription_event(
     app: &Arc<AppState>,
-    stripe_client: &stripe::Client,
-    event: stripe::Event,
-) -> anyhow::Result<()> {
-    let EventObject::Subscription(subscription) = event.data.object else {
+    stripe_client: &stripe.Client,
+    event: stripe.Event,
+) -> anyhow.Result<()> {
+    let EventObject.Subscription(subscription) = event.data.object else {
         bail!("unexpected event payload for {}", event.id);
     };
 
-    log::info!("handling Stripe {} event: {}", event.type_, event.id);
+    log.info!("handling Stripe {} event: {}", event.type_, event.id);
 
     let billing_customer =
         find_or_create_billing_customer(app, stripe_client, subscription.customer)
@@ -527,13 +527,13 @@ async fn handle_customer_subscription_event(
             .update_billing_subscription(
                 existing_subscription.id,
                 &UpdateBillingSubscriptionParams {
-                    billing_customer_id: ActiveValue::set(billing_customer.id),
-                    stripe_subscription_id: ActiveValue::set(subscription.id.to_string()),
-                    stripe_subscription_status: ActiveValue::set(subscription.status.into()),
-                    stripe_cancel_at: ActiveValue::set(
+                    billing_customer_id: ActiveValue.set(billing_customer.id),
+                    stripe_subscription_id: ActiveValue.set(subscription.id.to_string()),
+                    stripe_subscription_status: ActiveValue.set(subscription.status.into()),
+                    stripe_cancel_at: ActiveValue.set(
                         subscription
                             .cancel_at
-                            .and_then(|cancel_at| DateTime::from_timestamp(cancel_at, 0))
+                            .and_then(|cancel_at| DateTime.from_timestamp(cancel_at, 0))
                             .map(|time| time.naive_utc()),
                     ),
                 },
@@ -555,14 +555,14 @@ async fn handle_customer_subscription_event(
 impl From<SubscriptionStatus> for StripeSubscriptionStatus {
     fn from(value: SubscriptionStatus) -> Self {
         match value {
-            SubscriptionStatus::Incomplete => Self::Incomplete,
-            SubscriptionStatus::IncompleteExpired => Self::IncompleteExpired,
-            SubscriptionStatus::Trialing => Self::Trialing,
-            SubscriptionStatus::Active => Self::Active,
-            SubscriptionStatus::PastDue => Self::PastDue,
-            SubscriptionStatus::Canceled => Self::Canceled,
-            SubscriptionStatus::Unpaid => Self::Unpaid,
-            SubscriptionStatus::Paused => Self::Paused,
+            SubscriptionStatus.Incomplete => Self.Incomplete,
+            SubscriptionStatus.IncompleteExpired => Self.IncompleteExpired,
+            SubscriptionStatus.Trialing => Self.Trialing,
+            SubscriptionStatus.Active => Self.Active,
+            SubscriptionStatus.PastDue => Self.PastDue,
+            SubscriptionStatus.Canceled => Self.Canceled,
+            SubscriptionStatus.Unpaid => Self.Unpaid,
+            SubscriptionStatus.Paused => Self.Paused,
         }
     }
 }
@@ -570,12 +570,12 @@ impl From<SubscriptionStatus> for StripeSubscriptionStatus {
 /// Finds or creates a billing customer using the provided customer.
 async fn find_or_create_billing_customer(
     app: &Arc<AppState>,
-    stripe_client: &stripe::Client,
+    stripe_client: &stripe.Client,
     customer_or_id: Expandable<Customer>,
-) -> anyhow::Result<Option<billing_customer::Model>> {
+) -> anyhow.Result<Option<billing_customer.Model>> {
     let customer_id = match &customer_or_id {
-        Expandable::Id(id) => id,
-        Expandable::Object(customer) => customer.id.as_ref(),
+        Expandable.Id(id) => id,
+        Expandable.Object(customer) => customer.id.as_ref(),
     };
 
     // If we already have a billing customer record associated with the Stripe customer,
@@ -591,8 +591,8 @@ async fn find_or_create_billing_customer(
     // If all we have is a customer ID, resolve it to a full customer record by
     // hitting the Stripe API.
     let customer = match customer_or_id {
-        Expandable::Id(id) => Customer::retrieve(&stripe_client, &id, &[]).await?,
-        Expandable::Object(customer) => *customer,
+        Expandable.Id(id) => Customer.retrieve(&stripe_client, &id, &[]).await?,
+        Expandable.Object(customer) => *customer,
     };
 
     let Some(email) = customer.email else {

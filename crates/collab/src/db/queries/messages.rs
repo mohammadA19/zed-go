@@ -1,8 +1,8 @@
-use super::*;
-use rpc::Notification;
-use sea_orm::{SelectColumns, TryInsertResult};
-use time::OffsetDateTime;
-use util::ResultExt;
+use super.*;
+use rpc.Notification;
+use sea_orm.{SelectColumns, TryInsertResult};
+use time.OffsetDateTime;
+use util.ResultExt;
 
 impl Database {
     /// Inserts a record representing a user joining the chat for a given channel.
@@ -16,12 +16,12 @@ impl Database {
             let channel = self.get_channel_internal(channel_id, &tx).await?;
             self.check_user_is_channel_participant(&channel, user_id, &tx)
                 .await?;
-            channel_chat_participant::ActiveModel {
-                id: ActiveValue::NotSet,
-                channel_id: ActiveValue::Set(channel_id),
-                user_id: ActiveValue::Set(user_id),
-                connection_id: ActiveValue::Set(connection_id.id as i32),
-                connection_server_id: ActiveValue::Set(ServerId(connection_id.owner_id as i32)),
+            channel_chat_participant.ActiveModel {
+                id: ActiveValue.NotSet,
+                channel_id: ActiveValue.Set(channel_id),
+                user_id: ActiveValue.Set(user_id),
+                connection_id: ActiveValue.Set(connection_id.id as i32),
+                connection_server_id: ActiveValue.Set(ServerId(connection_id.owner_id as i32)),
             }
             .insert(&*tx)
             .await?;
@@ -36,14 +36,14 @@ impl Database {
         connection_id: ConnectionId,
         tx: &DatabaseTransaction,
     ) -> Result<()> {
-        channel_chat_participant::Entity::delete_many()
+        channel_chat_participant.Entity.delete_many()
             .filter(
-                Condition::all()
+                Condition.all()
                     .add(
-                        channel_chat_participant::Column::ConnectionServerId
+                        channel_chat_participant.Column.ConnectionServerId
                             .eq(connection_id.owner_id),
                     )
-                    .add(channel_chat_participant::Column::ConnectionId.eq(connection_id.id)),
+                    .add(channel_chat_participant.Column.ConnectionId.eq(connection_id.id)),
             )
             .exec(tx)
             .await?;
@@ -59,15 +59,15 @@ impl Database {
         _user_id: UserId,
     ) -> Result<()> {
         self.transaction(|tx| async move {
-            channel_chat_participant::Entity::delete_many()
+            channel_chat_participant.Entity.delete_many()
                 .filter(
-                    Condition::all()
+                    Condition.all()
                         .add(
-                            channel_chat_participant::Column::ConnectionServerId
+                            channel_chat_participant.Column.ConnectionServerId
                                 .eq(connection_id.owner_id),
                         )
-                        .add(channel_chat_participant::Column::ConnectionId.eq(connection_id.id))
-                        .add(channel_chat_participant::Column::ChannelId.eq(channel_id)),
+                        .add(channel_chat_participant.Column.ConnectionId.eq(connection_id.id))
+                        .add(channel_chat_participant.Column.ChannelId.eq(channel_id)),
                 )
                 .exec(&*tx)
                 .await?;
@@ -86,22 +86,22 @@ impl Database {
         user_id: UserId,
         count: usize,
         before_message_id: Option<MessageId>,
-    ) -> Result<Vec<proto::ChannelMessage>> {
+    ) -> Result<Vec<proto.ChannelMessage>> {
         self.transaction(|tx| async move {
             let channel = self.get_channel_internal(channel_id, &tx).await?;
             self.check_user_is_channel_participant(&channel, user_id, &tx)
                 .await?;
 
             let mut condition =
-                Condition::all().add(channel_message::Column::ChannelId.eq(channel_id));
+                Condition.all().add(channel_message.Column.ChannelId.eq(channel_id));
 
             if let Some(before_message_id) = before_message_id {
-                condition = condition.add(channel_message::Column::Id.lt(before_message_id));
+                condition = condition.add(channel_message.Column.Id.lt(before_message_id));
             }
 
-            let rows = channel_message::Entity::find()
+            let rows = channel_message.Entity.find()
                 .filter(condition)
-                .order_by_desc(channel_message::Column::Id)
+                .order_by_desc(channel_message.Column.Id)
                 .limit(count as u64)
                 .all(&*tx)
                 .await?;
@@ -116,15 +116,15 @@ impl Database {
         &self,
         user_id: UserId,
         message_ids: &[MessageId],
-    ) -> Result<Vec<proto::ChannelMessage>> {
+    ) -> Result<Vec<proto.ChannelMessage>> {
         self.transaction(|tx| async move {
-            let rows = channel_message::Entity::find()
-                .filter(channel_message::Column::Id.is_in(message_ids.iter().copied()))
-                .order_by_desc(channel_message::Column::Id)
+            let rows = channel_message.Entity.find()
+                .filter(channel_message.Column.Id.is_in(message_ids.iter().copied()))
+                .order_by_desc(channel_message.Column.Id)
                 .all(&*tx)
                 .await?;
 
-            let mut channels = HashMap::<ChannelId, channel::Model>::default();
+            let mut channels = HashMap.<ChannelId, channel.Model>.default();
             for row in &rows {
                 channels.insert(
                     row.channel_id,
@@ -145,20 +145,20 @@ impl Database {
 
     async fn load_channel_messages(
         &self,
-        rows: Vec<channel_message::Model>,
+        rows: Vec<channel_message.Model>,
         tx: &DatabaseTransaction,
-    ) -> Result<Vec<proto::ChannelMessage>> {
+    ) -> Result<Vec<proto.ChannelMessage>> {
         let mut messages = rows
             .into_iter()
             .map(|row| {
                 let nonce = row.nonce.as_u64_pair();
-                proto::ChannelMessage {
+                proto.ChannelMessage {
                     id: row.id.to_proto(),
                     sender_id: row.sender_id.to_proto(),
                     body: row.body,
                     timestamp: row.sent_at.assume_utc().unix_timestamp() as u64,
                     mentions: vec![],
-                    nonce: Some(proto::Nonce {
+                    nonce: Some(proto.Nonce {
                         upper_half: nonce.0,
                         lower_half: nonce.1,
                     }),
@@ -168,13 +168,13 @@ impl Database {
                         .map(|t| t.assume_utc().unix_timestamp() as u64),
                 }
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         messages.reverse();
 
-        let mut mentions = channel_message_mention::Entity::find()
-            .filter(channel_message_mention::Column::MessageId.is_in(messages.iter().map(|m| m.id)))
-            .order_by_asc(channel_message_mention::Column::MessageId)
-            .order_by_asc(channel_message_mention::Column::StartOffset)
+        let mut mentions = channel_message_mention.Entity.find()
+            .filter(channel_message_mention.Column.MessageId.is_in(messages.iter().map(|m| m.id)))
+            .order_by_asc(channel_message_mention.Column.MessageId)
+            .order_by_asc(channel_message_mention.Column.StartOffset)
             .stream(tx)
             .await?;
 
@@ -187,8 +187,8 @@ impl Database {
                     message_ix += 1;
                 } else {
                     if message.id == message_id {
-                        message.mentions.push(proto::ChatMention {
-                            range: Some(proto::Range {
+                        message.mentions.push(proto.ChatMention {
+                            range: Some(proto.Range {
                                 start: mention.start_offset as u64,
                                 end: mention.end_offset as u64,
                             }),
@@ -207,8 +207,8 @@ impl Database {
         &self,
         message_id: MessageId,
         body: &str,
-        mentions: &[proto::ChatMention],
-    ) -> Result<Vec<tables::channel_message_mention::ActiveModel>> {
+        mentions: &[proto.ChatMention],
+    ) -> Result<Vec<tables.channel_message_mention.ActiveModel>> {
         Ok(mentions
             .iter()
             .filter_map(|mention| {
@@ -218,24 +218,24 @@ impl Database {
                 {
                     return None;
                 }
-                Some(channel_message_mention::ActiveModel {
-                    message_id: ActiveValue::Set(message_id),
-                    start_offset: ActiveValue::Set(range.start as i32),
-                    end_offset: ActiveValue::Set(range.end as i32),
-                    user_id: ActiveValue::Set(UserId::from_proto(mention.user_id)),
+                Some(channel_message_mention.ActiveModel {
+                    message_id: ActiveValue.Set(message_id),
+                    start_offset: ActiveValue.Set(range.start as i32),
+                    end_offset: ActiveValue.Set(range.end as i32),
+                    user_id: ActiveValue.Set(UserId.from_proto(mention.user_id)),
                 })
             })
-            .collect::<Vec<_>>())
+            .collect.<Vec<_>>())
     }
 
     /// Creates a new channel message.
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy.too_many_arguments)]
     pub async fn create_channel_message(
         &self,
         channel_id: ChannelId,
         user_id: UserId,
         body: &str,
-        mentions: &[proto::ChatMention],
+        mentions: &[proto.ChatMention],
         timestamp: OffsetDateTime,
         nonce: u128,
         reply_to_message_id: Option<MessageId>,
@@ -245,14 +245,14 @@ impl Database {
             self.check_user_is_channel_participant(&channel, user_id, &tx)
                 .await?;
 
-            let mut rows = channel_chat_participant::Entity::find()
-                .filter(channel_chat_participant::Column::ChannelId.eq(channel_id))
+            let mut rows = channel_chat_participant.Entity.find()
+                .filter(channel_chat_participant.Column.ChannelId.eq(channel_id))
                 .stream(&*tx)
                 .await?;
 
             let mut is_participant = false;
-            let mut participant_connection_ids = HashSet::default();
-            let mut participant_user_ids = Vec::new();
+            let mut participant_connection_ids = HashSet.default();
+            let mut participant_user_ids = Vec.new();
             while let Some(row) = rows.next().await {
                 let row = row?;
                 if row.user_id == user_id {
@@ -267,23 +267,23 @@ impl Database {
                 Err(anyhow!("not a chat participant"))?;
             }
 
-            let timestamp = timestamp.to_offset(time::UtcOffset::UTC);
-            let timestamp = time::PrimitiveDateTime::new(timestamp.date(), timestamp.time());
+            let timestamp = timestamp.to_offset(time.UtcOffset.UTC);
+            let timestamp = time.PrimitiveDateTime.new(timestamp.date(), timestamp.time());
 
-            let result = channel_message::Entity::insert(channel_message::ActiveModel {
-                channel_id: ActiveValue::Set(channel_id),
-                sender_id: ActiveValue::Set(user_id),
-                body: ActiveValue::Set(body.to_string()),
-                sent_at: ActiveValue::Set(timestamp),
-                nonce: ActiveValue::Set(Uuid::from_u128(nonce)),
-                id: ActiveValue::NotSet,
-                reply_to_message_id: ActiveValue::Set(reply_to_message_id),
-                edited_at: ActiveValue::NotSet,
+            let result = channel_message.Entity.insert(channel_message.ActiveModel {
+                channel_id: ActiveValue.Set(channel_id),
+                sender_id: ActiveValue.Set(user_id),
+                body: ActiveValue.Set(body.to_string()),
+                sent_at: ActiveValue.Set(timestamp),
+                nonce: ActiveValue.Set(Uuid.from_u128(nonce)),
+                id: ActiveValue.NotSet,
+                reply_to_message_id: ActiveValue.Set(reply_to_message_id),
+                edited_at: ActiveValue.NotSet,
             })
             .on_conflict(
-                OnConflict::columns([
-                    channel_message::Column::SenderId,
-                    channel_message::Column::Nonce,
+                OnConflict.columns([
+                    channel_message.Column.SenderId,
+                    channel_message.Column.Nonce,
                 ])
                 .do_nothing()
                 .to_owned(),
@@ -293,16 +293,16 @@ impl Database {
             .await?;
 
             let message_id;
-            let mut notifications = Vec::new();
+            let mut notifications = Vec.new();
             match result {
-                TryInsertResult::Inserted(result) => {
+                TryInsertResult.Inserted(result) => {
                     message_id = result.last_insert_id;
                     let mentioned_user_ids =
-                        mentions.iter().map(|m| m.user_id).collect::<HashSet<_>>();
+                        mentions.iter().map(|m| m.user_id).collect.<HashSet<_>>();
 
                     let mentions = self.format_mentions_to_entities(message_id, body, mentions)?;
                     if !mentions.is_empty() {
-                        channel_message_mention::Entity::insert_many(mentions)
+                        channel_message_mention.Entity.insert_many(mentions)
                             .exec(&*tx)
                             .await?;
                     }
@@ -310,8 +310,8 @@ impl Database {
                     for mentioned_user in mentioned_user_ids {
                         notifications.extend(
                             self.create_notification(
-                                UserId::from_proto(mentioned_user),
-                                rpc::Notification::ChannelMessageMention {
+                                UserId.from_proto(mentioned_user),
+                                rpc.Notification.ChannelMessageMention {
                                     message_id: message_id.to_proto(),
                                     sender_id: user_id.to_proto(),
                                     channel_id: channel_id.to_proto(),
@@ -327,8 +327,8 @@ impl Database {
                         .await?;
                 }
                 _ => {
-                    message_id = channel_message::Entity::find()
-                        .filter(channel_message::Column::Nonce.eq(Uuid::from_u128(nonce)))
+                    message_id = channel_message.Entity.find()
+                        .filter(channel_message.Column.Nonce.eq(Uuid.from_u128(nonce)))
                         .one(&*tx)
                         .await?
                         .ok_or_else(|| anyhow!("failed to insert message"))?
@@ -354,14 +354,14 @@ impl Database {
         self.transaction(|tx| async move {
             self.observe_channel_message_internal(channel_id, user_id, message_id, &tx)
                 .await?;
-            let mut batch = NotificationBatch::default();
+            let mut batch = NotificationBatch.default();
             batch.extend(
                 self.mark_notification_as_read(
                     user_id,
-                    &Notification::ChannelMessageMention {
+                    &Notification.ChannelMessageMention {
                         message_id: message_id.to_proto(),
-                        sender_id: Default::default(),
-                        channel_id: Default::default(),
+                        sender_id: Default.default(),
+                        channel_id: Default.default(),
                     },
                     &tx,
                 )
@@ -379,18 +379,18 @@ impl Database {
         message_id: MessageId,
         tx: &DatabaseTransaction,
     ) -> Result<()> {
-        observed_channel_messages::Entity::insert(observed_channel_messages::ActiveModel {
-            user_id: ActiveValue::Set(user_id),
-            channel_id: ActiveValue::Set(channel_id),
-            channel_message_id: ActiveValue::Set(message_id),
+        observed_channel_messages.Entity.insert(observed_channel_messages.ActiveModel {
+            user_id: ActiveValue.Set(user_id),
+            channel_id: ActiveValue.Set(channel_id),
+            channel_message_id: ActiveValue.Set(message_id),
         })
         .on_conflict(
-            OnConflict::columns([
-                observed_channel_messages::Column::ChannelId,
-                observed_channel_messages::Column::UserId,
+            OnConflict.columns([
+                observed_channel_messages.Column.ChannelId,
+                observed_channel_messages.Column.UserId,
             ])
-            .update_column(observed_channel_messages::Column::ChannelMessageId)
-            .action_cond_where(observed_channel_messages::Column::ChannelMessageId.lt(message_id))
+            .update_column(observed_channel_messages.Column.ChannelMessageId)
+            .action_cond_where(observed_channel_messages.Column.ChannelMessageId.lt(message_id))
             .to_owned(),
         )
         // TODO: Try to upgrade SeaORM so we don't have to do this hack around their bug
@@ -404,11 +404,11 @@ impl Database {
         channel_ids: &[ChannelId],
         user_id: UserId,
         tx: &DatabaseTransaction,
-    ) -> Result<Vec<proto::ChannelMessageId>> {
-        let rows = observed_channel_messages::Entity::find()
-            .filter(observed_channel_messages::Column::UserId.eq(user_id))
+    ) -> Result<Vec<proto.ChannelMessageId>> {
+        let rows = observed_channel_messages.Entity.find()
+            .filter(observed_channel_messages.Column.UserId.eq(user_id))
             .filter(
-                observed_channel_messages::Column::ChannelId
+                observed_channel_messages.Column.ChannelId
                     .is_in(channel_ids.iter().map(|id| id.0)),
             )
             .all(tx)
@@ -416,7 +416,7 @@ impl Database {
 
         Ok(rows
             .into_iter()
-            .map(|message| proto::ChannelMessageId {
+            .map(|message| proto.ChannelMessageId {
                 channel_id: message.channel_id.to_proto(),
                 message_id: message.channel_message_id.to_proto(),
             })
@@ -427,8 +427,8 @@ impl Database {
         &self,
         channel_ids: &[ChannelId],
         tx: &DatabaseTransaction,
-    ) -> Result<Vec<proto::ChannelMessageId>> {
-        let mut values = String::new();
+    ) -> Result<Vec<proto.ChannelMessageId>> {
+        let mut values = String.new();
         for id in channel_ids {
             if !values.is_empty() {
                 values.push_str(", ");
@@ -437,7 +437,7 @@ impl Database {
         }
 
         if values.is_empty() {
-            return Ok(Vec::default());
+            return Ok(Vec.default());
         }
 
         let sql = format!(
@@ -460,15 +460,15 @@ impl Database {
             "#,
         );
 
-        let stmt = Statement::from_string(self.pool.get_database_backend(), sql);
-        let mut last_messages = channel_message::Model::find_by_statement(stmt)
+        let stmt = Statement.from_string(self.pool.get_database_backend(), sql);
+        let mut last_messages = channel_message.Model.find_by_statement(stmt)
             .stream(tx)
             .await?;
 
-        let mut results = Vec::new();
+        let mut results = Vec.new();
         while let Some(result) = last_messages.next().await {
             let message = result?;
-            results.push(proto::ChannelMessageId {
+            results.push(proto.ChannelMessageId {
                 channel_id: message.channel_id.to_proto(),
                 message_id: message.id.to_proto(),
             });
@@ -492,13 +492,13 @@ impl Database {
         user_id: UserId,
     ) -> Result<(Vec<ConnectionId>, Vec<NotificationId>)> {
         self.transaction(|tx| async move {
-            let mut rows = channel_chat_participant::Entity::find()
-                .filter(channel_chat_participant::Column::ChannelId.eq(channel_id))
+            let mut rows = channel_chat_participant.Entity.find()
+                .filter(channel_chat_participant.Column.ChannelId.eq(channel_id))
                 .stream(&*tx)
                 .await?;
 
             let mut is_participant = false;
-            let mut participant_connection_ids = Vec::new();
+            let mut participant_connection_ids = Vec.new();
             while let Some(row) = rows.next().await {
                 let row = row?;
                 if row.user_id == user_id {
@@ -512,8 +512,8 @@ impl Database {
                 Err(anyhow!("not a chat participant"))?;
             }
 
-            let result = channel_message::Entity::delete_by_id(message_id)
-                .filter(channel_message::Column::SenderId.eq(user_id))
+            let result = channel_message.Entity.delete_by_id(message_id)
+                .filter(channel_message.Column.SenderId.eq(user_id))
                 .exec(&*tx)
                 .await?;
 
@@ -524,7 +524,7 @@ impl Database {
                     .await
                     .is_ok()
                 {
-                    let result = channel_message::Entity::delete_by_id(message_id)
+                    let result = channel_message.Entity.delete_by_id(message_id)
                         .exec(&*tx)
                         .await?;
                     if result.rows_affected == 0 {
@@ -538,10 +538,10 @@ impl Database {
             let notification_kind_id =
                 self.get_notification_kind_id_by_name("ChannelMessageMention");
 
-            let existing_notifications = notification::Entity::find()
-                .filter(notification::Column::EntityId.eq(message_id))
-                .filter(notification::Column::Kind.eq(notification_kind_id))
-                .select_column(notification::Column::Id)
+            let existing_notifications = notification.Entity.find()
+                .filter(notification.Column.EntityId.eq(message_id))
+                .filter(notification.Column.Kind.eq(notification_kind_id))
+                .select_column(notification.Column.Id)
                 .all(&*tx)
                 .await?;
 
@@ -551,9 +551,9 @@ impl Database {
                 .collect();
 
             // remove all the mention notifications for this message
-            notification::Entity::delete_many()
-                .filter(notification::Column::EntityId.eq(message_id))
-                .filter(notification::Column::Kind.eq(notification_kind_id))
+            notification.Entity.delete_many()
+                .filter(notification.Column.EntityId.eq(message_id))
+                .filter(notification.Column.Kind.eq(notification_kind_id))
                 .exec(&*tx)
                 .await?;
 
@@ -569,7 +569,7 @@ impl Database {
         message_id: MessageId,
         user_id: UserId,
         body: &str,
-        mentions: &[proto::ChatMention],
+        mentions: &[proto.ChatMention],
         edited_at: OffsetDateTime,
     ) -> Result<UpdatedChannelMessage> {
         self.transaction(|tx| async move {
@@ -577,14 +577,14 @@ impl Database {
             self.check_user_is_channel_participant(&channel, user_id, &tx)
                 .await?;
 
-            let mut rows = channel_chat_participant::Entity::find()
-                .filter(channel_chat_participant::Column::ChannelId.eq(channel_id))
+            let mut rows = channel_chat_participant.Entity.find()
+                .filter(channel_chat_participant.Column.ChannelId.eq(channel_id))
                 .stream(&*tx)
                 .await?;
 
             let mut is_participant = false;
-            let mut participant_connection_ids = Vec::new();
-            let mut participant_user_ids = Vec::new();
+            let mut participant_connection_ids = Vec.new();
+            let mut participant_user_ids = Vec.new();
             while let Some(row) = rows.next().await {
                 let row = row?;
                 if row.user_id == user_id {
@@ -599,8 +599,8 @@ impl Database {
                 Err(anyhow!("not a chat participant"))?;
             }
 
-            let channel_message = channel_message::Entity::find_by_id(message_id)
-                .filter(channel_message::Column::SenderId.eq(user_id))
+            let channel_message = channel_message.Entity.find_by_id(message_id)
+                .filter(channel_message.Column.SenderId.eq(user_id))
                 .one(&*tx)
                 .await?;
 
@@ -608,24 +608,24 @@ impl Database {
                 Err(anyhow!("Channel message not found"))?
             };
 
-            let edited_at = edited_at.to_offset(time::UtcOffset::UTC);
-            let edited_at = time::PrimitiveDateTime::new(edited_at.date(), edited_at.time());
+            let edited_at = edited_at.to_offset(time.UtcOffset.UTC);
+            let edited_at = time.PrimitiveDateTime.new(edited_at.date(), edited_at.time());
 
-            let updated_message = channel_message::ActiveModel {
-                body: ActiveValue::Set(body.to_string()),
-                edited_at: ActiveValue::Set(Some(edited_at)),
-                reply_to_message_id: ActiveValue::Unchanged(channel_message.reply_to_message_id),
-                id: ActiveValue::Unchanged(message_id),
-                channel_id: ActiveValue::Unchanged(channel_id),
-                sender_id: ActiveValue::Unchanged(user_id),
-                sent_at: ActiveValue::Unchanged(channel_message.sent_at),
-                nonce: ActiveValue::Unchanged(channel_message.nonce),
+            let updated_message = channel_message.ActiveModel {
+                body: ActiveValue.Set(body.to_string()),
+                edited_at: ActiveValue.Set(Some(edited_at)),
+                reply_to_message_id: ActiveValue.Unchanged(channel_message.reply_to_message_id),
+                id: ActiveValue.Unchanged(message_id),
+                channel_id: ActiveValue.Unchanged(channel_id),
+                sender_id: ActiveValue.Unchanged(user_id),
+                sent_at: ActiveValue.Unchanged(channel_message.sent_at),
+                nonce: ActiveValue.Unchanged(channel_message.nonce),
             };
 
-            let result = channel_message::Entity::update_many()
+            let result = channel_message.Entity.update_many()
                 .set(updated_message)
-                .filter(channel_message::Column::Id.eq(message_id))
-                .filter(channel_message::Column::SenderId.eq(user_id))
+                .filter(channel_message.Column.Id.eq(message_id))
+                .filter(channel_message.Column.SenderId.eq(user_id))
                 .exec(&*tx)
                 .await?;
             if result.rows_affected == 0 {
@@ -636,28 +636,28 @@ impl Database {
 
             // we have to fetch the old mentions,
             // so we don't send a notification when the message has been edited that you are mentioned in
-            let old_mentions = channel_message_mention::Entity::find()
-                .filter(channel_message_mention::Column::MessageId.eq(message_id))
+            let old_mentions = channel_message_mention.Entity.find()
+                .filter(channel_message_mention.Column.MessageId.eq(message_id))
                 .all(&*tx)
                 .await?;
 
             // remove all existing mentions
-            channel_message_mention::Entity::delete_many()
-                .filter(channel_message_mention::Column::MessageId.eq(message_id))
+            channel_message_mention.Entity.delete_many()
+                .filter(channel_message_mention.Column.MessageId.eq(message_id))
                 .exec(&*tx)
                 .await?;
 
             let new_mentions = self.format_mentions_to_entities(message_id, body, mentions)?;
             if !new_mentions.is_empty() {
                 // insert new mentions
-                channel_message_mention::Entity::insert_many(new_mentions)
+                channel_message_mention.Entity.insert_many(new_mentions)
                     .exec(&*tx)
                     .await?;
             }
 
-            let mut update_mention_user_ids = HashSet::default();
+            let mut update_mention_user_ids = HashSet.default();
             let mut new_mention_user_ids =
-                mentions.iter().map(|m| m.user_id).collect::<HashSet<_>>();
+                mentions.iter().map(|m| m.user_id).collect.<HashSet<_>>();
             // Filter out users that were mentioned before
             for mention in &old_mentions {
                 if new_mention_user_ids.contains(&mention.user_id.to_proto()) {
@@ -670,19 +670,19 @@ impl Database {
             let notification_kind_id =
                 self.get_notification_kind_id_by_name("ChannelMessageMention");
 
-            let existing_notifications = notification::Entity::find()
-                .filter(notification::Column::EntityId.eq(message_id))
-                .filter(notification::Column::Kind.eq(notification_kind_id))
+            let existing_notifications = notification.Entity.find()
+                .filter(notification.Column.EntityId.eq(message_id))
+                .filter(notification.Column.Kind.eq(notification_kind_id))
                 .all(&*tx)
                 .await?;
 
             // determine which notifications should be updated or deleted
-            let mut deleted_notification_ids = HashSet::default();
-            let mut updated_mention_notifications = Vec::new();
+            let mut deleted_notification_ids = HashSet.default();
+            let mut updated_mention_notifications = Vec.new();
             for notification in existing_notifications {
                 if update_mention_user_ids.contains(&notification.recipient_id.to_proto()) {
                     if let Some(notification) =
-                        self::notifications::model_to_proto(self, notification).log_err()
+                        self.notifications.model_to_proto(self, notification).log_err()
                     {
                         updated_mention_notifications.push(notification);
                     }
@@ -691,12 +691,12 @@ impl Database {
                 }
             }
 
-            let mut notifications = Vec::new();
+            let mut notifications = Vec.new();
             for mentioned_user in new_mention_user_ids {
                 notifications.extend(
                     self.create_notification(
-                        UserId::from_proto(mentioned_user),
-                        rpc::Notification::ChannelMessageMention {
+                        UserId.from_proto(mentioned_user),
+                        rpc.Notification.ChannelMessageMention {
                             message_id: message_id.to_proto(),
                             sender_id: user_id.to_proto(),
                             channel_id: channel_id.to_proto(),
@@ -716,7 +716,7 @@ impl Database {
                 timestamp: channel_message.sent_at,
                 deleted_mention_notification_ids: deleted_notification_ids
                     .into_iter()
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
                 updated_mention_notifications,
             })
         })

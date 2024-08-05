@@ -4,92 +4,92 @@ pub mod test;
 pub mod telemetry;
 pub mod user;
 
-use anyhow::{anyhow, Context as _, Result};
-use async_recursion::async_recursion;
-use async_tungstenite::tungstenite::{
-    client::IntoClientRequest,
-    error::Error as WebsocketError,
-    http::{HeaderValue, Request, StatusCode},
+use anyhow.{anyhow, Context as _, Result};
+use async_recursion.async_recursion;
+use async_tungstenite.tungstenite.{
+    client.IntoClientRequest,
+    error.Error as WebsocketError,
+    http.{HeaderValue, Request, StatusCode},
 };
-use clock::SystemClock;
-use collections::HashMap;
-use futures::{
-    channel::oneshot,
-    future::{BoxFuture, LocalBoxFuture},
+use clock.SystemClock;
+use collections.HashMap;
+use futures.{
+    channel.oneshot,
+    future.{BoxFuture, LocalBoxFuture},
     AsyncReadExt, FutureExt, SinkExt, Stream, StreamExt, TryFutureExt as _, TryStreamExt,
 };
-use gpui::{
+use gpui.{
     actions, AnyModel, AnyWeakModel, AppContext, AsyncAppContext, Global, Model, Task, WeakModel,
 };
-use http_client::{AsyncBody, HttpClient, HttpClientWithUrl};
-use lazy_static::lazy_static;
-use parking_lot::RwLock;
-use postage::watch;
-use proto::ProtoClient;
-use rand::prelude::*;
-use release_channel::{AppVersion, ReleaseChannel};
-use rpc::proto::{AnyTypedEnvelope, EntityMessage, EnvelopedMessage, PeerId, RequestMessage};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
-use std::fmt;
-use std::pin::Pin;
-use std::{
-    any::TypeId,
-    convert::TryFrom,
-    fmt::Write as _,
-    future::Future,
-    marker::PhantomData,
-    path::PathBuf,
-    sync::{
-        atomic::{AtomicU64, Ordering},
+use http_client.{AsyncBody, HttpClient, HttpClientWithUrl};
+use lazy_static.lazy_static;
+use parking_lot.RwLock;
+use postage.watch;
+use proto.ProtoClient;
+use rand.prelude.*;
+use release_channel.{AppVersion, ReleaseChannel};
+use rpc.proto.{AnyTypedEnvelope, EntityMessage, EnvelopedMessage, PeerId, RequestMessage};
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
+use std.fmt;
+use std.pin.Pin;
+use std.{
+    any.TypeId,
+    convert.TryFrom,
+    fmt.Write as _,
+    future.Future,
+    marker.PhantomData,
+    path.PathBuf,
+    sync.{
+        atomic.{AtomicU64, Ordering},
         Arc, Weak,
     },
-    time::{Duration, Instant},
+    time.{Duration, Instant},
 };
-use telemetry::Telemetry;
-use thiserror::Error;
-use url::Url;
-use util::{ResultExt, TryFutureExt};
+use telemetry.Telemetry;
+use thiserror.Error;
+use url.Url;
+use util.{ResultExt, TryFutureExt};
 
-pub use rpc::*;
-pub use telemetry_events::Event;
-pub use user::*;
+pub use rpc.*;
+pub use telemetry_events.Event;
+pub use user.*;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DevServerToken(pub String);
 
-impl fmt::Display for DevServerToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Display for DevServerToken {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{}", self.0)
     }
 }
 
 lazy_static! {
-    static ref ZED_SERVER_URL: Option<String> = std::env::var("ZED_SERVER_URL").ok();
-    static ref ZED_RPC_URL: Option<String> = std::env::var("ZED_RPC_URL").ok();
+    static ref ZED_SERVER_URL: Option<String> = std.env.var("ZED_SERVER_URL").ok();
+    static ref ZED_RPC_URL: Option<String> = std.env.var("ZED_RPC_URL").ok();
     /// An environment variable whose presence indicates that the development auth
     /// provider should be used.
     ///
     /// Only works in development. Setting this environment variable in other release
     /// channels is a no-op.
     pub static ref ZED_DEVELOPMENT_AUTH: bool =
-        std::env::var("ZED_DEVELOPMENT_AUTH").map_or(false, |value| !value.is_empty());
-    pub static ref IMPERSONATE_LOGIN: Option<String> = std::env::var("ZED_IMPERSONATE")
+        std.env.var("ZED_DEVELOPMENT_AUTH").map_or(false, |value| !value.is_empty());
+    pub static ref IMPERSONATE_LOGIN: Option<String> = std.env.var("ZED_IMPERSONATE")
         .ok()
         .and_then(|s| if s.is_empty() { None } else { Some(s) });
-    pub static ref ADMIN_API_TOKEN: Option<String> = std::env::var("ZED_ADMIN_API_TOKEN")
+    pub static ref ADMIN_API_TOKEN: Option<String> = std.env.var("ZED_ADMIN_API_TOKEN")
         .ok()
         .and_then(|s| if s.is_empty() { None } else { Some(s) });
     pub static ref ZED_APP_PATH: Option<PathBuf> =
-        std::env::var("ZED_APP_PATH").ok().map(PathBuf::from);
+        std.env.var("ZED_APP_PATH").ok().map(PathBuf.from);
     pub static ref ZED_ALWAYS_ACTIVE: bool =
-        std::env::var("ZED_ALWAYS_ACTIVE").map_or(false, |e| !e.is_empty());
+        std.env.var("ZED_ALWAYS_ACTIVE").map_or(false, |e| !e.is_empty());
 }
 
-pub const INITIAL_RECONNECTION_DELAY: Duration = Duration::from_millis(500);
-pub const MAX_RECONNECTION_DELAY: Duration = Duration::from_secs(10);
-pub const CONNECTION_TIMEOUT: Duration = Duration::from_secs(20);
+pub const INITIAL_RECONNECTION_DELAY: Duration = Duration.from_millis(500);
+pub const MAX_RECONNECTION_DELAY: Duration = Duration.from_secs(10);
+pub const CONNECTION_TIMEOUT: Duration = Duration.from_secs(20);
 
 actions!(client, [SignIn, SignOut, Reconnect]);
 
@@ -108,8 +108,8 @@ impl Settings for ClientSettings {
 
     type FileContent = ClientSettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
-        let mut result = sources.json_merge::<Self>()?;
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
+        let mut result = sources.json_merge.<Self>()?;
         if let Some(server_url) = &*ZED_SERVER_URL {
             result.server_url.clone_from(&server_url)
         }
@@ -132,7 +132,7 @@ impl Settings for ProxySettings {
 
     type FileContent = ProxySettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
         Ok(Self {
             proxy: sources
                 .user
@@ -143,13 +143,13 @@ impl Settings for ProxySettings {
 }
 
 pub fn init_settings(cx: &mut AppContext) {
-    TelemetrySettings::register(cx);
-    ClientSettings::register(cx);
-    ProxySettings::register(cx);
+    TelemetrySettings.register(cx);
+    ClientSettings.register(cx);
+    ProxySettings.register(cx);
 }
 
 pub fn init(client: &Arc<Client>, cx: &mut AppContext) {
-    let client = Arc::downgrade(client);
+    let client = Arc.downgrade(client);
     cx.on_action({
         let client = client.clone();
         move |_: &SignIn, cx| {
@@ -199,13 +199,13 @@ pub struct Client {
     credentials_provider: Arc<dyn CredentialsProvider + Send + Sync + 'static>,
     state: RwLock<ClientState>,
 
-    #[allow(clippy::type_complexity)]
+    #[allow(clippy.type_complexity)]
     #[cfg(any(test, feature = "test-support"))]
     authenticate: RwLock<
         Option<Box<dyn 'static + Send + Sync + Fn(&AsyncAppContext) -> Task<Result<Credentials>>>>,
     >,
 
-    #[allow(clippy::type_complexity)]
+    #[allow(clippy.type_complexity)]
     #[cfg(any(test, feature = "test-support"))]
     establish_connection: RwLock<
         Option<
@@ -232,33 +232,33 @@ pub enum EstablishConnectionError {
     #[error("unauthorized")]
     Unauthorized,
     #[error("{0}")]
-    Other(#[from] anyhow::Error),
+    Other(#[from] anyhow.Error),
     #[error("{0}")]
-    Http(#[from] http_client::Error),
+    Http(#[from] http_client.Error),
     #[error("{0}")]
-    InvalidHeaderValue(#[from] async_tungstenite::tungstenite::http::header::InvalidHeaderValue),
+    InvalidHeaderValue(#[from] async_tungstenite.tungstenite.http.header.InvalidHeaderValue),
     #[error("{0}")]
-    Io(#[from] std::io::Error),
+    Io(#[from] std.io.Error),
     #[error("{0}")]
-    Websocket(#[from] async_tungstenite::tungstenite::http::Error),
+    Websocket(#[from] async_tungstenite.tungstenite.http.Error),
 }
 
 impl From<WebsocketError> for EstablishConnectionError {
     fn from(error: WebsocketError) -> Self {
-        if let WebsocketError::Http(response) = &error {
+        if let WebsocketError.Http(response) = &error {
             match response.status() {
-                StatusCode::UNAUTHORIZED => return EstablishConnectionError::Unauthorized,
-                StatusCode::UPGRADE_REQUIRED => return EstablishConnectionError::UpgradeRequired,
+                StatusCode.UNAUTHORIZED => return EstablishConnectionError.Unauthorized,
+                StatusCode.UPGRADE_REQUIRED => return EstablishConnectionError.UpgradeRequired,
                 _ => {}
             }
         }
-        EstablishConnectionError::Other(error.into())
+        EstablishConnectionError.Other(error.into())
     }
 }
 
 impl EstablishConnectionError {
-    pub fn other(error: impl Into<anyhow::Error> + Send + Sync) -> Self {
-        Self::Other(error.into())
+    pub fn other(error: impl Into<anyhow.Error> + Send + Sync) -> Self {
+        Self.Other(error.into())
     }
 }
 
@@ -283,23 +283,23 @@ pub enum Status {
 
 impl Status {
     pub fn is_connected(&self) -> bool {
-        matches!(self, Self::Connected { .. })
+        matches!(self, Self.Connected { .. })
     }
 
     pub fn is_signed_out(&self) -> bool {
-        matches!(self, Self::SignedOut | Self::UpgradeRequired)
+        matches!(self, Self.SignedOut | Self.UpgradeRequired)
     }
 }
 
 struct ClientState {
     credentials: Option<Credentials>,
-    status: (watch::Sender<Status>, watch::Receiver<Status>),
+    status: (watch.Sender<Status>, watch.Receiver<Status>),
     entity_id_extractors: HashMap<TypeId, fn(&dyn AnyTypedEnvelope) -> u64>,
     _reconnect_task: Option<Task<()>>,
     entities_by_type_and_remote_id: HashMap<(TypeId, u64), WeakSubscriber>,
     models_by_message_type: HashMap<TypeId, AnyWeakModel>,
     entity_types_by_message_type: HashMap<TypeId, TypeId>,
-    #[allow(clippy::type_complexity)]
+    #[allow(clippy.type_complexity)]
     message_handlers: HashMap<
         TypeId,
         Arc<
@@ -329,8 +329,8 @@ pub enum Credentials {
 impl Credentials {
     pub fn authorization_header(&self) -> String {
         match self {
-            Credentials::DevServer { token } => format!("dev-server-token {}", token),
-            Credentials::User {
+            Credentials.DevServer { token } => format!("dev-server-token {}", token),
+            Credentials.User {
                 user_id,
                 access_token,
             } => format!("{} {}", user_id, access_token),
@@ -368,13 +368,13 @@ impl Default for ClientState {
     fn default() -> Self {
         Self {
             credentials: None,
-            status: watch::channel_with(Status::SignedOut),
-            entity_id_extractors: Default::default(),
+            status: watch.channel_with(Status.SignedOut),
+            entity_id_extractors: Default.default(),
             _reconnect_task: None,
-            models_by_message_type: Default::default(),
-            entities_by_type_and_remote_id: Default::default(),
-            entity_types_by_message_type: Default::default(),
-            message_handlers: Default::default(),
+            models_by_message_type: Default.default(),
+            entities_by_type_and_remote_id: Default.default(),
+            entity_types_by_message_type: Default.default(),
+            message_handlers: Default.default(),
         }
     }
 }
@@ -393,13 +393,13 @@ pub enum Subscription {
 impl Drop for Subscription {
     fn drop(&mut self) {
         match self {
-            Subscription::Entity { client, id } => {
+            Subscription.Entity { client, id } => {
                 if let Some(client) = client.upgrade() {
                     let mut state = client.state.write();
                     let _ = state.entities_by_type_and_remote_id.remove(id);
                 }
             }
-            Subscription::Message { client, id } => {
+            Subscription.Message { client, id } => {
                 if let Some(client) = client.upgrade() {
                     let mut state = client.state.write();
                     let _ = state.entity_types_by_message_type.remove(id);
@@ -421,8 +421,8 @@ impl<T: 'static> PendingEntitySubscription<T> {
     pub fn set_model(mut self, model: &Model<T>, cx: &mut AsyncAppContext) -> Subscription {
         self.consumed = true;
         let mut state = self.client.state.write();
-        let id = (TypeId::of::<T>(), self.remote_id);
-        let Some(WeakSubscriber::Pending(messages)) =
+        let id = (TypeId.of.<T>(), self.remote_id);
+        let Some(WeakSubscriber.Pending(messages)) =
             state.entities_by_type_and_remote_id.remove(&id)
         else {
             unreachable!()
@@ -430,7 +430,7 @@ impl<T: 'static> PendingEntitySubscription<T> {
 
         state.entities_by_type_and_remote_id.insert(
             id,
-            WeakSubscriber::Entity {
+            WeakSubscriber.Entity {
                 handle: model.downgrade().into(),
             },
         );
@@ -438,8 +438,8 @@ impl<T: 'static> PendingEntitySubscription<T> {
         for message in messages {
             self.client.handle_message(message, cx);
         }
-        Subscription::Entity {
-            client: Arc::downgrade(&self.client),
+        Subscription.Entity {
+            client: Arc.downgrade(&self.client),
             id,
         }
     }
@@ -449,12 +449,12 @@ impl<T: 'static> Drop for PendingEntitySubscription<T> {
     fn drop(&mut self) {
         if !self.consumed {
             let mut state = self.client.state.write();
-            if let Some(WeakSubscriber::Pending(messages)) = state
+            if let Some(WeakSubscriber.Pending(messages)) = state
                 .entities_by_type_and_remote_id
-                .remove(&(TypeId::of::<T>(), self.remote_id))
+                .remove(&(TypeId.of.<T>(), self.remote_id))
             {
                 for message in messages {
-                    log::info!("unhandled message {}", message.payload_type_name());
+                    log.info!("unhandled message {}", message.payload_type_name());
                 }
             }
         }
@@ -480,24 +480,24 @@ pub struct TelemetrySettingsContent {
     pub metrics: Option<bool>,
 }
 
-impl settings::Settings for TelemetrySettings {
+impl settings.Settings for TelemetrySettings {
     const KEY: Option<&'static str> = Some("telemetry");
 
     type FileContent = TelemetrySettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
         Ok(Self {
             diagnostics: sources.user.as_ref().and_then(|v| v.diagnostics).unwrap_or(
                 sources
                     .default
                     .diagnostics
-                    .ok_or_else(Self::missing_default)?,
+                    .ok_or_else(Self.missing_default)?,
             ),
             metrics: sources
                 .user
                 .as_ref()
                 .and_then(|v| v.metrics)
-                .unwrap_or(sources.default.metrics.ok_or_else(Self::missing_default)?),
+                .unwrap_or(sources.default.metrics.ok_or_else(Self.missing_default)?),
         })
     }
 }
@@ -508,56 +508,56 @@ impl Client {
         http: Arc<HttpClientWithUrl>,
         cx: &mut AppContext,
     ) -> Arc<Self> {
-        let use_zed_development_auth = match ReleaseChannel::try_global(cx) {
-            Some(ReleaseChannel::Dev) => *ZED_DEVELOPMENT_AUTH,
-            Some(ReleaseChannel::Nightly | ReleaseChannel::Preview | ReleaseChannel::Stable)
+        let use_zed_development_auth = match ReleaseChannel.try_global(cx) {
+            Some(ReleaseChannel.Dev) => *ZED_DEVELOPMENT_AUTH,
+            Some(ReleaseChannel.Nightly | ReleaseChannel.Preview | ReleaseChannel.Stable)
             | None => false,
         };
 
         let credentials_provider: Arc<dyn CredentialsProvider + Send + Sync + 'static> =
             if use_zed_development_auth {
-                Arc::new(DevelopmentCredentialsProvider {
-                    path: paths::config_dir().join("development_auth"),
+                Arc.new(DevelopmentCredentialsProvider {
+                    path: paths.config_dir().join("development_auth"),
                 })
             } else {
-                Arc::new(KeychainCredentialsProvider)
+                Arc.new(KeychainCredentialsProvider)
             };
 
-        Arc::new(Self {
-            id: AtomicU64::new(0),
-            peer: Peer::new(0),
-            telemetry: Telemetry::new(clock, http.clone(), cx),
+        Arc.new(Self {
+            id: AtomicU64.new(0),
+            peer: Peer.new(0),
+            telemetry: Telemetry.new(clock, http.clone(), cx),
             http,
             credentials_provider,
-            state: Default::default(),
+            state: Default.default(),
 
             #[cfg(any(test, feature = "test-support"))]
-            authenticate: Default::default(),
+            authenticate: Default.default(),
             #[cfg(any(test, feature = "test-support"))]
-            establish_connection: Default::default(),
+            establish_connection: Default.default(),
             #[cfg(any(test, feature = "test-support"))]
-            rpc_url: RwLock::default(),
+            rpc_url: RwLock.default(),
         })
     }
 
     pub fn production(cx: &mut AppContext) -> Arc<Self> {
         let user_agent = format!(
             "Zed/{} ({}; {})",
-            AppVersion::global(cx),
-            std::env::consts::OS,
-            std::env::consts::ARCH
+            AppVersion.global(cx),
+            std.env.consts.OS,
+            std.env.consts.ARCH
         );
-        let clock = Arc::new(clock::RealSystemClock);
-        let http = Arc::new(HttpClientWithUrl::new(
-            &ClientSettings::get_global(cx).server_url,
+        let clock = Arc.new(clock.RealSystemClock);
+        let http = Arc.new(HttpClientWithUrl.new(
+            &ClientSettings.get_global(cx).server_url,
             Some(user_agent),
-            ProxySettings::get_global(cx).proxy.clone(),
+            ProxySettings.get_global(cx).proxy.clone(),
         ));
-        Self::new(clock, http.clone(), cx)
+        Self.new(clock, http.clone(), cx)
     }
 
     pub fn id(&self) -> u64 {
-        self.id.load(Ordering::SeqCst)
+        self.id.load(Ordering.SeqCst)
     }
 
     pub fn http_client(&self) -> Arc<HttpClientWithUrl> {
@@ -565,7 +565,7 @@ impl Client {
     }
 
     pub fn set_id(&self, id: u64) -> &Self {
-        self.id.store(id, Ordering::SeqCst);
+        self.id.store(id, Ordering.SeqCst);
         self
     }
 
@@ -585,7 +585,7 @@ impl Client {
     where
         F: 'static + Send + Sync + Fn(&AsyncAppContext) -> Task<Result<Credentials>>,
     {
-        *self.authenticate.write() = Some(Box::new(authenticate));
+        *self.authenticate.write() = Some(Box.new(authenticate));
         self
     }
 
@@ -597,7 +597,7 @@ impl Client {
             + Sync
             + Fn(&Credentials, &AsyncAppContext) -> Task<Result<Connection, EstablishConnectionError>>,
     {
-        *self.establish_connection.write() = Some(Box::new(connect));
+        *self.establish_connection.write() = Some(Box.new(connect));
         self
     }
 
@@ -608,14 +608,14 @@ impl Client {
     }
 
     pub fn global(cx: &AppContext) -> Arc<Self> {
-        cx.global::<GlobalClient>().0.clone()
+        cx.global.<GlobalClient>().0.clone()
     }
     pub fn set_global(client: Arc<Client>, cx: &mut AppContext) {
         cx.set_global(GlobalClient(client))
     }
 
     pub fn user_id(&self) -> Option<u64> {
-        if let Some(Credentials::User { user_id, .. }) = self.state.read().credentials.as_ref() {
+        if let Some(Credentials.User { user_id, .. }) = self.state.read().credentials.as_ref() {
             Some(*user_id)
         } else {
             None
@@ -623,41 +623,41 @@ impl Client {
     }
 
     pub fn peer_id(&self) -> Option<PeerId> {
-        if let Status::Connected { peer_id, .. } = &*self.status().borrow() {
+        if let Status.Connected { peer_id, .. } = &*self.status().borrow() {
             Some(*peer_id)
         } else {
             None
         }
     }
 
-    pub fn status(&self) -> watch::Receiver<Status> {
+    pub fn status(&self) -> watch.Receiver<Status> {
         self.state.read().status.1.clone()
     }
 
     fn set_status(self: &Arc<Self>, status: Status, cx: &AsyncAppContext) {
-        log::info!("set status on client {}: {:?}", self.id(), status);
+        log.info!("set status on client {}: {:?}", self.id(), status);
         let mut state = self.state.write();
         *state.status.0.borrow_mut() = status;
 
         match status {
-            Status::Connected { .. } => {
+            Status.Connected { .. } => {
                 state._reconnect_task = None;
             }
-            Status::ConnectionLost => {
+            Status.ConnectionLost => {
                 let this = self.clone();
                 state._reconnect_task = Some(cx.spawn(move |cx| async move {
                     #[cfg(any(test, feature = "test-support"))]
-                    let mut rng = StdRng::seed_from_u64(0);
+                    let mut rng = StdRng.seed_from_u64(0);
                     #[cfg(not(any(test, feature = "test-support")))]
-                    let mut rng = StdRng::from_entropy();
+                    let mut rng = StdRng.from_entropy();
 
                     let mut delay = INITIAL_RECONNECTION_DELAY;
                     while let Err(error) = this.authenticate_and_connect(true, &cx).await {
-                        log::error!("failed to connect {}", error);
-                        if matches!(*this.status().borrow(), Status::ConnectionError) {
+                        log.error!("failed to connect {}", error);
+                        if matches!(*this.status().borrow(), Status.ConnectionError) {
                             this.set_status(
-                                Status::ReconnectionError {
-                                    next_reconnection: Instant::now() + delay,
+                                Status.ReconnectionError {
+                                    next_reconnection: Instant.now() + delay,
                                 },
                                 &cx,
                             );
@@ -672,7 +672,7 @@ impl Client {
                     }
                 }));
             }
-            Status::SignedOut | Status::UpgradeRequired => {
+            Status.SignedOut | Status.UpgradeRequired => {
                 self.telemetry.set_authenticated_user_info(None, false);
                 state._reconnect_task.take();
             }
@@ -687,7 +687,7 @@ impl Client {
     where
         T: 'static,
     {
-        let id = (TypeId::of::<T>(), remote_id);
+        let id = (TypeId.of.<T>(), remote_id);
 
         let mut state = self.state.write();
         if state.entities_by_type_and_remote_id.contains_key(&id) {
@@ -696,7 +696,7 @@ impl Client {
 
         state
             .entities_by_type_and_remote_id
-            .insert(id, WeakSubscriber::Pending(Default::default()));
+            .insert(id, WeakSubscriber.Pending(Default.default()));
 
         Ok(PendingEntitySubscription {
             client: self.clone(),
@@ -738,7 +738,7 @@ impl Client {
             + Sync,
         F: 'static + Future<Output = Result<()>>,
     {
-        let message_type_id = TypeId::of::<M>();
+        let message_type_id = TypeId.of.<M>();
         let mut state = self.state.write();
         state
             .models_by_message_type
@@ -746,24 +746,24 @@ impl Client {
 
         let prev_handler = state.message_handlers.insert(
             message_type_id,
-            Arc::new(move |subscriber, envelope, client, cx| {
-                let subscriber = subscriber.downcast::<E>().unwrap();
-                let envelope = envelope.into_any().downcast::<TypedEnvelope<M>>().unwrap();
+            Arc.new(move |subscriber, envelope, client, cx| {
+                let subscriber = subscriber.downcast.<E>().unwrap();
+                let envelope = envelope.into_any().downcast.<TypedEnvelope<M>>().unwrap();
                 handler(subscriber, *envelope, client.clone(), cx).boxed_local()
             }),
         );
         if prev_handler.is_some() {
-            let location = std::panic::Location::caller();
+            let location = std.panic.Location.caller();
             panic!(
                 "{}:{} registered handler for the same message {} twice",
                 location.file(),
                 location.line(),
-                std::any::type_name::<M>()
+                std.any.type_name.<M>()
             );
         }
 
-        Subscription::Message {
-            client: Arc::downgrade(self),
+        Subscription.Message {
+            client: Arc.downgrade(self),
             id: message_type_id,
         }
     }
@@ -777,10 +777,10 @@ impl Client {
         M: RequestMessage,
         E: 'static,
         H: 'static + Sync + Fn(Model<E>, TypedEnvelope<M>, AsyncAppContext) -> F + Send + Sync,
-        F: 'static + Future<Output = Result<M::Response>>,
+        F: 'static + Future<Output = Result<M.Response>>,
     {
         self.add_message_handler_impl(model, move |handle, envelope, this, cx| {
-            Self::respond_to_request(envelope.receipt(), handler(handle, envelope, cx), this)
+            Self.respond_to_request(envelope.receipt(), handler(handle, envelope, cx), this)
         })
     }
 
@@ -791,8 +791,8 @@ impl Client {
         H: 'static + Fn(Model<E>, TypedEnvelope<M>, AsyncAppContext) -> F + Send + Sync,
         F: 'static + Future<Output = Result<()>>,
     {
-        self.add_entity_message_handler::<M, E, _, _>(move |subscriber, message, _, cx| {
-            handler(subscriber.downcast::<E>().unwrap(), message, cx)
+        self.add_entity_message_handler.<M, E, _, _>(move |subscriber, message, _, cx| {
+            handler(subscriber.downcast.<E>().unwrap(), message, cx)
         })
     }
 
@@ -803,8 +803,8 @@ impl Client {
         H: 'static + Fn(AnyModel, TypedEnvelope<M>, Arc<Self>, AsyncAppContext) -> F + Send + Sync,
         F: 'static + Future<Output = Result<()>>,
     {
-        let model_type_id = TypeId::of::<E>();
-        let message_type_id = TypeId::of::<M>();
+        let model_type_id = TypeId.of.<E>();
+        let message_type_id = TypeId.of.<M>();
 
         let mut state = self.state.write();
         state
@@ -817,7 +817,7 @@ impl Client {
                 |envelope| {
                     envelope
                         .as_any()
-                        .downcast_ref::<TypedEnvelope<M>>()
+                        .downcast_ref.<TypedEnvelope<M>>()
                         .unwrap()
                         .payload
                         .remote_entity_id()
@@ -825,8 +825,8 @@ impl Client {
             });
         let prev_handler = state.message_handlers.insert(
             message_type_id,
-            Arc::new(move |handle, envelope, client, cx| {
-                let envelope = envelope.into_any().downcast::<TypedEnvelope<M>>().unwrap();
+            Arc.new(move |handle, envelope, client, cx| {
+                let envelope = envelope.into_any().downcast.<TypedEnvelope<M>>().unwrap();
                 handler(handle, *envelope, client.clone(), cx).boxed_local()
             }),
         );
@@ -840,18 +840,18 @@ impl Client {
         M: EntityMessage + RequestMessage,
         E: 'static,
         H: 'static + Fn(Model<E>, TypedEnvelope<M>, AsyncAppContext) -> F + Send + Sync,
-        F: 'static + Future<Output = Result<M::Response>>,
+        F: 'static + Future<Output = Result<M.Response>>,
     {
-        self.add_entity_message_handler::<M, E, _, _>(move |entity, envelope, client, cx| {
-            Self::respond_to_request::<M, _>(
+        self.add_entity_message_handler.<M, E, _, _>(move |entity, envelope, client, cx| {
+            Self.respond_to_request.<M, _>(
                 envelope.receipt(),
-                handler(entity.downcast::<E>().unwrap(), envelope, cx),
+                handler(entity.downcast.<E>().unwrap(), envelope, cx),
                 client,
             )
         })
     }
 
-    async fn respond_to_request<T: RequestMessage, F: Future<Output = Result<T::Response>>>(
+    async fn respond_to_request<T: RequestMessage, F: Future<Output = Result<T.Response>>>(
         receipt: Receipt<T>,
         response: F,
         client: Arc<Self>,
@@ -876,7 +876,7 @@ impl Client {
     }
 
     pub fn set_dev_server_token(&self, token: DevServerToken) -> &Self {
-        self.state.write().credentials = Some(Credentials::DevServer { token });
+        self.state.write().credentials = Some(Credentials.DevServer { token });
         self
     }
 
@@ -885,23 +885,23 @@ impl Client {
         self: &Arc<Self>,
         try_provider: bool,
         cx: &AsyncAppContext,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow.Result<()> {
         let was_disconnected = match *self.status().borrow() {
-            Status::SignedOut => true,
-            Status::ConnectionError
-            | Status::ConnectionLost
-            | Status::Authenticating { .. }
-            | Status::Reauthenticating { .. }
-            | Status::ReconnectionError { .. } => false,
-            Status::Connected { .. } | Status::Connecting { .. } | Status::Reconnecting { .. } => {
+            Status.SignedOut => true,
+            Status.ConnectionError
+            | Status.ConnectionLost
+            | Status.Authenticating { .. }
+            | Status.Reauthenticating { .. }
+            | Status.ReconnectionError { .. } => false,
+            Status.Connected { .. } | Status.Connecting { .. } | Status.Reconnecting { .. } => {
                 return Ok(())
             }
-            Status::UpgradeRequired => return Err(EstablishConnectionError::UpgradeRequired)?,
+            Status.UpgradeRequired => return Err(EstablishConnectionError.UpgradeRequired)?,
         };
         if was_disconnected {
-            self.set_status(Status::Authenticating, cx);
+            self.set_status(Status.Authenticating, cx);
         } else {
-            self.set_status(Status::Reauthenticating, cx)
+            self.set_status(Status.Reauthenticating, cx)
         }
 
         let mut read_from_provider = false;
@@ -914,12 +914,12 @@ impl Client {
         if credentials.is_none() {
             let mut status_rx = self.status();
             let _ = status_rx.next().await;
-            futures::select_biased! {
+            futures.select_biased! {
                 authenticate = self.authenticate(cx).fuse() => {
                     match authenticate {
                         Ok(creds) => credentials = Some(creds),
                         Err(err) => {
-                            self.set_status(Status::ConnectionError, cx);
+                            self.set_status(Status.ConnectionError, cx);
                             return Err(err);
                         }
                     }
@@ -930,60 +930,60 @@ impl Client {
             }
         }
         let credentials = credentials.unwrap();
-        if let Credentials::User { user_id, .. } = &credentials {
+        if let Credentials.User { user_id, .. } = &credentials {
             self.set_id(*user_id);
         }
 
         if was_disconnected {
-            self.set_status(Status::Connecting, cx);
+            self.set_status(Status.Connecting, cx);
         } else {
-            self.set_status(Status::Reconnecting, cx);
+            self.set_status(Status.Reconnecting, cx);
         }
 
         let mut timeout =
-            futures::FutureExt::fuse(cx.background_executor().timer(CONNECTION_TIMEOUT));
-        futures::select_biased! {
+            futures.FutureExt.fuse(cx.background_executor().timer(CONNECTION_TIMEOUT));
+        futures.select_biased! {
             connection = self.establish_connection(&credentials, cx).fuse() => {
                 match connection {
                     Ok(conn) => {
                         self.state.write().credentials = Some(credentials.clone());
                         if !read_from_provider && IMPERSONATE_LOGIN.is_none() {
-                            if let Credentials::User{user_id, access_token} = credentials {
+                            if let Credentials.User{user_id, access_token} = credentials {
                                 self.credentials_provider.write_credentials(user_id, access_token, cx).await.log_err();
                             }
                         }
 
-                        futures::select_biased! {
+                        futures.select_biased! {
                             result = self.set_connection(conn, cx).fuse() => result,
                             _ = timeout => {
-                                self.set_status(Status::ConnectionError, cx);
+                                self.set_status(Status.ConnectionError, cx);
                                 Err(anyhow!("timed out waiting on hello message from server"))
                             }
                         }
                     }
-                    Err(EstablishConnectionError::Unauthorized) => {
+                    Err(EstablishConnectionError.Unauthorized) => {
                         self.state.write().credentials.take();
                         if read_from_provider {
                             self.credentials_provider.delete_credentials(cx).await.log_err();
-                            self.set_status(Status::SignedOut, cx);
+                            self.set_status(Status.SignedOut, cx);
                             self.authenticate_and_connect(false, cx).await
                         } else {
-                            self.set_status(Status::ConnectionError, cx);
-                            Err(EstablishConnectionError::Unauthorized)?
+                            self.set_status(Status.ConnectionError, cx);
+                            Err(EstablishConnectionError.Unauthorized)?
                         }
                     }
-                    Err(EstablishConnectionError::UpgradeRequired) => {
-                        self.set_status(Status::UpgradeRequired, cx);
-                        Err(EstablishConnectionError::UpgradeRequired)?
+                    Err(EstablishConnectionError.UpgradeRequired) => {
+                        self.set_status(Status.UpgradeRequired, cx);
+                        Err(EstablishConnectionError.UpgradeRequired)?
                     }
                     Err(error) => {
-                        self.set_status(Status::ConnectionError, cx);
+                        self.set_status(Status.ConnectionError, cx);
                         Err(error)?
                     }
                 }
             }
             _ = &mut timeout => {
-                self.set_status(Status::ConnectionError, cx);
+                self.set_status(Status.ConnectionError, cx);
                 Err(anyhow!("timed out trying to establish connection"))
             }
         }
@@ -995,7 +995,7 @@ impl Client {
         cx: &AsyncAppContext,
     ) -> Result<()> {
         let executor = cx.background_executor();
-        log::info!("add connection to peer");
+        log.info!("add connection to peer");
         let (connection_id, handle_io, mut incoming) = self.peer.add_connection(conn, {
             let executor = executor.clone();
             move |duration| executor.timer(duration)
@@ -1003,16 +1003,16 @@ impl Client {
         let handle_io = executor.spawn(handle_io);
 
         let peer_id = async {
-            log::info!("waiting for server hello");
+            log.info!("waiting for server hello");
             let message = incoming
                 .next()
                 .await
                 .ok_or_else(|| anyhow!("no hello message received"))?;
-            log::info!("got server hello");
+            log.info!("got server hello");
             let hello_message_type_name = message.payload_type_name().to_string();
             let hello = message
                 .into_any()
-                .downcast::<TypedEnvelope<proto::Hello>>()
+                .downcast.<TypedEnvelope<proto.Hello>>()
                 .map_err(|_| {
                     anyhow!(
                         "invalid hello message received: {:?}",
@@ -1034,13 +1034,13 @@ impl Client {
             }
         };
 
-        log::info!(
+        log.info!(
             "set status to connected (connection id: {:?}, peer id: {:?})",
             connection_id,
             peer_id
         );
         self.set_status(
-            Status::Connected {
+            Status.Connected {
                 peer_id,
                 connection_id,
             },
@@ -1054,7 +1054,7 @@ impl Client {
                     while let Some(message) = incoming.next().await {
                         this.handle_message(message, &cx);
                         // Don't starve the main thread when receiving lots of messages at once.
-                        smol::future::yield_now().await;
+                        smol.future.yield_now().await;
                     }
                 }
             }
@@ -1067,17 +1067,17 @@ impl Client {
                 match handle_io.await {
                     Ok(()) => {
                         if *this.status().borrow()
-                            == (Status::Connected {
+                            == (Status.Connected {
                                 connection_id,
                                 peer_id,
                             })
                         {
-                            this.set_status(Status::SignedOut, &cx);
+                            this.set_status(Status.SignedOut, &cx);
                         }
                     }
                     Err(err) => {
-                        log::error!("connection error: {:?}", err);
-                        this.set_status(Status::ConnectionLost, &cx);
+                        log.error!("connection error: {:?}", err);
+                        this.set_status(Status.ConnectionLost, &cx);
                     }
                 }
             }
@@ -1124,7 +1124,7 @@ impl Client {
             }
 
             if let Some(url) = &*ZED_RPC_URL {
-                return Url::parse(url).context("invalid rpc url");
+                return Url.parse(url).context("invalid rpc url");
             }
 
             let mut url = http.build_url("/rpc");
@@ -1135,14 +1135,14 @@ impl Client {
                 url += preview_param;
             }
 
-            let response = http.get(&url, Default::default(), false).await?;
+            let response = http.get(&url, Default.default(), false).await?;
             let collab_url = if response.status().is_redirection() {
                 response
                     .headers()
                     .get("Location")
                     .ok_or_else(|| anyhow!("missing location header in /rpc response"))?
                     .to_str()
-                    .map_err(EstablishConnectionError::other)?
+                    .map_err(EstablishConnectionError.other)?
                     .to_string()
             } else {
                 Err(anyhow!(
@@ -1151,7 +1151,7 @@ impl Client {
                 ))?
             };
 
-            Url::parse(&collab_url).context("invalid rpc url")
+            Url.parse(&collab_url).context("invalid rpc url")
         }
     }
 
@@ -1161,11 +1161,11 @@ impl Client {
         cx: &AsyncAppContext,
     ) -> Task<Result<Connection, EstablishConnectionError>> {
         let release_channel = cx
-            .update(|cx| ReleaseChannel::try_global(cx))
+            .update(|cx| ReleaseChannel.try_global(cx))
             .ok()
             .flatten();
         let app_version = cx
-            .update(|cx| AppVersion::global(cx).to_string())
+            .update(|cx| AppVersion.global(cx).to_string())
             .ok()
             .unwrap_or_default();
 
@@ -1173,7 +1173,7 @@ impl Client {
         let credentials = credentials.clone();
         let rpc_url = self.rpc_url(http, release_channel);
         cx.background_executor().spawn(async move {
-            use HttpOrHttps::*;
+            use HttpOrHttps.*;
 
             #[derive(Debug)]
             enum HttpOrHttps {
@@ -1191,9 +1191,9 @@ impl Client {
                 .host_str()
                 .zip(rpc_url.port_or_known_default())
                 .ok_or_else(|| anyhow!("missing host in rpc url"))?;
-            let stream = smol::net::TcpStream::connect(rpc_host).await?;
+            let stream = smol.net.TcpStream.connect(rpc_host).await?;
 
-            log::info!("connected to rpc endpoint {}", rpc_url);
+            log.info!("connected to rpc endpoint {}", rpc_url);
 
             rpc_url
                 .set_scheme(match url_scheme {
@@ -1212,31 +1212,31 @@ impl Client {
             let request_headers = request.headers_mut();
             request_headers.insert(
                 "Authorization",
-                HeaderValue::from_str(&credentials.authorization_header())?,
+                HeaderValue.from_str(&credentials.authorization_header())?,
             );
             request_headers.insert(
                 "x-zed-protocol-version",
-                HeaderValue::from_str(&rpc::PROTOCOL_VERSION.to_string())?,
+                HeaderValue.from_str(&rpc.PROTOCOL_VERSION.to_string())?,
             );
-            request_headers.insert("x-zed-app-version", HeaderValue::from_str(&app_version)?);
+            request_headers.insert("x-zed-app-version", HeaderValue.from_str(&app_version)?);
             request_headers.insert(
                 "x-zed-release-channel",
-                HeaderValue::from_str(&release_channel.map(|r| r.dev_name()).unwrap_or("unknown"))?,
+                HeaderValue.from_str(&release_channel.map(|r| r.dev_name()).unwrap_or("unknown"))?,
             );
 
             match url_scheme {
                 Https => {
                     let (stream, _) =
-                        async_tungstenite::async_std::client_async_tls(request, stream).await?;
-                    Ok(Connection::new(
+                        async_tungstenite.async_std.client_async_tls(request, stream).await?;
+                    Ok(Connection.new(
                         stream
                             .map_err(|error| anyhow!(error))
                             .sink_map_err(|error| anyhow!(error)),
                     ))
                 }
                 Http => {
-                    let (stream, _) = async_tungstenite::client_async(request, stream).await?;
-                    Ok(Connection::new(
+                    let (stream, _) = async_tungstenite.client_async(request, stream).await?;
+                    Ok(Connection.new(
                         stream
                             .map_err(|error| anyhow!(error))
                             .sink_map_err(|error| anyhow!(error)),
@@ -1255,7 +1255,7 @@ impl Client {
         cx.spawn(|cx| async move {
             let background = cx.background_executor().clone();
 
-            let (open_url_tx, open_url_rx) = oneshot::channel::<String>();
+            let (open_url_tx, open_url_rx) = oneshot.channel.<String>();
             cx.update(|cx| {
                 cx.spawn(move |cx| async move {
                     let url = open_url_rx.await?;
@@ -1272,8 +1272,8 @@ impl Client {
                     // zed server to encrypt the user's access token, so that it can'be intercepted by
                     // any other app running on the user's device.
                     let (public_key, private_key) =
-                        rpc::auth::keypair().expect("failed to generate keypair for auth");
-                    let public_key_string = String::try_from(public_key)
+                        rpc.auth.keypair().expect("failed to generate keypair for auth");
+                    let public_key_string = String.try_from(public_key)
                         .expect("failed to serialize public key for auth");
 
                     if let Some((login, token)) =
@@ -1288,7 +1288,7 @@ impl Client {
 
                     // Start an HTTP server to receive the redirect from Zed's sign-in page.
                     let server =
-                        tiny_http::Server::http("127.0.0.1:0").expect("failed to find open port");
+                        tiny_http.Server.http("127.0.0.1:0").expect("failed to find open port");
                     let port = server.server_addr().port();
 
                     // Open the Zed sign-in page in the user's browser, with query parameters that indicate
@@ -1299,7 +1299,7 @@ impl Client {
                     ));
 
                     if let Some(impersonate_login) = IMPERSONATE_LOGIN.as_ref() {
-                        log::info!("impersonating user @{}", impersonate_login);
+                        log.info!("impersonating user @{}", impersonate_login);
                         write!(&mut url, "&impersonate={}", impersonate_login).unwrap();
                     }
 
@@ -1313,11 +1313,11 @@ impl Client {
                     let (user_id, access_token) = background
                         .spawn(async move {
                             for _ in 0..100 {
-                                if let Some(req) = server.recv_timeout(Duration::from_secs(1))? {
+                                if let Some(req) = server.recv_timeout(Duration.from_secs(1))? {
                                     let path = req.url();
                                     let mut user_id = None;
                                     let mut access_token = None;
-                                    let url = Url::parse(&format!("http://example.com{}", path))
+                                    let url = Url.parse(&format!("http://example.com{}", path))
                                         .context("failed to parse login notification url")?;
                                     for (key, value) in url.query_pairs() {
                                         if key == "access_token" {
@@ -1330,8 +1330,8 @@ impl Client {
                                     let post_auth_url =
                                         http.build_url("/native_app_signin_succeeded");
                                     req.respond(
-                                        tiny_http::Response::empty(302).with_header(
-                                            tiny_http::Header::from_bytes(
+                                        tiny_http.Response.empty(302).with_header(
+                                            tiny_http.Header.from_bytes(
                                                 &b"Location"[..],
                                                 post_auth_url.as_bytes(),
                                             )
@@ -1357,7 +1357,7 @@ impl Client {
                         .decrypt_string(&access_token)
                         .context("failed to decrypt access token")?;
 
-                    Ok(Credentials::User {
+                    Ok(Credentials.User {
                         user_id: user_id.parse()?,
                         access_token,
                     })
@@ -1390,12 +1390,12 @@ impl Client {
         let mut url = self.rpc_url(http.clone(), None).await?;
         url.set_path("/user");
         url.set_query(Some(&format!("github_login={login}")));
-        let request: http_client::Request<AsyncBody> = Request::get(url.as_str())
+        let request: http_client.Request<AsyncBody> = Request.get(url.as_str())
             .header("Authorization", format!("token {api_token}"))
             .body("".into())?;
 
         let mut response = http.send(request).await?;
-        let mut body = String::new();
+        let mut body = String.new();
         response.body_mut().read_to_string(&mut body).await?;
         if !response.status().is_success() {
             Err(anyhow!(
@@ -1404,11 +1404,11 @@ impl Client {
                 body,
             ))?;
         }
-        let response: AuthenticatedUserResponse = serde_json::from_str(&body)?;
+        let response: AuthenticatedUserResponse = serde_json.from_str(&body)?;
 
         // Use the admin API token to authenticate as the impersonated user.
         api_token.insert_str(0, "ADMIN_TOKEN:");
-        Ok(Credentials::User {
+        Ok(Credentials.User {
             user_id: response.user.id,
             access_token: api_token,
         })
@@ -1428,16 +1428,16 @@ impl Client {
 
     pub fn disconnect(self: &Arc<Self>, cx: &AsyncAppContext) {
         self.peer.teardown();
-        self.set_status(Status::SignedOut, cx);
+        self.set_status(Status.SignedOut, cx);
     }
 
     pub fn reconnect(self: &Arc<Self>, cx: &AsyncAppContext) {
         self.peer.teardown();
-        self.set_status(Status::ConnectionLost, cx);
+        self.set_status(Status.ConnectionLost, cx);
     }
 
     fn connection_id(&self) -> Result<ConnectionId> {
-        if let Status::Connected { connection_id, .. } = *self.status().borrow() {
+        if let Status.Connected { connection_id, .. } = *self.status().borrow() {
             Ok(connection_id)
         } else {
             Err(anyhow!("not connected"))
@@ -1445,11 +1445,11 @@ impl Client {
     }
 
     pub fn send<T: EnvelopedMessage>(&self, message: T) -> Result<()> {
-        log::debug!("rpc send. client_id:{}, name:{}", self.id(), T::NAME);
+        log.debug!("rpc send. client_id:{}, name:{}", self.id(), T.NAME);
         self.peer.send(self.connection_id()?, message)
     }
 
-    pub fn send_dynamic(&self, envelope: proto::Envelope) -> Result<()> {
+    pub fn send_dynamic(&self, envelope: proto.Envelope) -> Result<()> {
         let connection_id = self.connection_id()?;
         self.peer.send_dynamic(connection_id, envelope)
     }
@@ -1457,7 +1457,7 @@ impl Client {
     pub fn request<T: RequestMessage>(
         &self,
         request: T,
-    ) -> impl Future<Output = Result<T::Response>> {
+    ) -> impl Future<Output = Result<T.Response>> {
         self.request_envelope(request)
             .map_ok(|envelope| envelope.payload)
     }
@@ -1465,22 +1465,22 @@ impl Client {
     pub fn request_stream<T: RequestMessage>(
         &self,
         request: T,
-    ) -> impl Future<Output = Result<impl Stream<Item = Result<T::Response>>>> {
-        let client_id = self.id.load(Ordering::SeqCst);
-        log::debug!(
+    ) -> impl Future<Output = Result<impl Stream<Item = Result<T.Response>>>> {
+        let client_id = self.id.load(Ordering.SeqCst);
+        log.debug!(
             "rpc request start. client_id:{}. name:{}",
             client_id,
-            T::NAME
+            T.NAME
         );
         let response = self
             .connection_id()
             .map(|conn_id| self.peer.request_stream(conn_id, request));
         async move {
             let response = response?.await;
-            log::debug!(
+            log.debug!(
                 "rpc request finish. client_id:{}. name:{}",
                 client_id,
-                T::NAME
+                T.NAME
             );
             response
         }
@@ -1489,22 +1489,22 @@ impl Client {
     pub fn request_envelope<T: RequestMessage>(
         &self,
         request: T,
-    ) -> impl Future<Output = Result<TypedEnvelope<T::Response>>> {
+    ) -> impl Future<Output = Result<TypedEnvelope<T.Response>>> {
         let client_id = self.id();
-        log::debug!(
+        log.debug!(
             "rpc request start. client_id:{}. name:{}",
             client_id,
-            T::NAME
+            T.NAME
         );
         let response = self
             .connection_id()
             .map(|conn_id| self.peer.request_envelope(conn_id, request));
         async move {
             let response = response?.await;
-            log::debug!(
+            log.debug!(
                 "rpc request finish. client_id:{}. name:{}",
                 client_id,
-                T::NAME
+                T.NAME
             );
             response
         }
@@ -1512,11 +1512,11 @@ impl Client {
 
     pub fn request_dynamic(
         &self,
-        envelope: proto::Envelope,
+        envelope: proto.Envelope,
         request_type: &'static str,
-    ) -> impl Future<Output = Result<proto::Envelope>> {
+    ) -> impl Future<Output = Result<proto.Envelope>> {
         let client_id = self.id();
-        log::debug!(
+        log.debug!(
             "rpc request start. client_id:{}. name:{}",
             client_id,
             request_type
@@ -1526,7 +1526,7 @@ impl Client {
             .map(|conn_id| self.peer.request_dynamic(conn_id, envelope, request_type));
         async move {
             let response = response?.await;
-            log::debug!(
+            log.debug!(
                 "rpc request finish. client_id:{}. name:{}",
                 client_id,
                 request_type
@@ -1535,17 +1535,17 @@ impl Client {
         }
     }
 
-    fn respond<T: RequestMessage>(&self, receipt: Receipt<T>, response: T::Response) -> Result<()> {
-        log::debug!("rpc respond. client_id:{}. name:{}", self.id(), T::NAME);
+    fn respond<T: RequestMessage>(&self, receipt: Receipt<T>, response: T.Response) -> Result<()> {
+        log.debug!("rpc respond. client_id:{}. name:{}", self.id(), T.NAME);
         self.peer.respond(receipt, response)
     }
 
     fn respond_with_error<T: RequestMessage>(
         &self,
         receipt: Receipt<T>,
-        error: proto::Error,
+        error: proto.Error,
     ) -> Result<()> {
-        log::debug!("rpc respond. client_id:{}. name:{}", self.id(), T::NAME);
+        log.debug!("rpc respond. client_id:{}. name:{}", self.id(), T.NAME);
         self.peer.respond_with_error(receipt, error)
     }
 
@@ -1581,16 +1581,16 @@ impl Client {
                 .entities_by_type_and_remote_id
                 .get_mut(&(entity_type_id, entity_id))
             {
-                Some(WeakSubscriber::Pending(pending)) => {
+                Some(WeakSubscriber.Pending(pending)) => {
                     pending.push(message);
                     return;
                 }
                 Some(weak_subscriber) => match weak_subscriber {
-                    WeakSubscriber::Entity { handle } => {
+                    WeakSubscriber.Entity { handle } => {
                         subscriber = handle.upgrade();
                     }
 
-                    WeakSubscriber::Pending(_) => {}
+                    WeakSubscriber.Pending(_) => {}
                 },
                 _ => {}
             }
@@ -1599,13 +1599,13 @@ impl Client {
         let subscriber = if let Some(subscriber) = subscriber {
             subscriber
         } else {
-            log::info!("unhandled message {}", type_name);
+            log.info!("unhandled message {}", type_name);
             self.peer.respond_with_unhandled_message(message).log_err();
             return;
         };
 
         let handler = state.message_handlers.get(&payload_type_id).cloned();
-        // Dropping the state prevents deadlocks if the handler interacts with rpc::Client.
+        // Dropping the state prevents deadlocks if the handler interacts with rpc.Client.
         // It also ensures we don't hold the lock while yielding back to the executor, as
         // that might cause the executor thread driving this future to block indefinitely.
         drop(state);
@@ -1613,7 +1613,7 @@ impl Client {
         if let Some(handler) = handler {
             let future = handler(subscriber, message, self, cx.clone());
             let client_id = self.id();
-            log::debug!(
+            log.debug!(
                 "rpc message received. client_id:{}, sender_id:{:?}, type:{}",
                 client_id,
                 sender_id,
@@ -1622,7 +1622,7 @@ impl Client {
             cx.spawn(move |_| async move {
                     match future.await {
                         Ok(()) => {
-                            log::debug!(
+                            log.debug!(
                                 "rpc message handled. client_id:{}, sender_id:{:?}, type:{}",
                                 client_id,
                                 sender_id,
@@ -1630,7 +1630,7 @@ impl Client {
                             );
                         }
                         Err(error) => {
-                            log::error!(
+                            log.error!(
                                 "error handling message. client_id:{}, sender_id:{:?}, type:{}, error:{:?}",
                                 client_id,
                                 sender_id,
@@ -1642,7 +1642,7 @@ impl Client {
                 })
                 .detach();
         } else {
-            log::info!("unhandled message {}", type_name);
+            log.info!("unhandled message {}", type_name);
             self.peer.respond_with_unhandled_message(message).log_err();
         }
     }
@@ -1655,13 +1655,13 @@ impl Client {
 impl ProtoClient for Client {
     fn request(
         &self,
-        envelope: proto::Envelope,
+        envelope: proto.Envelope,
         request_type: &'static str,
-    ) -> BoxFuture<'static, Result<proto::Envelope>> {
+    ) -> BoxFuture<'static, Result<proto.Envelope>> {
         self.request_dynamic(envelope, request_type).boxed()
     }
 
-    fn send(&self, envelope: proto::Envelope) -> Result<()> {
+    fn send(&self, envelope: proto.Envelope) -> Result<()> {
         self.send_dynamic(envelope)
     }
 }
@@ -1693,11 +1693,11 @@ impl CredentialsProvider for DevelopmentCredentialsProvider {
                 return None;
             }
 
-            let json = std::fs::read(&self.path).log_err()?;
+            let json = std.fs.read(&self.path).log_err()?;
 
-            let credentials: DevelopmentCredentials = serde_json::from_slice(&json).log_err()?;
+            let credentials: DevelopmentCredentials = serde_json.from_slice(&json).log_err()?;
 
-            Some(Credentials::User {
+            Some(Credentials.User {
                 user_id: credentials.user_id,
                 access_token: credentials.access_token,
             })
@@ -1712,12 +1712,12 @@ impl CredentialsProvider for DevelopmentCredentialsProvider {
         _cx: &'a AsyncAppContext,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + 'a>> {
         async move {
-            let json = serde_json::to_string(&DevelopmentCredentials {
+            let json = serde_json.to_string(&DevelopmentCredentials {
                 user_id,
                 access_token,
             })?;
 
-            std::fs::write(&self.path, json)?;
+            std.fs.write(&self.path, json)?;
 
             Ok(())
         }
@@ -1728,7 +1728,7 @@ impl CredentialsProvider for DevelopmentCredentialsProvider {
         &'a self,
         _cx: &'a AsyncAppContext,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + 'a>> {
-        async move { Ok(std::fs::remove_file(&self.path)?) }.boxed_local()
+        async move { Ok(std.fs.remove_file(&self.path)?) }.boxed_local()
     }
 }
 
@@ -1746,14 +1746,14 @@ impl CredentialsProvider for KeychainCredentialsProvider {
             }
 
             let (user_id, access_token) = cx
-                .update(|cx| cx.read_credentials(&ClientSettings::get_global(cx).server_url))
+                .update(|cx| cx.read_credentials(&ClientSettings.get_global(cx).server_url))
                 .log_err()?
                 .await
                 .log_err()??;
 
-            Some(Credentials::User {
+            Some(Credentials.User {
                 user_id: user_id.parse().ok()?,
-                access_token: String::from_utf8(access_token).ok()?,
+                access_token: String.from_utf8(access_token).ok()?,
             })
         }
         .boxed_local()
@@ -1768,7 +1768,7 @@ impl CredentialsProvider for KeychainCredentialsProvider {
         async move {
             cx.update(move |cx| {
                 cx.write_credentials(
-                    &ClientSettings::get_global(cx).server_url,
+                    &ClientSettings.get_global(cx).server_url,
                     &user_id.to_string(),
                     access_token.as_bytes(),
                 )
@@ -1783,7 +1783,7 @@ impl CredentialsProvider for KeychainCredentialsProvider {
         cx: &'a AsyncAppContext,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + 'a>> {
         async move {
-            cx.update(move |cx| cx.delete_credentials(&ClientSettings::get_global(cx).server_url))?
+            cx.update(move |cx| cx.delete_credentials(&ClientSettings.get_global(cx).server_url))?
                 .await
         }
         .boxed_local()
@@ -1798,7 +1798,7 @@ pub static ZED_URL_SCHEME: &str = "zed";
 /// Returns a [`Some`] containing the unprefixed link if the link is a Zed link.
 /// Returns [`None`] otherwise.
 pub fn parse_zed_link<'a>(link: &'a str, cx: &AppContext) -> Option<&'a str> {
-    let server_url = &ClientSettings::get_global(cx).server_url;
+    let server_url = &ClientSettings.get_global(cx).server_url;
     if let Some(stripped) = link
         .strip_prefix(server_url)
         .and_then(|result| result.strip_prefix('/'))
@@ -1817,66 +1817,66 @@ pub fn parse_zed_link<'a>(link: &'a str, cx: &AppContext) -> Option<&'a str> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test::FakeServer;
+    use super.*;
+    use crate.test.FakeServer;
 
-    use clock::FakeSystemClock;
-    use gpui::{BackgroundExecutor, Context, TestAppContext};
-    use http_client::FakeHttpClient;
-    use parking_lot::Mutex;
-    use proto::TypedEnvelope;
-    use settings::SettingsStore;
-    use std::future;
+    use clock.FakeSystemClock;
+    use gpui.{BackgroundExecutor, Context, TestAppContext};
+    use http_client.FakeHttpClient;
+    use parking_lot.Mutex;
+    use proto.TypedEnvelope;
+    use settings.SettingsStore;
+    use std.future;
 
-    #[gpui::test(iterations = 10)]
+    #[gpui.test(iterations = 10)]
     async fn test_reconnection(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
         let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::default()),
-                FakeHttpClient::with_404_response(),
+            Client.new(
+                Arc.new(FakeSystemClock.default()),
+                FakeHttpClient.with_404_response(),
                 cx,
             )
         });
-        let server = FakeServer::for_client(user_id, &client, cx).await;
+        let server = FakeServer.for_client(user_id, &client, cx).await;
         let mut status = client.status();
         assert!(matches!(
             status.next().await,
-            Some(Status::Connected { .. })
+            Some(Status.Connected { .. })
         ));
         assert_eq!(server.auth_count(), 1);
 
         server.forbid_connections();
         server.disconnect();
-        while !matches!(status.next().await, Some(Status::ReconnectionError { .. })) {}
+        while !matches!(status.next().await, Some(Status.ReconnectionError { .. })) {}
 
         server.allow_connections();
-        cx.executor().advance_clock(Duration::from_secs(10));
-        while !matches!(status.next().await, Some(Status::Connected { .. })) {}
+        cx.executor().advance_clock(Duration.from_secs(10));
+        while !matches!(status.next().await, Some(Status.Connected { .. })) {}
         assert_eq!(server.auth_count(), 1); // Client reused the cached credentials when reconnecting
 
         server.forbid_connections();
         server.disconnect();
-        while !matches!(status.next().await, Some(Status::ReconnectionError { .. })) {}
+        while !matches!(status.next().await, Some(Status.ReconnectionError { .. })) {}
 
         // Clear cached credentials after authentication fails
         server.roll_access_token();
         server.allow_connections();
         cx.executor().run_until_parked();
-        cx.executor().advance_clock(Duration::from_secs(10));
-        while !matches!(status.next().await, Some(Status::Connected { .. })) {}
+        cx.executor().advance_clock(Duration.from_secs(10));
+        while !matches!(status.next().await, Some(Status.Connected { .. })) {}
         assert_eq!(server.auth_count(), 2); // Client re-authenticated due to an invalid token
     }
 
-    #[gpui::test(iterations = 10)]
+    #[gpui.test(iterations = 10)]
     async fn test_connection_timeout(executor: BackgroundExecutor, cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
         let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::default()),
-                FakeHttpClient::with_404_response(),
+            Client.new(
+                Arc.new(FakeSystemClock.default()),
+                FakeHttpClient.with_404_response(),
                 cx,
             )
         });
@@ -1885,7 +1885,7 @@ mod tests {
         // Time out when client tries to connect.
         client.override_authenticate(move |cx| {
             cx.background_executor().spawn(async move {
-                Ok(Credentials::User {
+                Ok(Credentials.User {
                     user_id,
                     access_token: "token".into(),
                 })
@@ -1893,7 +1893,7 @@ mod tests {
         });
         client.override_establish_connection(|_, cx| {
             cx.background_executor().spawn(async move {
-                future::pending::<()>().await;
+                future.pending.<()>().await;
                 unreachable!()
             })
         });
@@ -1902,60 +1902,60 @@ mod tests {
             |cx| async move { client.authenticate_and_connect(false, &cx).await }
         });
         executor.run_until_parked();
-        assert!(matches!(status.next().await, Some(Status::Connecting)));
+        assert!(matches!(status.next().await, Some(Status.Connecting)));
 
         executor.advance_clock(CONNECTION_TIMEOUT);
         assert!(matches!(
             status.next().await,
-            Some(Status::ConnectionError { .. })
+            Some(Status.ConnectionError { .. })
         ));
         auth_and_connect.await.unwrap_err();
 
         // Allow the connection to be established.
-        let server = FakeServer::for_client(user_id, &client, cx).await;
+        let server = FakeServer.for_client(user_id, &client, cx).await;
         assert!(matches!(
             status.next().await,
-            Some(Status::Connected { .. })
+            Some(Status.Connected { .. })
         ));
 
         // Disconnect client.
         server.forbid_connections();
         server.disconnect();
-        while !matches!(status.next().await, Some(Status::ReconnectionError { .. })) {}
+        while !matches!(status.next().await, Some(Status.ReconnectionError { .. })) {}
 
         // Time out when re-establishing the connection.
         server.allow_connections();
         client.override_establish_connection(|_, cx| {
             cx.background_executor().spawn(async move {
-                future::pending::<()>().await;
+                future.pending.<()>().await;
                 unreachable!()
             })
         });
         executor.advance_clock(2 * INITIAL_RECONNECTION_DELAY);
         assert!(matches!(
             status.next().await,
-            Some(Status::Reconnecting { .. })
+            Some(Status.Reconnecting { .. })
         ));
 
         executor.advance_clock(CONNECTION_TIMEOUT);
         assert!(matches!(
             status.next().await,
-            Some(Status::ReconnectionError { .. })
+            Some(Status.ReconnectionError { .. })
         ));
     }
 
-    #[gpui::test(iterations = 10)]
+    #[gpui.test(iterations = 10)]
     async fn test_authenticating_more_than_once(
         cx: &mut TestAppContext,
         executor: BackgroundExecutor,
     ) {
         init_test(cx);
-        let auth_count = Arc::new(Mutex::new(0));
-        let dropped_auth_count = Arc::new(Mutex::new(0));
+        let auth_count = Arc.new(Mutex.new(0));
+        let dropped_auth_count = Arc.new(Mutex.new(0));
         let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::default()),
-                FakeHttpClient::with_404_response(),
+            Client.new(
+                Arc.new(FakeSystemClock.default()),
+                FakeHttpClient.with_404_response(),
                 cx,
             )
         });
@@ -1967,8 +1967,8 @@ mod tests {
                 let dropped_auth_count = dropped_auth_count.clone();
                 cx.background_executor().spawn(async move {
                     *auth_count.lock() += 1;
-                    let _drop = util::defer(move || *dropped_auth_count.lock() += 1);
-                    future::pending::<()>().await;
+                    let _drop = util.defer(move || *dropped_auth_count.lock() += 1);
+                    future.pending.<()>().await;
                     unreachable!()
                 })
             }
@@ -1991,23 +1991,23 @@ mod tests {
         assert_eq!(*dropped_auth_count.lock(), 1);
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_subscribing_to_entity(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
         let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::default()),
-                FakeHttpClient::with_404_response(),
+            Client.new(
+                Arc.new(FakeSystemClock.default()),
+                FakeHttpClient.with_404_response(),
                 cx,
             )
         });
-        let server = FakeServer::for_client(user_id, &client, cx).await;
+        let server = FakeServer.for_client(user_id, &client, cx).await;
 
-        let (done_tx1, mut done_rx1) = smol::channel::unbounded();
-        let (done_tx2, mut done_rx2) = smol::channel::unbounded();
+        let (done_tx1, mut done_rx1) = smol.channel.unbounded();
+        let (done_tx2, mut done_rx2) = smol.channel.unbounded();
         client.add_model_message_handler(
-            move |model: Model<TestModel>, _: TypedEnvelope<proto::JoinProject>, mut cx| {
+            move |model: Model<TestModel>, _: TypedEnvelope<proto.JoinProject>, mut cx| {
                 match model.update(&mut cx, |model, _| model.id).unwrap() {
                     1 => done_tx1.try_send(()).unwrap(),
                     2 => done_tx2.try_send(()).unwrap(),
@@ -2045,31 +2045,31 @@ mod tests {
             .set_model(&model3, &mut cx.to_async());
         drop(subscription3);
 
-        server.send(proto::JoinProject { project_id: 1 });
-        server.send(proto::JoinProject { project_id: 2 });
+        server.send(proto.JoinProject { project_id: 1 });
+        server.send(proto.JoinProject { project_id: 2 });
         done_rx1.next().await.unwrap();
         done_rx2.next().await.unwrap();
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_subscribing_after_dropping_subscription(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
         let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::default()),
-                FakeHttpClient::with_404_response(),
+            Client.new(
+                Arc.new(FakeSystemClock.default()),
+                FakeHttpClient.with_404_response(),
                 cx,
             )
         });
-        let server = FakeServer::for_client(user_id, &client, cx).await;
+        let server = FakeServer.for_client(user_id, &client, cx).await;
 
-        let model = cx.new_model(|_| TestModel::default());
-        let (done_tx1, _done_rx1) = smol::channel::unbounded();
-        let (done_tx2, mut done_rx2) = smol::channel::unbounded();
+        let model = cx.new_model(|_| TestModel.default());
+        let (done_tx1, _done_rx1) = smol.channel.unbounded();
+        let (done_tx2, mut done_rx2) = smol.channel.unbounded();
         let subscription1 = client.add_message_handler(
             model.downgrade(),
-            move |_, _: TypedEnvelope<proto::Ping>, _| {
+            move |_, _: TypedEnvelope<proto.Ping>, _| {
                 done_tx1.try_send(()).unwrap();
                 async { Ok(()) }
             },
@@ -2077,33 +2077,33 @@ mod tests {
         drop(subscription1);
         let _subscription2 = client.add_message_handler(
             model.downgrade(),
-            move |_, _: TypedEnvelope<proto::Ping>, _| {
+            move |_, _: TypedEnvelope<proto.Ping>, _| {
                 done_tx2.try_send(()).unwrap();
                 async { Ok(()) }
             },
         );
-        server.send(proto::Ping {});
+        server.send(proto.Ping {});
         done_rx2.next().await.unwrap();
     }
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_dropping_subscription_in_handler(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
         let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::default()),
-                FakeHttpClient::with_404_response(),
+            Client.new(
+                Arc.new(FakeSystemClock.default()),
+                FakeHttpClient.with_404_response(),
                 cx,
             )
         });
-        let server = FakeServer::for_client(user_id, &client, cx).await;
+        let server = FakeServer.for_client(user_id, &client, cx).await;
 
-        let model = cx.new_model(|_| TestModel::default());
-        let (done_tx, mut done_rx) = smol::channel::unbounded();
+        let model = cx.new_model(|_| TestModel.default());
+        let (done_tx, mut done_rx) = smol.channel.unbounded();
         let subscription = client.add_message_handler(
             model.clone().downgrade(),
-            move |model: Model<TestModel>, _: TypedEnvelope<proto::Ping>, mut cx| {
+            move |model: Model<TestModel>, _: TypedEnvelope<proto.Ping>, mut cx| {
                 model
                     .update(&mut cx, |model, _| model.subscription.take())
                     .unwrap();
@@ -2114,7 +2114,7 @@ mod tests {
         model.update(cx, |model, _| {
             model.subscription = Some(subscription);
         });
-        server.send(proto::Ping {});
+        server.send(proto.Ping {});
         done_rx.next().await.unwrap();
     }
 
@@ -2126,7 +2126,7 @@ mod tests {
 
     fn init_test(cx: &mut TestAppContext) {
         cx.update(|cx| {
-            let settings_store = SettingsStore::test(cx);
+            let settings_store = SettingsStore.test(cx);
             cx.set_global(settings_store);
             init_settings(cx);
         });

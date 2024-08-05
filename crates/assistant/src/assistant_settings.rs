@@ -1,14 +1,14 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use anthropic::Model as AnthropicModel;
-use fs::Fs;
-use gpui::{AppContext, Pixels};
-use language_model::{settings::AllLanguageModelSettings, CloudModel, LanguageModel};
-use ollama::Model as OllamaModel;
-use open_ai::Model as OpenAiModel;
-use schemars::{schema::Schema, JsonSchema};
-use serde::{Deserialize, Serialize};
-use settings::{update_settings_file, Settings, SettingsSources};
+use anthropic.Model as AnthropicModel;
+use fs.Fs;
+use gpui.{AppContext, Pixels};
+use language_model.{settings.AllLanguageModelSettings, CloudModel, LanguageModel};
+use ollama.Model as OllamaModel;
+use open_ai.Model as OpenAiModel;
+use schemars.{schema.Schema, JsonSchema};
+use serde.{Deserialize, Serialize};
+use settings.{update_settings_file, Settings, SettingsSources};
 
 #[derive(Copy, Clone, Default, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -66,53 +66,53 @@ pub enum AssistantSettingsContent {
 
 impl JsonSchema for AssistantSettingsContent {
     fn schema_name() -> String {
-        VersionedAssistantSettingsContent::schema_name()
+        VersionedAssistantSettingsContent.schema_name()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> Schema {
-        VersionedAssistantSettingsContent::json_schema(gen)
+    fn json_schema(gen: &mut schemars.gen.SchemaGenerator) -> Schema {
+        VersionedAssistantSettingsContent.json_schema(gen)
     }
 
     fn is_referenceable() -> bool {
-        VersionedAssistantSettingsContent::is_referenceable()
+        VersionedAssistantSettingsContent.is_referenceable()
     }
 }
 
 impl Default for AssistantSettingsContent {
     fn default() -> Self {
-        Self::Versioned(VersionedAssistantSettingsContent::default())
+        Self.Versioned(VersionedAssistantSettingsContent.default())
     }
 }
 
 impl AssistantSettingsContent {
     pub fn is_version_outdated(&self) -> bool {
         match self {
-            AssistantSettingsContent::Versioned(settings) => match settings {
-                VersionedAssistantSettingsContent::V1(_) => true,
-                VersionedAssistantSettingsContent::V2(_) => false,
+            AssistantSettingsContent.Versioned(settings) => match settings {
+                VersionedAssistantSettingsContent.V1(_) => true,
+                VersionedAssistantSettingsContent.V2(_) => false,
             },
-            AssistantSettingsContent::Legacy(_) => true,
+            AssistantSettingsContent.Legacy(_) => true,
         }
     }
 
     pub fn update_file(&mut self, fs: Arc<dyn Fs>, cx: &AppContext) {
-        if let AssistantSettingsContent::Versioned(settings) = self {
-            if let VersionedAssistantSettingsContent::V1(settings) = settings {
+        if let AssistantSettingsContent.Versioned(settings) = self {
+            if let VersionedAssistantSettingsContent.V1(settings) = settings {
                 if let Some(provider) = settings.provider.clone() {
                     match provider {
-                        AssistantProviderContentV1::Anthropic {
+                        AssistantProviderContentV1.Anthropic {
                             api_url,
                             low_speed_timeout_in_seconds,
                             ..
-                        } => update_settings_file::<AllLanguageModelSettings>(
+                        } => update_settings_file.<AllLanguageModelSettings>(
                             fs,
                             cx,
                             move |content, _| {
                                 if content.anthropic.is_none() {
                                     content.anthropic =
-                                        Some(language_model::settings::AnthropicSettingsContent::Versioned(
-                                            language_model::settings::VersionedAnthropicSettingsContent::V1(
-                                                language_model::settings::AnthropicSettingsContentV1 {
+                                        Some(language_model.settings.AnthropicSettingsContent.Versioned(
+                                            language_model.settings.VersionedAnthropicSettingsContent.V1(
+                                                language_model.settings.AnthropicSettingsContentV1 {
                                                     api_url,
                                                     low_speed_timeout_in_seconds,
                                                     available_models: None
@@ -122,29 +122,29 @@ impl AssistantSettingsContent {
                                 }
                             },
                         ),
-                        AssistantProviderContentV1::Ollama {
+                        AssistantProviderContentV1.Ollama {
                             api_url,
                             low_speed_timeout_in_seconds,
                             ..
-                        } => update_settings_file::<AllLanguageModelSettings>(
+                        } => update_settings_file.<AllLanguageModelSettings>(
                             fs,
                             cx,
                             move |content, _| {
                                 if content.ollama.is_none() {
                                     content.ollama =
-                                        Some(language_model::settings::OllamaSettingsContent {
+                                        Some(language_model.settings.OllamaSettingsContent {
                                             api_url,
                                             low_speed_timeout_in_seconds,
                                         });
                                 }
                             },
                         ),
-                        AssistantProviderContentV1::OpenAi {
+                        AssistantProviderContentV1.OpenAi {
                             api_url,
                             low_speed_timeout_in_seconds,
                             available_models,
                             ..
-                        } => update_settings_file::<AllLanguageModelSettings>(
+                        } => update_settings_file.<AllLanguageModelSettings>(
                             fs,
                             cx,
                             move |content, _| {
@@ -153,17 +153,17 @@ impl AssistantSettingsContent {
                                         models
                                             .into_iter()
                                             .filter_map(|model| match model {
-                                                open_ai::Model::Custom { name, max_tokens } => {
-                                                    Some(language_model::provider::open_ai::AvailableModel { name, max_tokens })
+                                                open_ai.Model.Custom { name, max_tokens } => {
+                                                    Some(language_model.provider.open_ai.AvailableModel { name, max_tokens })
                                                 }
                                                 _ => None,
                                             })
-                                            .collect::<Vec<_>>()
+                                            .collect.<Vec<_>>()
                                     });
                                     content.openai =
-                                        Some(language_model::settings::OpenAiSettingsContent::Versioned(
-                                            language_model::settings::VersionedOpenAiSettingsContent::V1(
-                                                language_model::settings::OpenAiSettingsContentV1 {
+                                        Some(language_model.settings.OpenAiSettingsContent.Versioned(
+                                            language_model.settings.VersionedOpenAiSettingsContent.V1(
+                                                language_model.settings.OpenAiSettingsContentV1 {
                                                     api_url,
                                                     low_speed_timeout_in_seconds,
                                                     available_models
@@ -179,15 +179,15 @@ impl AssistantSettingsContent {
             }
         }
 
-        *self = AssistantSettingsContent::Versioned(VersionedAssistantSettingsContent::V2(
+        *self = AssistantSettingsContent.Versioned(VersionedAssistantSettingsContent.V2(
             self.upgrade(),
         ));
     }
 
     fn upgrade(&self) -> AssistantSettingsContentV2 {
         match self {
-            AssistantSettingsContent::Versioned(settings) => match settings {
-                VersionedAssistantSettingsContent::V1(settings) => AssistantSettingsContentV2 {
+            AssistantSettingsContent.Versioned(settings) => match settings {
+                VersionedAssistantSettingsContent.V1(settings) => AssistantSettingsContentV2 {
                     enabled: settings.enabled,
                     button: settings.button,
                     dock: settings.dock,
@@ -197,25 +197,25 @@ impl AssistantSettingsContent {
                         .provider
                         .clone()
                         .and_then(|provider| match provider {
-                            AssistantProviderContentV1::ZedDotDev { default_model } => {
+                            AssistantProviderContentV1.ZedDotDev { default_model } => {
                                 default_model.map(|model| LanguageModelSelection {
                                     provider: "zed.dev".to_string(),
                                     model: model.id().to_string(),
                                 })
                             }
-                            AssistantProviderContentV1::OpenAi { default_model, .. } => {
+                            AssistantProviderContentV1.OpenAi { default_model, .. } => {
                                 default_model.map(|model| LanguageModelSelection {
                                     provider: "openai".to_string(),
                                     model: model.id().to_string(),
                                 })
                             }
-                            AssistantProviderContentV1::Anthropic { default_model, .. } => {
+                            AssistantProviderContentV1.Anthropic { default_model, .. } => {
                                 default_model.map(|model| LanguageModelSelection {
                                     provider: "anthropic".to_string(),
                                     model: model.id().to_string(),
                                 })
                             }
-                            AssistantProviderContentV1::Ollama { default_model, .. } => {
+                            AssistantProviderContentV1.Ollama { default_model, .. } => {
                                 default_model.map(|model| LanguageModelSelection {
                                     provider: "ollama".to_string(),
                                     model: model.id().to_string(),
@@ -223,9 +223,9 @@ impl AssistantSettingsContent {
                             }
                         }),
                 },
-                VersionedAssistantSettingsContent::V2(settings) => settings.clone(),
+                VersionedAssistantSettingsContent.V2(settings) => settings.clone(),
             },
-            AssistantSettingsContent::Legacy(settings) => AssistantSettingsContentV2 {
+            AssistantSettingsContent.Legacy(settings) => AssistantSettingsContentV2 {
                 enabled: None,
                 button: settings.button,
                 dock: settings.dock,
@@ -246,15 +246,15 @@ impl AssistantSettingsContent {
 
     pub fn set_dock(&mut self, dock: AssistantDockPosition) {
         match self {
-            AssistantSettingsContent::Versioned(settings) => match settings {
-                VersionedAssistantSettingsContent::V1(settings) => {
+            AssistantSettingsContent.Versioned(settings) => match settings {
+                VersionedAssistantSettingsContent.V1(settings) => {
                     settings.dock = Some(dock);
                 }
-                VersionedAssistantSettingsContent::V2(settings) => {
+                VersionedAssistantSettingsContent.V2(settings) => {
                     settings.dock = Some(dock);
                 }
             },
-            AssistantSettingsContent::Legacy(settings) => {
+            AssistantSettingsContent.Legacy(settings) => {
                 settings.dock = Some(dock);
             }
         }
@@ -265,37 +265,37 @@ impl AssistantSettingsContent {
         let provider = language_model.provider_id().0.to_string();
 
         match self {
-            AssistantSettingsContent::Versioned(settings) => match settings {
-                VersionedAssistantSettingsContent::V1(settings) => match provider.as_ref() {
+            AssistantSettingsContent.Versioned(settings) => match settings {
+                VersionedAssistantSettingsContent.V1(settings) => match provider.as_ref() {
                     "zed.dev" => {
-                        log::warn!("attempted to set zed.dev model on outdated settings");
+                        log.warn!("attempted to set zed.dev model on outdated settings");
                     }
                     "anthropic" => {
                         let (api_url, low_speed_timeout_in_seconds) = match &settings.provider {
-                            Some(AssistantProviderContentV1::Anthropic {
+                            Some(AssistantProviderContentV1.Anthropic {
                                 api_url,
                                 low_speed_timeout_in_seconds,
                                 ..
                             }) => (api_url.clone(), *low_speed_timeout_in_seconds),
                             _ => (None, None),
                         };
-                        settings.provider = Some(AssistantProviderContentV1::Anthropic {
-                            default_model: AnthropicModel::from_id(&model).ok(),
+                        settings.provider = Some(AssistantProviderContentV1.Anthropic {
+                            default_model: AnthropicModel.from_id(&model).ok(),
                             api_url,
                             low_speed_timeout_in_seconds,
                         });
                     }
                     "ollama" => {
                         let (api_url, low_speed_timeout_in_seconds) = match &settings.provider {
-                            Some(AssistantProviderContentV1::Ollama {
+                            Some(AssistantProviderContentV1.Ollama {
                                 api_url,
                                 low_speed_timeout_in_seconds,
                                 ..
                             }) => (api_url.clone(), *low_speed_timeout_in_seconds),
                             _ => (None, None),
                         };
-                        settings.provider = Some(AssistantProviderContentV1::Ollama {
-                            default_model: Some(ollama::Model::new(&model)),
+                        settings.provider = Some(AssistantProviderContentV1.Ollama {
+                            default_model: Some(ollama.Model.new(&model)),
                             api_url,
                             low_speed_timeout_in_seconds,
                         });
@@ -303,7 +303,7 @@ impl AssistantSettingsContent {
                     "openai" => {
                         let (api_url, low_speed_timeout_in_seconds, available_models) =
                             match &settings.provider {
-                                Some(AssistantProviderContentV1::OpenAi {
+                                Some(AssistantProviderContentV1.OpenAi {
                                     api_url,
                                     low_speed_timeout_in_seconds,
                                     available_models,
@@ -315,8 +315,8 @@ impl AssistantSettingsContent {
                                 ),
                                 _ => (None, None, None),
                             };
-                        settings.provider = Some(AssistantProviderContentV1::OpenAi {
-                            default_model: open_ai::Model::from_id(&model).ok(),
+                        settings.provider = Some(AssistantProviderContentV1.OpenAi {
+                            default_model: open_ai.Model.from_id(&model).ok(),
                             api_url,
                             low_speed_timeout_in_seconds,
                             available_models,
@@ -324,12 +324,12 @@ impl AssistantSettingsContent {
                     }
                     _ => {}
                 },
-                VersionedAssistantSettingsContent::V2(settings) => {
+                VersionedAssistantSettingsContent.V2(settings) => {
                     settings.default_model = Some(LanguageModelSelection { provider, model });
                 }
             },
-            AssistantSettingsContent::Legacy(settings) => {
-                if let Ok(model) = open_ai::Model::from_id(&language_model.id().0) {
+            AssistantSettingsContent.Legacy(settings) => {
+                if let Ok(model) = open_ai.Model.from_id(&language_model.id().0) {
                     settings.default_open_ai_model = Some(model);
                 }
             }
@@ -348,7 +348,7 @@ pub enum VersionedAssistantSettingsContent {
 
 impl Default for VersionedAssistantSettingsContent {
     fn default() -> Self {
-        Self::V2(AssistantSettingsContentV2 {
+        Self.V2(AssistantSettingsContentV2 {
             enabled: None,
             button: None,
             dock: None,
@@ -392,8 +392,8 @@ pub struct LanguageModelSelection {
     pub model: String,
 }
 
-fn providers_schema(_: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
-    schemars::schema::SchemaObject {
+fn providers_schema(_: &mut schemars.gen.SchemaGenerator) -> schemars.schema.Schema {
+    schemars.schema.SchemaObject {
         enum_values: Some(vec![
             "anthropic".into(),
             "google".into(),
@@ -402,7 +402,7 @@ fn providers_schema(_: &mut schemars::gen::SchemaGenerator) -> schemars::schema:
             "zed.dev".into(),
             "copilot_chat".into(),
         ]),
-        ..Default::default()
+        ..Default.default()
     }
     .into()
 }
@@ -481,10 +481,10 @@ impl Settings for AssistantSettings {
     type FileContent = AssistantSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _: &mut gpui::AppContext,
-    ) -> anyhow::Result<Self> {
-        let mut settings = AssistantSettings::default();
+        sources: SettingsSources<Self.FileContent>,
+        _: &mut gpui.AppContext,
+    ) -> anyhow.Result<Self> {
+        let mut settings = AssistantSettings.default();
 
         for value in sources.defaults_and_customizations() {
             if value.is_version_outdated() {
@@ -497,15 +497,15 @@ impl Settings for AssistantSettings {
             merge(&mut settings.dock, value.dock);
             merge(
                 &mut settings.default_width,
-                value.default_width.map(Into::into),
+                value.default_width.map(Into.into),
             );
             merge(
                 &mut settings.default_height,
-                value.default_height.map(Into::into),
+                value.default_height.map(Into.into),
             );
             merge(
                 &mut settings.default_model,
-                value.default_model.map(Into::into),
+                value.default_model.map(Into.into),
             );
         }
 
@@ -521,27 +521,27 @@ fn merge<T>(target: &mut T, value: Option<T>) {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{ReadGlobal, TestAppContext};
+    use gpui.{ReadGlobal, TestAppContext};
 
-    use super::*;
+    use super.*;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_deserialize_assistant_settings_with_version(cx: &mut TestAppContext) {
-        let fs = fs::FakeFs::new(cx.executor().clone());
-        fs.create_dir(paths::settings_file().parent().unwrap())
+        let fs = fs.FakeFs.new(cx.executor().clone());
+        fs.create_dir(paths.settings_file().parent().unwrap())
             .await
             .unwrap();
 
         cx.update(|cx| {
-            let test_settings = settings::SettingsStore::test(cx);
+            let test_settings = settings.SettingsStore.test(cx);
             cx.set_global(test_settings);
-            AssistantSettings::register(cx);
+            AssistantSettings.register(cx);
         });
 
         cx.update(|cx| {
-            assert!(!AssistantSettings::get_global(cx).using_outdated_settings_version);
+            assert!(!AssistantSettings.get_global(cx).using_outdated_settings_version);
             assert_eq!(
-                AssistantSettings::get_global(cx).default_model,
+                AssistantSettings.get_global(cx).default_model,
                 LanguageModelSelection {
                     provider: "openai".into(),
                     model: "gpt-4o".into(),
@@ -550,11 +550,11 @@ mod tests {
         });
 
         cx.update(|cx| {
-            settings::SettingsStore::global(cx).update_settings_file::<AssistantSettings>(
+            settings.SettingsStore.global(cx).update_settings_file.<AssistantSettings>(
                 fs.clone(),
                 |settings, _| {
-                    *settings = AssistantSettingsContent::Versioned(
-                        VersionedAssistantSettingsContent::V2(AssistantSettingsContentV2 {
+                    *settings = AssistantSettingsContent.Versioned(
+                        VersionedAssistantSettingsContent.V2(AssistantSettingsContentV2 {
                             default_model: Some(LanguageModelSelection {
                                 provider: "test-provider".into(),
                                 model: "gpt-99".into(),
@@ -572,7 +572,7 @@ mod tests {
 
         cx.run_until_parked();
 
-        let raw_settings_value = fs.load(paths::settings_file()).await.unwrap();
+        let raw_settings_value = fs.load(paths.settings_file()).await.unwrap();
         assert!(raw_settings_value.contains(r#""version": "2""#));
 
         #[derive(Debug, Deserialize)]
@@ -581,7 +581,7 @@ mod tests {
         }
 
         let assistant_settings: AssistantSettingsTest =
-            serde_json_lenient::from_str(&raw_settings_value).unwrap();
+            serde_json_lenient.from_str(&raw_settings_value).unwrap();
 
         assert!(!assistant_settings.assistant.is_version_outdated());
     }

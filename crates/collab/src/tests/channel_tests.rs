@@ -1,26 +1,26 @@
-use crate::{
-    db::{self, UserId},
-    rpc::RECONNECT_TIMEOUT,
-    tests::{room_participants, RoomParticipants, TestServer},
+use crate.{
+    db.{self, UserId},
+    rpc.RECONNECT_TIMEOUT,
+    tests.{room_participants, RoomParticipants, TestServer},
 };
-use call::ActiveCall;
-use channel::{ChannelMembership, ChannelStore};
-use client::{ChannelId, User};
-use futures::future::try_join_all;
-use gpui::{BackgroundExecutor, Model, SharedString, TestAppContext};
-use rpc::{
-    proto::{self, ChannelRole},
+use call.ActiveCall;
+use channel.{ChannelMembership, ChannelStore};
+use client.{ChannelId, User};
+use futures.future.try_join_all;
+use gpui.{BackgroundExecutor, Model, SharedString, TestAppContext};
+use rpc.{
+    proto.{self, ChannelRole},
     RECEIVE_TIMEOUT,
 };
-use std::sync::Arc;
+use std.sync.Arc;
 
-#[gpui::test]
+#[gpui.test]
 async fn test_core_channels(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -59,7 +59,7 @@ async fn test_core_channels(
 
     cx_b.read(|cx| {
         client_b.channel_store().read_with(cx, |channels, _| {
-            assert!(channels.ordered_channels().collect::<Vec<_>>().is_empty())
+            assert!(channels.ordered_channels().collect.<Vec<_>>().is_empty())
         })
     });
 
@@ -72,7 +72,7 @@ async fn test_core_channels(
             let invite = store.invite_member(
                 channel_a_id,
                 client_b.user_id().unwrap(),
-                proto::ChannelRole::Member,
+                proto.ChannelRole.Member,
                 cx,
             );
 
@@ -108,13 +108,13 @@ async fn test_core_channels(
         &[
             (
                 client_a.user_id().unwrap(),
-                proto::ChannelRole::Admin,
-                proto::channel_member::Kind::Member,
+                proto.ChannelRole.Admin,
+                proto.channel_member.Kind.Member,
             ),
             (
                 client_b.user_id().unwrap(),
-                proto::ChannelRole::Member,
-                proto::channel_member::Kind::Invitee,
+                proto.ChannelRole.Member,
+                proto.channel_member.Kind.Invitee,
             ),
         ],
     );
@@ -186,7 +186,7 @@ async fn test_core_channels(
             store.set_member_role(
                 channel_a_id,
                 client_b.user_id().unwrap(),
-                proto::ChannelRole::Admin,
+                proto.ChannelRole.Admin,
                 cx,
             )
         })
@@ -281,8 +281,8 @@ async fn test_core_channels(
         .app_state
         .db
         .rename_channel(
-            db::ChannelId::from_proto(channel_a_id.0),
-            UserId::from_proto(client_a.id()),
+            db.ChannelId.from_proto(channel_a_id.0),
+            UserId.from_proto(client_a.id()),
             "channel-a-renamed",
         )
         .await
@@ -304,7 +304,7 @@ async fn test_core_channels(
 #[track_caller]
 fn assert_participants_eq(participants: &[Arc<User>], expected_partitipants: &[u64]) {
     assert_eq!(
-        participants.iter().map(|p| p.id).collect::<Vec<_>>(),
+        participants.iter().map(|p| p.id).collect.<Vec<_>>(),
         expected_partitipants
     );
 }
@@ -312,24 +312,24 @@ fn assert_participants_eq(participants: &[Arc<User>], expected_partitipants: &[u
 #[track_caller]
 fn assert_members_eq(
     members: &[ChannelMembership],
-    expected_members: &[(u64, proto::ChannelRole, proto::channel_member::Kind)],
+    expected_members: &[(u64, proto.ChannelRole, proto.channel_member.Kind)],
 ) {
     assert_eq!(
         members
             .iter()
             .map(|member| (member.user.id, member.role, member.kind))
-            .collect::<Vec<_>>(),
+            .collect.<Vec<_>>(),
         expected_members
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_joining_channel_ancestor_member(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
 
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
@@ -346,7 +346,7 @@ async fn test_joining_channel_ancestor_member(
         .await
         .unwrap();
 
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     assert!(active_call_b
         .update(cx_b, |active_call, cx| active_call.join_channel(sub_id, cx))
@@ -354,14 +354,14 @@ async fn test_joining_channel_ancestor_member(
         .is_ok());
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_room(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -375,8 +375,8 @@ async fn test_channel_room(
         )
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     active_call_a
         .update(cx_a, |active_call, cx| active_call.join_channel(zed_id, cx))
@@ -577,9 +577,9 @@ async fn test_channel_room(
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_jumping(executor: BackgroundExecutor, cx_a: &mut TestAppContext) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
 
     let zed_id = server
@@ -589,7 +589,7 @@ async fn test_channel_jumping(executor: BackgroundExecutor, cx_a: &mut TestAppCo
         .make_channel("rust", None, (&client_a, cx_a), &mut [])
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     active_call_a
         .update(cx_a, |active_call, cx| active_call.join_channel(zed_id, cx))
@@ -629,13 +629,13 @@ async fn test_channel_jumping(executor: BackgroundExecutor, cx_a: &mut TestAppCo
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_permissions_update_while_invited(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -649,7 +649,7 @@ async fn test_permissions_update_while_invited(
             channel_store.invite_member(
                 rust_id,
                 client_b.user_id().unwrap(),
-                proto::ChannelRole::Member,
+                proto.ChannelRole.Member,
                 cx,
             )
         })
@@ -676,7 +676,7 @@ async fn test_permissions_update_while_invited(
             channel_store.set_member_role(
                 rust_id,
                 client_b.user_id().unwrap(),
-                proto::ChannelRole::Admin,
+                proto.ChannelRole.Admin,
                 cx,
             )
         })
@@ -697,13 +697,13 @@ async fn test_permissions_update_while_invited(
     assert_channels(client_b.channel_store(), cx_b, &[]);
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_rename(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -745,14 +745,14 @@ async fn test_channel_rename(
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_call_from_channel(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -769,8 +769,8 @@ async fn test_call_from_channel(
         )
         .await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     active_call_a
         .update(cx_a, |call, cx| call.join_channel(channel_id, cx))
@@ -827,13 +827,13 @@ async fn test_call_from_channel(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_lost_channel_creation(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -852,7 +852,7 @@ async fn test_lost_channel_creation(
             channel_store.invite_member(
                 channel_id,
                 client_b.user_id().unwrap(),
-                proto::ChannelRole::Member,
+                proto.ChannelRole.Member,
                 cx,
             )
         })
@@ -931,14 +931,14 @@ async fn test_lost_channel_creation(
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_link_notifications(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -953,9 +953,9 @@ async fn test_channel_link_notifications(
 
     try_join_all(client_a.channel_store().update(cx_a, |channel_store, cx| {
         [
-            channel_store.set_channel_visibility(zed_channel, proto::ChannelVisibility::Public, cx),
-            channel_store.invite_member(zed_channel, user_b, proto::ChannelRole::Member, cx),
-            channel_store.invite_member(zed_channel, user_c, proto::ChannelRole::Guest, cx),
+            channel_store.set_channel_visibility(zed_channel, proto.ChannelVisibility.Public, cx),
+            channel_store.invite_member(zed_channel, user_b, proto.ChannelRole.Member, cx),
+            channel_store.invite_member(zed_channel, user_c, proto.ChannelRole.Guest, cx),
         ]
     }))
     .await
@@ -1018,7 +1018,7 @@ async fn test_channel_link_notifications(
     client_a
         .channel_store()
         .update(cx_a, |channel_store, cx| {
-            channel_store.set_channel_visibility(vim_channel, proto::ChannelVisibility::Public, cx)
+            channel_store.set_channel_visibility(vim_channel, proto.ChannelVisibility.Public, cx)
         })
         .await
         .unwrap();
@@ -1063,7 +1063,7 @@ async fn test_channel_link_notifications(
         .update(cx_a, |channel_store, cx| {
             channel_store.set_channel_visibility(
                 helix_channel,
-                proto::ChannelVisibility::Public,
+                proto.ChannelVisibility.Public,
                 cx,
             )
         })
@@ -1089,13 +1089,13 @@ async fn test_channel_link_notifications(
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_membership_notifications(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_c").await;
 
@@ -1113,10 +1113,10 @@ async fn test_channel_membership_notifications(
 
     try_join_all(client_a.channel_store().update(cx_a, |channel_store, cx| {
         [
-            channel_store.set_channel_visibility(zed_channel, proto::ChannelVisibility::Public, cx),
-            channel_store.set_channel_visibility(vim_channel, proto::ChannelVisibility::Public, cx),
-            channel_store.invite_member(zed_channel, user_b, proto::ChannelRole::Admin, cx),
-            channel_store.invite_member(opensource_channel, user_b, proto::ChannelRole::Member, cx),
+            channel_store.set_channel_visibility(zed_channel, proto.ChannelVisibility.Public, cx),
+            channel_store.set_channel_visibility(vim_channel, proto.ChannelVisibility.Public, cx),
+            channel_store.invite_member(zed_channel, user_b, proto.ChannelRole.Admin, cx),
+            channel_store.invite_member(opensource_channel, user_b, proto.ChannelRole.Member, cx),
         ]
     }))
     .await
@@ -1169,7 +1169,7 @@ async fn test_channel_membership_notifications(
     client_a
         .channel_store()
         .update(cx_a, |channel_store, cx| {
-            channel_store.set_member_role(opensource_channel, user_b, ChannelRole::Admin, cx)
+            channel_store.set_member_role(opensource_channel, user_b, ChannelRole.Admin, cx)
         })
         .await
         .unwrap();
@@ -1181,13 +1181,13 @@ async fn test_channel_membership_notifications(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_guest_access(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -1200,7 +1200,7 @@ async fn test_guest_access(
     let channel_a = channels[0];
     let channel_b = channels[1];
 
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     // Non-members should not be allowed to join
     assert!(active_call_b
@@ -1212,14 +1212,14 @@ async fn test_guest_access(
     client_a
         .channel_store()
         .update(cx_a, |channel_store, cx| {
-            channel_store.set_channel_visibility(channel_a, proto::ChannelVisibility::Public, cx)
+            channel_store.set_channel_visibility(channel_a, proto.ChannelVisibility.Public, cx)
         })
         .await
         .unwrap();
     client_a
         .channel_store()
         .update(cx_a, |channel_store, cx| {
-            channel_store.set_channel_visibility(channel_b, proto::ChannelVisibility::Public, cx)
+            channel_store.set_channel_visibility(channel_b, proto.ChannelVisibility.Public, cx)
         })
         .await
         .unwrap();
@@ -1249,13 +1249,13 @@ async fn test_guest_access(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_invite_access(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -1268,7 +1268,7 @@ async fn test_invite_access(
     let channel_a_id = channels[0];
     let channel_b_id = channels[0];
 
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     // should not be allowed to join
     assert!(active_call_b
@@ -1282,7 +1282,7 @@ async fn test_invite_access(
             channel_store.invite_member(
                 channel_a_id,
                 client_b.user_id().unwrap(),
-                ChannelRole::Member,
+                ChannelRole.Member,
                 cx,
             )
         })
@@ -1308,9 +1308,9 @@ async fn test_invite_access(
     })
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_leave_channel(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
-    let (_server, _client_a, client_b, channel_id) = TestServer::start2(cx_a, cx_b).await;
+    let (_server, _client_a, client_b, channel_id) = TestServer.start2(cx_a, cx_b).await;
 
     client_b
         .channel_store()
@@ -1330,14 +1330,14 @@ async fn test_leave_channel(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_moving(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     _cx_b: &mut TestAppContext,
     _cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
 
     let channels = server
@@ -1415,7 +1415,7 @@ fn assert_channel_invitations(
                     name: channel.name.clone(),
                     id: channel.id,
                 })
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         })
     });
     assert_eq!(actual, expected_channels);
@@ -1436,10 +1436,10 @@ fn assert_channels(
                     name: channel.name.clone(),
                     id: channel.id,
                 })
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         })
     });
-    pretty_assertions::assert_eq!(actual, expected_channels);
+    pretty_assertions.assert_eq!(actual, expected_channels);
 }
 
 #[track_caller]
@@ -1453,8 +1453,8 @@ fn assert_channels_list_shape(
             store
                 .ordered_channels()
                 .map(|(depth, channel)| (channel.id, depth))
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         })
     });
-    pretty_assertions::assert_eq!(actual, expected_channels);
+    pretty_assertions.assert_eq!(actual, expected_channels);
 }

@@ -1,19 +1,19 @@
-use channel::{ChannelMembership, ChannelStore};
-use client::{
-    proto::{self, ChannelRole, ChannelVisibility},
+use channel.{ChannelMembership, ChannelStore};
+use client.{
+    proto.{self, ChannelRole, ChannelVisibility},
     ChannelId, User, UserId, UserStore,
 };
-use fuzzy::{match_strings, StringMatchCandidate};
-use gpui::{
+use fuzzy.{match_strings, StringMatchCandidate};
+use gpui.{
     actions, anchored, deferred, div, AppContext, ClipboardItem, DismissEvent, EventEmitter,
     FocusableView, Model, ParentElement, Render, Styled, Subscription, Task, View, ViewContext,
     VisualContext, WeakView,
 };
-use picker::{Picker, PickerDelegate};
-use std::sync::Arc;
-use ui::{prelude::*, Avatar, CheckboxWithLabel, ContextMenu, ListItem, ListItemSpacing};
-use util::TryFutureExt;
-use workspace::{notifications::DetachAndPromptErr, ModalView};
+use picker.{Picker, PickerDelegate};
+use std.sync.Arc;
+use ui.{prelude.*, Avatar, CheckboxWithLabel, ContextMenu, ListItem, ListItemSpacing};
+use util.TryFutureExt;
+use workspace.{notifications.DetachAndPromptErr, ModalView};
 
 actions!(
     channel_modal,
@@ -42,18 +42,18 @@ impl ChannelModal {
         cx.observe(&channel_store, |_, _, cx| cx.notify()).detach();
         let channel_modal = cx.view().downgrade();
         let picker = cx.new_view(|cx| {
-            Picker::uniform_list(
+            Picker.uniform_list(
                 ChannelModalDelegate {
                     channel_modal,
-                    matching_users: Vec::new(),
-                    matching_member_indices: Vec::new(),
+                    matching_users: Vec.new(),
+                    matching_member_indices: Vec.new(),
                     selected_index: 0,
                     user_store: user_store.clone(),
                     channel_store: channel_store.clone(),
                     channel_id,
-                    match_candidates: Vec::new(),
+                    match_candidates: Vec.new(),
                     context_menu: None,
-                    members: Vec::new(),
+                    members: Vec.new(),
                     has_all_members: false,
                     mode,
                 },
@@ -71,8 +71,8 @@ impl ChannelModal {
 
     fn toggle_mode(&mut self, _: &ToggleMode, cx: &mut ViewContext<Self>) {
         let mode = match self.picker.read(cx).delegate.mode {
-            Mode::ManageMembers => Mode::InviteMembers,
-            Mode::InviteMembers => Mode::ManageMembers,
+            Mode.ManageMembers => Mode.InviteMembers,
+            Mode.InviteMembers => Mode.ManageMembers,
         };
         self.set_mode(mode, cx);
     }
@@ -95,9 +95,9 @@ impl ChannelModal {
                 .set_channel_visibility(
                     self.channel_id,
                     match selection {
-                        Selection::Unselected => ChannelVisibility::Members,
-                        Selection::Selected => ChannelVisibility::Public,
-                        Selection::Indeterminate => return,
+                        Selection.Unselected => ChannelVisibility.Members,
+                        Selection.Selected => ChannelVisibility.Public,
+                        Selection.Indeterminate => return,
                     },
                     cx,
                 )
@@ -105,7 +105,7 @@ impl ChannelModal {
         });
     }
 
-    fn dismiss(&mut self, _: &menu::Cancel, cx: &mut ViewContext<Self>) {
+    fn dismiss(&mut self, _: &menu.Cancel, cx: &mut ViewContext<Self>) {
         cx.emit(DismissEvent);
     }
 }
@@ -114,7 +114,7 @@ impl EventEmitter<DismissEvent> for ChannelModal {}
 impl ModalView for ChannelModal {}
 
 impl FocusableView for ChannelModal {
-    fn focus_handle(&self, cx: &AppContext) -> gpui::FocusHandle {
+    fn focus_handle(&self, cx: &AppContext) -> gpui.FocusHandle {
         self.picker.focus_handle(cx)
     }
 }
@@ -132,8 +132,8 @@ impl Render for ChannelModal {
 
         v_flex()
             .key_context("ChannelModal")
-            .on_action(cx.listener(Self::toggle_mode))
-            .on_action(cx.listener(Self::dismiss))
+            .on_action(cx.listener(Self.toggle_mode))
+            .on_action(cx.listener(Self.dismiss))
             .elevation_3(cx)
             .w(rems(34.))
             .child(
@@ -146,8 +146,8 @@ impl Render for ChannelModal {
                             .w_px()
                             .flex_1()
                             .gap_1()
-                            .child(Icon::new(IconName::Hash).size(IconSize::Medium))
-                            .child(Label::new(channel_name)),
+                            .child(Icon.new(IconName.Hash).size(IconSize.Medium))
+                            .child(Label.new(channel_name)),
                     )
                     .child(
                         h_flex()
@@ -155,32 +155,32 @@ impl Render for ChannelModal {
                             .h(rems_from_px(22.))
                             .justify_between()
                             .line_height(rems(1.25))
-                            .child(CheckboxWithLabel::new(
+                            .child(CheckboxWithLabel.new(
                                 "is-public",
-                                Label::new("Public").size(LabelSize::Small),
-                                if visibility == ChannelVisibility::Public {
-                                    ui::Selection::Selected
+                                Label.new("Public").size(LabelSize.Small),
+                                if visibility == ChannelVisibility.Public {
+                                    ui.Selection.Selected
                                 } else {
-                                    ui::Selection::Unselected
+                                    ui.Selection.Unselected
                                 },
-                                cx.listener(Self::set_channel_visibility),
+                                cx.listener(Self.set_channel_visibility),
                             ))
                             .children(
                                 Some(
-                                    Button::new("copy-link", "Copy Link")
-                                        .label_size(LabelSize::Small)
+                                    Button.new("copy-link", "Copy Link")
+                                        .label_size(LabelSize.Small)
                                         .on_click(cx.listener(move |this, _, cx| {
                                             if let Some(channel) = this
                                                 .channel_store
                                                 .read(cx)
                                                 .channel_for_id(channel_id)
                                             {
-                                                let item = ClipboardItem::new(channel.link(cx));
+                                                let item = ClipboardItem.new(channel.link(cx));
                                                 cx.write_to_clipboard(item);
                                             }
                                         })),
                                 )
-                                .filter(|_| visibility == ChannelVisibility::Public),
+                                .filter(|_| visibility == ChannelVisibility.Public),
                             ),
                     )
                     .child(
@@ -192,12 +192,12 @@ impl Render for ChannelModal {
                                     .py_1()
                                     .cursor_pointer()
                                     .border_b_2()
-                                    .when(mode == Mode::ManageMembers, |this| {
+                                    .when(mode == Mode.ManageMembers, |this| {
                                         this.border_color(cx.theme().colors().border)
                                     })
-                                    .child(Label::new("Manage Members"))
+                                    .child(Label.new("Manage Members"))
                                     .on_click(cx.listener(|this, _, cx| {
-                                        this.set_mode(Mode::ManageMembers, cx);
+                                        this.set_mode(Mode.ManageMembers, cx);
                                     })),
                             )
                             .child(
@@ -207,12 +207,12 @@ impl Render for ChannelModal {
                                     .py_1()
                                     .cursor_pointer()
                                     .border_b_2()
-                                    .when(mode == Mode::InviteMembers, |this| {
+                                    .when(mode == Mode.InviteMembers, |this| {
                                         this.border_color(cx.theme().colors().border)
                                     })
-                                    .child(Label::new("Invite Members"))
+                                    .child(Label.new("Invite Members"))
                                     .on_click(cx.listener(|this, _, cx| {
-                                        this.set_mode(Mode::InviteMembers, cx);
+                                        this.set_mode(Mode.InviteMembers, cx);
                                     })),
                             ),
                     ),
@@ -251,8 +251,8 @@ impl PickerDelegate for ChannelModalDelegate {
 
     fn match_count(&self) -> usize {
         match self.mode {
-            Mode::ManageMembers => self.matching_member_indices.len(),
-            Mode::InviteMembers => self.matching_users.len(),
+            Mode.ManageMembers => self.matching_member_indices.len(),
+            Mode.InviteMembers => self.matching_users.len(),
         }
     }
 
@@ -266,7 +266,7 @@ impl PickerDelegate for ChannelModalDelegate {
 
     fn update_matches(&mut self, query: String, cx: &mut ViewContext<Picker<Self>>) -> Task<()> {
         match self.mode {
-            Mode::ManageMembers => {
+            Mode.ManageMembers => {
                 if self.has_all_members {
                     self.match_candidates.clear();
                     self.match_candidates
@@ -282,8 +282,8 @@ impl PickerDelegate for ChannelModalDelegate {
                         &self.match_candidates,
                         &query,
                         true,
-                        usize::MAX,
-                        &Default::default(),
+                        usize.MAX,
+                        &Default.default(),
                         cx.background_executor().clone(),
                     ));
 
@@ -314,14 +314,14 @@ impl PickerDelegate for ChannelModalDelegate {
                                 picker.delegate.members = members;
                                 cx.notify();
                             })?;
-                            anyhow::Ok(())
+                            anyhow.Ok(())
                         }
                         .log_err()
                         .await;
                     })
                 }
             }
-            Mode::InviteMembers => {
+            Mode.InviteMembers => {
                 let search_users = self
                     .user_store
                     .update(cx, |store, cx| store.fuzzy_search_users(query, cx));
@@ -332,7 +332,7 @@ impl PickerDelegate for ChannelModalDelegate {
                             picker.delegate.matching_users = users;
                             cx.notify();
                         })?;
-                        anyhow::Ok(())
+                        anyhow.Ok(())
                     }
                     .log_err()
                     .await;
@@ -348,12 +348,12 @@ impl PickerDelegate for ChannelModalDelegate {
                 return;
             }
             match self.mode {
-                Mode::ManageMembers => self.show_context_menu(self.selected_index, cx),
-                Mode::InviteMembers => match self.member_status(selected_user.id, cx) {
-                    Some(proto::channel_member::Kind::Invitee) => {
+                Mode.ManageMembers => self.show_context_menu(self.selected_index, cx),
+                Mode.InviteMembers => match self.member_status(selected_user.id, cx) {
+                    Some(proto.channel_member.Kind.Invitee) => {
                         self.remove_member(selected_user.id, cx);
                     }
-                    Some(proto::channel_member::Kind::Member) => {}
+                    Some(proto.channel_member.Kind.Member) => {}
                     None => self.invite_member(selected_user, cx),
                 },
             }
@@ -375,44 +375,44 @@ impl PickerDelegate for ChannelModalDelegate {
         ix: usize,
         selected: bool,
         cx: &mut ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem> {
+    ) -> Option<Self.ListItem> {
         let user = self.user_at_index(ix)?;
         let membership = self.member_at_index(ix);
         let request_status = self.member_status(user.id, cx);
         let is_me = self.user_store.read(cx).current_user().map(|user| user.id) == Some(user.id);
 
         Some(
-            ListItem::new(ix)
+            ListItem.new(ix)
                 .inset(true)
-                .spacing(ListItemSpacing::Sparse)
+                .spacing(ListItemSpacing.Sparse)
                 .selected(selected)
-                .start_slot(Avatar::new(user.avatar_uri.clone()))
-                .child(Label::new(user.github_login.clone()))
+                .start_slot(Avatar.new(user.avatar_uri.clone()))
+                .child(Label.new(user.github_login.clone()))
                 .end_slot(h_flex().gap_2().map(|slot| {
                     match self.mode {
-                        Mode::ManageMembers => slot
+                        Mode.ManageMembers => slot
                             .children(
-                                if request_status == Some(proto::channel_member::Kind::Invitee) {
-                                    Some(Label::new("Invited"))
+                                if request_status == Some(proto.channel_member.Kind.Invitee) {
+                                    Some(Label.new("Invited"))
                                 } else {
                                     None
                                 },
                             )
                             .children(match membership.map(|m| m.role) {
-                                Some(ChannelRole::Admin) => Some(Label::new("Admin")),
-                                Some(ChannelRole::Guest) => Some(Label::new("Guest")),
+                                Some(ChannelRole.Admin) => Some(Label.new("Admin")),
+                                Some(ChannelRole.Guest) => Some(Label.new("Guest")),
                                 _ => None,
                             })
                             .when(!is_me, |el| {
-                                el.child(IconButton::new("ellipsis", IconName::Ellipsis))
+                                el.child(IconButton.new("ellipsis", IconName.Ellipsis))
                             })
-                            .when(is_me, |el| el.child(Label::new("You").color(Color::Muted)))
+                            .when(is_me, |el| el.child(Label.new("You").color(Color.Muted)))
                             .children(
                                 if let (Some((menu, _)), true) = (&self.context_menu, selected) {
                                     Some(
                                         deferred(
                                             anchored()
-                                                .anchor(gpui::AnchorCorner::TopRight)
+                                                .anchor(gpui.AnchorCorner.TopRight)
                                                 .child(menu.clone()),
                                         )
                                         .with_priority(1),
@@ -421,12 +421,12 @@ impl PickerDelegate for ChannelModalDelegate {
                                     None
                                 },
                             ),
-                        Mode::InviteMembers => match request_status {
-                            Some(proto::channel_member::Kind::Invitee) => {
-                                slot.children(Some(Label::new("Invited")))
+                        Mode.InviteMembers => match request_status {
+                            Some(proto.channel_member.Kind.Invitee) => {
+                                slot.children(Some(Label.new("Invited")))
                             }
-                            Some(proto::channel_member::Kind::Member) => {
-                                slot.children(Some(Label::new("Member")))
+                            Some(proto.channel_member.Kind.Member) => {
+                                slot.children(Some(Label.new("Member")))
                             }
                             _ => slot,
                         },
@@ -441,7 +441,7 @@ impl ChannelModalDelegate {
         &self,
         user_id: UserId,
         cx: &AppContext,
-    ) -> Option<proto::channel_member::Kind> {
+    ) -> Option<proto.channel_member.Kind> {
         self.members
             .iter()
             .find_map(|membership| (membership.user.id == user_id).then_some(membership.kind))
@@ -449,7 +449,7 @@ impl ChannelModalDelegate {
                 self.channel_store
                     .read(cx)
                     .has_pending_channel_invite(self.channel_id, user_id)
-                    .then_some(proto::channel_member::Kind::Invitee)
+                    .then_some(proto.channel_member.Kind.Invitee)
             })
     }
 
@@ -461,11 +461,11 @@ impl ChannelModalDelegate {
 
     fn user_at_index(&self, ix: usize) -> Option<Arc<User>> {
         match self.mode {
-            Mode::ManageMembers => self.matching_member_indices.get(ix).and_then(|ix| {
+            Mode.ManageMembers => self.matching_member_indices.get(ix).and_then(|ix| {
                 let channel_membership = self.members.get(*ix)?;
                 Some(channel_membership.user.clone())
             }),
-            Mode::InviteMembers => self.matching_users.get(ix).cloned(),
+            Mode.InviteMembers => self.matching_users.get(ix).cloned(),
         }
     }
 
@@ -527,7 +527,7 @@ impl ChannelModalDelegate {
 
     fn invite_member(&mut self, user: Arc<User>, cx: &mut ViewContext<Picker<Self>>) {
         let invite_member = self.channel_store.update(cx, |store, cx| {
-            store.invite_member(self.channel_id, user.id, ChannelRole::Member, cx)
+            store.invite_member(self.channel_id, user.id, ChannelRole.Member, cx)
         });
 
         cx.spawn(|this, mut cx| async move {
@@ -536,8 +536,8 @@ impl ChannelModalDelegate {
             this.update(&mut cx, |this, cx| {
                 let new_member = ChannelMembership {
                     user,
-                    kind: proto::channel_member::Kind::Invitee,
-                    role: ChannelRole::Member,
+                    kind: proto.channel_member.Kind.Invitee,
+                    role: ChannelRole.Member,
                 };
                 let members = &mut this.delegate.members;
                 match members.binary_search_by_key(&new_member.sort_key(), |k| k.sort_key()) {
@@ -556,23 +556,23 @@ impl ChannelModalDelegate {
         };
         let user_id = membership.user.id;
         let picker = cx.view().clone();
-        let context_menu = ContextMenu::build(cx, |mut menu, _cx| {
+        let context_menu = ContextMenu.build(cx, |mut menu, _cx| {
             let role = membership.role;
 
-            if role == ChannelRole::Admin || role == ChannelRole::Member {
+            if role == ChannelRole.Admin || role == ChannelRole.Member {
                 let picker = picker.clone();
                 menu = menu.entry("Demote to Guest", None, move |cx| {
                     picker.update(cx, |picker, cx| {
                         picker
                             .delegate
-                            .set_user_role(user_id, ChannelRole::Guest, cx);
+                            .set_user_role(user_id, ChannelRole.Guest, cx);
                     })
                 });
             }
 
-            if role == ChannelRole::Admin || role == ChannelRole::Guest {
+            if role == ChannelRole.Admin || role == ChannelRole.Guest {
                 let picker = picker.clone();
-                let label = if role == ChannelRole::Guest {
+                let label = if role == ChannelRole.Guest {
                     "Promote to Member"
                 } else {
                     "Demote to Member"
@@ -582,18 +582,18 @@ impl ChannelModalDelegate {
                     picker.update(cx, |picker, cx| {
                         picker
                             .delegate
-                            .set_user_role(user_id, ChannelRole::Member, cx);
+                            .set_user_role(user_id, ChannelRole.Member, cx);
                     })
                 });
             }
 
-            if role == ChannelRole::Member || role == ChannelRole::Guest {
+            if role == ChannelRole.Member || role == ChannelRole.Guest {
                 let picker = picker.clone();
                 menu = menu.entry("Promote to Admin", None, move |cx| {
                     picker.update(cx, |picker, cx| {
                         picker
                             .delegate
-                            .set_user_role(user_id, ChannelRole::Admin, cx);
+                            .set_user_role(user_id, ChannelRole.Admin, cx);
                     })
                 });
             };

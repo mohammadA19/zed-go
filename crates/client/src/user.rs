@@ -1,25 +1,25 @@
-use super::{proto, Client, Status, TypedEnvelope};
-use anyhow::{anyhow, Context, Result};
-use collections::{hash_map::Entry, HashMap, HashSet};
-use feature_flags::FeatureFlagAppExt;
-use futures::{channel::mpsc, Future, StreamExt};
-use gpui::{
+use super.{proto, Client, Status, TypedEnvelope};
+use anyhow.{anyhow, Context, Result};
+use collections.{hash_map.Entry, HashMap, HashSet};
+use feature_flags.FeatureFlagAppExt;
+use futures.{channel.mpsc, Future, StreamExt};
+use gpui.{
     AppContext, AsyncAppContext, EventEmitter, Model, ModelContext, SharedString, SharedUri, Task,
     WeakModel,
 };
-use postage::{sink::Sink, watch};
-use rpc::proto::{RequestMessage, UsersResponse};
-use std::sync::{Arc, Weak};
-use text::ReplicaId;
-use util::TryFutureExt as _;
+use postage.{sink.Sink, watch};
+use rpc.proto.{RequestMessage, UsersResponse};
+use std.sync.{Arc, Weak};
+use text.ReplicaId;
+use util.TryFutureExt as _;
 
 pub type UserId = u64;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub struct ChannelId(pub u64);
 
-impl std::fmt::Display for ChannelId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Display for ChannelId {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         self.0.fmt(f)
     }
 }
@@ -31,7 +31,7 @@ pub struct ProjectId(pub u64);
 pub struct DevServerId(pub u64);
 
 #[derive(
-    Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, serde::Serialize, serde::Deserialize,
+    Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, serde.Serialize, serde.Deserialize,
 )]
 pub struct DevServerProjectId(pub u64);
 
@@ -47,19 +47,19 @@ pub struct User {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Collaborator {
-    pub peer_id: proto::PeerId,
+    pub peer_id: proto.PeerId,
     pub replica_id: ReplicaId,
     pub user_id: UserId,
 }
 
 impl PartialOrd for User {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<std.cmp.Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for User {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> std.cmp.Ordering {
         self.github_login.cmp(&other.github_login)
     }
 }
@@ -91,9 +91,9 @@ pub struct UserStore {
     users: HashMap<u64, Arc<User>>,
     by_github_login: HashMap<String, u64>,
     participant_indices: HashMap<u64, ParticipantIndex>,
-    update_contacts_tx: mpsc::UnboundedSender<UpdateContacts>,
-    current_plan: Option<proto::Plan>,
-    current_user: watch::Receiver<Option<Arc<User>>>,
+    update_contacts_tx: mpsc.UnboundedSender<UpdateContacts>,
+    current_plan: Option<proto.Plan>,
+    current_user: watch.Receiver<Option<Arc<User>>>,
     contacts: Vec<Arc<Contact>>,
     incoming_contact_requests: Vec<Arc<User>>,
     outgoing_contact_requests: Vec<Arc<User>>,
@@ -130,32 +130,32 @@ pub enum ContactEventKind {
 impl EventEmitter<Event> for UserStore {}
 
 enum UpdateContacts {
-    Update(proto::UpdateContacts),
-    Wait(postage::barrier::Sender),
-    Clear(postage::barrier::Sender),
+    Update(proto.UpdateContacts),
+    Wait(postage.barrier.Sender),
+    Clear(postage.barrier.Sender),
 }
 
 impl UserStore {
     pub fn new(client: Arc<Client>, cx: &mut ModelContext<Self>) -> Self {
-        let (mut current_user_tx, current_user_rx) = watch::channel();
-        let (update_contacts_tx, mut update_contacts_rx) = mpsc::unbounded();
+        let (mut current_user_tx, current_user_rx) = watch.channel();
+        let (update_contacts_tx, mut update_contacts_rx) = mpsc.unbounded();
         let rpc_subscriptions = vec![
-            client.add_message_handler(cx.weak_model(), Self::handle_update_plan),
-            client.add_message_handler(cx.weak_model(), Self::handle_update_contacts),
-            client.add_message_handler(cx.weak_model(), Self::handle_update_invite_info),
-            client.add_message_handler(cx.weak_model(), Self::handle_show_contacts),
+            client.add_message_handler(cx.weak_model(), Self.handle_update_plan),
+            client.add_message_handler(cx.weak_model(), Self.handle_update_contacts),
+            client.add_message_handler(cx.weak_model(), Self.handle_update_invite_info),
+            client.add_message_handler(cx.weak_model(), Self.handle_show_contacts),
         ];
         Self {
-            users: Default::default(),
-            by_github_login: Default::default(),
+            users: Default.default(),
+            by_github_login: Default.default(),
             current_user: current_user_rx,
             current_plan: None,
-            contacts: Default::default(),
-            incoming_contact_requests: Default::default(),
-            participant_indices: Default::default(),
-            outgoing_contact_requests: Default::default(),
+            contacts: Default.default(),
+            incoming_contact_requests: Default.default(),
+            participant_indices: Default.default(),
+            outgoing_contact_requests: Default.default(),
             invite_info: None,
-            client: Arc::downgrade(&client),
+            client: Arc.downgrade(&client),
             update_contacts_tx,
             _maintain_contacts: cx.spawn(|this, mut cx| async move {
                 let _subscriptions = rpc_subscriptions;
@@ -171,7 +171,7 @@ impl UserStore {
             }),
             _maintain_current_user: cx.spawn(|this, mut cx| async move {
                 let mut status = client.status();
-                let weak = Arc::downgrade(&client);
+                let weak = Arc.downgrade(&client);
                 drop(client);
                 while let Some(status) = status.next().await {
                     // if the client is dropped, the app is shutting down.
@@ -179,7 +179,7 @@ impl UserStore {
                         return Ok(());
                     };
                     match status {
-                        Status::Connected { .. } => {
+                        Status.Connected { .. } => {
                             if let Some(user_id) = client.user_id() {
                                 let fetch_user = if let Ok(fetch_user) = this
                                     .update(&mut cx, |this, cx| {
@@ -190,12 +190,12 @@ impl UserStore {
                                     break;
                                 };
                                 let fetch_metrics_id =
-                                    client.request(proto::GetPrivateUserInfo {}).log_err();
-                                let (user, info) = futures::join!(fetch_user, fetch_metrics_id);
+                                    client.request(proto.GetPrivateUserInfo {}).log_err();
+                                let (user, info) = futures.join!(fetch_user, fetch_metrics_id);
 
                                 cx.update(|cx| {
                                     if let Some(info) = info {
-                                        let disable_staff = std::env::var("ZED_DISABLE_STAFF")
+                                        let disable_staff = std.env.var("ZED_DISABLE_STAFF")
                                             .map_or(false, |v| v != "" && v != "0");
                                         let staff = info.staff && !disable_staff;
                                         cx.update_flags(staff, info.flags);
@@ -211,7 +211,7 @@ impl UserStore {
                                 this.update(&mut cx, |_, cx| cx.notify())?;
                             }
                         }
-                        Status::SignedOut => {
+                        Status.SignedOut => {
                             current_user_tx.send(None).await.ok();
                             this.update(&mut cx, |this, cx| {
                                 cx.notify();
@@ -219,7 +219,7 @@ impl UserStore {
                             })?
                             .await;
                         }
-                        Status::ConnectionLost => {
+                        Status.ConnectionLost => {
                             this.update(&mut cx, |this, cx| {
                                 cx.notify();
                                 this.clear_contacts()
@@ -231,7 +231,7 @@ impl UserStore {
                 }
                 Ok(())
             }),
-            pending_contact_requests: Default::default(),
+            pending_contact_requests: Default.default(),
             weak_self: cx.weak_model(),
         }
     }
@@ -244,12 +244,12 @@ impl UserStore {
 
     async fn handle_update_invite_info(
         this: Model<Self>,
-        message: TypedEnvelope<proto::UpdateInviteInfo>,
+        message: TypedEnvelope<proto.UpdateInviteInfo>,
         mut cx: AsyncAppContext,
     ) -> Result<()> {
         this.update(&mut cx, |this, cx| {
             this.invite_info = Some(InviteInfo {
-                url: Arc::from(message.payload.url),
+                url: Arc.from(message.payload.url),
                 count: message.payload.count,
             });
             cx.notify();
@@ -259,10 +259,10 @@ impl UserStore {
 
     async fn handle_show_contacts(
         this: Model<Self>,
-        _: TypedEnvelope<proto::ShowContacts>,
+        _: TypedEnvelope<proto.ShowContacts>,
         mut cx: AsyncAppContext,
     ) -> Result<()> {
-        this.update(&mut cx, |_, cx| cx.emit(Event::ShowContacts))?;
+        this.update(&mut cx, |_, cx| cx.emit(Event.ShowContacts))?;
         Ok(())
     }
 
@@ -272,12 +272,12 @@ impl UserStore {
 
     async fn handle_update_contacts(
         this: Model<Self>,
-        message: TypedEnvelope<proto::UpdateContacts>,
+        message: TypedEnvelope<proto.UpdateContacts>,
         mut cx: AsyncAppContext,
     ) -> Result<()> {
         this.update(&mut cx, |this, _| {
             this.update_contacts_tx
-                .unbounded_send(UpdateContacts::Update(message.payload))
+                .unbounded_send(UpdateContacts.Update(message.payload))
                 .unwrap();
         })?;
         Ok(())
@@ -285,7 +285,7 @@ impl UserStore {
 
     async fn handle_update_plan(
         this: Model<Self>,
-        message: TypedEnvelope<proto::UpdateUserPlan>,
+        message: TypedEnvelope<proto.UpdateUserPlan>,
         mut cx: AsyncAppContext,
     ) -> Result<()> {
         this.update(&mut cx, |this, cx| {
@@ -301,19 +301,19 @@ impl UserStore {
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<()>> {
         match message {
-            UpdateContacts::Wait(barrier) => {
+            UpdateContacts.Wait(barrier) => {
                 drop(barrier);
-                Task::ready(Ok(()))
+                Task.ready(Ok(()))
             }
-            UpdateContacts::Clear(barrier) => {
+            UpdateContacts.Clear(barrier) => {
                 self.contacts.clear();
                 self.incoming_contact_requests.clear();
                 self.outgoing_contact_requests.clear();
                 drop(barrier);
-                Task::ready(Ok(()))
+                Task.ready(Ok(()))
             }
-            UpdateContacts::Update(message) => {
-                let mut user_ids = HashSet::default();
+            UpdateContacts.Update(message) => {
+                let mut user_ids = HashSet.default();
                 for contact in &message.contacts {
                     user_ids.insert(contact.user_id);
                 }
@@ -326,17 +326,17 @@ impl UserStore {
 
                     // Users are fetched in parallel above and cached in call to get_users
                     // No need to parallelize here
-                    let mut updated_contacts = Vec::new();
+                    let mut updated_contacts = Vec.new();
                     let this = this
                         .upgrade()
                         .ok_or_else(|| anyhow!("can't upgrade user store handle"))?;
                     for contact in message.contacts {
-                        updated_contacts.push(Arc::new(
-                            Contact::from_proto(contact, &this, &mut cx).await?,
+                        updated_contacts.push(Arc.new(
+                            Contact.from_proto(contact, &this, &mut cx).await?,
                         ));
                     }
 
-                    let mut incoming_requests = Vec::new();
+                    let mut incoming_requests = Vec.new();
                     for request in message.incoming_requests {
                         incoming_requests.push({
                             this.update(&mut cx, |this, cx| {
@@ -346,7 +346,7 @@ impl UserStore {
                         });
                     }
 
-                    let mut outgoing_requests = Vec::new();
+                    let mut outgoing_requests = Vec.new();
                     for requested_user_id in message.outgoing_requests {
                         outgoing_requests.push(
                             this.update(&mut cx, |this, cx| this.get_user(requested_user_id, cx))?
@@ -355,11 +355,11 @@ impl UserStore {
                     }
 
                     let removed_contacts =
-                        HashSet::<u64>::from_iter(message.remove_contacts.iter().copied());
+                        HashSet.<u64>.from_iter(message.remove_contacts.iter().copied());
                     let removed_incoming_requests =
-                        HashSet::<u64>::from_iter(message.remove_incoming_requests.iter().copied());
+                        HashSet.<u64>.from_iter(message.remove_incoming_requests.iter().copied());
                     let removed_outgoing_requests =
-                        HashSet::<u64>::from_iter(message.remove_outgoing_requests.iter().copied());
+                        HashSet.<u64>.from_iter(message.remove_outgoing_requests.iter().copied());
 
                     this.update(&mut cx, |this, cx| {
                         // Remove contacts
@@ -379,9 +379,9 @@ impl UserStore {
                         // Remove incoming contact requests
                         this.incoming_contact_requests.retain(|user| {
                             if removed_incoming_requests.contains(&user.id) {
-                                cx.emit(Event::Contact {
+                                cx.emit(Event.Contact {
                                     user: user.clone(),
-                                    kind: ContactEventKind::Cancelled,
+                                    kind: ContactEventKind.Cancelled,
                                 });
                                 false
                             } else {
@@ -452,21 +452,21 @@ impl UserStore {
             .binary_search_by_key(&&user.github_login, |contact| &contact.user.github_login)
             .is_ok()
         {
-            ContactRequestStatus::RequestAccepted
+            ContactRequestStatus.RequestAccepted
         } else if self
             .outgoing_contact_requests
             .binary_search_by_key(&&user.github_login, |user| &user.github_login)
             .is_ok()
         {
-            ContactRequestStatus::RequestSent
+            ContactRequestStatus.RequestSent
         } else if self
             .incoming_contact_requests
             .binary_search_by_key(&&user.github_login, |user| &user.github_login)
             .is_ok()
         {
-            ContactRequestStatus::RequestReceived
+            ContactRequestStatus.RequestReceived
         } else {
-            ContactRequestStatus::None
+            ContactRequestStatus.None
         }
     }
 
@@ -475,7 +475,7 @@ impl UserStore {
         responder_id: u64,
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<()>> {
-        self.perform_contact_request(responder_id, proto::RequestContact { responder_id }, cx)
+        self.perform_contact_request(responder_id, proto.RequestContact { responder_id }, cx)
     }
 
     pub fn remove_contact(
@@ -483,7 +483,7 @@ impl UserStore {
         user_id: u64,
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<()>> {
-        self.perform_contact_request(user_id, proto::RemoveContact { user_id }, cx)
+        self.perform_contact_request(user_id, proto.RemoveContact { user_id }, cx)
     }
 
     pub fn has_incoming_contact_request(&self, user_id: u64) -> bool {
@@ -500,12 +500,12 @@ impl UserStore {
     ) -> Task<Result<()>> {
         self.perform_contact_request(
             requester_id,
-            proto::RespondToContactRequest {
+            proto.RespondToContactRequest {
                 requester_id,
                 response: if accept {
-                    proto::ContactRequestResponse::Accept
+                    proto.ContactRequestResponse.Accept
                 } else {
-                    proto::ContactRequestResponse::Decline
+                    proto.ContactRequestResponse.Decline
                 } as i32,
             },
             cx,
@@ -521,9 +521,9 @@ impl UserStore {
         cx.spawn(move |_, _| async move {
             client
                 .ok_or_else(|| anyhow!("can't upgrade client reference"))?
-                .request(proto::RespondToContactRequest {
+                .request(proto.RespondToContactRequest {
                     requester_id,
-                    response: proto::ContactRequestResponse::Dismiss as i32,
+                    response: proto.ContactRequestResponse.Dismiss as i32,
                 })
                 .await?;
             Ok(())
@@ -546,7 +546,7 @@ impl UserStore {
                 .request(request)
                 .await;
             this.update(&mut cx, |this, cx| {
-                if let Entry::Occupied(mut request_count) =
+                if let Entry.Occupied(mut request_count) =
                     this.pending_contact_requests.entry(user_id)
                 {
                     *request_count.get_mut() -= 1;
@@ -562,9 +562,9 @@ impl UserStore {
     }
 
     pub fn clear_contacts(&mut self) -> impl Future<Output = ()> {
-        let (tx, mut rx) = postage::barrier::channel();
+        let (tx, mut rx) = postage.barrier.channel();
         self.update_contacts_tx
-            .unbounded_send(UpdateContacts::Clear(tx))
+            .unbounded_send(UpdateContacts.Clear(tx))
             .unwrap();
         async move {
             rx.next().await;
@@ -572,9 +572,9 @@ impl UserStore {
     }
 
     pub fn contact_updates_done(&mut self) -> impl Future<Output = ()> {
-        let (tx, mut rx) = postage::barrier::channel();
+        let (tx, mut rx) = postage.barrier.channel();
         self.update_contacts_tx
-            .unbounded_send(UpdateContacts::Wait(tx))
+            .unbounded_send(UpdateContacts.Wait(tx))
             .unwrap();
         async move {
             rx.next().await;
@@ -593,7 +593,7 @@ impl UserStore {
             if !user_ids_to_fetch.is_empty() {
                 this.update(&mut cx, |this, cx| {
                     this.load_users(
-                        proto::GetUsers {
+                        proto.GetUsers {
                             user_ids: user_ids_to_fetch,
                         },
                         cx,
@@ -621,7 +621,7 @@ impl UserStore {
         query: String,
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<Vec<Arc<User>>>> {
-        self.load_users(proto::FuzzySearchUsers { query }, cx)
+        self.load_users(proto.FuzzySearchUsers { query }, cx)
     }
 
     pub fn get_cached_user(&self, user_id: u64) -> Option<Arc<User>> {
@@ -647,7 +647,7 @@ impl UserStore {
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<Arc<User>>> {
         if let Some(user) = self.users.get(&user_id).cloned() {
-            return Task::ready(Ok(user));
+            return Task.ready(Ok(user));
         }
 
         let load_users = self.get_users(vec![user_id], cx);
@@ -672,11 +672,11 @@ impl UserStore {
         self.current_user.borrow().clone()
     }
 
-    pub fn current_plan(&self) -> Option<proto::Plan> {
+    pub fn current_plan(&self) -> Option<proto.Plan> {
         self.current_plan
     }
 
-    pub fn watch_current_user(&self) -> watch::Receiver<Option<Arc<User>>> {
+    pub fn watch_current_user(&self) -> watch.Receiver<Option<Arc<User>>> {
         self.current_user.clone()
     }
 
@@ -693,15 +693,15 @@ impl UserStore {
 
                 this.update(&mut cx, |this, _| this.insert(users))
             } else {
-                Ok(Vec::new())
+                Ok(Vec.new())
             }
         })
     }
 
-    pub fn insert(&mut self, users: Vec<proto::User>) -> Vec<Arc<User>> {
-        let mut ret = Vec::with_capacity(users.len());
+    pub fn insert(&mut self, users: Vec<proto.User>) -> Vec<Arc<User>> {
+        let mut ret = Vec.with_capacity(users.len());
         for user in users {
-            let user = User::new(user);
+            let user = User.new(user);
             if let Some(old) = self.users.insert(user.id, user.clone()) {
                 if old.github_login != user.github_login {
                     self.by_github_login.remove(&old.github_login);
@@ -721,7 +721,7 @@ impl UserStore {
     ) {
         if participant_indices != self.participant_indices {
             self.participant_indices = participant_indices;
-            cx.emit(Event::ParticipantIndicesChanged);
+            cx.emit(Event.ParticipantIndicesChanged);
         }
     }
 
@@ -734,8 +734,8 @@ impl UserStore {
         user_ids: impl Iterator<Item = u64>,
         cx: &AppContext,
     ) -> HashMap<u64, SharedString> {
-        let mut ret = HashMap::default();
-        let mut missing_user_ids = Vec::new();
+        let mut ret = HashMap.default();
+        let mut missing_user_ids = Vec.new();
         for id in user_ids {
             if let Some(github_login) = self.get_cached_user(id).map(|u| u.github_login.clone()) {
                 ret.insert(id, github_login.into());
@@ -756,8 +756,8 @@ impl UserStore {
 }
 
 impl User {
-    fn new(message: proto::User) -> Arc<Self> {
-        Arc::new(User {
+    fn new(message: proto.User) -> Arc<Self> {
+        Arc.new(User {
             id: message.id,
             github_login: message.github_login,
             avatar_uri: message.avatar_url.into(),
@@ -767,7 +767,7 @@ impl User {
 
 impl Contact {
     async fn from_proto(
-        contact: proto::Contact,
+        contact: proto.Contact,
         user_store: &Model<UserStore>,
         cx: &mut AsyncAppContext,
     ) -> Result<Self> {
@@ -785,7 +785,7 @@ impl Contact {
 }
 
 impl Collaborator {
-    pub fn from_proto(message: proto::Collaborator) -> Result<Self> {
+    pub fn from_proto(message: proto.Collaborator) -> Result<Self> {
         Ok(Self {
             peer_id: message.peer_id.ok_or_else(|| anyhow!("invalid peer id"))?,
             replica_id: message.replica_id as ReplicaId,

@@ -1,15 +1,15 @@
-use crate::{
-    db::{
-        tests::{channel_tree, new_test_connection, new_test_user},
+use crate.{
+    db.{
+        tests.{channel_tree, new_test_connection, new_test_user},
         Channel, ChannelId, ChannelRole, Database, NewUserParams, RoomId, UserId,
     },
     test_both_dbs,
 };
-use rpc::{
-    proto::{self},
+use rpc.{
+    proto.{self},
     ConnectionId,
 };
-use std::sync::Arc;
+use std.sync.Arc;
 
 test_both_dbs!(test_channels, test_channels_postgres, test_channels_sqlite);
 
@@ -22,7 +22,7 @@ async fn test_channels(db: &Arc<Database>) {
     // Make sure that people cannot read channels they haven't been invited to
     assert!(db.get_channel(zed_id, b_id).await.is_err());
 
-    db.invite_channel_member(zed_id, b_id, a_id, ChannelRole::Member)
+    db.invite_channel_member(zed_id, b_id, a_id, ChannelRole.Member)
         .await
         .unwrap();
 
@@ -46,8 +46,8 @@ async fn test_channels(db: &Arc<Database>) {
         .unwrap();
     let ids = members
         .into_iter()
-        .map(|m| UserId::from_proto(m.user_id))
-        .collect::<Vec<_>>();
+        .map(|m| UserId.from_proto(m.user_id))
+        .collect.<Vec<_>>();
     assert_eq!(ids, &[a_id, b_id]);
 
     let rust_id = db.create_root_channel("rust", a_id).await.unwrap();
@@ -85,11 +85,11 @@ async fn test_channels(db: &Arc<Database>) {
 
     // Update member permissions
     let set_subchannel_admin = db
-        .set_channel_member_role(crdb_id, a_id, b_id, ChannelRole::Admin)
+        .set_channel_member_role(crdb_id, a_id, b_id, ChannelRole.Admin)
         .await;
     assert!(set_subchannel_admin.is_err());
     let set_channel_admin = db
-        .set_channel_member_role(zed_id, a_id, b_id, ChannelRole::Admin)
+        .set_channel_member_role(zed_id, a_id, b_id, ChannelRole.Admin)
         .await;
     assert!(set_channel_admin.is_ok());
 
@@ -139,7 +139,7 @@ async fn test_joining_channels(db: &Arc<Database>) {
         .unwrap();
     assert_eq!(joined_room.room.participants.len(), 1);
 
-    let room_id = RoomId::from_proto(joined_room.room.id);
+    let room_id = RoomId.from_proto(joined_room.room.id);
     drop(joined_room);
     // cannot join a room without membership to its channel
     assert!(db
@@ -165,13 +165,13 @@ async fn test_channel_invites(db: &Arc<Database>) {
 
     let channel_1_2 = db.create_root_channel("channel_2", user_1).await.unwrap();
 
-    db.invite_channel_member(channel_1_1, user_2, user_1, ChannelRole::Member)
+    db.invite_channel_member(channel_1_1, user_2, user_1, ChannelRole.Member)
         .await
         .unwrap();
-    db.invite_channel_member(channel_1_2, user_2, user_1, ChannelRole::Member)
+    db.invite_channel_member(channel_1_2, user_2, user_1, ChannelRole.Member)
         .await
         .unwrap();
-    db.invite_channel_member(channel_1_1, user_3, user_1, ChannelRole::Admin)
+    db.invite_channel_member(channel_1_1, user_3, user_1, ChannelRole.Admin)
         .await
         .unwrap();
 
@@ -182,7 +182,7 @@ async fn test_channel_invites(db: &Arc<Database>) {
         .invited_channels
         .into_iter()
         .map(|channel| channel.id)
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     assert_eq!(user_2_invites, &[channel_1_1, channel_1_2]);
 
     let user_3_invites = db
@@ -192,7 +192,7 @@ async fn test_channel_invites(db: &Arc<Database>) {
         .invited_channels
         .into_iter()
         .map(|channel| channel.id)
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     assert_eq!(user_3_invites, &[channel_1_1]);
 
     let (mut members, _) = db
@@ -204,20 +204,20 @@ async fn test_channel_invites(db: &Arc<Database>) {
     assert_eq!(
         members,
         &[
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: user_1.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: user_2.to_proto(),
-                kind: proto::channel_member::Kind::Invitee.into(),
-                role: proto::ChannelRole::Member.into(),
+                kind: proto.channel_member.Kind.Invitee.into(),
+                role: proto.ChannelRole.Member.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: user_3.to_proto(),
-                kind: proto::channel_member::Kind::Invitee.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Invitee.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
         ]
     );
@@ -238,20 +238,20 @@ async fn test_channel_invites(db: &Arc<Database>) {
     assert_eq!(
         members,
         &[
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: user_1.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: user_3.to_proto(),
-                kind: proto::channel_member::Kind::Invitee.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Invitee.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: user_2.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Member.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Member.into(),
             },
         ]
     );
@@ -440,20 +440,20 @@ async fn test_user_is_channel_participant(db: &Arc<Database>) {
         .await
         .unwrap();
 
-    db.set_channel_visibility(zed_channel, crate::db::ChannelVisibility::Public, admin)
+    db.set_channel_visibility(zed_channel, crate.db.ChannelVisibility.Public, admin)
         .await
         .unwrap();
     db.set_channel_visibility(
         public_channel_id,
-        crate::db::ChannelVisibility::Public,
+        crate.db.ChannelVisibility.Public,
         admin,
     )
     .await
     .unwrap();
-    db.invite_channel_member(zed_channel, member, admin, ChannelRole::Member)
+    db.invite_channel_member(zed_channel, member, admin, ChannelRole.Member)
         .await
         .unwrap();
-    db.invite_channel_member(zed_channel, guest, admin, ChannelRole::Guest)
+    db.invite_channel_member(zed_channel, guest, admin, ChannelRole.Guest)
         .await
         .unwrap();
 
@@ -492,20 +492,20 @@ async fn test_user_is_channel_participant(db: &Arc<Database>) {
     assert_eq!(
         members,
         &[
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: admin.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: member.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Member.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Member.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: guest.to_proto(),
-                kind: proto::channel_member::Kind::Invitee.into(),
-                role: proto::ChannelRole::Guest.into(),
+                kind: proto.channel_member.Kind.Invitee.into(),
+                role: proto.ChannelRole.Guest.into(),
             },
         ]
     );
@@ -540,7 +540,7 @@ async fn test_user_is_channel_participant(db: &Arc<Database>) {
         ],
     );
 
-    db.set_channel_member_role(zed_channel, admin, guest, ChannelRole::Banned)
+    db.set_channel_member_role(zed_channel, admin, guest, ChannelRole.Banned)
         .await
         .unwrap();
     assert!(db
@@ -567,20 +567,20 @@ async fn test_user_is_channel_participant(db: &Arc<Database>) {
     assert_eq!(
         members,
         &[
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: admin.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: member.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Member.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Member.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: guest.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Banned.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Banned.into(),
             },
         ]
     );
@@ -589,7 +589,7 @@ async fn test_user_is_channel_participant(db: &Arc<Database>) {
         .await
         .unwrap();
 
-    db.invite_channel_member(zed_channel, guest, admin, ChannelRole::Guest)
+    db.invite_channel_member(zed_channel, guest, admin, ChannelRole.Guest)
         .await
         .unwrap();
 
@@ -604,20 +604,20 @@ async fn test_user_is_channel_participant(db: &Arc<Database>) {
     assert_eq!(
         members,
         &[
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: admin.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: member.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Member.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Member.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: guest.to_proto(),
-                kind: proto::channel_member::Kind::Invitee.into(),
-                role: proto::ChannelRole::Guest.into(),
+                kind: proto.channel_member.Kind.Invitee.into(),
+                role: proto.ChannelRole.Guest.into(),
             },
         ]
     );
@@ -673,20 +673,20 @@ async fn test_user_is_channel_participant(db: &Arc<Database>) {
     assert_eq!(
         members,
         &[
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: admin.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Admin.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Admin.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: member.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Member.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Member.into(),
             },
-            proto::ChannelMember {
+            proto.ChannelMember {
                 user_id: guest.to_proto(),
-                kind: proto::channel_member::Kind::Member.into(),
-                role: proto::ChannelRole::Guest.into(),
+                kind: proto.channel_member.Kind.Member.into(),
+                role: proto.ChannelRole.Guest.into(),
             },
         ]
     );
@@ -712,7 +712,7 @@ async fn test_guest_access(db: &Arc<Database>) {
     let guest_connection = new_test_connection(server);
 
     let zed_channel = db.create_root_channel("zed", admin).await.unwrap();
-    db.set_channel_visibility(zed_channel, crate::db::ChannelVisibility::Public, admin)
+    db.set_channel_visibility(zed_channel, crate.db.ChannelVisibility.Public, admin)
         .await
         .unwrap();
 
@@ -736,8 +736,8 @@ fn assert_channel_tree(actual: Vec<Channel>, expected: &[(ChannelId, &[ChannelId
     let actual = actual
         .iter()
         .map(|channel| (channel.id, channel.parent_path.as_slice()))
-        .collect::<Vec<_>>();
-    pretty_assertions::assert_eq!(
+        .collect.<Vec<_>>();
+    pretty_assertions.assert_eq!(
         actual,
         expected.to_vec(),
         "wrong channel ids and parent paths"

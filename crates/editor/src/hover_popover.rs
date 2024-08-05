@@ -998,17 +998,17 @@ mod tests {
             fn test() { «println!»(); }
         "});
         let mut requests =
-            cx.handle_request::<lsp::request::HoverRequest, _, _>(move |_, _, _| async move {
-                Ok(Some(lsp::Hover {
-                    contents: lsp::HoverContents::Markup(lsp::MarkupContent {
-                        kind: lsp::MarkupKind::Markdown,
+            cx.handle_request.<lsp.request.HoverRequest, _, _>(move |_, _, _| async move {
+                Ok(Some(lsp.Hover {
+                    contents: lsp.HoverContents.Markup(lsp.MarkupContent {
+                        kind: lsp.MarkupKind.Markdown,
                         value: "some basic docs".to_string(),
                     }),
                     range: Some(symbol_range),
                 }))
             });
         cx.background_executor
-            .advance_clock(Duration::from_millis(HOVER_DELAY_MILLIS + 100));
+            .advance_clock(Duration.from_millis(HOVER_DELAY_MILLIS + 100));
         requests.next().await;
 
         cx.editor(|editor, cx| {
@@ -1035,30 +1035,30 @@ mod tests {
         "});
         let mut request = cx
             .lsp
-            .handle_request::<lsp::request::HoverRequest, _, _>(|_, _| async move { Ok(None) });
+            .handle_request.<lsp.request.HoverRequest, _, _>(|_, _| async move { Ok(None) });
         cx.update_editor(|editor, cx| {
             let snapshot = editor.snapshot(cx);
             let anchor = snapshot
                 .buffer_snapshot
-                .anchor_before(hover_point.to_offset(&snapshot, Bias::Left));
+                .anchor_before(hover_point.to_offset(&snapshot, Bias.Left));
             hover_at(editor, Some(anchor), cx)
         });
         cx.background_executor
-            .advance_clock(Duration::from_millis(HOVER_DELAY_MILLIS + 100));
+            .advance_clock(Duration.from_millis(HOVER_DELAY_MILLIS + 100));
         request.next().await;
         cx.editor(|editor, _| {
             assert!(!editor.hover_state.visible());
         });
     }
 
-    #[gpui::test]
-    async fn test_keyboard_hover_info_popover(cx: &mut gpui::TestAppContext) {
+    #[gpui.test]
+    async fn test_keyboard_hover_info_popover(cx: &mut gpui.TestAppContext) {
         init_test(cx, |_| {});
 
-        let mut cx = EditorLspTestContext::new_rust(
-            lsp::ServerCapabilities {
-                hover_provider: Some(lsp::HoverProviderCapability::Simple(true)),
-                ..Default::default()
+        let mut cx = EditorLspTestContext.new_rust(
+            lsp.ServerCapabilities {
+                hover_provider: Some(lsp.HoverProviderCapability.Simple(true)),
+                ..Default.default()
             },
             cx,
         )
@@ -1085,10 +1085,10 @@ mod tests {
         });
 
         let mut requests =
-            cx.handle_request::<lsp::request::HoverRequest, _, _>(move |_, _, _| async move {
-                Ok(Some(lsp::Hover {
-                    contents: lsp::HoverContents::Markup(lsp::MarkupContent {
-                        kind: lsp::MarkupKind::Markdown,
+            cx.handle_request.<lsp.request.HoverRequest, _, _>(move |_, _, _| async move {
+                Ok(Some(lsp.Hover {
+                    contents: lsp.HoverContents.Markup(lsp.MarkupContent {
+                        kind: lsp.MarkupKind.Markdown,
                         value: "some other basic docs".to_string(),
                     }),
                     range: Some(symbol_range),
@@ -1118,14 +1118,14 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    async fn test_empty_hovers_filtered(cx: &mut gpui::TestAppContext) {
+    #[gpui.test]
+    async fn test_empty_hovers_filtered(cx: &mut gpui.TestAppContext) {
         init_test(cx, |_| {});
 
-        let mut cx = EditorLspTestContext::new_rust(
-            lsp::ServerCapabilities {
-                hover_provider: Some(lsp::HoverProviderCapability::Simple(true)),
-                ..Default::default()
+        let mut cx = EditorLspTestContext.new_rust(
+            lsp.ServerCapabilities {
+                hover_provider: Some(lsp.HoverProviderCapability.Simple(true)),
+                ..Default.default()
             },
             cx,
         )
@@ -1139,12 +1139,12 @@ mod tests {
         let symbol_range = cx.lsp_range(indoc! {"
             «fn» test() { println!(); }
         "});
-        cx.handle_request::<lsp::request::HoverRequest, _, _>(move |_, _, _| async move {
-            Ok(Some(lsp::Hover {
-                contents: lsp::HoverContents::Array(vec![
-                    lsp::MarkedString::String("regular text for hover to show".to_string()),
-                    lsp::MarkedString::String("".to_string()),
-                    lsp::MarkedString::LanguageString(lsp::LanguageString {
+        cx.handle_request.<lsp.request.HoverRequest, _, _>(move |_, _, _| async move {
+            Ok(Some(lsp.Hover {
+                contents: lsp.HoverContents.Array(vec![
+                    lsp.MarkedString.String("regular text for hover to show".to_string()),
+                    lsp.MarkedString.String("".to_string()),
+                    lsp.MarkedString.LanguageString(lsp.LanguageString {
                         language: "Rust".to_string(),
                         value: "".to_string(),
                     }),
@@ -1179,14 +1179,14 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    async fn test_line_ends_trimmed(cx: &mut gpui::TestAppContext) {
+    #[gpui.test]
+    async fn test_line_ends_trimmed(cx: &mut gpui.TestAppContext) {
         init_test(cx, |_| {});
 
-        let mut cx = EditorLspTestContext::new_rust(
-            lsp::ServerCapabilities {
-                hover_provider: Some(lsp::HoverProviderCapability::Simple(true)),
-                ..Default::default()
+        let mut cx = EditorLspTestContext.new_rust(
+            lsp.ServerCapabilities {
+                hover_provider: Some(lsp.HoverProviderCapability.Simple(true)),
+                ..Default.default()
             },
             cx,
         )
@@ -1205,12 +1205,12 @@ mod tests {
         let markdown_string = format!("\n```rust\n{code_str}```");
 
         let closure_markdown_string = markdown_string.clone();
-        cx.handle_request::<lsp::request::HoverRequest, _, _>(move |_, _, _| {
+        cx.handle_request.<lsp.request.HoverRequest, _, _>(move |_, _, _| {
             let future_markdown_string = closure_markdown_string.clone();
             async move {
-                Ok(Some(lsp::Hover {
-                    contents: lsp::HoverContents::Markup(lsp::MarkupContent {
-                        kind: lsp::MarkupKind::Markdown,
+                Ok(Some(lsp.Hover {
+                    contents: lsp.HoverContents.Markup(lsp.MarkupContent {
+                        kind: lsp.MarkupKind.Markdown,
                         value: future_markdown_string,
                     }),
                     range: Some(symbol_range),
@@ -1244,14 +1244,14 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    async fn test_hover_diagnostic_and_info_popovers(cx: &mut gpui::TestAppContext) {
+    #[gpui.test]
+    async fn test_hover_diagnostic_and_info_popovers(cx: &mut gpui.TestAppContext) {
         init_test(cx, |_| {});
 
-        let mut cx = EditorLspTestContext::new_rust(
-            lsp::ServerCapabilities {
-                hover_provider: Some(lsp::HoverProviderCapability::Simple(true)),
-                ..Default::default()
+        let mut cx = EditorLspTestContext.new_rust(
+            lsp.ServerCapabilities {
+                hover_provider: Some(lsp.HoverProviderCapability.Simple(true)),
+                ..Default.default()
             },
             cx,
         )
@@ -1269,12 +1269,12 @@ mod tests {
         "});
         cx.update_buffer(|buffer, cx| {
             let snapshot = buffer.text_snapshot();
-            let set = DiagnosticSet::from_sorted_entries(
+            let set = DiagnosticSet.from_sorted_entries(
                 vec![DiagnosticEntry {
                     range,
                     diagnostic: Diagnostic {
                         message: "A test diagnostic message.".to_string(),
-                        ..Default::default()
+                        ..Default.default()
                     },
                 }],
                 &snapshot,
@@ -1296,17 +1296,17 @@ mod tests {
         let range = cx.lsp_range(indoc! {"
             fn «test»() { println!(); }
         "});
-        cx.handle_request::<lsp::request::HoverRequest, _, _>(move |_, _, _| async move {
-            Ok(Some(lsp::Hover {
-                contents: lsp::HoverContents::Markup(lsp::MarkupContent {
-                    kind: lsp::MarkupKind::Markdown,
+        cx.handle_request.<lsp.request.HoverRequest, _, _>(move |_, _, _| async move {
+            Ok(Some(lsp.Hover {
+                contents: lsp.HoverContents.Markup(lsp.MarkupContent {
+                    kind: lsp.MarkupKind.Markdown,
                     value: "some new docs".to_string(),
                 }),
                 range: Some(range),
             }))
         });
         cx.background_executor
-            .advance_clock(Duration::from_millis(HOVER_DELAY_MILLIS + 100));
+            .advance_clock(Duration.from_millis(HOVER_DELAY_MILLIS + 100));
 
         cx.background_executor.run_until_parked();
         cx.editor(|Editor { hover_state, .. }, _| {
@@ -1314,8 +1314,8 @@ mod tests {
         });
     }
 
-    #[gpui::test]
-    async fn test_hover_inlay_label_parts(cx: &mut gpui::TestAppContext) {
+    #[gpui.test]
+    async fn test_hover_inlay_label_parts(cx: &mut gpui.TestAppContext) {
         init_test(cx, |settings| {
             settings.defaults.inlay_hints = Some(InlayHintSettings {
                 enabled: true,
@@ -1327,15 +1327,15 @@ mod tests {
             })
         });
 
-        let mut cx = EditorLspTestContext::new_rust(
-            lsp::ServerCapabilities {
-                inlay_hint_provider: Some(lsp::OneOf::Right(
-                    lsp::InlayHintServerCapabilities::Options(lsp::InlayHintOptions {
+        let mut cx = EditorLspTestContext.new_rust(
+            lsp.ServerCapabilities {
+                inlay_hint_provider: Some(lsp.OneOf.Right(
+                    lsp.InlayHintServerCapabilities.Options(lsp.InlayHintOptions {
                         resolve_provider: Some(true),
-                        ..Default::default()
+                        ..Default.default()
                     }),
                 )),
-                ..Default::default()
+                ..Default.default()
             },
             cx,
         )
@@ -1395,17 +1395,17 @@ mod tests {
         let entire_hint_label = ": TestNewType<TestStruct>";
         let closure_uri = uri.clone();
         cx.lsp
-            .handle_request::<lsp::request::InlayHintRequest, _, _>(move |params, _| {
+            .handle_request.<lsp.request.InlayHintRequest, _, _>(move |params, _| {
                 let task_uri = closure_uri.clone();
                 async move {
                     assert_eq!(params.text_document.uri, task_uri);
-                    Ok(Some(vec![lsp::InlayHint {
+                    Ok(Some(vec![lsp.InlayHint {
                         position: hint_position,
-                        label: lsp::InlayHintLabel::LabelParts(vec![lsp::InlayHintLabelPart {
+                        label: lsp.InlayHintLabel.LabelParts(vec![lsp.InlayHintLabelPart {
                             value: entire_hint_label.to_string(),
-                            ..Default::default()
+                            ..Default.default()
                         }]),
-                        kind: Some(lsp::InlayHintKind::TYPE),
+                        kind: Some(lsp.InlayHintKind.TYPE),
                         text_edits: None,
                         tooltip: None,
                         padding_left: Some(false),
@@ -1444,7 +1444,7 @@ mod tests {
             let next_valid = inlay_range.end.to_display_point(&snapshot);
             assert_eq!(previous_valid.row(), next_valid.row());
             assert!(previous_valid.column() < next_valid.column());
-            let exact_unclipped = DisplayPoint::new(
+            let exact_unclipped = DisplayPoint.new(
                 previous_valid.row(),
                 previous_valid.column()
                     + (entire_hint_label.find(new_type_label).unwrap() + new_type_label.len() / 2)
@@ -1470,52 +1470,52 @@ mod tests {
 
         let resolve_closure_uri = uri.clone();
         cx.lsp
-            .handle_request::<lsp::request::InlayHintResolveRequest, _, _>(
+            .handle_request.<lsp.request.InlayHintResolveRequest, _, _>(
                 move |mut hint_to_resolve, _| {
-                    let mut resolved_hint_positions = BTreeSet::new();
+                    let mut resolved_hint_positions = BTreeSet.new();
                     let task_uri = resolve_closure_uri.clone();
                     async move {
                         let inserted = resolved_hint_positions.insert(hint_to_resolve.position);
                         assert!(inserted, "Hint {hint_to_resolve:?} was resolved twice");
 
                         // `: TestNewType<TestStruct>`
-                        hint_to_resolve.label = lsp::InlayHintLabel::LabelParts(vec![
-                            lsp::InlayHintLabelPart {
+                        hint_to_resolve.label = lsp.InlayHintLabel.LabelParts(vec![
+                            lsp.InlayHintLabelPart {
                                 value: ": ".to_string(),
-                                ..Default::default()
+                                ..Default.default()
                             },
-                            lsp::InlayHintLabelPart {
+                            lsp.InlayHintLabelPart {
                                 value: new_type_label.to_string(),
-                                location: Some(lsp::Location {
+                                location: Some(lsp.Location {
                                     uri: task_uri.clone(),
                                     range: new_type_target_range,
                                 }),
-                                tooltip: Some(lsp::InlayHintLabelPartTooltip::String(format!(
+                                tooltip: Some(lsp.InlayHintLabelPartTooltip.String(format!(
                                     "A tooltip for `{new_type_label}`"
                                 ))),
-                                ..Default::default()
+                                ..Default.default()
                             },
-                            lsp::InlayHintLabelPart {
+                            lsp.InlayHintLabelPart {
                                 value: "<".to_string(),
-                                ..Default::default()
+                                ..Default.default()
                             },
-                            lsp::InlayHintLabelPart {
+                            lsp.InlayHintLabelPart {
                                 value: struct_label.to_string(),
-                                location: Some(lsp::Location {
+                                location: Some(lsp.Location {
                                     uri: task_uri,
                                     range: struct_target_range,
                                 }),
-                                tooltip: Some(lsp::InlayHintLabelPartTooltip::MarkupContent(
-                                    lsp::MarkupContent {
-                                        kind: lsp::MarkupKind::Markdown,
+                                tooltip: Some(lsp.InlayHintLabelPartTooltip.MarkupContent(
+                                    lsp.MarkupContent {
+                                        kind: lsp.MarkupKind.Markdown,
                                         value: format!("A tooltip for `{struct_label}`"),
                                     },
                                 )),
-                                ..Default::default()
+                                ..Default.default()
                             },
-                            lsp::InlayHintLabelPart {
+                            lsp.InlayHintLabelPart {
                                 value: ">".to_string(),
-                                ..Default::default()
+                                ..Default.default()
                             },
                         ]);
 
@@ -1538,7 +1538,7 @@ mod tests {
             );
         });
         cx.background_executor
-            .advance_clock(Duration::from_millis(HOVER_DELAY_MILLIS + 100));
+            .advance_clock(Duration.from_millis(HOVER_DELAY_MILLIS + 100));
         cx.background_executor.run_until_parked();
         cx.update_editor(|editor, cx| {
             let hover_state = &editor.hover_state;
@@ -1549,9 +1549,9 @@ mod tests {
             let buffer_snapshot = editor.buffer().update(cx, |buffer, cx| buffer.snapshot(cx));
             assert_eq!(
                 popover.symbol_range,
-                RangeInEditor::Inlay(InlayHighlight {
-                    inlay: InlayId::Hint(0),
-                    inlay_position: buffer_snapshot.anchor_at(inlay_range.start, Bias::Right),
+                RangeInEditor.Inlay(InlayHighlight {
+                    inlay: InlayId.Hint(0),
+                    inlay_position: buffer_snapshot.anchor_at(inlay_range.start, Bias.Right),
                     range: ": ".len()..": ".len() + new_type_label.len(),
                 }),
                 "Popover range should match the new type label part"
@@ -1568,7 +1568,7 @@ mod tests {
             let next_valid = inlay_range.end.to_display_point(&snapshot);
             assert_eq!(previous_valid.row(), next_valid.row());
             assert!(previous_valid.column() < next_valid.column());
-            let exact_unclipped = DisplayPoint::new(
+            let exact_unclipped = DisplayPoint.new(
                 previous_valid.row(),
                 previous_valid.column()
                     + (entire_hint_label.find(struct_label).unwrap() + struct_label.len() / 2)
@@ -1592,7 +1592,7 @@ mod tests {
             );
         });
         cx.background_executor
-            .advance_clock(Duration::from_millis(HOVER_DELAY_MILLIS + 100));
+            .advance_clock(Duration.from_millis(HOVER_DELAY_MILLIS + 100));
         cx.background_executor.run_until_parked();
         cx.update_editor(|editor, cx| {
             let hover_state = &editor.hover_state;
@@ -1603,9 +1603,9 @@ mod tests {
             let buffer_snapshot = editor.buffer().update(cx, |buffer, cx| buffer.snapshot(cx));
             assert_eq!(
                 popover.symbol_range,
-                RangeInEditor::Inlay(InlayHighlight {
-                    inlay: InlayId::Hint(0),
-                    inlay_position: buffer_snapshot.anchor_at(inlay_range.start, Bias::Right),
+                RangeInEditor.Inlay(InlayHighlight {
+                    inlay: InlayId.Hint(0),
+                    inlay_position: buffer_snapshot.anchor_at(inlay_range.start, Bias.Right),
                     range: ": ".len() + new_type_label.len() + "<".len()
                         ..": ".len() + new_type_label.len() + "<".len() + struct_label.len(),
                 }),

@@ -1,32 +1,32 @@
-#![allow(clippy::reversed_empty_ranges)]
-use crate::{rpc::RECONNECT_TIMEOUT, tests::TestServer};
-use call::{ActiveCall, ParticipantLocation};
-use client::ChannelId;
-use collab_ui::{
-    channel_view::ChannelView,
-    notifications::project_shared_notification::ProjectSharedNotification,
+#![allow(clippy.reversed_empty_ranges)]
+use crate.{rpc.RECONNECT_TIMEOUT, tests.TestServer};
+use call.{ActiveCall, ParticipantLocation};
+use client.ChannelId;
+use collab_ui.{
+    channel_view.ChannelView,
+    notifications.project_shared_notification.ProjectSharedNotification,
 };
-use editor::{Editor, ExcerptRange, MultiBuffer};
-use gpui::{
+use editor.{Editor, ExcerptRange, MultiBuffer};
+use gpui.{
     point, BackgroundExecutor, BorrowAppContext, Context, Entity, SharedString, TestAppContext,
     View, VisualContext, VisualTestContext,
 };
-use language::Capability;
-use live_kit_client::MacOSDisplay;
-use project::WorktreeSettings;
-use rpc::proto::PeerId;
-use serde_json::json;
-use settings::SettingsStore;
-use workspace::{
-    dock::{test::TestPanel, DockPosition},
-    item::{test::TestItem, ItemHandle as _},
-    shared_screen::SharedScreen,
+use language.Capability;
+use live_kit_client.MacOSDisplay;
+use project.WorktreeSettings;
+use rpc.proto.PeerId;
+use serde_json.json;
+use settings.SettingsStore;
+use workspace.{
+    dock.{test.TestPanel, DockPosition},
+    item.{test.TestItem, ItemHandle as _},
+    shared_screen.SharedScreen,
     SplitDirection, Workspace,
 };
 
-use super::TestClient;
+use super.TestClient;
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_basic_following(
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
@@ -34,7 +34,7 @@ async fn test_basic_following(
     cx_d: &mut TestAppContext,
 ) {
     let executor = cx_a.executor();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -47,11 +47,11 @@ async fn test_basic_following(
             (&client_d, cx_d),
         ])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
-    cx_a.update(editor::init);
-    cx_b.update(editor::init);
+    cx_a.update(editor.init);
+    cx_b.update(editor.init);
 
     client_a
         .fs()
@@ -95,7 +95,7 @@ async fn test_basic_following(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
     let editor_a2 = workspace_a
         .update(cx_a, |workspace, cx| {
@@ -103,7 +103,7 @@ async fn test_basic_following(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     // Client B opens an editor.
@@ -113,7 +113,7 @@ async fn test_basic_following(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     let peer_id_a = client_a.peer_id().unwrap();
@@ -126,13 +126,13 @@ async fn test_basic_following(
         editor.handle_input("a", cx);
         editor.handle_input("b", cx);
         editor.handle_input("c", cx);
-        editor.select_left(&Default::default(), cx);
+        editor.select_left(&Default.default(), cx);
         assert_eq!(editor.selections.ranges(cx), vec![3..2]);
     });
     editor_a2.update(cx_a, |editor, cx| {
         editor.handle_input("d", cx);
         editor.handle_input("e", cx);
-        editor.select_left(&Default::default(), cx);
+        editor.select_left(&Default.default(), cx);
         assert_eq!(editor.selections.ranges(cx), vec![2..1]);
     });
 
@@ -144,7 +144,7 @@ async fn test_basic_following(
         workspace
             .active_item(cx)
             .unwrap()
-            .downcast::<Editor>()
+            .downcast.<Editor>()
             .unwrap()
     });
     assert_eq!(
@@ -161,7 +161,7 @@ async fn test_basic_following(
     );
 
     executor.run_until_parked();
-    let active_call_c = cx_c.read(ActiveCall::global);
+    let active_call_c = cx_c.read(ActiveCall.global);
     let project_c = client_c.build_dev_server_project(project_id, cx_c).await;
     let (workspace_c, cx_c) = client_c.build_workspace(&project_c, cx_c);
     active_call_c
@@ -174,7 +174,7 @@ async fn test_basic_following(
     workspace_c.update(cx_c, |workspace, cx| workspace.follow(peer_id_a, cx));
 
     cx_d.executor().run_until_parked();
-    let active_call_d = cx_d.read(ActiveCall::global);
+    let active_call_d = cx_d.read(ActiveCall.global);
     let project_d = client_d.build_dev_server_project(project_id, cx_d).await;
     let (workspace_d, cx_d) = client_d.build_workspace(&project_d, cx_d);
     active_call_d
@@ -242,7 +242,7 @@ async fn test_basic_following(
     // Client C closes the project.
     let weak_workspace_c = workspace_c.downgrade();
     workspace_c.update(cx_c, |workspace, cx| {
-        workspace.close_window(&Default::default(), cx);
+        workspace.close_window(&Default.default(), cx);
     });
     executor.run_until_parked();
     // are you sure you want to leave the call?
@@ -289,7 +289,7 @@ async fn test_basic_following(
                 .get_open_buffer(&(worktree_id, "2.txt").into(), cx)
                 .unwrap()
         });
-        let mut result = MultiBuffer::new(0, Capability::ReadWrite);
+        let mut result = MultiBuffer.new(0, Capability.ReadWrite);
         result.push_excerpts(
             buffer_a1,
             [ExcerptRange {
@@ -310,9 +310,9 @@ async fn test_basic_following(
     });
     let multibuffer_editor_a = workspace_a.update(cx_a, |workspace, cx| {
         let editor = cx.new_view(|cx| {
-            Editor::for_multibuffer(multibuffer_a, Some(project_a.clone()), true, cx)
+            Editor.for_multibuffer(multibuffer_a, Some(project_a.clone()), true, cx)
         });
-        workspace.add_item_to_active_pane(Box::new(editor.clone()), None, true, cx);
+        workspace.add_item_to_active_pane(Box.new(editor.clone()), None, true, cx);
         editor
     });
     executor.run_until_parked();
@@ -320,7 +320,7 @@ async fn test_basic_following(
         workspace
             .active_item(cx)
             .unwrap()
-            .downcast::<Editor>()
+            .downcast.<Editor>()
             .unwrap()
     });
     assert_eq!(
@@ -375,7 +375,7 @@ async fn test_basic_following(
     editor_a1.update(cx_a, |editor, cx| {
         editor.change_selections(None, cx, |s| s.select_ranges([1..1, 2..2]));
     });
-    executor.advance_clock(workspace::item::LEADER_UPDATE_THROTTLE);
+    executor.advance_clock(workspace.item.LEADER_UPDATE_THROTTLE);
     executor.run_until_parked();
     cx_b.background_executor.run_until_parked();
 
@@ -391,7 +391,7 @@ async fn test_basic_following(
         editor.change_selections(None, cx, |s| s.select_ranges([3..3]));
         editor.set_scroll_position(point(0., 100.), cx);
     });
-    executor.advance_clock(workspace::item::LEADER_UPDATE_THROTTLE);
+    executor.advance_clock(workspace.item.LEADER_UPDATE_THROTTLE);
     executor.run_until_parked();
     editor_b1.update(cx_b, |editor, cx| {
         assert_eq!(editor.selections.ranges(cx), &[3..3]);
@@ -429,7 +429,7 @@ async fn test_basic_following(
     );
 
     // Client B activates an external window, which causes a new screen-sharing item to be added to the pane.
-    let display = MacOSDisplay::new();
+    let display = MacOSDisplay.new();
     active_call_b
         .update(cx_b, |call, cx| call.set_location(None, cx))
         .await
@@ -448,7 +448,7 @@ async fn test_basic_following(
         workspace
             .active_item(cx)
             .expect("no active item")
-            .downcast::<SharedScreen>()
+            .downcast.<SharedScreen>()
             .expect("active item isn't a shared screen")
     });
 
@@ -478,10 +478,10 @@ async fn test_basic_following(
     });
 
     // Client B activates a panel, and the previously-opened screen-sharing item gets activated.
-    let panel = cx_b.new_view(|cx| TestPanel::new(DockPosition::Left, cx));
+    let panel = cx_b.new_view(|cx| TestPanel.new(DockPosition.Left, cx));
     workspace_b.update(cx_b, |workspace, cx| {
         workspace.add_panel(panel, cx);
-        workspace.toggle_panel_focus::<TestPanel>(cx);
+        workspace.toggle_panel_focus.<TestPanel>(cx);
     });
     executor.run_until_parked();
     assert_eq!(
@@ -494,7 +494,7 @@ async fn test_basic_following(
 
     // Toggling the focus back to the pane causes client A to return to the multibuffer.
     workspace_b.update(cx_b, |workspace, cx| {
-        workspace.toggle_panel_focus::<TestPanel>(cx);
+        workspace.toggle_panel_focus.<TestPanel>(cx);
     });
     executor.run_until_parked();
     workspace_a.update(cx_a, |workspace, cx| {
@@ -506,10 +506,10 @@ async fn test_basic_following(
 
     // Client B activates an item that doesn't implement following,
     // so the previously-opened screen-sharing item gets activated.
-    let unfollowable_item = cx_b.new_view(|cx| TestItem::new(cx));
+    let unfollowable_item = cx_b.new_view(|cx| TestItem.new(cx));
     workspace_b.update(cx_b, |workspace, cx| {
         workspace.active_pane().update(cx, |pane, cx| {
-            pane.add_item(Box::new(unfollowable_item), true, true, None, cx)
+            pane.add_item(Box.new(unfollowable_item), true, true, None, cx)
         })
     });
     executor.run_until_parked();
@@ -530,23 +530,23 @@ async fn test_basic_following(
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_following_tab_order(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
-    cx_a.update(editor::init);
-    cx_b.update(editor::init);
+    cx_a.update(editor.init);
+    cx_b.update(editor.init);
 
     client_a
         .fs()
@@ -599,7 +599,7 @@ async fn test_following_tab_order(
         .await
         .unwrap();
 
-    let pane_paths = |pane: &View<workspace::Pane>, cx: &mut VisualTestContext| {
+    let pane_paths = |pane: &View<workspace.Pane>, cx: &mut VisualTestContext| {
         pane.update(cx, |pane, cx| {
             pane.items()
                 .map(|item| {
@@ -610,7 +610,7 @@ async fn test_following_tab_order(
                         .unwrap()
                         .to_owned()
                 })
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         })
     };
 
@@ -647,20 +647,20 @@ async fn test_following_tab_order(
     assert_eq!(&pane_paths(&pane_a, cx_a), &["1.txt", "3.txt", "2.txt"]);
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_peers_following_each_other(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
     let executor = cx_a.executor();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
-    cx_a.update(editor::init);
-    cx_b.update(editor::init);
+    cx_a.update(editor.init);
+    cx_b.update(editor.init);
 
     // Client A shares a project.
     client_a
@@ -700,7 +700,7 @@ async fn test_peers_following_each_other(cx_a: &mut TestAppContext, cx_b: &mut T
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     // Client B opens a different file.
@@ -711,19 +711,19 @@ async fn test_peers_following_each_other(cx_a: &mut TestAppContext, cx_b: &mut T
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     // Clients A and B follow each other in split panes
     workspace_a.update(cx_a, |workspace, cx| {
-        workspace.split_and_clone(workspace.active_pane().clone(), SplitDirection::Right, cx);
+        workspace.split_and_clone(workspace.active_pane().clone(), SplitDirection.Right, cx);
     });
     workspace_a.update(cx_a, |workspace, cx| {
         workspace.follow(client_b.peer_id().unwrap(), cx)
     });
     executor.run_until_parked();
     workspace_b.update(cx_b, |workspace, cx| {
-        workspace.split_and_clone(workspace.active_pane().clone(), SplitDirection::Right, cx);
+        workspace.split_and_clone(workspace.active_pane().clone(), SplitDirection.Right, cx);
     });
     workspace_b.update(cx_b, |workspace, cx| {
         workspace.follow(client_a.peer_id().unwrap(), cx)
@@ -970,7 +970,7 @@ async fn test_peers_following_each_other(cx_a: &mut TestAppContext, cx_b: &mut T
     // and some of which were originally opened by client B.
     workspace_b.update(cx_b, |workspace, cx| {
         workspace.active_pane().update(cx, |pane, cx| {
-            pane.close_inactive_items(&Default::default(), cx)
+            pane.close_inactive_items(&Default.default(), cx)
                 .unwrap()
                 .detach();
         });
@@ -1161,21 +1161,21 @@ async fn test_peers_following_each_other(cx_a: &mut TestAppContext, cx_b: &mut T
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_auto_unfollowing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
     // 2 clients connect to a server.
     let executor = cx_a.executor();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
-    cx_a.update(editor::init);
-    cx_b.update(editor::init);
+    cx_a.update(editor.init);
+    cx_b.update(editor.init);
 
     // Client A shares a project.
     client_a
@@ -1214,7 +1214,7 @@ async fn test_auto_unfollowing(cx_a: &mut TestAppContext, cx_b: &mut TestAppCont
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     // Client B starts following client A.
@@ -1232,13 +1232,13 @@ async fn test_auto_unfollowing(cx_a: &mut TestAppContext, cx_b: &mut TestAppCont
         workspace
             .active_item(cx)
             .unwrap()
-            .downcast::<Editor>()
+            .downcast.<Editor>()
             .unwrap()
     });
 
     // When client B moves, it automatically stops following client A.
     editor_b2.update(cx_b, |editor, cx| {
-        editor.move_right(&editor::actions::MoveRight, cx)
+        editor.move_right(&editor.actions.MoveRight, cx)
     });
     assert_eq!(
         workspace_b.update(cx_b, |workspace, _| workspace.leader_for_pane(&pane_b)),
@@ -1284,7 +1284,7 @@ async fn test_auto_unfollowing(cx_a: &mut TestAppContext, cx_b: &mut TestAppCont
 
     // When client B activates a different pane, it continues following client A in the original pane.
     workspace_b.update(cx_b, |workspace, cx| {
-        workspace.split_and_clone(pane_b.clone(), SplitDirection::Right, cx)
+        workspace.split_and_clone(pane_b.clone(), SplitDirection.Right, cx)
     });
     assert_eq!(
         workspace_b.update(cx_b, |workspace, _| workspace.leader_for_pane(&pane_b)),
@@ -1310,22 +1310,22 @@ async fn test_auto_unfollowing(cx_a: &mut TestAppContext, cx_b: &mut TestAppCont
     );
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_peers_simultaneously_following_each_other(
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
     let executor = cx_a.executor();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
-    cx_a.update(editor::init);
-    cx_b.update(editor::init);
+    cx_a.update(editor.init);
+    cx_b.update(editor.init);
 
     client_a.fs().insert_tree("/a", json!({})).await;
     let (project_a, _) = client_a.build_local_project("/a", cx_a).await;
@@ -1364,7 +1364,7 @@ async fn test_peers_simultaneously_following_each_other(
     });
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
     // a and b join a channel/call
     // a shares project 1
@@ -1375,7 +1375,7 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
     // b opens a different file in project 1, a cannot follow b
     // b shares the project, a joins the project and follows b
     let executor = cx_a.executor();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -1404,8 +1404,8 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     let (project_a, worktree_id_a) = client_a.build_local_project("/a", cx_a).await;
     let (project_b, worktree_id_b) = client_b.build_local_project("/b", cx_b).await;
@@ -1448,10 +1448,10 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
         .max_by_key(|window| window.window_id())
         .unwrap();
 
-    let mut cx_b2 = VisualTestContext::from_window(window_b_project_a, cx_b);
+    let mut cx_b2 = VisualTestContext.from_window(window_b_project_a, cx_b);
 
     let workspace_b_project_a = window_b_project_a
-        .downcast::<Workspace>()
+        .downcast.<Workspace>()
         .unwrap()
         .root(cx_b)
         .unwrap();
@@ -1466,7 +1466,7 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
         let item = workspace.active_item(cx).unwrap();
         assert_eq!(
             item.tab_description(0, cx).unwrap(),
-            SharedString::from("w.rs")
+            SharedString.from("w.rs")
         );
     });
 
@@ -1495,7 +1495,7 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
         let item = workspace.active_item(cx).unwrap();
         assert_eq!(
             item.tab_description(0, cx).unwrap(),
-            SharedString::from("x.rs")
+            SharedString.from("x.rs")
         );
     });
 
@@ -1539,7 +1539,7 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
     executor.run_until_parked();
     assert_eq!(visible_push_notifications(cx_a).len(), 1);
     cx_a.update(|cx| {
-        workspace::join_in_room_project(
+        workspace.join_in_room_project(
             project_b_id,
             client_b.user_id().unwrap(),
             client_a.app_state.clone(),
@@ -1557,9 +1557,9 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
         .iter()
         .max_by_key(|window| window.window_id())
         .unwrap();
-    let cx_a2 = &mut VisualTestContext::from_window(window_a_project_b, cx_a);
+    let cx_a2 = &mut VisualTestContext.from_window(window_a_project_b, cx_a);
     let workspace_a_project_b = window_a_project_b
-        .downcast::<Workspace>()
+        .downcast.<Workspace>()
         .unwrap()
         .root(cx_a)
         .unwrap();
@@ -1574,14 +1574,14 @@ async fn test_following_across_workspaces(cx_a: &mut TestAppContext, cx_b: &mut 
         let item = workspace.active_item(cx).unwrap();
         assert_eq!(
             item.tab_description(0, cx).unwrap(),
-            SharedString::from("y.rs")
+            SharedString.from("y.rs")
         );
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_following_stops_on_unshare(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
-    let (_server, client_a, client_b, channel_id) = TestServer::start2(cx_a, cx_b).await;
+    let (_server, client_a, client_b, channel_id) = TestServer.start2(cx_a, cx_b).await;
 
     let (workspace_a, cx_a) = client_a.build_test_workspace(cx_a).await;
     client_a
@@ -1593,10 +1593,10 @@ async fn test_following_stops_on_unshare(cx_a: &mut TestAppContext, cx_b: &mut T
     cx_a.run_until_parked();
 
     let editor_a = workspace_a.update(cx_a, |workspace, cx| {
-        workspace.active_item_as::<Editor>(cx).unwrap()
+        workspace.active_item_as.<Editor>(cx).unwrap()
     });
     let editor_b = workspace_b.update(cx_b, |workspace, cx| {
-        workspace.active_item_as::<Editor>(cx).unwrap()
+        workspace.active_item_as.<Editor>(cx).unwrap()
     });
 
     // b should follow a to position 1
@@ -1604,7 +1604,7 @@ async fn test_following_stops_on_unshare(cx_a: &mut TestAppContext, cx_b: &mut T
         editor.change_selections(None, cx, |s| s.select_ranges([1..1]))
     });
     cx_a.executor()
-        .advance_clock(workspace::item::LEADER_UPDATE_THROTTLE);
+        .advance_clock(workspace.item.LEADER_UPDATE_THROTTLE);
     cx_a.run_until_parked();
     editor_b.update(cx_b, |editor, cx| {
         assert_eq!(editor.selections.ranges(cx), vec![1..1])
@@ -1613,7 +1613,7 @@ async fn test_following_stops_on_unshare(cx_a: &mut TestAppContext, cx_b: &mut T
     // a unshares the project
     cx_a.update(|cx| {
         let project = workspace_a.read(cx).project().clone();
-        ActiveCall::global(cx).update(cx, |call, cx| {
+        ActiveCall.global(cx).update(cx, |call, cx| {
             call.unshare_project(project, cx).unwrap();
         })
     });
@@ -1624,31 +1624,31 @@ async fn test_following_stops_on_unshare(cx_a: &mut TestAppContext, cx_b: &mut T
         editor.change_selections(None, cx, |s| s.select_ranges([2..2]))
     });
     cx_a.executor()
-        .advance_clock(workspace::item::LEADER_UPDATE_THROTTLE);
+        .advance_clock(workspace.item.LEADER_UPDATE_THROTTLE);
     cx_a.run_until_parked();
     editor_b.update(cx_b, |editor, cx| {
         assert_eq!(editor.selections.ranges(cx), vec![1..1])
     });
     cx_b.update(|cx| {
-        let room = ActiveCall::global(cx).read(cx).room().unwrap().read(cx);
+        let room = ActiveCall.global(cx).read(cx).room().unwrap().read(cx);
         let participant = room.remote_participants().get(&client_a.id()).unwrap();
-        assert_eq!(participant.location, ParticipantLocation::UnsharedProject)
+        assert_eq!(participant.location, ParticipantLocation.UnsharedProject)
     })
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_following_into_excluded_file(
     mut cx_a: &mut TestAppContext,
     mut cx_b: &mut TestAppContext,
 ) {
     let executor = cx_a.executor();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     for cx in [&mut cx_a, &mut cx_b] {
         cx.update(|cx| {
-            cx.update_global::<SettingsStore, _>(|store, cx| {
-                store.update_user_settings::<WorktreeSettings>(cx, |settings| {
+            cx.update_global.<SettingsStore, _>(|store, cx| {
+                store.update_user_settings.<WorktreeSettings>(cx, |settings| {
                     settings.file_scan_exclusions = Some(vec!["**/.git".to_string()]);
                 });
             });
@@ -1657,8 +1657,8 @@ async fn test_following_into_excluded_file(
     server
         .create_room(&mut [(&client_a, cx_a), (&client_b, cx_b)])
         .await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
     let peer_id_a = client_a.peer_id().unwrap();
 
     client_a
@@ -1701,7 +1701,7 @@ async fn test_following_into_excluded_file(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
     let editor_for_excluded_a = workspace_a
         .update(cx_a, |workspace, cx| {
@@ -1709,7 +1709,7 @@ async fn test_following_into_excluded_file(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     // Client A updates their selections in those editors
@@ -1717,26 +1717,26 @@ async fn test_following_into_excluded_file(
         editor.handle_input("a", cx);
         editor.handle_input("b", cx);
         editor.handle_input("c", cx);
-        editor.select_left(&Default::default(), cx);
+        editor.select_left(&Default.default(), cx);
         assert_eq!(editor.selections.ranges(cx), vec![3..2]);
     });
     editor_for_excluded_a.update(cx_a, |editor, cx| {
-        editor.select_all(&Default::default(), cx);
+        editor.select_all(&Default.default(), cx);
         editor.handle_input("new commit message", cx);
-        editor.select_left(&Default::default(), cx);
+        editor.select_left(&Default.default(), cx);
         assert_eq!(editor.selections.ranges(cx), vec![18..17]);
     });
 
     // When client B starts following client A, currently visible file is replicated
     workspace_b.update(cx_b, |workspace, cx| workspace.follow(peer_id_a, cx));
-    executor.advance_clock(workspace::item::LEADER_UPDATE_THROTTLE);
+    executor.advance_clock(workspace.item.LEADER_UPDATE_THROTTLE);
     executor.run_until_parked();
 
     let editor_for_excluded_b = workspace_b.update(cx_b, |workspace, cx| {
         workspace
             .active_item(cx)
             .unwrap()
-            .downcast::<Editor>()
+            .downcast.<Editor>()
             .unwrap()
     });
     assert_eq!(
@@ -1749,9 +1749,9 @@ async fn test_following_into_excluded_file(
     );
 
     editor_for_excluded_a.update(cx_a, |editor, cx| {
-        editor.select_right(&Default::default(), cx);
+        editor.select_right(&Default.default(), cx);
     });
-    executor.advance_clock(workspace::item::LEADER_UPDATE_THROTTLE);
+    executor.advance_clock(workspace.item.LEADER_UPDATE_THROTTLE);
     executor.run_until_parked();
 
     // Changes from B to the excluded file are replicated in A's editor
@@ -1769,12 +1769,12 @@ async fn test_following_into_excluded_file(
 
 fn visible_push_notifications(
     cx: &mut TestAppContext,
-) -> Vec<gpui::View<ProjectSharedNotification>> {
-    let mut ret = Vec::new();
+) -> Vec<gpui.View<ProjectSharedNotification>> {
+    let mut ret = Vec.new();
     for window in cx.windows() {
         window
             .update(cx, |window, _| {
-                if let Ok(handle) = window.downcast::<ProjectSharedNotification>() {
+                if let Ok(handle) = window.downcast.<ProjectSharedNotification>() {
                     ret.push(handle)
                 }
             })
@@ -1792,7 +1792,7 @@ struct PaneSummary {
 
 fn followers_by_leader(project_id: u64, cx: &TestAppContext) -> Vec<(PeerId, Vec<PeerId>)> {
     cx.read(|cx| {
-        let active_call = ActiveCall::global(cx).read(cx);
+        let active_call = ActiveCall.global(cx).read(cx);
         let peer_id = active_call.client().peer_id();
         let room = active_call.room().unwrap().read(cx);
         let mut result = room
@@ -1808,7 +1808,7 @@ fn followers_by_leader(project_id: u64, cx: &TestAppContext) -> Vec<(PeerId, Vec
                     Some((peer_id, followers.to_vec()))
                 }
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         result.sort_by_key(|e| e.0);
         result
     })
@@ -1835,7 +1835,7 @@ fn pane_summaries(workspace: &View<Workspace>, cx: &mut VisualTestContext) -> Ve
                             (
                                 ix == active_ix,
                                 item.tab_description(0, cx)
-                                    .map_or(String::new(), |s| s.to_string()),
+                                    .map_or(String.new(), |s| s.to_string()),
                             )
                         })
                         .collect(),
@@ -1845,24 +1845,24 @@ fn pane_summaries(workspace: &View<Workspace>, cx: &mut VisualTestContext) -> Ve
     })
 }
 
-#[gpui::test(iterations = 10)]
+#[gpui.test(iterations = 10)]
 async fn test_following_to_channel_notes_without_a_shared_project(
     deterministic: BackgroundExecutor,
     mut cx_a: &mut TestAppContext,
     mut cx_b: &mut TestAppContext,
     mut cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(deterministic.clone()).await;
+    let mut server = TestServer.start(deterministic.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
 
-    cx_a.update(editor::init);
-    cx_b.update(editor::init);
-    cx_c.update(editor::init);
-    cx_a.update(collab_ui::channel_view::init);
-    cx_b.update(collab_ui::channel_view::init);
-    cx_c.update(collab_ui::channel_view::init);
+    cx_a.update(editor.init);
+    cx_b.update(editor.init);
+    cx_c.update(editor.init);
+    cx_a.update(collab_ui.channel_view.init);
+    cx_b.update(collab_ui.channel_view.init);
+    cx_c.update(collab_ui.channel_view.init);
 
     let channel_1_id = server
         .make_channel(
@@ -1882,9 +1882,9 @@ async fn test_following_to_channel_notes_without_a_shared_project(
         .await;
 
     // Clients A, B, and C join a channel.
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
-    let active_call_c = cx_c.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
+    let active_call_c = cx_c.read(ActiveCall.global);
     for (call, cx) in [
         (&active_call_a, &mut cx_a),
         (&active_call_b, &mut cx_b),
@@ -1917,7 +1917,7 @@ async fn test_following_to_channel_notes_without_a_shared_project(
 
     // Client A opens the notes for channel 1.
     let channel_notes_1_a = cx_a
-        .update(|cx| ChannelView::open(channel_1_id, None, workspace_a.clone(), cx))
+        .update(|cx| ChannelView.open(channel_1_id, None, workspace_a.clone(), cx))
         .await
         .unwrap();
     channel_notes_1_a.update(cx_a, |notes, cx| {
@@ -1951,19 +1951,19 @@ async fn test_following_to_channel_notes_without_a_shared_project(
         workspace
             .active_item(cx)
             .expect("no active item")
-            .downcast::<ChannelView>()
+            .downcast.<ChannelView>()
             .expect("active item is not a channel view")
     });
     channel_notes_1_b.update(cx_b, |notes, cx| {
         assert_eq!(notes.channel(cx).unwrap().name, "channel-1");
         let editor = notes.editor.read(cx);
         assert_eq!(editor.text(cx), "Hello from A.");
-        assert_eq!(editor.selections.ranges::<usize>(cx), &[3..4]);
+        assert_eq!(editor.selections.ranges.<usize>(cx), &[3..4]);
     });
 
     //  Client A opens the notes for channel 2.
     let channel_notes_2_a = cx_a
-        .update(|cx| ChannelView::open(channel_2_id, None, workspace_a.clone(), cx))
+        .update(|cx| ChannelView.open(channel_2_id, None, workspace_a.clone(), cx))
         .await
         .unwrap();
     channel_notes_2_a.update(cx_a, |notes, cx| {
@@ -1980,7 +1980,7 @@ async fn test_following_to_channel_notes_without_a_shared_project(
         workspace
             .active_item(cx)
             .expect("no active item")
-            .downcast::<ChannelView>()
+            .downcast.<ChannelView>()
             .expect("active item is not a channel view")
     });
     channel_notes_2_b.update(cx_b, |notes, cx| {
@@ -1994,7 +1994,7 @@ async fn test_following_to_channel_notes_without_a_shared_project(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     // This does not send any leader update message to client B.
@@ -2013,27 +2013,27 @@ pub(crate) async fn join_channel(
     channel_id: ChannelId,
     client: &TestClient,
     cx: &mut TestAppContext,
-) -> anyhow::Result<()> {
-    cx.update(|cx| workspace::join_channel(channel_id, client.app_state.clone(), None, cx))
+) -> anyhow.Result<()> {
+    cx.update(|cx| workspace.join_channel(channel_id, client.app_state.clone(), None, cx))
         .await
 }
 
 async fn share_workspace(
     workspace: &View<Workspace>,
     cx: &mut VisualTestContext,
-) -> anyhow::Result<u64> {
+) -> anyhow.Result<u64> {
     let project = workspace.update(cx, |workspace, _| workspace.project().clone());
-    cx.read(ActiveCall::global)
+    cx.read(ActiveCall.global)
         .update(cx, |call, cx| call.share_project(project, cx))
         .await
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_following_to_channel_notes_other_workspace(
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let (_server, client_a, client_b, channel) = TestServer::start2(cx_a, cx_b).await;
+    let (_server, client_a, client_b, channel) = TestServer.start2(cx_a, cx_b).await;
 
     let mut cx_a2 = cx_a.clone();
     let (workspace_a, cx_a) = client_a.build_test_workspace(cx_a).await;
@@ -2061,14 +2061,14 @@ async fn test_following_to_channel_notes_other_workspace(
     let (workspace_a2, cx_a2) = client_a.build_test_workspace(&mut cx_a2).await;
     cx_a2.update(|cx| cx.activate_window());
     cx_a2
-        .update(|cx| ChannelView::open(channel, None, workspace_a2, cx))
+        .update(|cx| ChannelView.open(channel, None, workspace_a2, cx))
         .await
         .unwrap();
     cx_a2.run_until_parked();
 
     // b should follow a to the channel notes
     workspace_b.update(cx_b, |workspace, cx| {
-        let editor = workspace.active_item_as::<ChannelView>(cx).unwrap();
+        let editor = workspace.active_item_as.<ChannelView>(cx).unwrap();
         assert_eq!(editor.read(cx).channel(cx).unwrap().id, channel);
     });
 
@@ -2083,14 +2083,14 @@ async fn test_following_to_channel_notes_other_workspace(
 
     // b should follow a back
     workspace_b.update(cx_b, |workspace, cx| {
-        let editor = workspace.active_item_as::<Editor>(cx).unwrap();
+        let editor = workspace.active_item_as.<Editor>(cx).unwrap();
         assert_eq!(editor.tab_description(0, cx).unwrap(), "1.txt");
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_following_while_deactivated(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
-    let (_server, client_a, client_b, channel) = TestServer::start2(cx_a, cx_b).await;
+    let (_server, client_a, client_b, channel) = TestServer.start2(cx_a, cx_b).await;
 
     let mut cx_a2 = cx_a.clone();
     let (workspace_a, cx_a) = client_a.build_test_workspace(cx_a).await;
@@ -2121,7 +2121,7 @@ async fn test_following_while_deactivated(cx_a: &mut TestAppContext, cx_b: &mut 
     cx_a.simulate_keystrokes("cmd-p 2 enter");
 
     workspace_b.update(cx_b, |workspace, cx| {
-        let editor = workspace.active_item_as::<Editor>(cx).unwrap();
+        let editor = workspace.active_item_as.<Editor>(cx).unwrap();
         assert_eq!(editor.tab_description(0, cx).unwrap(), "1.txt");
     });
 
@@ -2146,7 +2146,7 @@ async fn test_following_while_deactivated(cx_a: &mut TestAppContext, cx_b: &mut 
 
     // b should follow a back
     workspace_b.update(cx_b, |workspace, cx| {
-        let editor = workspace.active_item_as::<Editor>(cx).unwrap();
+        let editor = workspace.active_item_as.<Editor>(cx).unwrap();
         assert_eq!(editor.tab_description(0, cx).unwrap(), "2.js");
     });
 }

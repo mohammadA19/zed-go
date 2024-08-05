@@ -1,62 +1,62 @@
-use crate::{
-    db::{self, NewUserParams, UserId},
-    rpc::{CLEANUP_TIMEOUT, RECONNECT_TIMEOUT},
-    tests::{TestClient, TestServer},
+use crate.{
+    db.{self, NewUserParams, UserId},
+    rpc.{CLEANUP_TIMEOUT, RECONNECT_TIMEOUT},
+    tests.{TestClient, TestServer},
 };
-use async_trait::async_trait;
-use futures::StreamExt;
-use gpui::{BackgroundExecutor, Task, TestAppContext};
-use parking_lot::Mutex;
-use rand::prelude::*;
-use rpc::RECEIVE_TIMEOUT;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use settings::SettingsStore;
-use std::sync::OnceLock;
-use std::{
+use async_trait.async_trait;
+use futures.StreamExt;
+use gpui.{BackgroundExecutor, Task, TestAppContext};
+use parking_lot.Mutex;
+use rand.prelude.*;
+use rpc.RECEIVE_TIMEOUT;
+use serde.{de.DeserializeOwned, Deserialize, Serialize};
+use settings.SettingsStore;
+use std.sync.OnceLock;
+use std.{
     env,
-    path::PathBuf,
-    rc::Rc,
-    sync::{
-        atomic::{AtomicBool, Ordering::SeqCst},
+    path.PathBuf,
+    rc.Rc,
+    sync.{
+        atomic.{AtomicBool, Ordering.SeqCst},
         Arc,
     },
 };
 
 fn plan_load_path() -> &'static Option<PathBuf> {
-    static PLAN_LOAD_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+    static PLAN_LOAD_PATH: OnceLock<Option<PathBuf>> = OnceLock.new();
     PLAN_LOAD_PATH.get_or_init(|| path_env_var("LOAD_PLAN"))
 }
 
 fn plan_save_path() -> &'static Option<PathBuf> {
-    static PLAN_SAVE_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
+    static PLAN_SAVE_PATH: OnceLock<Option<PathBuf>> = OnceLock.new();
     PLAN_SAVE_PATH.get_or_init(|| path_env_var("SAVE_PLAN"))
 }
 
 fn max_peers() -> usize {
-    static MAX_PEERS: OnceLock<usize> = OnceLock::new();
+    static MAX_PEERS: OnceLock<usize> = OnceLock.new();
     *MAX_PEERS.get_or_init(|| {
-        env::var("MAX_PEERS")
+        env.var("MAX_PEERS")
             .map(|i| i.parse().expect("invalid `MAX_PEERS` variable"))
             .unwrap_or(3)
     })
 }
 
 fn max_operations() -> usize {
-    static MAX_OPERATIONS: OnceLock<usize> = OnceLock::new();
+    static MAX_OPERATIONS: OnceLock<usize> = OnceLock.new();
     *MAX_OPERATIONS.get_or_init(|| {
-        env::var("OPERATIONS")
+        env.var("OPERATIONS")
             .map(|i| i.parse().expect("invalid `OPERATIONS` variable"))
             .unwrap_or(10)
     })
 }
 
-static LOADED_PLAN_JSON: Mutex<Option<Vec<u8>>> = Mutex::new(None);
-static LAST_PLAN: Mutex<Option<Box<dyn Send + FnOnce() -> Vec<u8>>>> = Mutex::new(None);
+static LOADED_PLAN_JSON: Mutex<Option<Vec<u8>>> = Mutex.new(None);
+static LAST_PLAN: Mutex<Option<Box<dyn Send + FnOnce() -> Vec<u8>>>> = Mutex.new(None);
 
 struct TestPlan<T: RandomizedTest> {
     rng: StdRng,
     replay: bool,
-    stored_operations: Vec<(StoredOperation<T::Operation>, Arc<AtomicBool>)>,
+    stored_operations: Vec<(StoredOperation<T.Operation>, Arc<AtomicBool>)>,
     max_operations: usize,
     operation_ix: usize,
     users: Vec<UserTestPlan>,
@@ -109,7 +109,7 @@ enum ServerOperation {
 
 pub enum TestError {
     Inapplicable,
-    Other(anyhow::Error),
+    Other(anyhow.Error),
 }
 
 #[async_trait(?Send)]
@@ -121,11 +121,11 @@ pub trait RandomizedTest: 'static + Sized {
         rng: &mut StdRng,
         plan: &mut UserTestPlan,
         cx: &TestAppContext,
-    ) -> Self::Operation;
+    ) -> Self.Operation;
 
     async fn apply_operation(
         client: &TestClient,
-        operation: Self::Operation,
+        operation: Self.Operation,
         cx: &mut TestAppContext,
     ) -> Result<(), TestError>;
 
@@ -141,23 +141,23 @@ pub async fn run_randomized_test<T: RandomizedTest>(
     executor: BackgroundExecutor,
     rng: StdRng,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
-    let plan = TestPlan::<T>::new(&mut server, rng).await;
+    let mut server = TestServer.start(executor.clone()).await;
+    let plan = TestPlan.<T>.new(&mut server, rng).await;
 
     LAST_PLAN.lock().replace({
         let plan = plan.clone();
-        Box::new(move || plan.lock().serialize())
+        Box.new(move || plan.lock().serialize())
     });
 
-    let mut clients = Vec::new();
-    let mut client_tasks = Vec::new();
-    let mut operation_channels = Vec::new();
+    let mut clients = Vec.new();
+    let mut client_tasks = Vec.new();
+    let mut operation_channels = Vec.new();
     loop {
         let Some((next_operation, applied)) = plan.lock().next_server_operation(&clients) else {
             break;
         };
         applied.store(true, SeqCst);
-        let did_apply = TestPlan::apply_server_operation(
+        let did_apply = TestPlan.apply_server_operation(
             plan.clone(),
             executor.clone(),
             &mut server,
@@ -175,15 +175,15 @@ pub async fn run_randomized_test<T: RandomizedTest>(
 
     drop(operation_channels);
     executor.start_waiting();
-    futures::future::join_all(client_tasks).await;
+    futures.future.join_all(client_tasks).await;
     executor.finish_waiting();
 
     executor.run_until_parked();
-    T::on_quiesce(&mut server, &mut clients).await;
+    T.on_quiesce(&mut server, &mut clients).await;
 
     for (client, cx) in clients {
         cx.update(|cx| {
-            let store = cx.remove_global::<SettingsStore>();
+            let store = cx.remove_global.<SettingsStore>();
             cx.clear_globals();
             cx.set_global(store);
             drop(client);
@@ -193,7 +193,7 @@ pub async fn run_randomized_test<T: RandomizedTest>(
 
     if let Some(path) = plan_save_path() {
         eprintln!("saved test plan to path {:?}", path);
-        std::fs::write(path, plan.lock().serialize()).unwrap();
+        std.fs.write(path, plan.lock().serialize()).unwrap();
     }
 }
 
@@ -201,7 +201,7 @@ pub fn save_randomized_test_plan() {
     if let Some(serialize_plan) = LAST_PLAN.lock().take() {
         if let Some(path) = plan_save_path() {
             eprintln!("saved test plan to path {:?}", path);
-            std::fs::write(path, serialize_plan()).unwrap();
+            std.fs.write(path, serialize_plan()).unwrap();
         }
     }
 }
@@ -212,7 +212,7 @@ impl<T: RandomizedTest> TestPlan<T> {
         let allow_client_reconnection = rng.gen_bool(0.7);
         let allow_client_disconnection = rng.gen_bool(0.1);
 
-        let mut users = Vec::new();
+        let mut users = Vec.new();
         for ix in 0..max_peers() {
             let username = format!("user-{}", ix + 1);
             let user_id = server
@@ -239,14 +239,14 @@ impl<T: RandomizedTest> TestPlan<T> {
             });
         }
 
-        T::initialize(server, &users).await;
+        T.initialize(server, &users).await;
 
-        let plan = Arc::new(Mutex::new(Self {
+        let plan = Arc.new(Mutex.new(Self {
             replay: false,
             allow_server_restarts,
             allow_client_reconnection,
             allow_client_disconnection,
-            stored_operations: Vec::new(),
+            stored_operations: Vec.new(),
             operation_ix: 0,
             next_batch_id: 0,
             max_operations: max_operations(),
@@ -259,7 +259,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                 .lock()
                 .get_or_insert_with(|| {
                     eprintln!("loaded test plan from path {:?}", path);
-                    std::fs::read(path).unwrap()
+                    std.fs.read(path).unwrap()
                 })
                 .clone();
             plan.lock().deserialize(json);
@@ -269,16 +269,16 @@ impl<T: RandomizedTest> TestPlan<T> {
     }
 
     fn deserialize(&mut self, json: Vec<u8>) {
-        let stored_operations: Vec<StoredOperation<T::Operation>> =
-            serde_json::from_slice(&json).unwrap();
+        let stored_operations: Vec<StoredOperation<T.Operation>> =
+            serde_json.from_slice(&json).unwrap();
         self.replay = true;
         self.stored_operations = stored_operations
             .iter()
             .cloned()
             .enumerate()
             .map(|(i, mut operation)| {
-                let did_apply = Arc::new(AtomicBool::new(false));
-                if let StoredOperation::Server(ServerOperation::MutateClients {
+                let did_apply = Arc.new(AtomicBool.new(false));
+                if let StoredOperation.Server(ServerOperation.MutateClients {
                     batch_id: current_batch_id,
                     user_ids,
                     ..
@@ -286,7 +286,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                 {
                     assert!(user_ids.is_empty());
                     user_ids.extend(stored_operations[i + 1..].iter().filter_map(|operation| {
-                        if let StoredOperation::Client {
+                        if let StoredOperation.Client {
                             user_id, batch_id, ..
                         } = operation
                         {
@@ -305,7 +305,7 @@ impl<T: RandomizedTest> TestPlan<T> {
 
     fn serialize(&mut self) -> Vec<u8> {
         // Format each operation as one line
-        let mut json = Vec::new();
+        let mut json = Vec.new();
         json.push(b'[');
         for (operation, applied) in &self.stored_operations {
             if !applied.load(SeqCst) {
@@ -315,7 +315,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                 json.push(b',');
             }
             json.extend_from_slice(b"\n  ");
-            serde_json::to_writer(&mut json, operation).unwrap();
+            serde_json.to_writer(&mut json, operation).unwrap();
         }
         json.extend_from_slice(b"\n]\n");
         json
@@ -328,16 +328,16 @@ impl<T: RandomizedTest> TestPlan<T> {
         if self.replay {
             while let Some(stored_operation) = self.stored_operations.get(self.operation_ix) {
                 self.operation_ix += 1;
-                if let (StoredOperation::Server(operation), applied) = stored_operation {
+                if let (StoredOperation.Server(operation), applied) = stored_operation {
                     return Some((operation.clone(), applied.clone()));
                 }
             }
             None
         } else {
             let operation = self.generate_server_operation(clients)?;
-            let applied = Arc::new(AtomicBool::new(false));
+            let applied = Arc.new(AtomicBool.new(false));
             self.stored_operations
-                .push((StoredOperation::Server(operation.clone()), applied.clone()));
+                .push((StoredOperation.Server(operation.clone()), applied.clone()));
             Some((operation, applied))
         }
     }
@@ -347,7 +347,7 @@ impl<T: RandomizedTest> TestPlan<T> {
         client: &TestClient,
         current_batch_id: usize,
         cx: &TestAppContext,
-    ) -> Option<(T::Operation, Arc<AtomicBool>)> {
+    ) -> Option<(T.Operation, Arc<AtomicBool>)> {
         let current_user_id = client.current_user_id(cx);
         let user_ix = self
             .users
@@ -360,7 +360,7 @@ impl<T: RandomizedTest> TestPlan<T> {
             while let Some(stored_operation) = self.stored_operations.get(user_plan.operation_ix) {
                 user_plan.operation_ix += 1;
                 if let (
-                    StoredOperation::Client {
+                    StoredOperation.Client {
                         user_id, operation, ..
                     },
                     applied,
@@ -377,7 +377,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                 return None;
             }
             self.operation_ix += 1;
-            let operation = T::generate_operation(
+            let operation = T.generate_operation(
                 client,
                 &mut self.rng,
                 self.users
@@ -386,9 +386,9 @@ impl<T: RandomizedTest> TestPlan<T> {
                     .unwrap(),
                 cx,
             );
-            let applied = Arc::new(AtomicBool::new(false));
+            let applied = Arc.new(AtomicBool.new(false));
             self.stored_operations.push((
-                StoredOperation::Client {
+                StoredOperation.Client {
                     user_id: current_user_id,
                     batch_id: current_batch_id,
                     operation: operation.clone(),
@@ -417,7 +417,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                         .choose(&mut self.rng)
                         .unwrap();
                     self.operation_ix += 1;
-                    ServerOperation::AddConnection {
+                    ServerOperation.AddConnection {
                         user_id: user.user_id,
                     }
                 }
@@ -425,33 +425,33 @@ impl<T: RandomizedTest> TestPlan<T> {
                     let (client, cx) = &clients[self.rng.gen_range(0..clients.len())];
                     let user_id = client.current_user_id(cx);
                     self.operation_ix += 1;
-                    ServerOperation::RemoveConnection { user_id }
+                    ServerOperation.RemoveConnection { user_id }
                 }
                 35..=39 if clients.len() > 1 && self.allow_client_reconnection => {
                     let (client, cx) = &clients[self.rng.gen_range(0..clients.len())];
                     let user_id = client.current_user_id(cx);
                     self.operation_ix += 1;
-                    ServerOperation::BounceConnection { user_id }
+                    ServerOperation.BounceConnection { user_id }
                 }
                 40..=44 if self.allow_server_restarts && clients.len() > 1 => {
                     self.operation_ix += 1;
-                    ServerOperation::RestartServer
+                    ServerOperation.RestartServer
                 }
                 _ if !clients.is_empty() => {
                     let count = self
                         .rng
                         .gen_range(1..10)
                         .min(self.max_operations - self.operation_ix);
-                    let batch_id = util::post_inc(&mut self.next_batch_id);
+                    let batch_id = util.post_inc(&mut self.next_batch_id);
                     let mut user_ids = (0..count)
                         .map(|_| {
                             let ix = self.rng.gen_range(0..clients.len());
                             let (client, cx) = &clients[ix];
                             client.current_user_id(cx)
                         })
-                        .collect::<Vec<_>>();
+                        .collect.<Vec<_>>();
                     user_ids.sort_unstable();
-                    ServerOperation::MutateClients {
+                    ServerOperation.MutateClients {
                         user_ids,
                         batch_id,
                         quiesce: self.rng.gen_bool(0.7),
@@ -462,19 +462,19 @@ impl<T: RandomizedTest> TestPlan<T> {
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy.too_many_arguments)]
     async fn apply_server_operation(
         plan: Arc<Mutex<Self>>,
         deterministic: BackgroundExecutor,
         server: &mut TestServer,
         clients: &mut Vec<(Rc<TestClient>, TestAppContext)>,
         client_tasks: &mut Vec<Task<()>>,
-        operation_channels: &mut Vec<futures::channel::mpsc::UnboundedSender<usize>>,
+        operation_channels: &mut Vec<futures.channel.mpsc.UnboundedSender<usize>>,
         operation: ServerOperation,
         cx: &mut TestAppContext,
     ) -> bool {
         match operation {
-            ServerOperation::AddConnection { user_id } => {
+            ServerOperation.AddConnection { user_id } => {
                 let username;
                 {
                     let mut plan = plan.lock();
@@ -485,27 +485,27 @@ impl<T: RandomizedTest> TestPlan<T> {
                     user.online = true;
                     username = user.username.clone();
                 };
-                log::info!("adding new connection for {}", username);
+                log.info!("adding new connection for {}", username);
 
                 let mut client_cx = cx.new_app();
 
-                let (operation_tx, operation_rx) = futures::channel::mpsc::unbounded();
-                let client = Rc::new(server.create_client(&mut client_cx, &username).await);
+                let (operation_tx, operation_rx) = futures.channel.mpsc.unbounded();
+                let client = Rc.new(server.create_client(&mut client_cx, &username).await);
                 operation_channels.push(operation_tx);
                 clients.push((client.clone(), client_cx.clone()));
 
                 let foreground_executor = client_cx.foreground_executor().clone();
                 let simulate_client =
-                    Self::simulate_client(plan.clone(), client, operation_rx, client_cx);
+                    Self.simulate_client(plan.clone(), client, operation_rx, client_cx);
                 client_tasks.push(foreground_executor.spawn(simulate_client));
 
-                log::info!("added connection for {}", username);
+                log.info!("added connection for {}", username);
             }
 
-            ServerOperation::RemoveConnection {
+            ServerOperation.RemoveConnection {
                 user_id: removed_user_id,
             } => {
-                log::info!("simulating full disconnection of user {}", removed_user_id);
+                log.info!("simulating full disconnection of user {}", removed_user_id);
                 let client_ix = clients
                     .iter()
                     .position(|(client, cx)| client.current_user_id(cx) == removed_user_id);
@@ -516,7 +516,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                     .connection_pool
                     .lock()
                     .user_connection_ids(removed_user_id)
-                    .collect::<Vec<_>>();
+                    .collect.<Vec<_>>();
                 assert_eq!(user_connection_ids.len(), 1);
                 let removed_peer_id = user_connection_ids[0].into();
                 let (client, client_cx) = clients.remove(client_ix);
@@ -526,7 +526,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                 server.disconnect_client(removed_peer_id);
                 deterministic.advance_clock(RECEIVE_TIMEOUT + RECONNECT_TIMEOUT);
                 deterministic.start_waiting();
-                log::info!("waiting for user {} to exit...", removed_user_id);
+                log.info!("waiting for user {} to exit...", removed_user_id);
                 client_task.await;
                 deterministic.finish_waiting();
                 server.allow_connections();
@@ -550,7 +550,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                         .unwrap();
                     let pool = server.connection_pool.lock();
                     for contact in contacts {
-                        if let db::Contact::Accepted { user_id, busy, .. } = contact {
+                        if let db.Contact.Accepted { user_id, busy, .. } = contact {
                             if user_id == removed_user_id {
                                 assert!(!pool.is_user_online(user_id));
                                 assert!(!busy);
@@ -559,7 +559,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                     }
                 }
 
-                log::info!("{} removed", client.username);
+                log.info!("{} removed", client.username);
                 plan.lock().user(removed_user_id).online = false;
                 client_cx.update(|cx| {
                     cx.clear_globals();
@@ -567,13 +567,13 @@ impl<T: RandomizedTest> TestPlan<T> {
                 });
             }
 
-            ServerOperation::BounceConnection { user_id } => {
-                log::info!("simulating temporary disconnection of user {}", user_id);
+            ServerOperation.BounceConnection { user_id } => {
+                log.info!("simulating temporary disconnection of user {}", user_id);
                 let user_connection_ids = server
                     .connection_pool
                     .lock()
                     .user_connection_ids(user_id)
-                    .collect::<Vec<_>>();
+                    .collect.<Vec<_>>();
                 if user_connection_ids.is_empty() {
                     return false;
                 }
@@ -583,8 +583,8 @@ impl<T: RandomizedTest> TestPlan<T> {
                 deterministic.advance_clock(RECEIVE_TIMEOUT + RECONNECT_TIMEOUT);
             }
 
-            ServerOperation::RestartServer => {
-                log::info!("simulating server restart");
+            ServerOperation.RestartServer => {
+                log.info!("simulating server restart");
                 server.reset().await;
                 deterministic.advance_clock(RECEIVE_TIMEOUT);
                 server.start().await.unwrap();
@@ -599,7 +599,7 @@ impl<T: RandomizedTest> TestPlan<T> {
                 assert_eq!(stale_room_ids, vec![]);
             }
 
-            ServerOperation::MutateClients {
+            ServerOperation.MutateClients {
                 user_ids,
                 batch_id,
                 quiesce,
@@ -612,13 +612,13 @@ impl<T: RandomizedTest> TestPlan<T> {
                     let Some(client_ix) = client_ix else { continue };
                     applied = true;
                     if let Err(err) = operation_channels[client_ix].unbounded_send(batch_id) {
-                        log::error!("error signaling user {user_id}: {err}");
+                        log.error!("error signaling user {user_id}: {err}");
                     }
                 }
 
                 if quiesce && applied {
                     deterministic.run_until_parked();
-                    T::on_quiesce(server, clients).await;
+                    T.on_quiesce(server, clients).await;
                 }
 
                 return applied;
@@ -630,10 +630,10 @@ impl<T: RandomizedTest> TestPlan<T> {
     async fn simulate_client(
         plan: Arc<Mutex<Self>>,
         client: Rc<TestClient>,
-        mut operation_rx: futures::channel::mpsc::UnboundedReceiver<usize>,
+        mut operation_rx: futures.channel.mpsc.UnboundedReceiver<usize>,
         mut cx: TestAppContext,
     ) {
-        T::on_client_added(&client, &mut cx).await;
+        T.on_client_added(&client, &mut cx).await;
 
         while let Some(batch_id) = operation_rx.next().await {
             let Some((operation, applied)) =
@@ -642,19 +642,19 @@ impl<T: RandomizedTest> TestPlan<T> {
                 break;
             };
             applied.store(true, SeqCst);
-            match T::apply_operation(&client, operation, &mut cx).await {
+            match T.apply_operation(&client, operation, &mut cx).await {
                 Ok(()) => {}
-                Err(TestError::Inapplicable) => {
+                Err(TestError.Inapplicable) => {
                     applied.store(false, SeqCst);
-                    log::info!("skipped operation");
+                    log.info!("skipped operation");
                 }
-                Err(TestError::Other(error)) => {
-                    log::error!("{} error: {}", client.username, error);
+                Err(TestError.Other(error)) => {
+                    log.error!("{} error: {}", client.username, error);
                 }
             }
             cx.executor().simulate_random_delay().await;
         }
-        log::info!("{}: done", client.username);
+        log.info!("{}: done", client.username);
     }
 
     fn user(&mut self, user_id: UserId) -> &mut UserTestPlan {
@@ -668,22 +668,22 @@ impl<T: RandomizedTest> TestPlan<T> {
 impl UserTestPlan {
     pub fn next_root_dir_name(&mut self) -> String {
         let user_id = self.user_id;
-        let root_id = util::post_inc(&mut self.next_root_id);
+        let root_id = util.post_inc(&mut self.next_root_id);
         format!("dir-{user_id}-{root_id}")
     }
 }
 
-impl From<anyhow::Error> for TestError {
-    fn from(value: anyhow::Error) -> Self {
-        Self::Other(value)
+impl From<anyhow.Error> for TestError {
+    fn from(value: anyhow.Error) -> Self {
+        Self.Other(value)
     }
 }
 
 fn path_env_var(name: &str) -> Option<PathBuf> {
-    let value = env::var(name).ok()?;
-    let mut path = PathBuf::from(value);
+    let value = env.var(name).ok()?;
+    let mut path = PathBuf.from(value);
     if path.is_relative() {
-        let mut abs_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut abs_path = PathBuf.from(env!("CARGO_MANIFEST_DIR"));
         abs_path.pop();
         abs_path.pop();
         abs_path.push(path);

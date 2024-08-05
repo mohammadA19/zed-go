@@ -4,56 +4,56 @@ mod tables;
 #[cfg(test)]
 pub mod tests;
 
-use crate::{executor::Executor, Error, Result};
-use anyhow::anyhow;
-use collections::{BTreeMap, HashMap, HashSet};
-use dashmap::DashMap;
-use futures::StreamExt;
-use rand::{prelude::StdRng, Rng, SeedableRng};
-use rpc::{
-    proto::{self},
+use crate.{executor.Executor, Error, Result};
+use anyhow.anyhow;
+use collections.{BTreeMap, HashMap, HashSet};
+use dashmap.DashMap;
+use futures.StreamExt;
+use rand.{prelude.StdRng, Rng, SeedableRng};
+use rpc.{
+    proto.{self},
     ConnectionId, ExtensionMetadata,
 };
-use sea_orm::{
-    entity::prelude::*,
-    sea_query::{Alias, Expr, OnConflict},
+use sea_orm.{
+    entity.prelude.*,
+    sea_query.{Alias, Expr, OnConflict},
     ActiveValue, Condition, ConnectionTrait, DatabaseConnection, DatabaseTransaction, DbErr,
     FromQueryResult, IntoActiveModel, IsolationLevel, JoinType, QueryOrder, QuerySelect, Statement,
     TransactionTrait,
 };
-use semantic_version::SemanticVersion;
-use serde::{Deserialize, Serialize};
-use sqlx::{
-    migrate::{Migrate, Migration, MigrationSource},
+use semantic_version.SemanticVersion;
+use serde.{Deserialize, Serialize};
+use sqlx.{
+    migrate.{Migrate, Migration, MigrationSource},
     Connection,
 };
-use std::ops::RangeInclusive;
-use std::{
-    fmt::Write as _,
-    future::Future,
-    marker::PhantomData,
-    ops::{Deref, DerefMut},
-    path::Path,
-    rc::Rc,
-    sync::Arc,
-    time::Duration,
+use std.ops.RangeInclusive;
+use std.{
+    fmt.Write as _,
+    future.Future,
+    marker.PhantomData,
+    ops.{Deref, DerefMut},
+    path.Path,
+    rc.Rc,
+    sync.Arc,
+    time.Duration,
 };
-use time::PrimitiveDateTime;
-use tokio::sync::{Mutex, OwnedMutexGuard};
+use time.PrimitiveDateTime;
+use tokio.sync.{Mutex, OwnedMutexGuard};
 
 #[cfg(test)]
-pub use tests::TestDb;
+pub use tests.TestDb;
 
-pub use ids::*;
-pub use queries::billing_customers::{CreateBillingCustomerParams, UpdateBillingCustomerParams};
-pub use queries::billing_subscriptions::{
+pub use ids.*;
+pub use queries.billing_customers.{CreateBillingCustomerParams, UpdateBillingCustomerParams};
+pub use queries.billing_subscriptions.{
     CreateBillingSubscriptionParams, UpdateBillingSubscriptionParams,
 };
-pub use queries::contributors::ContributorSelector;
-pub use queries::processed_stripe_events::CreateProcessedStripeEventParams;
-pub use sea_orm::ConnectOptions;
-pub use tables::user::Model as User;
-pub use tables::*;
+pub use queries.contributors.ContributorSelector;
+pub use queries.processed_stripe_events.CreateProcessedStripeEventParams;
+pub use sea_orm.ConnectOptions;
+pub use tables.user.Model as User;
+pub use tables.*;
 
 /// Database gives you a handle that lets you access the database.
 /// It handles pooling internally.
@@ -67,7 +67,7 @@ pub struct Database {
     notification_kinds_by_id: HashMap<NotificationKindId, &'static str>,
     notification_kinds_by_name: HashMap<String, NotificationKindId>,
     #[cfg(test)]
-    runtime: Option<tokio::runtime::Runtime>,
+    runtime: Option<tokio.runtime.Runtime>,
 }
 
 // The `Database` type has so many methods that its impl blocks are split into
@@ -75,15 +75,15 @@ pub struct Database {
 impl Database {
     /// Connects to the database with the given options
     pub async fn new(options: ConnectOptions, executor: Executor) -> Result<Self> {
-        sqlx::any::install_default_drivers();
+        sqlx.any.install_default_drivers();
         Ok(Self {
             options: options.clone(),
-            pool: sea_orm::Database::connect(options).await?,
-            rooms: DashMap::with_capacity(16384),
-            projects: DashMap::with_capacity(16384),
-            rng: Mutex::new(StdRng::seed_from_u64(0)),
-            notification_kinds_by_id: HashMap::default(),
-            notification_kinds_by_name: HashMap::default(),
+            pool: sea_orm.Database.connect(options).await?,
+            rooms: DashMap.with_capacity(16384),
+            projects: DashMap.with_capacity(16384),
+            rng: Mutex.new(StdRng.seed_from_u64(0)),
+            notification_kinds_by_id: HashMap.default(),
+            notification_kinds_by_name: HashMap.default(),
             executor,
             #[cfg(test)]
             runtime: None,
@@ -101,12 +101,12 @@ impl Database {
         &self,
         migrations_path: &Path,
         ignore_checksum_mismatch: bool,
-    ) -> anyhow::Result<Vec<(Migration, Duration)>> {
-        let migrations = MigrationSource::resolve(migrations_path)
+    ) -> anyhow.Result<Vec<(Migration, Duration)>> {
+        let migrations = MigrationSource.resolve(migrations_path)
             .await
             .map_err(|err| anyhow!("failed to load migrations: {err:?}"))?;
 
-        let mut connection = sqlx::AnyConnection::connect(self.options.get_url()).await?;
+        let mut connection = sqlx.AnyConnection.connect(self.options.get_url()).await?;
 
         connection.ensure_migrations_table().await?;
         let applied_migrations: HashMap<_, _> = connection
@@ -116,7 +116,7 @@ impl Database {
             .map(|m| (m.version, m))
             .collect();
 
-        let mut new_migrations = Vec::new();
+        let mut new_migrations = Vec.new();
         for migration in migrations {
             match applied_migrations.get(&migration.version) {
                 Some(applied_migration) => {
@@ -151,7 +151,7 @@ impl Database {
             loop {
                 let (tx, result) = self.with_transaction(&f).await?;
                 match result {
-                    Ok(result) => match tx.commit().await.map_err(Into::into) {
+                    Ok(result) => match tx.commit().await.map_err(Into.into) {
                         Ok(()) => return Ok(result),
                         Err(error) => {
                             if !self.retry_on_serialization_error(&error, i).await {
@@ -181,7 +181,7 @@ impl Database {
         let body = async {
             let (tx, result) = self.with_weak_transaction(&f).await?;
             match result {
-                Ok(result) => match tx.commit().await.map_err(Into::into) {
+                Ok(result) => match tx.commit().await.map_err(Into.into) {
                     Ok(()) => return Ok(result),
                     Err(error) => {
                         return Err(error);
@@ -214,7 +214,7 @@ impl Database {
                     Ok(Some((room_id, data))) => {
                         let lock = self.rooms.entry(room_id).or_default().clone();
                         let _guard = lock.lock_owned().await;
-                        match tx.commit().await.map_err(Into::into) {
+                        match tx.commit().await.map_err(Into.into) {
                             Ok(()) => {
                                 return Ok(Some(TransactionGuard {
                                     data,
@@ -229,7 +229,7 @@ impl Database {
                             }
                         }
                     }
-                    Ok(None) => match tx.commit().await.map_err(Into::into) {
+                    Ok(None) => match tx.commit().await.map_err(Into.into) {
                         Ok(()) => return Ok(None),
                         Err(error) => {
                             if !self.retry_on_serialization_error(&error, i).await {
@@ -260,7 +260,7 @@ impl Database {
         F: Send + Fn(TransactionHandle) -> Fut,
         Fut: Send + Future<Output = Result<T>>,
     {
-        let room_id = Database::room_id_for_project(&self, project_id).await?;
+        let room_id = Database.room_id_for_project(&self, project_id).await?;
         let body = async {
             let mut i = 0;
             loop {
@@ -272,7 +272,7 @@ impl Database {
                 let _guard = lock.lock_owned().await;
                 let (tx, result) = self.with_transaction(&f).await?;
                 match result {
-                    Ok(data) => match tx.commit().await.map_err(Into::into) {
+                    Ok(data) => match tx.commit().await.map_err(Into.into) {
                         Ok(()) => {
                             return Ok(TransactionGuard {
                                 data,
@@ -319,7 +319,7 @@ impl Database {
                 let _guard = lock.lock_owned().await;
                 let (tx, result) = self.with_transaction(&f).await?;
                 match result {
-                    Ok(data) => match tx.commit().await.map_err(Into::into) {
+                    Ok(data) => match tx.commit().await.map_err(Into.into) {
                         Ok(()) => {
                             return Ok(TransactionGuard {
                                 data,
@@ -354,12 +354,12 @@ impl Database {
     {
         let tx = self
             .pool
-            .begin_with_config(Some(IsolationLevel::Serializable), None)
+            .begin_with_config(Some(IsolationLevel.Serializable), None)
             .await?;
 
-        let mut tx = Arc::new(Some(tx));
+        let mut tx = Arc.new(Some(tx));
         let result = f(TransactionHandle(tx.clone())).await;
-        let Some(tx) = Arc::get_mut(&mut tx).and_then(|tx| tx.take()) else {
+        let Some(tx) = Arc.get_mut(&mut tx).and_then(|tx| tx.take()) else {
             return Err(anyhow!(
                 "couldn't complete transaction because it's still in use"
             ))?;
@@ -378,12 +378,12 @@ impl Database {
     {
         let tx = self
             .pool
-            .begin_with_config(Some(IsolationLevel::ReadCommitted), None)
+            .begin_with_config(Some(IsolationLevel.ReadCommitted), None)
             .await?;
 
-        let mut tx = Arc::new(Some(tx));
+        let mut tx = Arc.new(Some(tx));
         let result = f(TransactionHandle(tx.clone())).await;
-        let Some(tx) = Arc::get_mut(&mut tx).and_then(|tx| tx.take()) else {
+        let Some(tx) = Arc.get_mut(&mut tx).and_then(|tx| tx.take()) else {
             return Err(anyhow!(
                 "couldn't complete transaction because it's still in use"
             ))?;
@@ -398,7 +398,7 @@ impl Database {
     {
         #[cfg(test)]
         {
-            if let Executor::Deterministic(executor) = &self.executor {
+            if let Executor.Deterministic(executor) = &self.executor {
                 executor.simulate_random_delay().await;
             }
 
@@ -420,12 +420,12 @@ impl Database {
         if is_serialization_error(error) && prev_attempt_count < SLEEPS.len() {
             let base_delay = SLEEPS[prev_attempt_count];
             let randomized_delay = base_delay * self.rng.lock().await.gen_range(0.5..=2.0);
-            log::warn!(
+            log.warn!(
                 "retrying transaction after serialization error. delay: {} ms.",
                 randomized_delay
             );
             self.executor
-                .sleep(Duration::from_millis(randomized_delay as u64))
+                .sleep(Duration.from_millis(randomized_delay as u64))
                 .await;
             true
         } else {
@@ -437,9 +437,9 @@ impl Database {
 fn is_serialization_error(error: &Error) -> bool {
     const SERIALIZATION_FAILURE_CODE: &str = "40001";
     match error {
-        Error::Database(
-            DbErr::Exec(sea_orm::RuntimeErr::SqlxError(error))
-            | DbErr::Query(sea_orm::RuntimeErr::SqlxError(error)),
+        Error.Database(
+            DbErr.Exec(sea_orm.RuntimeErr.SqlxError(error))
+            | DbErr.Query(sea_orm.RuntimeErr.SqlxError(error)),
         ) if error
             .as_database_error()
             .and_then(|error| error.code())
@@ -458,7 +458,7 @@ pub struct TransactionHandle(Arc<Option<DatabaseTransaction>>);
 impl Deref for TransactionHandle {
     type Target = DatabaseTransaction;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         self.0.as_ref().as_ref().unwrap()
     }
 }
@@ -503,14 +503,14 @@ pub enum Contact {
 impl Contact {
     pub fn user_id(&self) -> UserId {
         match self {
-            Contact::Accepted { user_id, .. } => *user_id,
-            Contact::Outgoing { user_id } => *user_id,
-            Contact::Incoming { user_id, .. } => *user_id,
+            Contact.Accepted { user_id, .. } => *user_id,
+            Contact.Outgoing { user_id } => *user_id,
+            Contact.Incoming { user_id, .. } => *user_id,
         }
     }
 }
 
-pub type NotificationBatch = Vec<(UserId, proto::Notification)>;
+pub type NotificationBatch = Vec<(UserId, proto.Notification)>;
 
 pub struct CreatedChannelMessage {
     pub message_id: MessageId,
@@ -525,7 +525,7 @@ pub struct UpdatedChannelMessage {
     pub reply_to_message_id: Option<MessageId>,
     pub timestamp: PrimitiveDateTime,
     pub deleted_mention_notification_ids: Vec<NotificationId>,
-    pub updated_mention_notifications: Vec<rpc::proto::Notification>,
+    pub updated_mention_notifications: Vec<rpc.proto.Notification>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, FromQueryResult, Serialize, Deserialize)]
@@ -582,7 +582,7 @@ pub struct MembershipUpdated {
 
 /// The result of setting a member's role.
 #[derive(Debug)]
-#[allow(clippy::large_enum_variant)]
+#[allow(clippy.large_enum_variant)]
 pub enum SetMemberRoleResult {
     InviteUpdated(Channel),
     MembershipUpdated(MembershipUpdated),
@@ -617,7 +617,7 @@ pub struct Channel {
 }
 
 impl Channel {
-    pub fn from_model(value: channel::Model) -> Self {
+    pub fn from_model(value: channel.Model) -> Self {
         Channel {
             id: value.id,
             visibility: value.visibility,
@@ -626,8 +626,8 @@ impl Channel {
         }
     }
 
-    pub fn to_proto(&self) -> proto::Channel {
-        proto::Channel {
+    pub fn to_proto(&self) -> proto.Channel {
+        proto.Channel {
             id: self.id.to_proto(),
             name: self.name.clone(),
             visibility: self.visibility.into(),
@@ -640,12 +640,12 @@ impl Channel {
 pub struct ChannelMember {
     pub role: ChannelRole,
     pub user_id: UserId,
-    pub kind: proto::channel_member::Kind,
+    pub kind: proto.channel_member.Kind,
 }
 
 impl ChannelMember {
-    pub fn to_proto(&self) -> proto::ChannelMember {
-        proto::ChannelMember {
+    pub fn to_proto(&self) -> proto.ChannelMember {
+        proto.ChannelMember {
             role: self.role.into(),
             user_id: self.user_id.to_proto(),
             kind: self.kind.into(),
@@ -656,41 +656,41 @@ impl ChannelMember {
 #[derive(Debug, PartialEq)]
 pub struct ChannelsForUser {
     pub channels: Vec<Channel>,
-    pub channel_memberships: Vec<channel_member::Model>,
+    pub channel_memberships: Vec<channel_member.Model>,
     pub channel_participants: HashMap<ChannelId, Vec<UserId>>,
-    pub hosted_projects: Vec<proto::HostedProject>,
+    pub hosted_projects: Vec<proto.HostedProject>,
     pub invited_channels: Vec<Channel>,
 
-    pub observed_buffer_versions: Vec<proto::ChannelBufferVersion>,
-    pub observed_channel_messages: Vec<proto::ChannelMessageId>,
-    pub latest_buffer_versions: Vec<proto::ChannelBufferVersion>,
-    pub latest_channel_messages: Vec<proto::ChannelMessageId>,
+    pub observed_buffer_versions: Vec<proto.ChannelBufferVersion>,
+    pub observed_channel_messages: Vec<proto.ChannelMessageId>,
+    pub latest_buffer_versions: Vec<proto.ChannelBufferVersion>,
+    pub latest_channel_messages: Vec<proto.ChannelMessageId>,
 }
 
 #[derive(Debug)]
 pub struct RejoinedChannelBuffer {
-    pub buffer: proto::RejoinedChannelBuffer,
+    pub buffer: proto.RejoinedChannelBuffer,
     pub old_connection_id: ConnectionId,
 }
 
 #[derive(Clone)]
 pub struct JoinRoom {
-    pub room: proto::Room,
-    pub channel: Option<channel::Model>,
+    pub room: proto.Room,
+    pub channel: Option<channel.Model>,
 }
 
 pub struct RejoinedRoom {
-    pub room: proto::Room,
+    pub room: proto.Room,
     pub rejoined_projects: Vec<RejoinedProject>,
     pub reshared_projects: Vec<ResharedProject>,
-    pub channel: Option<channel::Model>,
+    pub channel: Option<channel.Model>,
 }
 
 pub struct ResharedProject {
     pub id: ProjectId,
     pub old_connection_id: ConnectionId,
     pub collaborators: Vec<ProjectCollaborator>,
-    pub worktrees: Vec<proto::WorktreeMetadata>,
+    pub worktrees: Vec<proto.WorktreeMetadata>,
 }
 
 pub struct RejoinedProject {
@@ -698,17 +698,17 @@ pub struct RejoinedProject {
     pub old_connection_id: ConnectionId,
     pub collaborators: Vec<ProjectCollaborator>,
     pub worktrees: Vec<RejoinedWorktree>,
-    pub language_servers: Vec<proto::LanguageServer>,
+    pub language_servers: Vec<proto.LanguageServer>,
 }
 
 impl RejoinedProject {
-    pub fn to_proto(&self) -> proto::RejoinedProject {
-        proto::RejoinedProject {
+    pub fn to_proto(&self) -> proto.RejoinedProject {
+        proto.RejoinedProject {
             id: self.id.to_proto(),
             worktrees: self
                 .worktrees
                 .iter()
-                .map(|worktree| proto::WorktreeMetadata {
+                .map(|worktree| proto.WorktreeMetadata {
                     id: worktree.id,
                     root_name: worktree.root_name.clone(),
                     visible: worktree.visible,
@@ -731,34 +731,34 @@ pub struct RejoinedWorktree {
     pub abs_path: String,
     pub root_name: String,
     pub visible: bool,
-    pub updated_entries: Vec<proto::Entry>,
+    pub updated_entries: Vec<proto.Entry>,
     pub removed_entries: Vec<u64>,
-    pub updated_repositories: Vec<proto::RepositoryEntry>,
+    pub updated_repositories: Vec<proto.RepositoryEntry>,
     pub removed_repositories: Vec<u64>,
-    pub diagnostic_summaries: Vec<proto::DiagnosticSummary>,
+    pub diagnostic_summaries: Vec<proto.DiagnosticSummary>,
     pub settings_files: Vec<WorktreeSettingsFile>,
     pub scan_id: u64,
     pub completed_scan_id: u64,
 }
 
 pub struct LeftRoom {
-    pub room: proto::Room,
-    pub channel: Option<channel::Model>,
+    pub room: proto.Room,
+    pub channel: Option<channel.Model>,
     pub left_projects: HashMap<ProjectId, LeftProject>,
     pub canceled_calls_to_user_ids: Vec<UserId>,
     pub deleted: bool,
 }
 
 pub struct RefreshedRoom {
-    pub room: proto::Room,
-    pub channel: Option<channel::Model>,
+    pub room: proto.Room,
+    pub channel: Option<channel.Model>,
     pub stale_participant_user_ids: Vec<UserId>,
     pub canceled_calls_to_user_ids: Vec<UserId>,
 }
 
 pub struct RefreshedChannelBuffer {
     pub connection_ids: Vec<ConnectionId>,
-    pub collaborators: Vec<proto::Collaborator>,
+    pub collaborators: Vec<proto.Collaborator>,
 }
 
 pub struct Project {
@@ -766,7 +766,7 @@ pub struct Project {
     pub role: ChannelRole,
     pub collaborators: Vec<ProjectCollaborator>,
     pub worktrees: BTreeMap<u64, Worktree>,
-    pub language_servers: Vec<proto::LanguageServer>,
+    pub language_servers: Vec<proto.LanguageServer>,
     pub dev_server_project_id: Option<DevServerProjectId>,
 }
 
@@ -778,8 +778,8 @@ pub struct ProjectCollaborator {
 }
 
 impl ProjectCollaborator {
-    pub fn to_proto(&self) -> proto::Collaborator {
-        proto::Collaborator {
+    pub fn to_proto(&self) -> proto.Collaborator {
+        proto.Collaborator {
             peer_id: Some(self.connection_id.into()),
             replica_id: self.replica_id.0 as u32,
             user_id: self.user_id.to_proto(),
@@ -799,9 +799,9 @@ pub struct Worktree {
     pub abs_path: String,
     pub root_name: String,
     pub visible: bool,
-    pub entries: Vec<proto::Entry>,
-    pub repository_entries: BTreeMap<u64, proto::RepositoryEntry>,
-    pub diagnostic_summaries: Vec<proto::DiagnosticSummary>,
+    pub entries: Vec<proto.Entry>,
+    pub repository_entries: BTreeMap<u64, proto.RepositoryEntry>,
+    pub diagnostic_summaries: Vec<proto.DiagnosticSummary>,
     pub settings_files: Vec<WorktreeSettingsFile>,
     pub scan_id: u64,
     pub completed_scan_id: u64,
@@ -815,7 +815,7 @@ pub struct WorktreeSettingsFile {
 
 pub struct NewExtensionVersion {
     pub name: String,
-    pub version: semver::Version,
+    pub version: semver.Version,
     pub description: String,
     pub authors: Vec<String>,
     pub repository: String,
