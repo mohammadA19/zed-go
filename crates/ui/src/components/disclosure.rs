@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use gpui::{ClickEvent, CursorStyle};
+use gpui.{ClickEvent, CursorStyle};
 
-use crate::{prelude::*, Color, IconButton, IconButtonShape, IconName, IconSize};
+use crate.{prelude.*, Color, IconButton, IconButtonShape, IconName, IconSize};
 
 #[derive(IntoElement)]
 pub struct Disclosure {
@@ -20,7 +20,7 @@ impl Disclosure {
             is_open,
             selected: false,
             on_toggle: None,
-            cursor_style: CursorStyle::PointingHand,
+            cursor_style: CursorStyle.PointingHand,
         }
     }
 
@@ -42,11 +42,11 @@ impl Selectable for Disclosure {
 
 impl Clickable for Disclosure {
     fn on_click(mut self, handler: impl Fn(&ClickEvent, &mut WindowContext) + 'static) -> Self {
-        self.on_toggle = Some(Arc::new(handler));
+        self.on_toggle = Some(Arc.new(handler));
         self
     }
 
-    fn cursor_style(mut self, cursor_style: gpui::CursorStyle) -> Self {
+    fn cursor_style(mut self, cursor_style: gpui.CursorStyle) -> Self {
         self.cursor_style = cursor_style;
         self
     }
@@ -54,16 +54,16 @@ impl Clickable for Disclosure {
 
 impl RenderOnce for Disclosure {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        IconButton::new(
+        IconButton.new(
             self.id,
             match self.is_open {
-                true => IconName::ChevronDown,
-                false => IconName::ChevronRight,
+                true => IconName.ChevronDown,
+                false => IconName.ChevronRight,
             },
         )
-        .shape(IconButtonShape::Square)
-        .icon_color(Color::Muted)
-        .icon_size(IconSize::Small)
+        .shape(IconButtonShape.Square)
+        .icon_color(Color.Muted)
+        .icon_size(IconSize.Small)
         .selected(self.selected)
         .when_some(self.on_toggle, move |this, on_toggle| {
             this.on_click(move |event, cx| on_toggle(event, cx))

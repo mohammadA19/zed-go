@@ -4,24 +4,24 @@
 // to creating a new db?)
 // Otherwise any missing migrations are run on the connection
 
-use std::ffi::CString;
+use std.ffi.CString;
 
-use anyhow::{anyhow, Context, Result};
-use indoc::{formatdoc, indoc};
-use libsqlite3_sys::sqlite3_exec;
+use anyhow.{anyhow, Context, Result};
+use indoc.{formatdoc, indoc};
+use libsqlite3_sys.sqlite3_exec;
 
-use crate::connection::Connection;
+use crate.connection.Connection;
 
 impl Connection {
-    fn eager_exec(&self, sql: &str) -> anyhow::Result<()> {
-        let sql_str = CString::new(sql).context("Error creating cstr")?;
+    fn eager_exec(&self, sql: &str) -> anyhow.Result<()> {
+        let sql_str = CString.new(sql).context("Error creating cstr")?;
         unsafe {
             sqlite3_exec(
                 self.sqlite3,
                 sql_str.as_c_str().as_ptr(),
                 None,
-                std::ptr::null_mut(),
-                std::ptr::null_mut(),
+                std.ptr.null_mut(),
+                std.ptr.null_mut(),
             );
         }
         self.last_error()
@@ -45,7 +45,7 @@ impl Connection {
                 )"})?()?;
 
             let completed_migrations =
-                self.select_bound::<&str, (String, usize, String)>(indoc! {"
+                self.select_bound.<&str, (String, usize, String)>(indoc! {"
                     SELECT domain, step, migration FROM migrations
                     WHERE domain = ?
                     ORDER BY step
@@ -82,13 +82,13 @@ impl Connection {
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
+    use indoc.indoc;
 
-    use crate::connection::Connection;
+    use crate.connection.Connection;
 
     #[test]
     fn test_migrations_are_added_to_table() {
-        let connection = Connection::open_memory(Some("migrations_are_added_to_table"));
+        let connection = Connection.open_memory(Some("migrations_are_added_to_table"));
 
         // Create first migration with a single step and run it
         connection
@@ -105,7 +105,7 @@ mod test {
         // Verify it got added to the migrations table
         assert_eq!(
             &connection
-                .select::<String>("SELECT (migration) FROM migrations")
+                .select.<String>("SELECT (migration) FROM migrations")
                 .unwrap()()
             .unwrap()[..],
             &[indoc! {"
@@ -137,7 +137,7 @@ mod test {
         // Verify it is also added to the migrations table
         assert_eq!(
             &connection
-                .select::<String>("SELECT (migration) FROM migrations")
+                .select.<String>("SELECT (migration) FROM migrations")
                 .unwrap()()
             .unwrap()[..],
             &[
@@ -157,7 +157,7 @@ mod test {
 
     #[test]
     fn test_migration_setup_works() {
-        let connection = Connection::open_memory(Some("migration_setup_works"));
+        let connection = Connection.open_memory(Some("migration_setup_works"));
 
         connection
             .exec(indoc! {"
@@ -170,7 +170,7 @@ mod test {
         .unwrap();
 
         let mut store_completed_migration = connection
-            .exec_bound::<(&str, usize, String)>(indoc! {"
+            .exec_bound.<(&str, usize, String)>(indoc! {"
                 INSERT INTO migrations (domain, step, migration)
                 VALUES (?, ?, ?)"})
             .unwrap();
@@ -189,7 +189,7 @@ mod test {
 
     #[test]
     fn migrations_dont_rerun() {
-        let connection = Connection::open_memory(Some("migrations_dont_rerun"));
+        let connection = Connection.open_memory(Some("migrations_dont_rerun"));
 
         // Create migration which clears a table
 
@@ -209,7 +209,7 @@ mod test {
 
         assert_eq!(
             connection
-                .select_row::<usize>("SELECT * FROM test_table")
+                .select_row.<usize>("SELECT * FROM test_table")
                 .unwrap()()
             .unwrap(),
             Some(1)
@@ -221,7 +221,7 @@ mod test {
             .unwrap();
         assert_eq!(
             connection
-                .select_row::<usize>("SELECT * FROM test_table")
+                .select_row.<usize>("SELECT * FROM test_table")
                 .unwrap()()
             .unwrap(),
             None
@@ -239,7 +239,7 @@ mod test {
             .unwrap();
         assert_eq!(
             connection
-                .select_row::<usize>("SELECT * FROM test_table")
+                .select_row.<usize>("SELECT * FROM test_table")
                 .unwrap()()
             .unwrap(),
             Some(2)
@@ -248,7 +248,7 @@ mod test {
 
     #[test]
     fn changed_migration_fails() {
-        let connection = Connection::open_memory(Some("changed_migration_fails"));
+        let connection = Connection.open_memory(Some("changed_migration_fails"));
 
         // Create a migration with two steps and run it
         connection
@@ -284,7 +284,7 @@ mod test {
 
     #[test]
     fn test_create_alter_drop() {
-        let connection = Connection::open_memory(Some("test_create_alter_drop"));
+        let connection = Connection.open_memory(Some("test_create_alter_drop"));
 
         connection
             .migrate("first_migration", &["CREATE TABLE table1(a TEXT) STRICT;"])
@@ -311,7 +311,7 @@ mod test {
             )
             .unwrap();
 
-        let res = &connection.select::<String>("SELECT b FROM table1").unwrap()().unwrap()[0];
+        let res = &connection.select.<String>("SELECT b FROM table1").unwrap()().unwrap()[0];
 
         assert_eq!(res, "test text");
     }

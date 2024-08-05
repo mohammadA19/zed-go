@@ -5,16 +5,16 @@ pub mod static_source;
 mod task_template;
 mod vscode_format;
 
-use collections::{hash_map, HashMap, HashSet};
-use gpui::SharedString;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-use std::path::PathBuf;
-use std::str::FromStr;
+use collections.{hash_map, HashMap, HashSet};
+use gpui.SharedString;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use std.borrow.Cow;
+use std.path.PathBuf;
+use std.str.FromStr;
 
-pub use task_template::{HideStrategy, RevealStrategy, TaskTemplate, TaskTemplates};
-pub use vscode_format::VsCodeTaskFile;
+pub use task_template.{HideStrategy, RevealStrategy, TaskTemplate, TaskTemplates};
+pub use vscode_format.VsCodeTaskFile;
 
 /// Task identifier, unique within the application.
 /// Based on it, task reruns and terminal tabs are managed.
@@ -136,20 +136,20 @@ impl VariableName {
 impl FromStr for VariableName {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self.Err> {
         let without_prefix = s.strip_prefix(ZED_VARIABLE_NAME_PREFIX).ok_or(())?;
         let value = match without_prefix {
-            "FILE" => Self::File,
-            "WORKTREE_ROOT" => Self::WorktreeRoot,
-            "SYMBOL" => Self::Symbol,
-            "SELECTED_TEXT" => Self::SelectedText,
-            "ROW" => Self::Row,
-            "COLUMN" => Self::Column,
+            "FILE" => Self.File,
+            "WORKTREE_ROOT" => Self.WorktreeRoot,
+            "SYMBOL" => Self.Symbol,
+            "SELECTED_TEXT" => Self.SelectedText,
+            "ROW" => Self.Row,
+            "COLUMN" => Self.Column,
             _ => {
                 if let Some(custom_name) =
                     without_prefix.strip_prefix(ZED_CUSTOM_VARIABLE_NAME_PREFIX)
                 {
-                    Self::Custom(Cow::Owned(custom_name.to_owned()))
+                    Self.Custom(Cow.Owned(custom_name.to_owned()))
                 } else {
                     return Err(());
                 }
@@ -163,21 +163,21 @@ impl FromStr for VariableName {
 pub const ZED_VARIABLE_NAME_PREFIX: &str = "ZED_";
 const ZED_CUSTOM_VARIABLE_NAME_PREFIX: &str = "CUSTOM_";
 
-impl std::fmt::Display for VariableName {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl std.fmt.Display for VariableName {
+    fn fmt(&self, f: &mut std.fmt.Formatter) -> std.fmt.Result {
         match self {
-            Self::File => write!(f, "{ZED_VARIABLE_NAME_PREFIX}FILE"),
-            Self::Filename => write!(f, "{ZED_VARIABLE_NAME_PREFIX}FILENAME"),
-            Self::RelativeFile => write!(f, "{ZED_VARIABLE_NAME_PREFIX}RELATIVE_FILE"),
-            Self::Dirname => write!(f, "{ZED_VARIABLE_NAME_PREFIX}DIRNAME"),
-            Self::Stem => write!(f, "{ZED_VARIABLE_NAME_PREFIX}STEM"),
-            Self::WorktreeRoot => write!(f, "{ZED_VARIABLE_NAME_PREFIX}WORKTREE_ROOT"),
-            Self::Symbol => write!(f, "{ZED_VARIABLE_NAME_PREFIX}SYMBOL"),
-            Self::Row => write!(f, "{ZED_VARIABLE_NAME_PREFIX}ROW"),
-            Self::Column => write!(f, "{ZED_VARIABLE_NAME_PREFIX}COLUMN"),
-            Self::SelectedText => write!(f, "{ZED_VARIABLE_NAME_PREFIX}SELECTED_TEXT"),
-            Self::RunnableSymbol => write!(f, "{ZED_VARIABLE_NAME_PREFIX}RUNNABLE_SYMBOL"),
-            Self::Custom(s) => write!(
+            Self.File => write!(f, "{ZED_VARIABLE_NAME_PREFIX}FILE"),
+            Self.Filename => write!(f, "{ZED_VARIABLE_NAME_PREFIX}FILENAME"),
+            Self.RelativeFile => write!(f, "{ZED_VARIABLE_NAME_PREFIX}RELATIVE_FILE"),
+            Self.Dirname => write!(f, "{ZED_VARIABLE_NAME_PREFIX}DIRNAME"),
+            Self.Stem => write!(f, "{ZED_VARIABLE_NAME_PREFIX}STEM"),
+            Self.WorktreeRoot => write!(f, "{ZED_VARIABLE_NAME_PREFIX}WORKTREE_ROOT"),
+            Self.Symbol => write!(f, "{ZED_VARIABLE_NAME_PREFIX}SYMBOL"),
+            Self.Row => write!(f, "{ZED_VARIABLE_NAME_PREFIX}ROW"),
+            Self.Column => write!(f, "{ZED_VARIABLE_NAME_PREFIX}COLUMN"),
+            Self.SelectedText => write!(f, "{ZED_VARIABLE_NAME_PREFIX}SELECTED_TEXT"),
+            Self.RunnableSymbol => write!(f, "{ZED_VARIABLE_NAME_PREFIX}RUNNABLE_SYMBOL"),
+            Self.Custom(s) => write!(
                 f,
                 "{ZED_VARIABLE_NAME_PREFIX}{ZED_CUSTOM_VARIABLE_NAME_PREFIX}{s}"
             ),
@@ -206,7 +206,7 @@ impl TaskVariables {
     /// Clear out variables obtained from tree-sitter queries, which are prefixed with '_' character
     pub fn sweep(&mut self) {
         self.0.retain(|name, _| {
-            if let VariableName::Custom(name) = name {
+            if let VariableName.Custom(name) = name {
                 !name.starts_with('_')
             } else {
                 true
@@ -217,16 +217,16 @@ impl TaskVariables {
 
 impl FromIterator<(VariableName, String)> for TaskVariables {
     fn from_iter<T: IntoIterator<Item = (VariableName, String)>>(iter: T) -> Self {
-        Self(HashMap::from_iter(iter))
+        Self(HashMap.from_iter(iter))
     }
 }
 
 impl IntoIterator for TaskVariables {
     type Item = (VariableName, String);
 
-    type IntoIter = hash_map::IntoIter<VariableName, String>;
+    type IntoIter = hash_map.IntoIter<VariableName, String>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_iter(self) -> Self.IntoIter {
         self.0.into_iter()
     }
 }

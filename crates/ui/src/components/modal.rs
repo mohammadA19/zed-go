@@ -1,10 +1,10 @@
-use crate::{
+use crate.{
     h_flex, rems_from_px, v_flex, Clickable, Color, Headline, HeadlineSize, IconButton,
     IconButtonShape, IconName, Label, LabelCommon, LabelSize, Spacing,
 };
-use gpui::{prelude::FluentBuilder, *};
-use smallvec::SmallVec;
-use theme::ActiveTheme;
+use gpui.{prelude.FluentBuilder, *};
+use smallvec.SmallVec;
+use theme.ActiveTheme;
 
 #[derive(IntoElement)]
 pub struct Modal {
@@ -20,11 +20,11 @@ impl Modal {
     pub fn new(id: impl Into<SharedString>, scroll_handle: Option<ScrollHandle>) -> Self {
         let id = id.into();
 
-        let container_id = ElementId::Name(format!("{}_container", id.clone()).into());
+        let container_id = ElementId.Name(format!("{}_container", id.clone()).into());
         Self {
-            id: ElementId::Name(id),
-            header: ModalHeader::new(),
-            children: SmallVec::new(),
+            id: ElementId.Name(id),
+            header: ModalHeader.new(),
+            children: SmallVec.new(),
             footer: None,
             container_id,
             container_scroll_handler: scroll_handle,
@@ -75,7 +75,7 @@ impl RenderOnce for Modal {
                 v_flex()
                     .id(self.container_id.clone())
                     .w_full()
-                    .gap(Spacing::Large.rems(cx))
+                    .gap(Spacing.Large.rems(cx))
                     .when_some(
                         self.container_scroll_handler,
                         |this, container_scroll_handle| {
@@ -101,7 +101,7 @@ impl ModalHeader {
     pub fn new() -> Self {
         Self {
             headline: None,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
             show_dismiss_button: false,
             show_back_button: false,
         }
@@ -140,9 +140,9 @@ impl RenderOnce for ModalHeader {
         if self.headline.is_some() {
             children.insert(
                 0,
-                Headline::new(self.headline.unwrap())
-                    .size(HeadlineSize::XSmall)
-                    .color(Color::Muted)
+                Headline.new(self.headline.unwrap())
+                    .size(HeadlineSize.XSmall)
+                    .color(Color.Muted)
                     .into_any_element(),
             );
         }
@@ -151,26 +151,26 @@ impl RenderOnce for ModalHeader {
             .flex_none()
             .justify_between()
             .w_full()
-            .px(Spacing::XLarge.rems(cx))
-            .pt(Spacing::Large.rems(cx))
-            .pb(Spacing::Small.rems(cx))
-            .gap(Spacing::Large.rems(cx))
+            .px(Spacing.XLarge.rems(cx))
+            .pt(Spacing.Large.rems(cx))
+            .pb(Spacing.Small.rems(cx))
+            .gap(Spacing.Large.rems(cx))
             .when(self.show_back_button, |this| {
                 this.child(
-                    IconButton::new("back", IconName::ArrowLeft)
-                        .shape(IconButtonShape::Square)
+                    IconButton.new("back", IconName.ArrowLeft)
+                        .shape(IconButtonShape.Square)
                         .on_click(|_, cx| {
-                            cx.dispatch_action(menu::Cancel.boxed_clone());
+                            cx.dispatch_action(menu.Cancel.boxed_clone());
                         }),
                 )
             })
             .child(div().flex_1().children(children))
             .when(self.show_dismiss_button, |this| {
                 this.child(
-                    IconButton::new("dismiss", IconName::Close)
-                        .shape(IconButtonShape::Square)
+                    IconButton.new("dismiss", IconName.Close)
+                        .shape(IconButtonShape.Square)
                         .on_click(|_, cx| {
-                            cx.dispatch_action(menu::Cancel.boxed_clone());
+                            cx.dispatch_action(menu.Cancel.boxed_clone());
                         }),
                 )
             })
@@ -185,7 +185,7 @@ pub struct ModalRow {
 impl ModalRow {
     pub fn new() -> Self {
         Self {
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 }
@@ -217,12 +217,12 @@ impl ModalFooter {
     }
 
     pub fn start_slot<E: IntoElement>(mut self, start_slot: impl Into<Option<E>>) -> Self {
-        self.start_slot = start_slot.into().map(IntoElement::into_any_element);
+        self.start_slot = start_slot.into().map(IntoElement.into_any_element);
         self
     }
 
     pub fn end_slot<E: IntoElement>(mut self, end_slot: impl Into<Option<E>>) -> Self {
-        self.end_slot = end_slot.into().map(IntoElement::into_any_element);
+        self.end_slot = end_slot.into().map(IntoElement.into_any_element);
         self
     }
 }
@@ -232,7 +232,7 @@ impl RenderOnce for ModalFooter {
         h_flex()
             .flex_none()
             .w_full()
-            .p(Spacing::Large.rems(cx))
+            .p(Spacing.Large.rems(cx))
             .justify_between()
             .child(div().when_some(self.start_slot, |this, start_slot| this.child(start_slot)))
             .child(div().when_some(self.end_slot, |this, end_slot| this.child(end_slot)))
@@ -253,7 +253,7 @@ impl Section {
             contained: false,
             header: None,
             meta: None,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 
@@ -262,7 +262,7 @@ impl Section {
             contained: true,
             header: None,
             meta: None,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 
@@ -294,23 +294,23 @@ impl RenderOnce for Section {
         section_bg.fade_out(0.96);
 
         let children = if self.contained {
-            v_flex().flex_1().px(Spacing::XLarge.rems(cx)).child(
+            v_flex().flex_1().px(Spacing.XLarge.rems(cx)).child(
                 v_flex()
                     .w_full()
                     .rounded_md()
                     .border_1()
                     .border_color(cx.theme().colors().border)
                     .bg(section_bg)
-                    .py(Spacing::Medium.rems(cx))
-                    .px(Spacing::Large.rems(cx) - rems_from_px(1.0))
-                    .gap_y(Spacing::Small.rems(cx))
+                    .py(Spacing.Medium.rems(cx))
+                    .px(Spacing.Large.rems(cx) - rems_from_px(1.0))
+                    .gap_y(Spacing.Small.rems(cx))
                     .child(div().flex().flex_1().size_full().children(self.children)),
             )
         } else {
             v_flex()
                 .w_full()
-                .gap_y(Spacing::Small.rems(cx))
-                .px(Spacing::Large.rems(cx) + Spacing::Large.rems(cx))
+                .gap_y(Spacing.Small.rems(cx))
+                .px(Spacing.Large.rems(cx) + Spacing.Large.rems(cx))
                 .children(self.children)
         };
 
@@ -320,10 +320,10 @@ impl RenderOnce for Section {
             .child(
                 v_flex()
                     .flex_none()
-                    .px(Spacing::XLarge.rems(cx))
+                    .px(Spacing.XLarge.rems(cx))
                     .children(self.header)
                     .when_some(self.meta, |this, meta| {
-                        this.child(Label::new(meta).size(LabelSize::Small).color(Color::Muted))
+                        this.child(Label.new(meta).size(LabelSize.Small).color(Color.Muted))
                     }),
             )
             .child(children)
@@ -350,7 +350,7 @@ impl SectionHeader {
     }
 
     pub fn end_slot<E: IntoElement>(mut self, end_slot: impl Into<Option<E>>) -> Self {
-        self.end_slot = end_slot.into().map(IntoElement::into_any_element);
+        self.end_slot = end_slot.into().map(IntoElement.into_any_element);
         self
     }
 }
@@ -360,7 +360,7 @@ impl RenderOnce for SectionHeader {
         h_flex()
             .id(self.label.clone())
             .w_full()
-            .px(Spacing::Large.rems(cx))
+            .px(Spacing.Large.rems(cx))
             .child(
                 div()
                     .h_7()
@@ -368,11 +368,11 @@ impl RenderOnce for SectionHeader {
                     .items_center()
                     .justify_between()
                     .w_full()
-                    .gap(Spacing::Small.rems(cx))
+                    .gap(Spacing.Small.rems(cx))
                     .child(
                         div().flex_1().child(
-                            Label::new(self.label.clone())
-                                .size(LabelSize::Small)
+                            Label.new(self.label.clone())
+                                .size(LabelSize.Small)
                                 .into_element(),
                         ),
                     )
@@ -383,13 +383,13 @@ impl RenderOnce for SectionHeader {
 
 impl Into<SectionHeader> for SharedString {
     fn into(self) -> SectionHeader {
-        SectionHeader::new(self)
+        SectionHeader.new(self)
     }
 }
 
 impl Into<SectionHeader> for &'static str {
     fn into(self) -> SectionHeader {
         let label: SharedString = self.into();
-        SectionHeader::new(label)
+        SectionHeader.new(label)
     }
 }

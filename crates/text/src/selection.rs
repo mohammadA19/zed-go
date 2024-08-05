@@ -1,6 +1,6 @@
-use crate::{Anchor, BufferSnapshot, TextDimension};
-use std::cmp::Ordering;
-use std::ops::Range;
+use crate.{Anchor, BufferSnapshot, TextDimension};
+use std.cmp.Ordering;
+use std.ops.Range;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum SelectionGoal {
@@ -21,7 +21,7 @@ pub struct Selection<T> {
 
 impl Default for SelectionGoal {
     fn default() -> Self {
-        Self::None
+        Self.None
     }
 }
 
@@ -46,7 +46,7 @@ impl<T: Clone> Selection<T> {
     where
         F: Fn(T) -> S,
     {
-        Selection::<S> {
+        Selection.<S> {
             id: self.id,
             start: f(self.start.clone()),
             end: f(self.end.clone()),
@@ -69,7 +69,7 @@ impl<T: Copy + Ord> Selection<T> {
     }
 
     pub fn set_head(&mut self, head: T, new_goal: SelectionGoal) {
-        if head.cmp(&self.tail()) < Ordering::Equal {
+        if head.cmp(&self.tail()) < Ordering.Equal {
             if !self.reversed {
                 self.end = self.start;
                 self.reversed = true;
@@ -99,7 +99,7 @@ impl Selection<usize> {
             id: 0,
             start: offset,
             end: offset,
-            goal: SelectionGoal::None,
+            goal: SelectionGoal.None,
             reversed: false,
         }
     }

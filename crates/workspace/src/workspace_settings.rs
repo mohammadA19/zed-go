@@ -1,9 +1,9 @@
-use anyhow::Result;
-use collections::HashMap;
-use gpui::AppContext;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
+use anyhow.Result;
+use collections.HashMap;
+use gpui.AppContext;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
 
 #[derive(Deserialize)]
 pub struct WorkspaceSettings {
@@ -34,9 +34,9 @@ pub enum CloseWindowWhenNoItems {
 impl CloseWindowWhenNoItems {
     pub fn should_close(&self) -> bool {
         match self {
-            CloseWindowWhenNoItems::PlatformDefault => cfg!(target_os = "macos"),
-            CloseWindowWhenNoItems::CloseWindow => true,
-            CloseWindowWhenNoItems::KeepWindowOpen => false,
+            CloseWindowWhenNoItems.PlatformDefault => cfg!(target_os = "macos"),
+            CloseWindowWhenNoItems.CloseWindow => true,
+            CloseWindowWhenNoItems.KeepWindowOpen => false,
         }
     }
 }
@@ -151,7 +151,7 @@ impl Settings for WorkspaceSettings {
 
     type FileContent = WorkspaceSettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
         sources.json_merge()
     }
 }
@@ -161,7 +161,7 @@ impl Settings for TabBarSettings {
 
     type FileContent = TabBarSettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
         sources.json_merge()
     }
 }

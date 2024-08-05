@@ -1,46 +1,46 @@
-use crate::{
-    motion::{self, Motion},
-    normal::yank::copy_selections_content,
-    object::Object,
-    state::Mode,
+use crate.{
+    motion.{self, Motion},
+    normal.yank.copy_selections_content,
+    object.Object,
+    state.Mode,
     Vim,
 };
-use editor::{
-    display_map::{DisplaySnapshot, ToDisplayPoint},
-    movement::TextLayoutDetails,
-    scroll::Autoscroll,
+use editor.{
+    display_map.{DisplaySnapshot, ToDisplayPoint},
+    movement.TextLayoutDetails,
+    scroll.Autoscroll,
     Bias, DisplayPoint,
 };
-use gpui::WindowContext;
-use language::{char_kind, CharKind, Selection};
+use gpui.WindowContext;
+use language.{char_kind, CharKind, Selection};
 
 pub fn change_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &mut WindowContext) {
     // Some motions ignore failure when switching to normal mode
     let mut motion_succeeded = matches!(
         motion,
-        Motion::Left
-            | Motion::Right
-            | Motion::EndOfLine { .. }
-            | Motion::Backspace
-            | Motion::StartOfLine { .. }
+        Motion.Left
+            | Motion.Right
+            | Motion.EndOfLine { .. }
+            | Motion.Backspace
+            | Motion.StartOfLine { .. }
     );
     vim.update_active_editor(cx, |vim, editor, cx| {
         let text_layout_details = editor.text_layout_details(cx);
         editor.transact(cx, |editor, cx| {
             // We are swapping to insert mode anyway. Just set the line end clipping behavior now
             editor.set_clip_at_line_ends(false, cx);
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     motion_succeeded |= match motion {
-                        Motion::NextWordStart { ignore_punctuation }
-                        | Motion::NextSubwordStart { ignore_punctuation } => {
+                        Motion.NextWordStart { ignore_punctuation }
+                        | Motion.NextSubwordStart { ignore_punctuation } => {
                             expand_changed_word_selection(
                                 map,
                                 selection,
                                 times,
                                 ignore_punctuation,
                                 &text_layout_details,
-                                motion == Motion::NextSubwordStart { ignore_punctuation },
+                                motion == Motion.NextSubwordStart { ignore_punctuation },
                             )
                         }
                         _ => {
@@ -51,13 +51,13 @@ pub fn change_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &m
                                 false,
                                 &text_layout_details,
                             );
-                            if let Motion::CurrentLine = motion {
-                                let mut start_offset = selection.start.to_offset(map, Bias::Left);
+                            if let Motion.CurrentLine = motion {
+                                let mut start_offset = selection.start.to_offset(map, Bias.Left);
                                 let scope = map
                                     .buffer_snapshot
                                     .language_scope_at(selection.start.to_point(&map));
                                 for (ch, offset) in map.buffer_chars_at(start_offset) {
-                                    if ch == '\n' || char_kind(&scope, ch) != CharKind::Whitespace {
+                                    if ch == '\n' || char_kind(&scope, ch) != CharKind.Whitespace {
                                         break;
                                     }
                                     start_offset = offset + ch.len_utf8();
@@ -75,9 +75,9 @@ pub fn change_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &m
     });
 
     if motion_succeeded {
-        vim.switch_mode(Mode::Insert, false, cx)
+        vim.switch_mode(Mode.Insert, false, cx)
     } else {
-        vim.switch_mode(Mode::Normal, false, cx)
+        vim.switch_mode(Mode.Normal, false, cx)
     }
 }
 
@@ -87,7 +87,7 @@ pub fn change_object(vim: &mut Vim, object: Object, around: bool, cx: &mut Windo
         // We are swapping to insert mode anyway. Just set the line end clipping behavior now
         editor.set_clip_at_line_ends(false, cx);
         editor.transact(cx, |editor, cx| {
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     objects_found |= object.expand_selection(map, selection, around);
                 });
@@ -100,9 +100,9 @@ pub fn change_object(vim: &mut Vim, object: Object, around: bool, cx: &mut Windo
     });
 
     if objects_found {
-        vim.switch_mode(Mode::Insert, false, cx);
+        vim.switch_mode(Mode.Insert, false, cx);
     } else {
-        vim.switch_mode(Mode::Normal, false, cx);
+        vim.switch_mode(Mode.Normal, false, cx);
     }
 }
 
@@ -125,37 +125,37 @@ fn expand_changed_word_selection(
             .buffer_snapshot
             .language_scope_at(selection.start.to_point(map));
         let in_word = map
-            .buffer_chars_at(selection.head().to_offset(map, Bias::Left))
+            .buffer_chars_at(selection.head().to_offset(map, Bias.Left))
             .next()
-            .map(|(c, _)| char_kind(&scope, c) != CharKind::Whitespace)
+            .map(|(c, _)| char_kind(&scope, c) != CharKind.Whitespace)
             .unwrap_or_default();
         return in_word;
     };
     if (times.is_none() || times.unwrap() == 1) && is_in_word() {
         let next_char = map
             .buffer_chars_at(
-                motion::next_char(map, selection.end, false).to_offset(map, Bias::Left),
+                motion.next_char(map, selection.end, false).to_offset(map, Bias.Left),
             )
             .next();
         match next_char {
-            Some((' ', _)) => selection.end = motion::next_char(map, selection.end, false),
+            Some((' ', _)) => selection.end = motion.next_char(map, selection.end, false),
             _ => {
                 if use_subword {
                     selection.end =
-                        motion::next_subword_end(map, selection.end, ignore_punctuation, 1, false);
+                        motion.next_subword_end(map, selection.end, ignore_punctuation, 1, false);
                 } else {
                     selection.end =
-                        motion::next_word_end(map, selection.end, ignore_punctuation, 1, false);
+                        motion.next_word_end(map, selection.end, ignore_punctuation, 1, false);
                 }
-                selection.end = motion::next_char(map, selection.end, false);
+                selection.end = motion.next_char(map, selection.end, false);
             }
         }
         true
     } else {
         let motion = if use_subword {
-            Motion::NextSubwordStart { ignore_punctuation }
+            Motion.NextSubwordStart { ignore_punctuation }
         } else {
-            Motion::NextWordStart { ignore_punctuation }
+            Motion.NextWordStart { ignore_punctuation }
         };
         motion.expand_selection(map, selection, times, false, &text_layout_details)
     }
@@ -163,13 +163,13 @@ fn expand_changed_word_selection(
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
+    use indoc.indoc;
 
-    use crate::test::NeovimBackedTestContext;
+    use crate.test.NeovimBackedTestContext;
 
-    #[gpui::test]
-    async fn test_change_h(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_h(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("c h", "Teˇst").await.assert_matches();
         cx.simulate("c h", "Tˇest").await.assert_matches();
         cx.simulate("c h", "ˇTest").await.assert_matches();
@@ -183,9 +183,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_backspace(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_backspace(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("c backspace", "Teˇst").await.assert_matches();
         cx.simulate("c backspace", "Tˇest").await.assert_matches();
         cx.simulate("c backspace", "ˇTest").await.assert_matches();
@@ -199,16 +199,16 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_l(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_l(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("c l", "Teˇst").await.assert_matches();
         cx.simulate("c l", "Tesˇt").await.assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_w(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_w(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("c w", "Teˇst").await.assert_matches();
         cx.simulate("c w", "Tˇest test").await.assert_matches();
         cx.simulate("c w", "Testˇ  test").await.assert_matches();
@@ -244,9 +244,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_e(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_e(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("c e", "Teˇst Test").await.assert_matches();
         cx.simulate("c e", "Tˇest test").await.assert_matches();
         cx.simulate(
@@ -280,9 +280,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_b(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_b(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("c b", "Teˇst Test").await.assert_matches();
         cx.simulate("c b", "Test ˇtest").await.assert_matches();
         cx.simulate("c b", "Test1 test2 ˇtest3")
@@ -311,9 +311,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_end_of_line(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_end_of_line(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "c $",
             indoc! {"
@@ -333,9 +333,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_0(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_0(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.simulate(
             "c 0",
@@ -356,9 +356,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_k(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_k(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.simulate(
             "c k",
@@ -398,9 +398,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_j(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_j(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "c j",
             indoc! {"
@@ -439,9 +439,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_end_of_document(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_end_of_document(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "c shift-g",
             indoc! {"
@@ -484,9 +484,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_cc(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_cc(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "c c",
             indoc! {"
@@ -521,9 +521,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_change_gg(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_gg(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "c g g",
             indoc! {"
@@ -566,9 +566,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_repeated_cj(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_repeated_cj(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for count in 1..=5 {
             cx.simulate_at_each_offset(
@@ -585,9 +585,9 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_repeated_cl(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_repeated_cl(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for count in 1..=5 {
             cx.simulate_at_each_offset(
@@ -604,9 +604,9 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_repeated_cb(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_repeated_cb(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for count in 1..=5 {
             cx.simulate_at_each_offset(
@@ -623,9 +623,9 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_repeated_ce(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_repeated_ce(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         for count in 1..=5 {
             cx.simulate_at_each_offset(

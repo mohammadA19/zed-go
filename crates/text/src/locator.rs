@@ -1,29 +1,29 @@
-use lazy_static::lazy_static;
-use smallvec::{smallvec, SmallVec};
-use std::iter;
+use lazy_static.lazy_static;
+use smallvec.{smallvec, SmallVec};
+use std.iter;
 
 lazy_static! {
-    static ref MIN: Locator = Locator::min();
-    static ref MAX: Locator = Locator::max();
+    static ref MIN: Locator = Locator.min();
+    static ref MAX: Locator = Locator.max();
 }
 
 /// An identifier for a position in a ordered collection.
 ///
 /// Allows prepending and appending without needing to renumber existing locators
-/// using `Locator::between(lhs, rhs)`.
+/// using `Locator.between(lhs, rhs)`.
 ///
-/// The initial location for a collection should be `Locator::between(Locator::min(), Locator::max())`,
+/// The initial location for a collection should be `Locator.between(Locator.min(), Locator.max())`,
 /// leaving room for items to be inserted before and after it.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Locator(SmallVec<[u64; 4]>);
 
 impl Locator {
     pub fn min() -> Self {
-        Self(smallvec![u64::MIN])
+        Self(smallvec![u64.MIN])
     }
 
     pub fn max() -> Self {
-        Self(smallvec![u64::MAX])
+        Self(smallvec![u64.MAX])
     }
 
     pub fn min_ref() -> &'static Self {
@@ -40,9 +40,9 @@ impl Locator {
     }
 
     pub fn between(lhs: &Self, rhs: &Self) -> Self {
-        let lhs = lhs.0.iter().copied().chain(iter::repeat(u64::MIN));
-        let rhs = rhs.0.iter().copied().chain(iter::repeat(u64::MAX));
-        let mut location = SmallVec::new();
+        let lhs = lhs.0.iter().copied().chain(iter.repeat(u64.MIN));
+        let rhs = rhs.0.iter().copied().chain(iter.repeat(u64.MAX));
+        let mut location = SmallVec.new();
         for (lhs, rhs) in lhs.zip(rhs) {
             let mid = lhs + ((rhs.saturating_sub(lhs)) >> 48);
             location.push(mid);
@@ -64,27 +64,27 @@ impl Locator {
 
 impl Default for Locator {
     fn default() -> Self {
-        Self::min()
+        Self.min()
     }
 }
 
-impl sum_tree::Item for Locator {
+impl sum_tree.Item for Locator {
     type Summary = Locator;
 
-    fn summary(&self) -> Self::Summary {
+    fn summary(&self) -> Self.Summary {
         self.clone()
     }
 }
 
-impl sum_tree::KeyedItem for Locator {
+impl sum_tree.KeyedItem for Locator {
     type Key = Locator;
 
-    fn key(&self) -> Self::Key {
+    fn key(&self) -> Self.Key {
         self.clone()
     }
 }
 
-impl sum_tree::Summary for Locator {
+impl sum_tree.Summary for Locator {
     type Context = ();
 
     fn add_summary(&mut self, summary: &Self, _: &()) {
@@ -94,14 +94,14 @@ impl sum_tree::Summary for Locator {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use rand::prelude::*;
-    use std::mem;
+    use super.*;
+    use rand.prelude.*;
+    use std.mem;
 
-    #[gpui::test(iterations = 100)]
+    #[gpui.test(iterations = 100)]
     fn test_locators(mut rng: StdRng) {
-        let mut lhs = Default::default();
-        let mut rhs = Default::default();
+        let mut lhs = Default.default();
+        let mut rhs = Default.default();
         while lhs == rhs {
             lhs = Locator(
                 (0..rng.gen_range(1..=5))
@@ -116,10 +116,10 @@ mod tests {
         }
 
         if lhs > rhs {
-            mem::swap(&mut lhs, &mut rhs);
+            mem.swap(&mut lhs, &mut rhs);
         }
 
-        let middle = Locator::between(&lhs, &rhs);
+        let middle = Locator.between(&lhs, &rhs);
         assert!(middle > lhs);
         assert!(middle < rhs);
         for ix in 0..middle.0.len() - 1 {

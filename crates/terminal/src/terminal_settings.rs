@@ -1,12 +1,12 @@
-use collections::HashMap;
-use gpui::{
+use collections.HashMap;
+use gpui.{
     px, AbsoluteLength, AppContext, FontFallbacks, FontFeatures, FontWeight, Pixels, SharedString,
 };
-use schemars::{gen::SchemaGenerator, schema::RootSchema, JsonSchema};
-use serde_derive::{Deserialize, Serialize};
-use settings::{add_references_to_properties, SettingsJsonSchemaParams, SettingsSources};
-use std::path::PathBuf;
-use task::Shell;
+use schemars.{gen.SchemaGenerator, schema.RootSchema, JsonSchema};
+use serde_derive.{Deserialize, Serialize};
+use settings.{add_references_to_properties, SettingsJsonSchemaParams, SettingsSources};
+use std.path.PathBuf;
+use task.Shell;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -67,12 +67,12 @@ pub struct VenvSettingsContent<'a> {
 impl VenvSettings {
     pub fn as_option(&self) -> Option<VenvSettingsContent> {
         match self {
-            VenvSettings::Off => None,
-            VenvSettings::On {
+            VenvSettings.Off => None,
+            VenvSettings.On {
                 activate_script,
                 directories,
             } => Some(VenvSettingsContent {
-                activate_script: activate_script.unwrap_or(ActivateScript::Default),
+                activate_script: activate_script.unwrap_or(ActivateScript.Default),
                 directories: directories.as_deref().unwrap_or(&[]),
             }),
         }
@@ -179,15 +179,15 @@ pub struct TerminalSettingsContent {
     pub toolbar: Option<ToolbarContent>,
 }
 
-impl settings::Settings for TerminalSettings {
+impl settings.Settings for TerminalSettings {
     const KEY: Option<&'static str> = Some("terminal");
 
     type FileContent = TerminalSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
+        sources: SettingsSources<Self.FileContent>,
         _: &mut AppContext,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 
@@ -196,7 +196,7 @@ impl settings::Settings for TerminalSettings {
         params: &SettingsJsonSchemaParams,
         _: &AppContext,
     ) -> RootSchema {
-        let mut root_schema = generator.root_schema_for::<Self::FileContent>();
+        let mut root_schema = generator.root_schema_for.<Self.FileContent>();
         root_schema.definitions.extend([
             ("FontFamilies".into(), params.font_family_schema()),
             ("FontFallbacks".into(), params.font_fallback_schema()),
@@ -230,9 +230,9 @@ pub enum TerminalLineHeight {
 impl TerminalLineHeight {
     pub fn value(&self) -> AbsoluteLength {
         let value = match self {
-            TerminalLineHeight::Comfortable => 1.618,
-            TerminalLineHeight::Standard => 1.3,
-            TerminalLineHeight::Custom(line_height) => f32::max(*line_height, 1.),
+            TerminalLineHeight.Comfortable => 1.618,
+            TerminalLineHeight.Standard => 1.3,
+            TerminalLineHeight.Custom(line_height) => f32.max(*line_height, 1.),
         };
         px(value).into()
     }

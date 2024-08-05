@@ -1,5 +1,5 @@
-use collections::HashMap;
-use std::{cmp::Ordering, ops::Range};
+use collections.HashMap;
+use std.{cmp.Ordering, ops.Range};
 
 /// Construct a string and a list of offsets within that string using a single
 /// string containing embedded position markers.
@@ -7,8 +7,8 @@ pub fn marked_text_offsets_by(
     marked_text: &str,
     markers: Vec<char>,
 ) -> (String, HashMap<char, Vec<usize>>) {
-    let mut extracted_markers: HashMap<char, Vec<usize>> = Default::default();
-    let mut unmarked_text = String::new();
+    let mut extracted_markers: HashMap<char, Vec<usize>> = Default.default();
+    let mut unmarked_text = String.new();
 
     for char in marked_text.chars() {
         if markers.contains(&char) {
@@ -41,13 +41,13 @@ pub fn marked_text_ranges_by(
             (
                 marker.clone(),
                 match marker {
-                    TextRangeMarker::Empty(empty_marker_char) => marker_offsets
+                    TextRangeMarker.Empty(empty_marker_char) => marker_offsets
                         .remove(&empty_marker_char)
                         .unwrap_or_default()
                         .into_iter()
                         .map(|empty_index| empty_index..empty_index)
-                        .collect::<Vec<Range<usize>>>(),
-                    TextRangeMarker::Range(start_marker, end_marker) => {
+                        .collect.<Vec<Range<usize>>>(),
+                    TextRangeMarker.Range(start_marker, end_marker) => {
                         let starts = marker_offsets.remove(&start_marker).unwrap_or_default();
                         let ends = marker_offsets.remove(&end_marker).unwrap_or_default();
                         assert_eq!(starts.len(), ends.len(), "marked ranges are unbalanced");
@@ -58,9 +58,9 @@ pub fn marked_text_ranges_by(
                                 assert!(end >= start, "marked ranges must be disjoint");
                                 start..end
                             })
-                            .collect::<Vec<Range<usize>>>()
+                            .collect.<Vec<Range<usize>>>()
                     }
-                    TextRangeMarker::ReverseRange(start_marker, end_marker) => {
+                    TextRangeMarker.ReverseRange(start_marker, end_marker) => {
                         let starts = marker_offsets.remove(&start_marker).unwrap_or_default();
                         let ends = marker_offsets.remove(&end_marker).unwrap_or_default();
                         assert_eq!(starts.len(), ends.len(), "marked ranges are unbalanced");
@@ -71,7 +71,7 @@ pub fn marked_text_ranges_by(
                                 assert!(end >= start, "marked ranges must be disjoint");
                                 end..start
                             })
-                            .collect::<Vec<Range<usize>>>()
+                            .collect.<Vec<Range<usize>>>()
                     }
                 },
             )
@@ -113,8 +113,8 @@ pub fn marked_text_ranges(
     marked_text: &str,
     ranges_are_directed: bool,
 ) -> (String, Vec<Range<usize>>) {
-    let mut unmarked_text = String::with_capacity(marked_text.len());
-    let mut ranges = Vec::new();
+    let mut unmarked_text = String.with_capacity(marked_text.len());
+    let mut ranges = Vec.new();
     let mut prev_marked_ix = 0;
     let mut current_range_start = None;
     let mut current_range_cursor = None;
@@ -199,14 +199,14 @@ pub fn generate_marked_text(
     for range in ranges.iter().rev() {
         if indicate_cursors {
             match range.start.cmp(&range.end) {
-                Ordering::Less => {
+                Ordering.Less => {
                     marked_text.insert_str(range.end, "ˇ»");
                     marked_text.insert(range.start, '«');
                 }
-                Ordering::Equal => {
+                Ordering.Equal => {
                     marked_text.insert(range.start, 'ˇ');
                 }
-                Ordering::Greater => {
+                Ordering.Greater => {
                     marked_text.insert(range.start, '»');
                     marked_text.insert_str(range.end, "«ˇ");
                 }
@@ -229,30 +229,30 @@ pub enum TextRangeMarker {
 impl TextRangeMarker {
     fn markers(&self) -> Vec<char> {
         match self {
-            Self::Empty(m) => vec![*m],
-            Self::Range(l, r) => vec![*l, *r],
-            Self::ReverseRange(l, r) => vec![*l, *r],
+            Self.Empty(m) => vec![*m],
+            Self.Range(l, r) => vec![*l, *r],
+            Self.ReverseRange(l, r) => vec![*l, *r],
         }
     }
 }
 
 impl From<char> for TextRangeMarker {
     fn from(marker: char) -> Self {
-        Self::Empty(marker)
+        Self.Empty(marker)
     }
 }
 
 impl From<(char, char)> for TextRangeMarker {
     fn from((left_marker, right_marker): (char, char)) -> Self {
-        Self::Range(left_marker, right_marker)
+        Self.Range(left_marker, right_marker)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{generate_marked_text, marked_text_ranges};
+    use super.{generate_marked_text, marked_text_ranges};
 
-    #[allow(clippy::reversed_empty_ranges)]
+    #[allow(clippy.reversed_empty_ranges)]
     #[test]
     fn test_marked_text() {
         let (text, ranges) = marked_text_ranges("one «ˇtwo» «threeˇ» «ˇfour» fiveˇ six", true);

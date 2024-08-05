@@ -1,9 +1,9 @@
-use gpui::{relative, AnyElement, FontWeight, StyleRefinement, Styled};
-use settings::Settings;
-use smallvec::SmallVec;
-use theme::ThemeSettings;
+use gpui.{relative, AnyElement, FontWeight, StyleRefinement, Styled};
+use settings.Settings;
+use smallvec.SmallVec;
+use theme.ThemeSettings;
 
-use crate::prelude::*;
+use crate.prelude.*;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Default)]
 pub enum LabelSize {
@@ -59,13 +59,13 @@ impl LabelLike {
     pub fn new() -> Self {
         Self {
             base: div(),
-            size: LabelSize::Default,
+            size: LabelSize.Default,
             weight: None,
-            line_height_style: LineHeightStyle::default(),
-            color: Color::Default,
+            line_height_style: LineHeightStyle.default(),
+            color: Color.Default,
             strikethrough: false,
             italic: false,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 }
@@ -76,7 +76,7 @@ impl LabelLike {
         self.base.style()
     }
 
-    gpui::margin_style_methods!({
+    gpui.margin_style_methods!({
         visibility: pub
     });
 }
@@ -121,7 +121,7 @@ impl ParentElement for LabelLike {
 
 impl RenderOnce for LabelLike {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let settings = ThemeSettings::get_global(cx);
+        let settings = ThemeSettings.get_global(cx);
 
         self.base
             .when(self.strikethrough, |this| {
@@ -131,16 +131,16 @@ impl RenderOnce for LabelLike {
                         .top_1_2()
                         .w_full()
                         .h_px()
-                        .bg(Color::Hidden.color(cx)),
+                        .bg(Color.Hidden.color(cx)),
                 )
             })
             .map(|this| match self.size {
-                LabelSize::Large => this.text_ui_lg(cx),
-                LabelSize::Default => this.text_ui(cx),
-                LabelSize::Small => this.text_ui_sm(cx),
-                LabelSize::XSmall => this.text_ui_xs(cx),
+                LabelSize.Large => this.text_ui_lg(cx),
+                LabelSize.Default => this.text_ui(cx),
+                LabelSize.Small => this.text_ui_sm(cx),
+                LabelSize.XSmall => this.text_ui_xs(cx),
             })
-            .when(self.line_height_style == LineHeightStyle::UiLabel, |this| {
+            .when(self.line_height_style == LineHeightStyle.UiLabel, |this| {
                 this.line_height(relative(1.))
             })
             .when(self.italic, |this| this.italic())

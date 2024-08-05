@@ -1,8 +1,8 @@
-use anyhow::Result;
-use std::path::PathBuf;
+use anyhow.Result;
+use std.path.PathBuf;
 
-use db::{define_connection, query, sqlez::statement::Statement, sqlez_macros::sql};
-use workspace::{ItemId, WorkspaceDb, WorkspaceId};
+use db.{define_connection, query, sqlez.statement.Statement, sqlez_macros.sql};
+use workspace.{ItemId, WorkspaceDb, WorkspaceId};
 
 define_connection! {
     pub static ref TERMINAL_DB: TerminalDb<WorkspaceDb> =
@@ -78,7 +78,7 @@ impl TerminalDb {
         let placeholders = alive_items
             .iter()
             .map(|_| "?")
-            .collect::<Vec<&str>>()
+            .collect.<Vec<&str>>()
             .join(", ");
 
         let query = format!(
@@ -86,7 +86,7 @@ impl TerminalDb {
         );
 
         self.write(move |conn| {
-            let mut statement = Statement::prepare(conn, query)?;
+            let mut statement = Statement.prepare(conn, query)?;
             let mut next_index = statement.bind(&workspace, 1)?;
             for id in alive_items {
                 next_index = statement.bind(&id, next_index)?;

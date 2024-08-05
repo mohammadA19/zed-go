@@ -1,8 +1,8 @@
-use gpui::{prelude::*, Action, MouseButton};
+use gpui.{prelude.*, Action, MouseButton};
 
-use ui::prelude::*;
+use ui.prelude.*;
 
-use crate::window_controls::{WindowControl, WindowControlType};
+use crate.window_controls.{WindowControl, WindowControlType};
 
 #[derive(IntoElement)]
 pub struct LinuxWindowControls {
@@ -23,24 +23,24 @@ impl RenderOnce for LinuxWindowControls {
             .id("generic-window-controls")
             .px_3()
             .gap_3()
-            .on_mouse_down(MouseButton::Left, |_, cx| cx.stop_propagation())
-            .child(WindowControl::new(
+            .on_mouse_down(MouseButton.Left, |_, cx| cx.stop_propagation())
+            .child(WindowControl.new(
                 "minimize",
-                WindowControlType::Minimize,
+                WindowControlType.Minimize,
                 cx,
             ))
-            .child(WindowControl::new(
+            .child(WindowControl.new(
                 "maximize-or-restore",
                 if cx.is_maximized() {
-                    WindowControlType::Restore
+                    WindowControlType.Restore
                 } else {
-                    WindowControlType::Maximize
+                    WindowControlType.Maximize
                 },
                 cx,
             ))
-            .child(WindowControl::new_close(
+            .child(WindowControl.new_close(
                 "close",
-                WindowControlType::Close,
+                WindowControlType.Close,
                 self.close_window_action,
                 cx,
             ))

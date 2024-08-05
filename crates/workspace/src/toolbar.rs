@@ -1,10 +1,10 @@
-use crate::ItemHandle;
-use gpui::{
+use crate.ItemHandle;
+use gpui.{
     AnyView, Entity, EntityId, EventEmitter, ParentElement as _, Render, Styled, View, ViewContext,
     WindowContext,
 };
-use ui::prelude::*;
-use ui::{h_flex, v_flex};
+use ui.prelude.*;
+use ui.{h_flex, v_flex};
 
 pub enum ToolbarItemEvent {
     ChangeLocation(ToolbarItemLocation),
@@ -13,7 +13,7 @@ pub enum ToolbarItemEvent {
 pub trait ToolbarItemView: Render + EventEmitter<ToolbarItemEvent> {
     fn set_active_pane_item(
         &mut self,
-        active_pane_item: Option<&dyn crate::ItemHandle>,
+        active_pane_item: Option<&dyn crate.ItemHandle>,
         cx: &mut ViewContext<Self>,
     ) -> ToolbarItemLocation;
 
@@ -50,12 +50,12 @@ impl Toolbar {
     fn has_any_visible_items(&self) -> bool {
         self.items
             .iter()
-            .any(|(_item, location)| *location != ToolbarItemLocation::Hidden)
+            .any(|(_item, location)| *location != ToolbarItemLocation.Hidden)
     }
 
     fn left_items(&self) -> impl Iterator<Item = &dyn ToolbarItemViewHandle> {
         self.items.iter().filter_map(|(item, location)| {
-            if *location == ToolbarItemLocation::PrimaryLeft {
+            if *location == ToolbarItemLocation.PrimaryLeft {
                 Some(item.as_ref())
             } else {
                 None
@@ -65,7 +65,7 @@ impl Toolbar {
 
     fn right_items(&self) -> impl Iterator<Item = &dyn ToolbarItemViewHandle> {
         self.items.iter().filter_map(|(item, location)| {
-            if *location == ToolbarItemLocation::PrimaryRight {
+            if *location == ToolbarItemLocation.PrimaryRight {
                 Some(item.as_ref())
             } else {
                 None
@@ -75,7 +75,7 @@ impl Toolbar {
 
     fn secondary_items(&self) -> impl Iterator<Item = &dyn ToolbarItemViewHandle> {
         self.items.iter().filter_map(|(item, location)| {
-            if *location == ToolbarItemLocation::Secondary {
+            if *location == ToolbarItemLocation.Secondary {
                 Some(item.as_ref())
             } else {
                 None
@@ -96,9 +96,9 @@ impl Render for Toolbar {
         let has_right_items = self.right_items().count() > 0;
 
         v_flex()
-            .p(Spacing::Large.rems(cx))
+            .p(Spacing.Large.rems(cx))
             .when(has_left_items || has_right_items, |this| {
-                this.gap(Spacing::Large.rems(cx))
+                this.gap(Spacing.Large.rems(cx))
             })
             .border_b_1()
             .border_color(cx.theme().colors().border_variant)
@@ -107,7 +107,7 @@ impl Render for Toolbar {
                 h_flex()
                     .min_h(rems_from_px(24.))
                     .justify_between()
-                    .gap(Spacing::Large.rems(cx))
+                    .gap(Spacing.Large.rems(cx))
                     .when(has_left_items, |this| {
                         this.child(
                             h_flex()
@@ -142,7 +142,7 @@ impl Toolbar {
     pub fn new() -> Self {
         Self {
             active_item: None,
-            items: Default::default(),
+            items: Default.default(),
             hidden: false,
             can_navigate: true,
         }
@@ -165,7 +165,7 @@ impl Toolbar {
                 .find(|(i, _)| i.id() == item.entity_id())
             {
                 match event {
-                    ToolbarItemEvent::ChangeLocation(new_location) => {
+                    ToolbarItemEvent.ChangeLocation(new_location) => {
                         if new_location != current_location {
                             *current_location = *new_location;
                             cx.notify();
@@ -175,7 +175,7 @@ impl Toolbar {
             }
         })
         .detach();
-        self.items.push((Box::new(item), location));
+        self.items.push((Box.new(item), location));
         cx.notify();
     }
 

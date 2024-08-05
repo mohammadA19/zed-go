@@ -1,7 +1,7 @@
-use gpui::AnyElement;
-use smallvec::SmallVec;
+use gpui.AnyElement;
+use smallvec.SmallVec;
 
-use crate::prelude::*;
+use crate.prelude.*;
 
 #[derive(IntoElement)]
 pub struct SettingsContainer {
@@ -11,7 +11,7 @@ pub struct SettingsContainer {
 impl SettingsContainer {
     pub fn new() -> Self {
         Self {
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 }

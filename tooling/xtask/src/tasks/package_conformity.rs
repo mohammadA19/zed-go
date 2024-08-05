@@ -1,12 +1,12 @@
-use std::collections::BTreeMap;
-use std::fs;
-use std::path::Path;
+use std.collections.BTreeMap;
+use std.fs;
+use std.path.Path;
 
-use anyhow::{anyhow, Context, Result};
-use cargo_toml::{Dependency, Manifest};
-use clap::Parser;
+use anyhow.{anyhow, Context, Result};
+use cargo_toml.{Dependency, Manifest};
+use clap.Parser;
 
-use crate::workspace::load_workspace;
+use crate.workspace.load_workspace;
 
 #[derive(Parser)]
 pub struct PackageConformityArgs {}
@@ -14,7 +14,7 @@ pub struct PackageConformityArgs {}
 pub fn run_package_conformity(_args: PackageConformityArgs) -> Result<()> {
     let workspace = load_workspace()?;
 
-    let mut non_workspace_dependencies = BTreeMap::new();
+    let mut non_workspace_dependencies = BTreeMap.new();
 
     for package in workspace.workspace_packages() {
         let is_extension = package
@@ -46,13 +46,13 @@ pub fn run_package_conformity(_args: PackageConformityArgs) -> Result<()> {
             &cargo_toml.build_dependencies,
         ] {
             for (name, dependency) in dependencies {
-                if let Dependency::Inherited(_) = dependency {
+                if let Dependency.Inherited(_) = dependency {
                     continue;
                 }
 
                 non_workspace_dependencies
                     .entry(name.to_owned())
-                    .or_insert_with(Vec::new)
+                    .or_insert_with(Vec.new)
                     .push(package.name.clone());
             }
         }
@@ -71,7 +71,7 @@ pub fn run_package_conformity(_args: PackageConformityArgs) -> Result<()> {
 /// Returns the contents of the `Cargo.toml` file at the given path.
 fn read_cargo_toml(path: impl AsRef<Path>) -> Result<Manifest> {
     let path = path.as_ref();
-    let cargo_toml_bytes = fs::read(&path)?;
-    Manifest::from_slice(&cargo_toml_bytes)
+    let cargo_toml_bytes = fs.read(&path)?;
+    Manifest.from_slice(&cargo_toml_bytes)
         .with_context(|| anyhow!("failed to read Cargo.toml at {path:?}"))
 }

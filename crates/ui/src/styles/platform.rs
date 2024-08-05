@@ -15,11 +15,11 @@ impl PlatformStyle {
     /// Returns the [`PlatformStyle`] for the current platform.
     pub const fn platform() -> Self {
         if cfg!(target_os = "linux") {
-            Self::Linux
+            Self.Linux
         } else if cfg!(target_os = "windows") {
-            Self::Windows
+            Self.Windows
         } else {
-            Self::Mac
+            Self.Mac
         }
     }
 }

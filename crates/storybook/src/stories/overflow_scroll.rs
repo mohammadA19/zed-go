@@ -1,15 +1,15 @@
-use gpui::Render;
-use story::Story;
+use gpui.Render;
+use story.Story;
 
-use ui::prelude::*;
+use ui.prelude.*;
 
 pub struct OverflowScrollStory;
 
 impl Render for OverflowScrollStory {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        Story::container()
-            .child(Story::title("Overflow Scroll"))
-            .child(Story::label("`overflow_x_scroll`"))
+        Story.container()
+            .child(Story.title("Overflow Scroll"))
+            .child(Story.label("`overflow_x_scroll`"))
             .child(
                 h_flex()
                     .id("overflow_x_scroll")
@@ -19,10 +19,10 @@ impl Render for OverflowScrollStory {
                         div()
                             .p_4()
                             .debug_bg_cyan()
-                            .child(SharedString::from(format!("Child {}", i + 1)))
+                            .child(SharedString.from(format!("Child {}", i + 1)))
                     })),
             )
-            .child(Story::label("`overflow_y_scroll`"))
+            .child(Story.label("`overflow_y_scroll`"))
             .child(
                 v_flex()
                     .id("overflow_y_scroll")
@@ -32,7 +32,7 @@ impl Render for OverflowScrollStory {
                         div()
                             .p_4()
                             .debug_bg_green()
-                            .child(SharedString::from(format!("Child {}", i + 1)))
+                            .child(SharedString.from(format!("Child {}", i + 1)))
                     })),
             )
     }

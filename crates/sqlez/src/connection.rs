@@ -1,13 +1,13 @@
-use std::{
-    cell::RefCell,
-    ffi::{CStr, CString},
-    marker::PhantomData,
-    path::Path,
+use std.{
+    cell.RefCell,
+    ffi.{CStr, CString},
+    marker.PhantomData,
+    path.Path,
     ptr,
 };
 
-use anyhow::{anyhow, Result};
-use libsqlite3_sys::*;
+use anyhow.{anyhow, Result};
+use libsqlite3_sys.*;
 
 pub struct Connection {
     pub(crate) sqlite3: *mut sqlite3,
@@ -20,19 +20,19 @@ unsafe impl Send for Connection {}
 impl Connection {
     pub(crate) fn open(uri: &str, persistent: bool) -> Result<Self> {
         let mut connection = Self {
-            sqlite3: ptr::null_mut(),
+            sqlite3: ptr.null_mut(),
             persistent,
-            write: RefCell::new(true),
+            write: RefCell.new(true),
             _sqlite: PhantomData,
         };
 
         let flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_READWRITE;
         unsafe {
             sqlite3_open_v2(
-                CString::new(uri)?.as_ptr(),
+                CString.new(uri)?.as_ptr(),
                 &mut connection.sqlite3,
                 flags,
-                ptr::null(),
+                ptr.null(),
             );
 
             // Turn on extended error codes
@@ -47,7 +47,7 @@ impl Connection {
     /// Attempts to open the database at uri. If it fails, a shared memory db will be opened
     /// instead.
     pub fn open_file(uri: &str) -> Self {
-        Self::open(uri, true).unwrap_or_else(|_| Self::open_memory(Some(uri)))
+        Self.open(uri, true).unwrap_or_else(|_| Self.open_memory(Some(uri)))
     }
 
     pub fn open_memory(uri: Option<&str>) -> Self {
@@ -57,7 +57,7 @@ impl Connection {
             ":memory:".to_string()
         };
 
-        Self::open(&in_memory_path, false).expect("Could not create fallback in memory db")
+        Self.open(&in_memory_path, false).expect("Could not create fallback in memory db")
     }
 
     pub fn persistent(&self) -> bool {
@@ -72,9 +72,9 @@ impl Connection {
         unsafe {
             let backup = sqlite3_backup_init(
                 destination.sqlite3,
-                CString::new("main")?.as_ptr(),
+                CString.new("main")?.as_ptr(),
                 self.sqlite3,
-                CString::new("main")?.as_ptr(),
+                CString.new("main")?.as_ptr(),
             );
             sqlite3_backup_step(backup, -1);
             sqlite3_backup_finish(backup);
@@ -83,12 +83,12 @@ impl Connection {
     }
 
     pub fn backup_main_to(&self, destination: impl AsRef<Path>) -> Result<()> {
-        let destination = Self::open_file(destination.as_ref().to_string_lossy().as_ref());
+        let destination = Self.open_file(destination.as_ref().to_string_lossy().as_ref());
         self.backup_main(&destination)
     }
 
     pub fn sql_has_syntax_error(&self, sql: &str) -> Option<(String, usize)> {
-        let sql = CString::new(sql).unwrap();
+        let sql = CString.new(sql).unwrap();
         let mut remaining_sql = sql.as_c_str();
         let sql_start = remaining_sql.as_ptr();
 
@@ -102,8 +102,8 @@ impl Connection {
                 }
                 any_remaining_sql
             } {
-                let mut raw_statement = ptr::null_mut::<sqlite3_stmt>();
-                let mut remaining_sql_ptr = ptr::null();
+                let mut raw_statement = ptr.null_mut.<sqlite3_stmt>();
+                let mut remaining_sql_ptr = ptr.null();
 
                 let (res, offset, message, _conn) =
                     if let Some((table_to_alter, column)) = alter_table {
@@ -113,7 +113,7 @@ impl Connection {
                         // prepare. As we don't want to trash whatever database this is connected to, we
                         // create a new in-memory DB to test.
 
-                        let temp_connection = Connection::open_memory(None);
+                        let temp_connection = Connection.open_memory(None);
                         //This should always succeed, if it doesn't then you really should know about it
                         temp_connection
                             .exec(&format!("CREATE TABLE {table_to_alter}({column})"))
@@ -169,12 +169,12 @@ impl Connection {
                     let sub_statement_correction =
                         remaining_sql.as_ptr() as usize - sql_start as usize;
                     let err_msg =
-                        String::from_utf8_lossy(CStr::from_ptr(message as *const _).to_bytes())
+                        String.from_utf8_lossy(CStr.from_ptr(message as *const _).to_bytes())
                             .into_owned();
 
                     return Some((err_msg, offset as usize + sub_statement_correction));
                 }
-                remaining_sql = CStr::from_ptr(remaining_sql_ptr);
+                remaining_sql = CStr.from_ptr(remaining_sql_ptr);
                 alter_table = None;
             }
         }
@@ -194,7 +194,7 @@ impl Connection {
                 None
             } else {
                 Some(
-                    String::from_utf8_lossy(CStr::from_ptr(message as *const _).to_bytes())
+                    String.from_utf8_lossy(CStr.from_ptr(message as *const _).to_bytes())
                         .into_owned(),
                 )
             };
@@ -225,7 +225,7 @@ fn parse_alter_table(remaining_sql_str: &str) -> Option<(String, String)> {
                 .skip(after_table_offset)
                 .skip_while(|c| c.is_whitespace())
                 .take_while(|c| !c.is_whitespace())
-                .collect::<String>();
+                .collect.<String>();
             if !table_to_alter.is_empty() {
                 let column_name =
                     if let Some(rename_offset) = remaining_sql_str.find("rename column") {
@@ -235,7 +235,7 @@ fn parse_alter_table(remaining_sql_str: &str) -> Option<(String, String)> {
                             .skip(after_rename_offset)
                             .skip_while(|c| c.is_whitespace())
                             .take_while(|c| !c.is_whitespace())
-                            .collect::<String>()
+                            .collect.<String>()
                     } else if let Some(drop_offset) = remaining_sql_str.find("drop column") {
                         let after_drop_offset = drop_offset + "drop column".len();
                         remaining_sql_str
@@ -243,7 +243,7 @@ fn parse_alter_table(remaining_sql_str: &str) -> Option<(String, String)> {
                             .skip(after_drop_offset)
                             .skip_while(|c| c.is_whitespace())
                             .take_while(|c| !c.is_whitespace())
-                            .collect::<String>()
+                            .collect.<String>()
                     } else {
                         "__place_holder_column_for_syntax_checking".to_string()
                     };
@@ -262,14 +262,14 @@ impl Drop for Connection {
 
 #[cfg(test)]
 mod test {
-    use anyhow::Result;
-    use indoc::indoc;
+    use anyhow.Result;
+    use indoc.indoc;
 
-    use crate::connection::Connection;
+    use crate.connection.Connection;
 
     #[test]
     fn string_round_trips() -> Result<()> {
-        let connection = Connection::open_memory(Some("string_round_trips"));
+        let connection = Connection.open_memory(Some("string_round_trips"));
         connection
             .exec(indoc! {"
             CREATE TABLE text (
@@ -295,7 +295,7 @@ mod test {
 
     #[test]
     fn tuple_round_trips() {
-        let connection = Connection::open_memory(Some("tuple_round_trips"));
+        let connection = Connection.open_memory(Some("tuple_round_trips"));
         connection
             .exec(indoc! {"
                 CREATE TABLE test (
@@ -310,7 +310,7 @@ mod test {
         let tuple2 = ("test2".to_string(), 32, vec![64, 32, 16, 8, 4, 2, 1, 0]);
 
         let mut insert = connection
-            .exec_bound::<(String, usize, Vec<u8>)>(
+            .exec_bound.<(String, usize, Vec<u8>)>(
                 "INSERT INTO test (text, integer, blob) VALUES (?, ?, ?)",
             )
             .unwrap();
@@ -320,7 +320,7 @@ mod test {
 
         assert_eq!(
             connection
-                .select::<(String, usize, Vec<u8>)>("SELECT * FROM test")
+                .select.<(String, usize, Vec<u8>)>("SELECT * FROM test")
                 .unwrap()()
             .unwrap(),
             vec![tuple1, tuple2]
@@ -329,7 +329,7 @@ mod test {
 
     #[test]
     fn bool_round_trips() {
-        let connection = Connection::open_memory(Some("bool_round_trips"));
+        let connection = Connection.open_memory(Some("bool_round_trips"));
         connection
             .exec(indoc! {"
                 CREATE TABLE bools (
@@ -346,7 +346,7 @@ mod test {
 
         assert_eq!(
             connection
-                .select_row::<(bool, bool)>("SELECT * FROM bools;")
+                .select_row.<(bool, bool)>("SELECT * FROM bools;")
                 .unwrap()()
             .unwrap(),
             Some((true, false))
@@ -355,7 +355,7 @@ mod test {
 
     #[test]
     fn backup_works() {
-        let connection1 = Connection::open_memory(Some("backup_works"));
+        let connection1 = Connection.open_memory(Some("backup_works"));
         connection1
             .exec(indoc! {"
                 CREATE TABLE blobs (
@@ -365,17 +365,17 @@ mod test {
         .unwrap();
         let blob = vec![0, 1, 2, 4, 8, 16, 32, 64];
         connection1
-            .exec_bound::<Vec<u8>>("INSERT INTO blobs (data) VALUES (?);")
+            .exec_bound.<Vec<u8>>("INSERT INTO blobs (data) VALUES (?);")
             .unwrap()(blob.clone())
         .unwrap();
 
         // Backup connection1 to connection2
-        let connection2 = Connection::open_memory(Some("backup_works_other"));
+        let connection2 = Connection.open_memory(Some("backup_works_other"));
         connection1.backup_main(&connection2).unwrap();
 
         // Delete the added blob and verify its deleted on the other side
         let read_blobs = connection1
-            .select::<Vec<u8>>("SELECT * FROM blobs;")
+            .select.<Vec<u8>>("SELECT * FROM blobs;")
             .unwrap()()
         .unwrap();
         assert_eq!(read_blobs, vec![blob]);
@@ -383,7 +383,7 @@ mod test {
 
     #[test]
     fn multi_step_statement_works() {
-        let connection = Connection::open_memory(Some("multi_step_statement_works"));
+        let connection = Connection.open_memory(Some("multi_step_statement_works"));
 
         connection
             .exec(indoc! {"
@@ -401,7 +401,7 @@ mod test {
 
         assert_eq!(
             connection
-                .select_row::<usize>("SELECT * FROM test")
+                .select_row.<usize>("SELECT * FROM test")
                 .unwrap()()
             .unwrap(),
             Some(2)
@@ -411,7 +411,7 @@ mod test {
     #[cfg(not(target_os = "linux"))]
     #[test]
     fn test_sql_has_syntax_errors() {
-        let connection = Connection::open_memory(Some("test_sql_has_syntax_errors"));
+        let connection = Connection.open_memory(Some("test_sql_has_syntax_errors"));
         let first_stmt =
             "CREATE TABLE kv_store(key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT ;";
         let second_stmt = "SELECT FROM";
@@ -427,7 +427,7 @@ mod test {
 
     #[test]
     fn test_alter_table_syntax() {
-        let connection = Connection::open_memory(Some("test_alter_table_syntax"));
+        let connection = Connection.open_memory(Some("test_alter_table_syntax"));
 
         assert!(connection
             .sql_has_syntax_error("ALTER TABLE test ADD x TEXT")

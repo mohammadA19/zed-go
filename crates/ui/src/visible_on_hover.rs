@@ -1,4 +1,4 @@
-use gpui::{InteractiveElement, SharedString, Styled};
+use gpui.{InteractiveElement, SharedString, Styled};
 
 pub trait VisibleOnHover {
     /// Sets the element to only be visible when the specified group is hovered.

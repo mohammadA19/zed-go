@@ -1,16 +1,16 @@
 mod appearance_settings_controls;
 
-use std::any::TypeId;
+use std.any.TypeId;
 
-use command_palette_hooks::CommandPaletteFilter;
-use editor::EditorSettingsControls;
-use feature_flags::{FeatureFlag, FeatureFlagViewExt};
-use gpui::{actions, AppContext, EventEmitter, FocusHandle, FocusableView, View};
-use ui::prelude::*;
-use workspace::item::{Item, ItemEvent};
-use workspace::Workspace;
+use command_palette_hooks.CommandPaletteFilter;
+use editor.EditorSettingsControls;
+use feature_flags.{FeatureFlag, FeatureFlagViewExt};
+use gpui.{actions, AppContext, EventEmitter, FocusHandle, FocusableView, View};
+use ui.prelude.*;
+use workspace.item.{Item, ItemEvent};
+use workspace.Workspace;
 
-use crate::appearance_settings_controls::AppearanceSettingsControls;
+use crate.appearance_settings_controls.AppearanceSettingsControls;
 
 pub struct SettingsUiFeatureFlag;
 
@@ -27,29 +27,29 @@ pub fn init(cx: &mut AppContext) {
                 .active_pane()
                 .read(cx)
                 .items()
-                .find_map(|item| item.downcast::<SettingsPage>());
+                .find_map(|item| item.downcast.<SettingsPage>());
 
             if let Some(existing) = existing {
                 workspace.activate_item(&existing, true, true, cx);
             } else {
-                let settings_page = SettingsPage::new(workspace, cx);
-                workspace.add_item_to_active_pane(Box::new(settings_page), None, true, cx)
+                let settings_page = SettingsPage.new(workspace, cx);
+                workspace.add_item_to_active_pane(Box.new(settings_page), None, true, cx)
             }
         });
 
-        let settings_ui_actions = [TypeId::of::<OpenSettingsEditor>()];
+        let settings_ui_actions = [TypeId.of.<OpenSettingsEditor>()];
 
-        CommandPaletteFilter::update_global(cx, |filter, _cx| {
+        CommandPaletteFilter.update_global(cx, |filter, _cx| {
             filter.hide_action_types(&settings_ui_actions);
         });
 
-        cx.observe_flag::<SettingsUiFeatureFlag, _>(move |is_enabled, _view, cx| {
+        cx.observe_flag.<SettingsUiFeatureFlag, _>(move |is_enabled, _view, cx| {
             if is_enabled {
-                CommandPaletteFilter::update_global(cx, |filter, _cx| {
+                CommandPaletteFilter.update_global(cx, |filter, _cx| {
                     filter.show_action_types(settings_ui_actions.iter());
                 });
             } else {
-                CommandPaletteFilter::update_global(cx, |filter, _cx| {
+                CommandPaletteFilter.update_global(cx, |filter, _cx| {
                     filter.hide_action_types(&settings_ui_actions);
                 });
             }

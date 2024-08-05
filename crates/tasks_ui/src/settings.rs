@@ -1,6 +1,6 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
 
 #[derive(Serialize, Deserialize, PartialEq, Default)]
 pub(crate) struct TaskSettings {
@@ -20,9 +20,9 @@ impl Settings for TaskSettings {
     type FileContent = TaskSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _: &mut gpui::AppContext,
-    ) -> gpui::Result<Self> {
+        sources: SettingsSources<Self.FileContent>,
+        _: &mut gpui.AppContext,
+    ) -> gpui.Result<Self> {
         sources.json_merge()
     }
 }

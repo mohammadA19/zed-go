@@ -24,8 +24,8 @@ impl Selection {
     /// Indeterminate states become selected if inverted.
     pub fn inverse(&self) -> Self {
         match self {
-            Self::Unselected | Self::Indeterminate => Self::Selected,
-            Self::Selected => Self::Unselected,
+            Self.Unselected | Self.Indeterminate => Self.Selected,
+            Self.Selected => Self.Unselected,
         }
     }
 }
@@ -33,9 +33,9 @@ impl Selection {
 impl From<bool> for Selection {
     fn from(selected: bool) -> Self {
         if selected {
-            Self::Selected
+            Self.Selected
         } else {
-            Self::Unselected
+            Self.Unselected
         }
     }
 }
@@ -43,9 +43,9 @@ impl From<bool> for Selection {
 impl From<Option<bool>> for Selection {
     fn from(selected: Option<bool>) -> Self {
         match selected {
-            Some(true) => Self::Selected,
-            Some(false) => Self::Unselected,
-            None => Self::Unselected,
+            Some(true) => Self.Selected,
+            Some(false) => Self.Unselected,
+            None => Self.Unselected,
         }
     }
 }

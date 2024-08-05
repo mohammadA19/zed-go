@@ -1,6 +1,6 @@
-use semantic_version::SemanticVersion;
-use serde::{Deserialize, Serialize};
-use std::{fmt::Display, sync::Arc, time::Duration};
+use semantic_version.SemanticVersion;
+use serde.{Deserialize, Serialize};
+use std.{fmt.Display, sync.Arc, time.Duration};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventRequestBody {
@@ -38,13 +38,13 @@ pub enum AssistantKind {
 }
 
 impl Display for AssistantKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         write!(
             f,
             "{}",
             match self {
-                Self::Panel => "panel",
-                Self::Inline => "inline",
+                Self.Panel => "panel",
+                Self.Inline => "inline",
             }
         )
     }
@@ -184,7 +184,7 @@ pub struct LocationData {
 pub struct Panic {
     pub thread: String,
     pub payload: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option.is_none")]
     pub location_data: Option<LocationData>,
     pub backtrace: Vec<String>,
     pub app_version: String,
@@ -193,7 +193,7 @@ pub struct Panic {
     pub os_version: Option<String>,
     pub architecture: String,
     pub panicked_on: i64,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option.is_none")]
     pub installation_id: Option<String>,
     pub session_id: String,
 }

@@ -1,8 +1,8 @@
-use std::ops::Deref;
-use std::sync::mpsc::Sender;
+use std.ops.Deref;
+use std.sync.mpsc.Sender;
 
-use parking_lot::Mutex;
-use thread_local::ThreadLocal;
+use parking_lot.Mutex;
+use thread_local.ThreadLocal;
 
 /// Unbounded standard library sender which is stored per thread to get around
 /// the lack of sync on the standard library version while still being unbounded
@@ -16,8 +16,8 @@ pub struct UnboundedSyncSender<T: Send> {
 impl<T: Send> UnboundedSyncSender<T> {
     pub fn new(sender: Sender<T>) -> Self {
         Self {
-            clonable_sender: Mutex::new(sender),
-            local_senders: ThreadLocal::new(),
+            clonable_sender: Mutex.new(sender),
+            local_senders: ThreadLocal.new(),
         }
     }
 }
@@ -25,7 +25,7 @@ impl<T: Send> UnboundedSyncSender<T> {
 impl<T: Send> Deref for UnboundedSyncSender<T> {
     type Target = Sender<T>;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         self.local_senders
             .get_or(|| self.clonable_sender.lock().clone())
     }

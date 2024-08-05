@@ -1,7 +1,7 @@
-use gpui::AnyElement;
-use smallvec::SmallVec;
+use gpui.AnyElement;
+use smallvec.SmallVec;
 
-use crate::{prelude::*, v_flex, Label, ListHeader};
+use crate.{prelude.*, v_flex, Label, ListHeader};
 
 #[derive(IntoElement)]
 pub struct List {
@@ -19,7 +19,7 @@ impl List {
             empty_message: "No items".into(),
             header: None,
             toggle: None,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 
@@ -51,7 +51,7 @@ impl RenderOnce for List {
             match (self.children.is_empty(), self.toggle) {
                 (false, _) => this.children(self.children),
                 (true, Some(false)) => this,
-                (true, _) => this.child(Label::new(self.empty_message.clone()).color(Color::Muted)),
+                (true, _) => this.child(Label.new(self.empty_message.clone()).color(Color.Muted)),
             }
         })
     }

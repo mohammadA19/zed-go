@@ -1,12 +1,12 @@
-use anyhow::Context;
-use collections::HashMap;
-use futures::{channel::oneshot, Future, FutureExt};
-use lazy_static::lazy_static;
-use parking_lot::{Mutex, RwLock};
-use std::{marker::PhantomData, ops::Deref, sync::Arc, thread};
-use thread_local::ThreadLocal;
+use anyhow.Context;
+use collections.HashMap;
+use futures.{channel.oneshot, Future, FutureExt};
+use lazy_static.lazy_static;
+use parking_lot.{Mutex, RwLock};
+use std.{marker.PhantomData, ops.Deref, sync.Arc, thread};
+use thread_local.ThreadLocal;
 
-use crate::{connection::Connection, domain::Migrator, util::UnboundedSyncSender};
+use crate.{connection.Connection, domain.Migrator, util.UnboundedSyncSender};
 
 const MIGRATION_RETRIES: usize = 10;
 
@@ -19,7 +19,7 @@ lazy_static! {
     /// (possibly with different migrations) could all be communicating with the same background
     /// thread.
     static ref QUEUES: RwLock<HashMap<Arc<str>, WriteQueue>> =
-        Default::default();
+        Default.default();
 }
 
 /// Thread safe connection to a given database file or in memory db. This can be cloned, shared, static,
@@ -70,7 +70,7 @@ impl<M: Migrator> ThreadSafeConnectionBuilder<M> {
         self
     }
 
-    pub async fn build(self) -> anyhow::Result<ThreadSafeConnection<M>> {
+    pub async fn build(self) -> anyhow.Result<ThreadSafeConnection<M>> {
         self.connection
             .initialize_queues(self.write_queue_constructor);
 
@@ -90,11 +90,11 @@ impl<M: Migrator> ThreadSafeConnectionBuilder<M> {
                 // Retry failed migrations in case they were run in parallel from different
                 // processes. This gives a best attempt at migrating before bailing
                 let mut migration_result =
-                    anyhow::Result::<()>::Err(anyhow::anyhow!("Migration never run"));
+                    anyhow.Result.<()>.Err(anyhow.anyhow!("Migration never run"));
 
                 for _ in 0..MIGRATION_RETRIES {
                     migration_result = connection
-                        .with_savepoint("thread_safe_multi_migration", || M::migrate(connection));
+                        .with_savepoint("thread_safe_multi_migration", || M.migrate(connection));
 
                     if migration_result.is_ok() {
                         break;
@@ -124,14 +124,14 @@ impl<M: Migrator> ThreadSafeConnection<M> {
     }
 
     pub fn builder(uri: &str, persistent: bool) -> ThreadSafeConnectionBuilder<M> {
-        ThreadSafeConnectionBuilder::<M> {
+        ThreadSafeConnectionBuilder.<M> {
             db_initialize_query: None,
             write_queue_constructor: None,
             connection: Self {
-                uri: Arc::from(uri),
+                uri: Arc.from(uri),
                 persistent,
                 connection_initialize_query: None,
-                connections: Default::default(),
+                connections: Default.default(),
                 _migrator: PhantomData,
             },
         }
@@ -140,13 +140,13 @@ impl<M: Migrator> ThreadSafeConnection<M> {
     /// Opens a new db connection with the initialized file path. This is internal and only
     /// called from the deref function.
     fn open_file(uri: &str) -> Connection {
-        Connection::open_file(uri)
+        Connection.open_file(uri)
     }
 
     /// Opens a shared memory connection using the file path as the identifier. This is internal
     /// and only called from the deref function.
     fn open_shared_memory(uri: &str) -> Connection {
-        Connection::open_memory(Some(uri))
+        Connection.open_memory(Some(uri))
     }
 
     pub fn write<T: 'static + Send + Sync>(
@@ -161,10 +161,10 @@ impl<M: Migrator> ThreadSafeConnection<M> {
 
         // Create a one shot channel for the result of the queued write
         // so we can await on the result
-        let (sender, receiver) = oneshot::channel();
+        let (sender, receiver) = oneshot.channel();
 
         let thread_safe_connection = (*self).clone();
-        write_channel(Box::new(move || {
+        write_channel(Box.new(move || {
             let connection = thread_safe_connection.deref();
             let result = connection.with_write(|connection| callback(connection));
             sender.send(result).ok();
@@ -178,9 +178,9 @@ impl<M: Migrator> ThreadSafeConnection<M> {
         connection_initialize_query: Option<&'static str>,
     ) -> Connection {
         let mut connection = if persistent {
-            Self::open_file(uri)
+            Self.open_file(uri)
         } else {
-            Self::open_shared_memory(uri)
+            Self.open_shared_memory(uri)
         };
 
         // Disallow writes on the connection. The only writes allowed for thread safe connections
@@ -208,10 +208,10 @@ impl ThreadSafeConnection<()> {
         write_queue_constructor: Option<WriteQueueConstructor>,
     ) -> Self {
         let connection = Self {
-            uri: Arc::from(uri),
+            uri: Arc.from(uri),
             persistent,
             connection_initialize_query,
-            connections: Default::default(),
+            connections: Default.default(),
             _migrator: PhantomData,
         };
 
@@ -235,27 +235,27 @@ impl<M: Migrator> Clone for ThreadSafeConnection<M> {
 impl<M: Migrator> Deref for ThreadSafeConnection<M> {
     type Target = Connection;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         self.connections.get_or(|| {
-            Self::create_connection(self.persistent, &self.uri, self.connection_initialize_query)
+            Self.create_connection(self.persistent, &self.uri, self.connection_initialize_query)
         })
     }
 }
 
 pub fn background_thread_queue() -> WriteQueueConstructor {
-    use std::sync::mpsc::channel;
+    use std.sync.mpsc.channel;
 
-    Box::new(|| {
-        let (sender, receiver) = channel::<QueuedWrite>();
+    Box.new(|| {
+        let (sender, receiver) = channel.<QueuedWrite>();
 
-        thread::spawn(move || {
+        thread.spawn(move || {
             while let Ok(write) = receiver.recv() {
                 write()
             }
         });
 
-        let sender = UnboundedSyncSender::new(sender);
-        Box::new(move |queued_write| {
+        let sender = UnboundedSyncSender.new(sender);
+        Box.new(move |queued_write| {
             sender
                 .send(queued_write)
                 .expect("Could not send write action to background thread");
@@ -264,9 +264,9 @@ pub fn background_thread_queue() -> WriteQueueConstructor {
 }
 
 pub fn locking_queue() -> WriteQueueConstructor {
-    Box::new(|| {
-        let write_mutex = Mutex::new(());
-        Box::new(move |queued_write| {
+    Box.new(|| {
+        let write_mutex = Mutex.new(());
+        Box.new(move |queued_write| {
             let _lock = write_mutex.lock();
             queued_write();
         })
@@ -275,12 +275,12 @@ pub fn locking_queue() -> WriteQueueConstructor {
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
-    use lazy_static::__Deref;
+    use indoc.indoc;
+    use lazy_static.__Deref;
 
-    use std::thread;
+    use std.thread;
 
-    use crate::{domain::Domain, thread_safe_connection::ThreadSafeConnection};
+    use crate.{domain.Domain, thread_safe_connection.ThreadSafeConnection};
 
     #[test]
     fn many_initialize_and_migrate_queries_at_once() {
@@ -297,9 +297,9 @@ mod test {
         }
 
         for _ in 0..100 {
-            handles.push(thread::spawn(|| {
+            handles.push(thread.spawn(|| {
                 let builder =
-                    ThreadSafeConnection::<TestDomain>::builder("annoying-test.db", false)
+                    ThreadSafeConnection.<TestDomain>.builder("annoying-test.db", false)
                         .with_db_initialization_query("PRAGMA journal_mode=WAL")
                         .with_connection_initialize_query(indoc! {"
                                 PRAGMA synchronous=NORMAL;
@@ -308,7 +308,7 @@ mod test {
                                 PRAGMA case_sensitive_like=TRUE;
                             "});
 
-                let _ = smol::block_on(builder.build()).unwrap().deref();
+                let _ = smol.block_on(builder.build()).unwrap().deref();
             }));
         }
 
@@ -351,9 +351,9 @@ mod test {
         }
 
         let builder =
-            ThreadSafeConnection::<TestWorkspace>::builder("wild_zed_lost_failure", false)
+            ThreadSafeConnection.<TestWorkspace>.builder("wild_zed_lost_failure", false)
                 .with_connection_initialize_query("PRAGMA FOREIGN_KEYS=true");
 
-        smol::block_on(builder.build()).unwrap();
+        smol.block_on(builder.build()).unwrap();
     }
 }

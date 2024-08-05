@@ -1,6 +1,6 @@
-use gpui::{prelude::*, Rgba, WindowAppearance};
+use gpui.{prelude.*, Rgba, WindowAppearance};
 
-use ui::prelude::*;
+use ui.prelude.*;
 
 #[derive(IntoElement)]
 pub struct WindowsWindowControls {
@@ -19,9 +19,9 @@ impl WindowsWindowControls {
 
     #[cfg(target_os = "windows")]
     fn get_font() -> &'static str {
-        use windows::Wdk::System::SystemServices::RtlGetVersion;
+        use windows.Wdk.System.SystemServices.RtlGetVersion;
 
-        let mut version = unsafe { std::mem::zeroed() };
+        let mut version = unsafe { std.mem.zeroed() };
         let status = unsafe { RtlGetVersion(&mut version) };
 
         if status.is_ok() && version.dwBuildNumber >= 22000 {
@@ -42,13 +42,13 @@ impl RenderOnce for WindowsWindowControls {
         };
 
         let button_hover_color = match cx.appearance() {
-            WindowAppearance::Light | WindowAppearance::VibrantLight => Rgba {
+            WindowAppearance.Light | WindowAppearance.VibrantLight => Rgba {
                 r: 0.1,
                 g: 0.1,
                 b: 0.1,
                 a: 0.2,
             },
-            WindowAppearance::Dark | WindowAppearance::VibrantDark => Rgba {
+            WindowAppearance.Dark | WindowAppearance.VibrantDark => Rgba {
                 r: 0.9,
                 g: 0.9,
                 b: 0.9,
@@ -58,30 +58,30 @@ impl RenderOnce for WindowsWindowControls {
 
         div()
             .id("windows-window-controls")
-            .font_family(Self::get_font())
+            .font_family(Self.get_font())
             .flex()
             .flex_row()
             .justify_center()
             .content_stretch()
             .max_h(self.button_height)
             .min_h(self.button_height)
-            .child(WindowsCaptionButton::new(
+            .child(WindowsCaptionButton.new(
                 "minimize",
-                WindowsCaptionButtonIcon::Minimize,
+                WindowsCaptionButtonIcon.Minimize,
                 button_hover_color,
             ))
-            .child(WindowsCaptionButton::new(
+            .child(WindowsCaptionButton.new(
                 "maximize-or-restore",
                 if cx.is_maximized() {
-                    WindowsCaptionButtonIcon::Restore
+                    WindowsCaptionButtonIcon.Restore
                 } else {
-                    WindowsCaptionButtonIcon::Maximize
+                    WindowsCaptionButtonIcon.Maximize
                 },
                 button_hover_color,
             ))
-            .child(WindowsCaptionButton::new(
+            .child(WindowsCaptionButton.new(
                 "close",
-                WindowsCaptionButtonIcon::Close,
+                WindowsCaptionButtonIcon.Close,
                 close_button_hover_color,
             ))
     }
@@ -139,10 +139,10 @@ impl RenderOnce for WindowsCaptionButton {
                 style.bg(active_color)
             })
             .child(match self.icon {
-                WindowsCaptionButtonIcon::Minimize => "\u{e921}",
-                WindowsCaptionButtonIcon::Restore => "\u{e923}",
-                WindowsCaptionButtonIcon::Maximize => "\u{e922}",
-                WindowsCaptionButtonIcon::Close => "\u{e8bb}",
+                WindowsCaptionButtonIcon.Minimize => "\u{e921}",
+                WindowsCaptionButtonIcon.Restore => "\u{e923}",
+                WindowsCaptionButtonIcon.Maximize => "\u{e922}",
+                WindowsCaptionButtonIcon.Close => "\u{e8bb}",
             })
     }
 }

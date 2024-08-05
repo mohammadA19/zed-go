@@ -1,3 +1,3 @@
 mod story;
 
-pub use story::*;
+pub use story.*;

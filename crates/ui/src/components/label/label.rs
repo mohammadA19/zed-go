@@ -1,6 +1,6 @@
-use gpui::{StyleRefinement, WindowContext};
+use gpui.{StyleRefinement, WindowContext};
 
-use crate::{prelude::*, LabelCommon, LabelLike, LabelSize, LineHeightStyle};
+use crate.{prelude.*, LabelCommon, LabelLike, LabelSize, LineHeightStyle};
 
 /// A struct representing a label element in the UI.
 ///
@@ -10,25 +10,25 @@ use crate::{prelude::*, LabelCommon, LabelLike, LabelSize, LineHeightStyle};
 /// # Examples
 ///
 /// ```
-/// use ui::prelude::*;
+/// use ui.prelude.*;
 ///
-/// Label::new("Hello, World!");
+/// Label.new("Hello, World!");
 /// ```
 ///
 /// **A colored label**, for example labeling a dangerous action:
 ///
 /// ```
-/// use ui::prelude::*;
+/// use ui.prelude.*;
 ///
-/// let my_label = Label::new("Delete").color(Color::Error);
+/// let my_label = Label.new("Delete").color(Color.Error);
 /// ```
 ///
 /// **A label with a strikethrough**, for example labeling something that has been deleted:
 ///
 /// ```
-/// use ui::prelude::*;
+/// use ui.prelude.*;
 ///
-/// let my_label = Label::new("Deleted").strikethrough(true);
+/// let my_label = Label.new("Deleted").strikethrough(true);
 /// ```
 #[derive(IntoElement)]
 pub struct Label {
@@ -43,13 +43,13 @@ impl Label {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// let my_label = Label::new("Hello, World!");
+    /// let my_label = Label.new("Hello, World!");
     /// ```
     pub fn new(label: impl Into<SharedString>) -> Self {
         Self {
-            base: LabelLike::new(),
+            base: LabelLike.new(),
             label: label.into(),
             single_line: false,
         }
@@ -60,9 +60,9 @@ impl Label {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// let my_label = Label::new("Hello, World!").single_line();
+    /// let my_label = Label.new("Hello, World!").single_line();
     /// ```
     pub fn single_line(mut self) -> Self {
         self.single_line = true;
@@ -76,7 +76,7 @@ impl Label {
         self.base.base.style()
     }
 
-    gpui::margin_style_methods!({
+    gpui.margin_style_methods!({
         visibility: pub
     });
 }
@@ -87,16 +87,16 @@ impl LabelCommon for Label {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// let my_label = Label::new("Hello, World!").size(LabelSize::Small);
+    /// let my_label = Label.new("Hello, World!").size(LabelSize.Small);
     /// ```
     fn size(mut self, size: LabelSize) -> Self {
         self.base = self.base.size(size);
         self
     }
 
-    fn weight(mut self, weight: gpui::FontWeight) -> Self {
+    fn weight(mut self, weight: gpui.FontWeight) -> Self {
         self.base = self.base.weight(weight);
         self
     }
@@ -106,9 +106,9 @@ impl LabelCommon for Label {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// let my_label = Label::new("Hello, World!").line_height_style(LineHeightStyle::UiLabel);
+    /// let my_label = Label.new("Hello, World!").line_height_style(LineHeightStyle.UiLabel);
     /// ```
     fn line_height_style(mut self, line_height_style: LineHeightStyle) -> Self {
         self.base = self.base.line_height_style(line_height_style);
@@ -120,9 +120,9 @@ impl LabelCommon for Label {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// let my_label = Label::new("Hello, World!").color(Color::Accent);
+    /// let my_label = Label.new("Hello, World!").color(Color.Accent);
     /// ```
     fn color(mut self, color: Color) -> Self {
         self.base = self.base.color(color);
@@ -134,9 +134,9 @@ impl LabelCommon for Label {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// let my_label = Label::new("Hello, World!").strikethrough(true);
+    /// let my_label = Label.new("Hello, World!").strikethrough(true);
     /// ```
     fn strikethrough(mut self, strikethrough: bool) -> Self {
         self.base = self.base.strikethrough(strikethrough);
@@ -148,9 +148,9 @@ impl LabelCommon for Label {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// let my_label = Label::new("Hello, World!").italic(true);
+    /// let my_label = Label.new("Hello, World!").italic(true);
     /// ```
     fn italic(mut self, italic: bool) -> Self {
         self.base = self.base.italic(italic);
@@ -161,7 +161,7 @@ impl LabelCommon for Label {
 impl RenderOnce for Label {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
         let target_label = if self.single_line {
-            SharedString::from(self.label.replace('\n', "␤"))
+            SharedString.from(self.label.replace('\n', "␤"))
         } else {
             self.label
         };

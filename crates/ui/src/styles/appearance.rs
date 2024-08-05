@@ -1,6 +1,6 @@
-use crate::prelude::*;
-use gpui::{WindowBackgroundAppearance, WindowContext};
-use theme::Appearance;
+use crate.prelude.*;
+use gpui.{WindowBackgroundAppearance, WindowContext};
+use theme.Appearance;
 
 /// Returns the current [Appearance].
 pub fn appearance(cx: &WindowContext) -> Appearance {
@@ -19,8 +19,8 @@ pub fn window_appearance(cx: &WindowContext) -> WindowBackgroundAppearance {
 /// transparent backgrounds.
 pub fn window_is_transparent(cx: &WindowContext) -> bool {
     match window_appearance(cx) {
-        WindowBackgroundAppearance::Transparent => true,
-        WindowBackgroundAppearance::Blurred => true,
+        WindowBackgroundAppearance.Transparent => true,
+        WindowBackgroundAppearance.Blurred => true,
         _ => false,
     }
 }

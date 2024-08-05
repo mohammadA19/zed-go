@@ -1,27 +1,27 @@
-use anyhow::{Context, Result};
-use fuzzy::{StringMatch, StringMatchCandidate};
-use git::repository::Branch;
-use gpui::{
+use anyhow.{Context, Result};
+use fuzzy.{StringMatch, StringMatchCandidate};
+use git.repository.Branch;
+use gpui.{
     actions, rems, AnyElement, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView,
     InteractiveElement, IntoElement, ParentElement, Render, SharedString, Styled, Subscription,
     Task, View, ViewContext, VisualContext, WindowContext,
 };
-use picker::{Picker, PickerDelegate};
-use std::{ops::Not, sync::Arc};
-use ui::{
+use picker.{Picker, PickerDelegate};
+use std.{ops.Not, sync.Arc};
+use ui.{
     h_flex, v_flex, Button, ButtonCommon, Clickable, Color, HighlightedLabel, Label, LabelCommon,
     LabelSize, ListItem, ListItemSpacing, Selectable,
 };
-use util::ResultExt;
-use workspace::notifications::NotificationId;
-use workspace::{ModalView, Toast, Workspace};
+use util.ResultExt;
+use workspace.notifications.NotificationId;
+use workspace.{ModalView, Toast, Workspace};
 
 actions!(branches, [OpenRecent]);
 
 pub fn init(cx: &mut AppContext) {
     cx.observe_new_views(|workspace: &mut Workspace, _| {
         workspace.register_action(|workspace, action, cx| {
-            BranchList::open(workspace, action, cx).log_err();
+            BranchList.open(workspace, action, cx).log_err();
         });
     })
     .detach();
@@ -35,7 +35,7 @@ pub struct BranchList {
 
 impl BranchList {
     fn new(delegate: BranchListDelegate, rem_width: f32, cx: &mut ViewContext<Self>) -> Self {
-        let picker = cx.new_view(|cx| Picker::uniform_list(delegate, cx));
+        let picker = cx.new_view(|cx| Picker.uniform_list(delegate, cx));
         let _subscription = cx.subscribe(&picker, |_, _, _, cx| cx.emit(DismissEvent));
         Self {
             picker,
@@ -49,8 +49,8 @@ impl BranchList {
         cx: &mut ViewContext<Workspace>,
     ) -> Result<()> {
         // Modal branch picker has a longer trailoff than a popover one.
-        let delegate = BranchListDelegate::new(workspace, cx.view().clone(), 70, cx)?;
-        workspace.toggle_modal(cx, |cx| BranchList::new(delegate, 34., cx));
+        let delegate = BranchListDelegate.new(workspace, cx.view().clone(), 70, cx)?;
+        workspace.toggle_modal(cx, |cx| BranchList.new(delegate, 34., cx));
 
         Ok(())
     }
@@ -71,7 +71,7 @@ impl Render for BranchList {
             .child(self.picker.clone())
             .on_mouse_down_out(cx.listener(|this, _, cx| {
                 this.picker.update(cx, |this, cx| {
-                    this.cancel(&Default::default(), cx);
+                    this.cancel(&Default.default(), cx);
                 })
             }))
     }
@@ -105,7 +105,7 @@ impl BranchListDelegate {
             workspace: handle,
             all_branches,
             selected_index: 0,
-            last_query: Default::default(),
+            last_query: Default.default(),
             branch_name_trailoff_after,
         })
     }
@@ -113,9 +113,9 @@ impl BranchListDelegate {
     fn display_error_toast(&self, message: String, cx: &mut WindowContext<'_>) {
         self.workspace.update(cx, |model, ctx| {
             struct GitCheckoutFailure;
-            let id = NotificationId::unique::<GitCheckoutFailure>();
+            let id = NotificationId.unique.<GitCheckoutFailure>();
 
-            model.show_toast(Toast::new(id, message), ctx)
+            model.show_toast(Toast.new(id, message), ctx)
         });
     }
 }
@@ -167,7 +167,7 @@ impl PickerDelegate for BranchListDelegate {
                         char_bag: command.name.chars().collect(),
                         string: command.name.into(),
                     })
-                    .collect::<Vec<StringMatchCandidate>>()
+                    .collect.<Vec<StringMatchCandidate>>()
             });
             let Some(candidates) = candidates.log_err() else {
                 return;
@@ -179,17 +179,17 @@ impl PickerDelegate for BranchListDelegate {
                     .map(|(index, candidate)| StringMatch {
                         candidate_id: index,
                         string: candidate.string,
-                        positions: Vec::new(),
+                        positions: Vec.new(),
                         score: 0.0,
                     })
                     .collect()
             } else {
-                fuzzy::match_strings(
+                fuzzy.match_strings(
                     &candidates,
                     &query,
                     true,
                     10000,
-                    &Default::default(),
+                    &Default.default(),
                     cx.background_executor().clone(),
                 )
                 .await
@@ -202,7 +202,7 @@ impl PickerDelegate for BranchListDelegate {
                         delegate.selected_index = 0;
                     } else {
                         delegate.selected_index =
-                            core::cmp::min(delegate.selected_index, delegate.matches.len() - 1);
+                            core.cmp.min(delegate.selected_index, delegate.matches.len() - 1);
                     }
                     delegate.last_query = query;
                 })
@@ -234,7 +234,7 @@ impl PickerDelegate for BranchListDelegate {
                     }
                     cx.emit(DismissEvent);
 
-                    Ok::<(), anyhow::Error>(())
+                    Ok.<(), anyhow.Error>(())
                 })
                 .log_err();
         })
@@ -250,10 +250,10 @@ impl PickerDelegate for BranchListDelegate {
         ix: usize,
         selected: bool,
         _cx: &mut ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem> {
+    ) -> Option<Self.ListItem> {
         let hit = &self.matches[ix];
         let shortened_branch_name =
-            util::truncate_and_trailoff(&hit.string, self.branch_name_trailoff_after);
+            util.truncate_and_trailoff(&hit.string, self.branch_name_trailoff_after);
         let highlights: Vec<_> = hit
             .positions
             .iter()
@@ -261,32 +261,32 @@ impl PickerDelegate for BranchListDelegate {
             .copied()
             .collect();
         Some(
-            ListItem::new(SharedString::from(format!("vcs-menu-{ix}")))
+            ListItem.new(SharedString.from(format!("vcs-menu-{ix}")))
                 .inset(true)
-                .spacing(ListItemSpacing::Sparse)
+                .spacing(ListItemSpacing.Sparse)
                 .selected(selected)
-                .start_slot(HighlightedLabel::new(shortened_branch_name, highlights)),
+                .start_slot(HighlightedLabel.new(shortened_branch_name, highlights)),
         )
     }
 
     fn render_header(&self, _: &mut ViewContext<Picker<Self>>) -> Option<AnyElement> {
         let label = if self.last_query.is_empty() {
-            Label::new("Recent Branches")
-                .size(LabelSize::Small)
+            Label.new("Recent Branches")
+                .size(LabelSize.Small)
                 .mt_1()
                 .ml_3()
                 .into_any_element()
         } else {
             let match_label = self.matches.is_empty().not().then(|| {
                 let suffix = if self.matches.len() == 1 { "" } else { "es" };
-                Label::new(format!("{} match{}", self.matches.len(), suffix))
-                    .color(Color::Muted)
-                    .size(LabelSize::Small)
+                Label.new(format!("{} match{}", self.matches.len(), suffix))
+                    .color(Color.Muted)
+                    .size(LabelSize.Small)
             });
             h_flex()
                 .px_3()
                 .justify_between()
-                .child(Label::new("Branches").size(LabelSize::Small))
+                .child(Label.new("Branches").size(LabelSize.Small))
                 .children(match_label)
                 .into_any_element()
         };
@@ -304,7 +304,7 @@ impl PickerDelegate for BranchListDelegate {
                 .pb_2()
                 .child(h_flex().w_full())
                 .child(
-                    Button::new("branch-picker-create-branch-button", "Create branch")
+                    Button.new("branch-picker-create-branch-button", "Create branch")
                         .on_click(cx.listener(|_, _, cx| {
                             cx.spawn(|picker, mut cx| async move {
                                 picker.update(&mut cx, |this, cx| {
@@ -324,13 +324,13 @@ impl PickerDelegate for BranchListDelegate {
                                         this.delegate.display_error_toast(format!("Failed to check branch '{current_pick}', check for conflicts or unstashed files"), cx);
                                         status?;
                                     }
-                                    this.cancel(&Default::default(), cx);
-                                    Ok::<(), anyhow::Error>(())
+                                    this.cancel(&Default.default(), cx);
+                                    Ok.<(), anyhow.Error>(())
                                 })
                             })
                             .detach_and_log_err(cx);
                         }))
-                        .style(ui::ButtonStyle::Filled),
+                        .style(ui.ButtonStyle.Filled),
                 )
                 .into_any_element(),
         )

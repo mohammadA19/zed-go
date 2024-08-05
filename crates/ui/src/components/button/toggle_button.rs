@@ -1,6 +1,6 @@
-use gpui::{AnyView, ClickEvent};
+use gpui.{AnyView, ClickEvent};
 
-use crate::{prelude::*, ButtonLike, ButtonLikeRounding, ElevationIndex};
+use crate.{prelude.*, ButtonLike, ButtonLikeRounding, ElevationIndex};
 
 /// The position of a [`ToggleButton`] within a group of buttons.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -26,7 +26,7 @@ pub struct ToggleButton {
 impl ToggleButton {
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
         Self {
-            base: ButtonLike::new(id),
+            base: ButtonLike.new(id),
             position_in_group: None,
             label: label.into(),
             label_color: None,
@@ -44,15 +44,15 @@ impl ToggleButton {
     }
 
     pub fn first(self) -> Self {
-        self.position_in_group(ToggleButtonPosition::First)
+        self.position_in_group(ToggleButtonPosition.First)
     }
 
     pub fn middle(self) -> Self {
-        self.position_in_group(ToggleButtonPosition::Middle)
+        self.position_in_group(ToggleButtonPosition.Middle)
     }
 
     pub fn last(self) -> Self {
-        self.position_in_group(ToggleButtonPosition::Last)
+        self.position_in_group(ToggleButtonPosition.Last)
     }
 }
 
@@ -83,7 +83,7 @@ impl Clickable for ToggleButton {
         self
     }
 
-    fn cursor_style(mut self, cursor_style: gpui::CursorStyle) -> Self {
+    fn cursor_style(mut self, cursor_style: gpui.CursorStyle) -> Self {
         self.base = self.base.cursor_style(cursor_style);
         self
     }
@@ -121,23 +121,23 @@ impl RenderOnce for ToggleButton {
         let is_selected = self.base.selected;
 
         let label_color = if is_disabled {
-            Color::Disabled
+            Color.Disabled
         } else if is_selected {
-            Color::Selected
+            Color.Selected
         } else {
             self.label_color.unwrap_or_default()
         };
 
         self.base
             .when_some(self.position_in_group, |this, position| match position {
-                ToggleButtonPosition::First => this.rounding(ButtonLikeRounding::Left),
-                ToggleButtonPosition::Middle => this.rounding(None),
-                ToggleButtonPosition::Last => this.rounding(ButtonLikeRounding::Right),
+                ToggleButtonPosition.First => this.rounding(ButtonLikeRounding.Left),
+                ToggleButtonPosition.Middle => this.rounding(None),
+                ToggleButtonPosition.Last => this.rounding(ButtonLikeRounding.Right),
             })
             .child(
-                Label::new(self.label)
+                Label.new(self.label)
                     .color(label_color)
-                    .line_height_style(LineHeightStyle::UiLabel),
+                    .line_height_style(LineHeightStyle.UiLabel),
             )
     }
 }

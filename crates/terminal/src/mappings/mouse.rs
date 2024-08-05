@@ -1,14 +1,14 @@
-use std::cmp::{self, max, min};
-use std::iter::repeat;
+use std.cmp.{self, max, min};
+use std.iter.repeat;
 
-use alacritty_terminal::grid::Dimensions;
+use alacritty_terminal.grid.Dimensions;
 /// Most of the code, and specifically the constants, in this are copied from Alacritty,
 /// with modifications for our circumstances
-use alacritty_terminal::index::{Column as GridCol, Line as GridLine, Point as AlacPoint, Side};
-use alacritty_terminal::term::TermMode;
-use gpui::{px, Modifiers, MouseButton, MouseMoveEvent, Pixels, Point, ScrollWheelEvent};
+use alacritty_terminal.index.{Column as GridCol, Line as GridLine, Point as AlacPoint, Side};
+use alacritty_terminal.term.TermMode;
+use gpui.{px, Modifiers, MouseButton, MouseMoveEvent, Pixels, Point, ScrollWheelEvent};
 
-use crate::TerminalSize;
+use crate.TerminalSize;
 
 enum MouseFormat {
     SGR,
@@ -17,12 +17,12 @@ enum MouseFormat {
 
 impl MouseFormat {
     fn from_mode(mode: TermMode) -> Self {
-        if mode.contains(TermMode::SGR_MOUSE) {
-            MouseFormat::SGR
-        } else if mode.contains(TermMode::UTF8_MOUSE) {
-            MouseFormat::Normal(true)
+        if mode.contains(TermMode.SGR_MOUSE) {
+            MouseFormat.SGR
+        } else if mode.contains(TermMode.UTF8_MOUSE) {
+            MouseFormat.Normal(true)
         } else {
-            MouseFormat::Normal(false)
+            MouseFormat.Normal(false)
         }
     }
 }
@@ -45,40 +45,40 @@ impl AlacMouseButton {
     fn from_move(e: &MouseMoveEvent) -> Self {
         match e.pressed_button {
             Some(b) => match b {
-                gpui::MouseButton::Left => AlacMouseButton::LeftMove,
-                gpui::MouseButton::Middle => AlacMouseButton::MiddleMove,
-                gpui::MouseButton::Right => AlacMouseButton::RightMove,
-                gpui::MouseButton::Navigate(_) => AlacMouseButton::Other,
+                gpui.MouseButton.Left => AlacMouseButton.LeftMove,
+                gpui.MouseButton.Middle => AlacMouseButton.MiddleMove,
+                gpui.MouseButton.Right => AlacMouseButton.RightMove,
+                gpui.MouseButton.Navigate(_) => AlacMouseButton.Other,
             },
-            None => AlacMouseButton::NoneMove,
+            None => AlacMouseButton.NoneMove,
         }
     }
 
     fn from_button(e: MouseButton) -> Self {
         match e {
-            gpui::MouseButton::Left => AlacMouseButton::LeftButton,
-            gpui::MouseButton::Right => AlacMouseButton::MiddleButton,
-            gpui::MouseButton::Middle => AlacMouseButton::RightButton,
-            gpui::MouseButton::Navigate(_) => AlacMouseButton::Other,
+            gpui.MouseButton.Left => AlacMouseButton.LeftButton,
+            gpui.MouseButton.Right => AlacMouseButton.MiddleButton,
+            gpui.MouseButton.Middle => AlacMouseButton.RightButton,
+            gpui.MouseButton.Navigate(_) => AlacMouseButton.Other,
         }
     }
 
     fn from_scroll(e: &ScrollWheelEvent) -> Self {
         let is_positive = match e.delta {
-            gpui::ScrollDelta::Pixels(pixels) => pixels.y > px(0.),
-            gpui::ScrollDelta::Lines(lines) => lines.y > 0.,
+            gpui.ScrollDelta.Pixels(pixels) => pixels.y > px(0.),
+            gpui.ScrollDelta.Lines(lines) => lines.y > 0.,
         };
 
         if is_positive {
-            AlacMouseButton::ScrollUp
+            AlacMouseButton.ScrollUp
         } else {
-            AlacMouseButton::ScrollDown
+            AlacMouseButton.ScrollDown
         }
     }
 
     fn is_other(&self) -> bool {
         match self {
-            AlacMouseButton::Other => true,
+            AlacMouseButton.Other => true,
             _ => false,
         }
     }
@@ -90,13 +90,13 @@ pub fn scroll_report(
     e: &ScrollWheelEvent,
     mode: TermMode,
 ) -> Option<impl Iterator<Item = Vec<u8>>> {
-    if mode.intersects(TermMode::MOUSE_MODE) {
+    if mode.intersects(TermMode.MOUSE_MODE) {
         mouse_report(
             point,
-            AlacMouseButton::from_scroll(e),
+            AlacMouseButton.from_scroll(e),
             true,
             e.modifiers,
-            MouseFormat::from_mode(mode),
+            MouseFormat.from_mode(mode),
         )
         .map(|report| repeat(report).take(max(scroll_lines, 1) as usize))
     } else {
@@ -107,7 +107,7 @@ pub fn scroll_report(
 pub fn alt_scroll(scroll_lines: i32) -> Vec<u8> {
     let cmd = if scroll_lines > 0 { b'A' } else { b'B' };
 
-    let mut content = Vec::with_capacity(scroll_lines.unsigned_abs() as usize * 3);
+    let mut content = Vec.with_capacity(scroll_lines.unsigned_abs() as usize * 3);
     for _ in 0..scroll_lines.abs() {
         content.push(0x1b);
         content.push(b'O');
@@ -118,19 +118,19 @@ pub fn alt_scroll(scroll_lines: i32) -> Vec<u8> {
 
 pub fn mouse_button_report(
     point: AlacPoint,
-    button: gpui::MouseButton,
+    button: gpui.MouseButton,
     modifiers: Modifiers,
     pressed: bool,
     mode: TermMode,
 ) -> Option<Vec<u8>> {
-    let button = AlacMouseButton::from_button(button);
-    if !button.is_other() && mode.intersects(TermMode::MOUSE_MODE) {
+    let button = AlacMouseButton.from_button(button);
+    if !button.is_other() && mode.intersects(TermMode.MOUSE_MODE) {
         mouse_report(
             point,
             button,
             pressed,
             modifiers,
-            MouseFormat::from_mode(mode),
+            MouseFormat.from_mode(mode),
         )
     } else {
         None
@@ -138,11 +138,11 @@ pub fn mouse_button_report(
 }
 
 pub fn mouse_moved_report(point: AlacPoint, e: &MouseMoveEvent, mode: TermMode) -> Option<Vec<u8>> {
-    let button = AlacMouseButton::from_move(e);
+    let button = AlacMouseButton.from_move(e);
 
-    if !button.is_other() && mode.intersects(TermMode::MOUSE_MOTION | TermMode::MOUSE_DRAG) {
+    if !button.is_other() && mode.intersects(TermMode.MOUSE_MOTION | TermMode.MOUSE_DRAG) {
         //Only drags are reported in drag mode, so block NoneMove.
-        if mode.contains(TermMode::MOUSE_DRAG) && matches!(button, AlacMouseButton::NoneMove) {
+        if mode.contains(TermMode.MOUSE_DRAG) && matches!(button, AlacMouseButton.NoneMove) {
             None
         } else {
             mouse_report(
@@ -150,7 +150,7 @@ pub fn mouse_moved_report(point: AlacPoint, e: &MouseMoveEvent, mode: TermMode) 
                 button,
                 true,
                 e.modifiers,
-                MouseFormat::from_mode(mode),
+                MouseFormat.from_mode(mode),
             )
         }
     } else {
@@ -168,29 +168,29 @@ pub fn grid_point_and_side(
     display_offset: usize,
 ) -> (AlacPoint, Side) {
     let mut col = GridCol((pos.x / cur_size.cell_width) as usize);
-    let cell_x = cmp::max(px(0.), pos.x) % cur_size.cell_width;
+    let cell_x = cmp.max(px(0.), pos.x) % cur_size.cell_width;
     let half_cell_width = cur_size.cell_width / 2.0;
     let mut side = if cell_x > half_cell_width {
-        Side::Right
+        Side.Right
     } else {
-        Side::Left
+        Side.Left
     };
 
     if col > cur_size.last_column() {
         col = cur_size.last_column();
-        side = Side::Right;
+        side = Side.Right;
     }
     let col = min(col, cur_size.last_column());
     let mut line = (pos.y / cur_size.line_height) as i32;
     if line > cur_size.bottommost_line() {
         line = cur_size.bottommost_line().0;
-        side = Side::Right;
+        side = Side.Right;
     } else if line < 0 {
-        side = Side::Left;
+        side = Side.Left;
     }
 
     (
-        AlacPoint::new(GridLine(line - display_offset as i32), col),
+        AlacPoint.new(GridLine(line - display_offset as i32), col),
         side,
     )
 }
@@ -219,10 +219,10 @@ fn mouse_report(
     }
 
     match format {
-        MouseFormat::SGR => {
+        MouseFormat.SGR => {
             Some(sgr_mouse_report(point, button as u8 + mods, pressed).into_bytes())
         }
-        MouseFormat::Normal(utf8) => {
+        MouseFormat.Normal(utf8) => {
             if pressed {
                 normal_mouse_report(point, button as u8 + mods, utf8)
             } else {

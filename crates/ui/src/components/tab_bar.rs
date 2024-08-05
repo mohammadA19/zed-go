@@ -1,7 +1,7 @@
-use gpui::{AnyElement, ScrollHandle};
-use smallvec::SmallVec;
+use gpui.{AnyElement, ScrollHandle};
+use smallvec.SmallVec;
 
-use crate::prelude::*;
+use crate.prelude.*;
 
 #[derive(IntoElement)]
 pub struct TabBar {
@@ -16,9 +16,9 @@ impl TabBar {
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
             id: id.into(),
-            start_children: SmallVec::new(),
-            children: SmallVec::new(),
-            end_children: SmallVec::new(),
+            start_children: SmallVec.new(),
+            children: SmallVec.new(),
+            end_children: SmallVec.new(),
             scroll_handle: None,
         }
     }
@@ -106,8 +106,8 @@ impl RenderOnce for TabBar {
                 this.child(
                     h_flex()
                         .flex_none()
-                        .gap(Spacing::Small.rems(cx))
-                        .px(Spacing::Medium.rems(cx))
+                        .gap(Spacing.Small.rems(cx))
+                        .px(Spacing.Medium.rems(cx))
                         .border_b_1()
                         .border_r_1()
                         .border_color(cx.theme().colors().border)
@@ -144,8 +144,8 @@ impl RenderOnce for TabBar {
                 this.child(
                     h_flex()
                         .flex_none()
-                        .gap(Spacing::Small.rems(cx))
-                        .px(Spacing::Medium.rems(cx))
+                        .gap(Spacing.Small.rems(cx))
+                        .px(Spacing.Medium.rems(cx))
                         .border_b_1()
                         .border_l_1()
                         .border_color(cx.theme().colors().border)

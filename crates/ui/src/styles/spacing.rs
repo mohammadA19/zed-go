@@ -1,8 +1,8 @@
-use gpui::{px, rems, Pixels, Rems, WindowContext};
-use settings::Settings;
-use theme::{ThemeSettings, UiDensity};
+use gpui.{px, rems, Pixels, Rems, WindowContext};
+use settings.Settings;
+use theme.{ThemeSettings, UiDensity};
 
-use crate::{rems_from_px, BASE_REM_SIZE_IN_PX};
+use crate.{rems_from_px, BASE_REM_SIZE_IN_PX};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Spacing {
@@ -39,36 +39,36 @@ pub enum Spacing {
 
 impl Spacing {
     pub fn spacing_ratio(self, cx: &WindowContext) -> f32 {
-        match ThemeSettings::get_global(cx).ui_density {
-            UiDensity::Compact => match self {
-                Spacing::None => 0.,
-                Spacing::XXSmall => 1. / BASE_REM_SIZE_IN_PX,
-                Spacing::XSmall => 1. / BASE_REM_SIZE_IN_PX,
-                Spacing::Small => 2. / BASE_REM_SIZE_IN_PX,
-                Spacing::Medium => 3. / BASE_REM_SIZE_IN_PX,
-                Spacing::Large => 4. / BASE_REM_SIZE_IN_PX,
-                Spacing::XLarge => 8. / BASE_REM_SIZE_IN_PX,
-                Spacing::XXLarge => 12. / BASE_REM_SIZE_IN_PX,
+        match ThemeSettings.get_global(cx).ui_density {
+            UiDensity.Compact => match self {
+                Spacing.None => 0.,
+                Spacing.XXSmall => 1. / BASE_REM_SIZE_IN_PX,
+                Spacing.XSmall => 1. / BASE_REM_SIZE_IN_PX,
+                Spacing.Small => 2. / BASE_REM_SIZE_IN_PX,
+                Spacing.Medium => 3. / BASE_REM_SIZE_IN_PX,
+                Spacing.Large => 4. / BASE_REM_SIZE_IN_PX,
+                Spacing.XLarge => 8. / BASE_REM_SIZE_IN_PX,
+                Spacing.XXLarge => 12. / BASE_REM_SIZE_IN_PX,
             },
-            UiDensity::Default => match self {
-                Spacing::None => 0.,
-                Spacing::XXSmall => 1. / BASE_REM_SIZE_IN_PX,
-                Spacing::XSmall => 2. / BASE_REM_SIZE_IN_PX,
-                Spacing::Small => 4. / BASE_REM_SIZE_IN_PX,
-                Spacing::Medium => 6. / BASE_REM_SIZE_IN_PX,
-                Spacing::Large => 8. / BASE_REM_SIZE_IN_PX,
-                Spacing::XLarge => 12. / BASE_REM_SIZE_IN_PX,
-                Spacing::XXLarge => 16. / BASE_REM_SIZE_IN_PX,
+            UiDensity.Default => match self {
+                Spacing.None => 0.,
+                Spacing.XXSmall => 1. / BASE_REM_SIZE_IN_PX,
+                Spacing.XSmall => 2. / BASE_REM_SIZE_IN_PX,
+                Spacing.Small => 4. / BASE_REM_SIZE_IN_PX,
+                Spacing.Medium => 6. / BASE_REM_SIZE_IN_PX,
+                Spacing.Large => 8. / BASE_REM_SIZE_IN_PX,
+                Spacing.XLarge => 12. / BASE_REM_SIZE_IN_PX,
+                Spacing.XXLarge => 16. / BASE_REM_SIZE_IN_PX,
             },
-            UiDensity::Comfortable => match self {
-                Spacing::None => 0.,
-                Spacing::XXSmall => 2. / BASE_REM_SIZE_IN_PX,
-                Spacing::XSmall => 3. / BASE_REM_SIZE_IN_PX,
-                Spacing::Small => 6. / BASE_REM_SIZE_IN_PX,
-                Spacing::Medium => 8. / BASE_REM_SIZE_IN_PX,
-                Spacing::Large => 10. / BASE_REM_SIZE_IN_PX,
-                Spacing::XLarge => 16. / BASE_REM_SIZE_IN_PX,
-                Spacing::XXLarge => 20. / BASE_REM_SIZE_IN_PX,
+            UiDensity.Comfortable => match self {
+                Spacing.None => 0.,
+                Spacing.XXSmall => 2. / BASE_REM_SIZE_IN_PX,
+                Spacing.XSmall => 3. / BASE_REM_SIZE_IN_PX,
+                Spacing.Small => 6. / BASE_REM_SIZE_IN_PX,
+                Spacing.Medium => 8. / BASE_REM_SIZE_IN_PX,
+                Spacing.Large => 10. / BASE_REM_SIZE_IN_PX,
+                Spacing.XLarge => 16. / BASE_REM_SIZE_IN_PX,
+                Spacing.XXLarge => 20. / BASE_REM_SIZE_IN_PX,
             },
         }
     }
@@ -78,14 +78,14 @@ impl Spacing {
     }
 
     pub fn px(self, cx: &WindowContext) -> Pixels {
-        let ui_font_size_f32: f32 = ThemeSettings::get_global(cx).ui_font_size.into();
+        let ui_font_size_f32: f32 = ThemeSettings.get_global(cx).ui_font_size.into();
 
         px(ui_font_size_f32 * self.spacing_ratio(cx))
     }
 }
 
 pub fn user_spacing_style(cx: &WindowContext) -> UiDensity {
-    ThemeSettings::get_global(cx).ui_density
+    ThemeSettings.get_global(cx).ui_density
 }
 
 pub fn custom_spacing(cx: &WindowContext, size: f32) -> Rems {

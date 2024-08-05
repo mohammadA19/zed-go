@@ -1,14 +1,14 @@
-use crate::{Supermaven, SupermavenCompletionStateId};
-use anyhow::Result;
-use client::telemetry::Telemetry;
-use editor::{Direction, InlineCompletionProvider};
-use futures::StreamExt as _;
-use gpui::{AppContext, EntityId, Model, ModelContext, Task};
-use language::{language_settings::all_language_settings, Anchor, Buffer};
-use std::{ops::Range, path::Path, sync::Arc, time::Duration};
-use text::ToPoint;
+use crate.{Supermaven, SupermavenCompletionStateId};
+use anyhow.Result;
+use client.telemetry.Telemetry;
+use editor.{Direction, InlineCompletionProvider};
+use futures.StreamExt as _;
+use gpui.{AppContext, EntityId, Model, ModelContext, Task};
+use language.{language_settings.all_language_settings, Anchor, Buffer};
+use std.{ops.Range, path.Path, sync.Arc, time.Duration};
+use text.ToPoint;
 
-pub const DEBOUNCE_TIMEOUT: Duration = Duration::from_millis(75);
+pub const DEBOUNCE_TIMEOUT: Duration = Duration.from_millis(75);
 
 pub struct SupermavenCompletionProvider {
     supermaven: Model<Supermaven>,
@@ -26,7 +26,7 @@ impl SupermavenCompletionProvider {
             buffer_id: None,
             completion_id: None,
             file_extension: None,
-            pending_refresh: Task::ready(Ok(())),
+            pending_refresh: Task.ready(Ok(())),
             telemetry: None,
         }
     }
@@ -78,7 +78,7 @@ impl InlineCompletionProvider for SupermavenCompletionProvider {
                     this.buffer_id = Some(buffer_handle.entity_id());
                     this.file_extension = buffer_handle.read(cx).file().and_then(|file| {
                         Some(
-                            Path::new(file.file_name(cx))
+                            Path.new(file.file_name(cx))
                                 .extension()?
                                 .to_str()?
                                 .to_string(),
@@ -104,13 +104,13 @@ impl InlineCompletionProvider for SupermavenCompletionProvider {
         if self.completion_id.is_some() {
             if let Some(telemetry) = self.telemetry.as_ref() {
                 telemetry.report_inline_completion_event(
-                    Self::name().to_string(),
+                    Self.name().to_string(),
                     true,
                     self.file_extension.clone(),
                 );
             }
         }
-        self.pending_refresh = Task::ready(Ok(()));
+        self.pending_refresh = Task.ready(Ok(()));
         self.completion_id = None;
     }
 
@@ -123,7 +123,7 @@ impl InlineCompletionProvider for SupermavenCompletionProvider {
             if self.completion_id.is_some() {
                 if let Some(telemetry) = self.telemetry.as_ref() {
                     telemetry.report_inline_completion_event(
-                        Self::name().to_string(),
+                        Self.name().to_string(),
                         false,
                         self.file_extension.clone(),
                     );
@@ -131,7 +131,7 @@ impl InlineCompletionProvider for SupermavenCompletionProvider {
             }
         }
 
-        self.pending_refresh = Task::ready(Ok(()));
+        self.pending_refresh = Task.ready(Ok(()));
         self.completion_id = None;
     }
 

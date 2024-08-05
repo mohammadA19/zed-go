@@ -1,5 +1,5 @@
 mod intelephense;
 mod phpactor;
 
-pub use intelephense::*;
-pub use phpactor::*;
+pub use intelephense.*;
+pub use phpactor.*;

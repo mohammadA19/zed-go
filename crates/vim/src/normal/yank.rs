@@ -1,24 +1,24 @@
-use std::time::Duration;
+use std.time.Duration;
 
-use crate::{
-    motion::Motion,
-    object::Object,
-    state::{Mode, Register},
+use crate.{
+    motion.Motion,
+    object.Object,
+    state.{Mode, Register},
     Vim,
 };
-use collections::HashMap;
-use editor::{ClipboardSelection, Editor};
-use gpui::WindowContext;
-use language::Point;
-use multi_buffer::MultiBufferRow;
-use ui::ViewContext;
+use collections.HashMap;
+use editor.{ClipboardSelection, Editor};
+use gpui.WindowContext;
+use language.Point;
+use multi_buffer.MultiBufferRow;
+use ui.ViewContext;
 
 pub fn yank_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &mut WindowContext) {
     vim.update_active_editor(cx, |vim, editor, cx| {
         let text_layout_details = editor.text_layout_details(cx);
         editor.transact(cx, |editor, cx| {
             editor.set_clip_at_line_ends(false, cx);
-            let mut original_positions: HashMap<_, _> = Default::default();
+            let mut original_positions: HashMap<_, _> = Default.default();
             editor.change_selections(None, cx, |s| {
                 s.move_with(|map, selection| {
                     let original_position = (selection.head(), selection.goal);
@@ -41,7 +41,7 @@ pub fn yank_object(vim: &mut Vim, object: Object, around: bool, cx: &mut WindowC
     vim.update_active_editor(cx, |vim, editor, cx| {
         editor.transact(cx, |editor, cx| {
             editor.set_clip_at_line_ends(false, cx);
-            let mut original_positions: HashMap<_, _> = Default::default();
+            let mut original_positions: HashMap<_, _> = Default.default();
             editor.change_selections(None, cx, |s| {
                 s.move_with(|map, selection| {
                     let original_position = (selection.head(), selection.goal);
@@ -89,9 +89,9 @@ fn copy_selections_content_internal(
 ) {
     let selections = editor.selections.all_adjusted(cx);
     let buffer = editor.buffer().read(cx).snapshot(cx);
-    let mut text = String::new();
-    let mut clipboard_selections = Vec::with_capacity(selections.len());
-    let mut ranges_to_highlight = Vec::new();
+    let mut text = String.new();
+    let mut clipboard_selections = Vec.with_capacity(selections.len());
+    let mut ranges_to_highlight = Vec.new();
 
     vim.update_state(|state| {
         state.marks.insert(
@@ -130,10 +130,10 @@ fn copy_selections_content_internal(
                 && end.row == buffer.max_buffer_row().0
                 && buffer.max_point().column > 0
                 && start.row < buffer.max_buffer_row().0
-                && start == Point::new(start.row, buffer.line_len(MultiBufferRow(start.row)));
+                && start == Point.new(start.row, buffer.line_len(MultiBufferRow(start.row)));
 
             if is_last_line {
-                start = Point::new(start.row + 1, 0);
+                start = Point.new(start.row + 1, 0);
             }
 
             let start_anchor = buffer.anchor_after(start);
@@ -166,21 +166,21 @@ fn copy_selections_content_internal(
         cx,
     );
 
-    if !is_yank || vim.state().mode == Mode::Visual {
+    if !is_yank || vim.state().mode == Mode.Visual {
         return;
     }
 
-    editor.highlight_background::<HighlightOnYank>(
+    editor.highlight_background.<HighlightOnYank>(
         &ranges_to_highlight,
         |colors| colors.editor_document_highlight_read_background,
         cx,
     );
     cx.spawn(|this, mut cx| async move {
         cx.background_executor()
-            .timer(Duration::from_millis(200))
+            .timer(Duration.from_millis(200))
             .await;
         this.update(&mut cx, |editor, cx| {
-            editor.clear_background_highlights::<HighlightOnYank>(cx)
+            editor.clear_background_highlights.<HighlightOnYank>(cx)
         })
         .ok();
     })

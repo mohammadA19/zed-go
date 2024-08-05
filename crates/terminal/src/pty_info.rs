@@ -1,14 +1,14 @@
-use alacritty_terminal::tty::Pty;
+use alacritty_terminal.tty.Pty;
 #[cfg(target_os = "windows")]
-use std::num::NonZeroU32;
+use std.num.NonZeroU32;
 #[cfg(unix)]
-use std::os::fd::AsRawFd;
-use std::path::PathBuf;
+use std.os.fd.AsRawFd;
+use std.path.PathBuf;
 
 #[cfg(target_os = "windows")]
-use windows::Win32::{Foundation::HANDLE, System::Threading::GetProcessId};
+use windows.Win32.{Foundation.HANDLE, System.Threading.GetProcessId};
 
-use sysinfo::{Pid, Process, ProcessRefreshKind, RefreshKind, System, UpdateKind};
+use sysinfo.{Pid, Process, ProcessRefreshKind, RefreshKind, System, UpdateKind};
 
 struct ProcessIdGetter {
     handle: i32,
@@ -25,11 +25,11 @@ impl ProcessIdGetter {
     }
 
     fn pid(&self) -> Option<Pid> {
-        let pid = unsafe { libc::tcgetpgrp(self.handle) };
+        let pid = unsafe { libc.tcgetpgrp(self.handle) };
         if pid < 0 {
-            return Some(Pid::from_u32(self.fallback_pid));
+            return Some(Pid.from_u32(self.fallback_pid));
         }
-        Some(Pid::from_u32(pid as u32))
+        Some(Pid.from_u32(pid as u32))
     }
 }
 
@@ -39,12 +39,12 @@ impl ProcessIdGetter {
         let child = pty.child_watcher();
         let handle = child.raw_handle();
         let fallback_pid = child.pid().unwrap_or_else(|| unsafe {
-            NonZeroU32::new_unchecked(GetProcessId(HANDLE(handle as _)))
+            NonZeroU32.new_unchecked(GetProcessId(HANDLE(handle as _)))
         });
 
         ProcessIdGetter {
             handle: handle as i32,
-            fallback_pid: u32::from(fallback_pid),
+            fallback_pid: u32.from(fallback_pid),
         }
     }
 
@@ -58,9 +58,9 @@ impl ProcessIdGetter {
             if self.fallback_pid == 0 {
                 return None;
             }
-            return Some(Pid::from_u32(self.fallback_pid));
+            return Some(Pid.from_u32(self.fallback_pid));
         }
-        Some(Pid::from_u32(pid))
+        Some(Pid.from_u32(pid))
     }
 }
 
@@ -81,17 +81,17 @@ pub struct PtyProcessInfo {
 
 impl PtyProcessInfo {
     pub fn new(pty: &Pty) -> PtyProcessInfo {
-        let process_refresh_kind = ProcessRefreshKind::new()
-            .with_cmd(UpdateKind::Always)
-            .with_cwd(UpdateKind::Always)
-            .with_exe(UpdateKind::Always);
-        let refresh_kind = RefreshKind::new().with_processes(process_refresh_kind);
-        let system = System::new_with_specifics(refresh_kind);
+        let process_refresh_kind = ProcessRefreshKind.new()
+            .with_cmd(UpdateKind.Always)
+            .with_cwd(UpdateKind.Always)
+            .with_exe(UpdateKind.Always);
+        let refresh_kind = RefreshKind.new().with_processes(process_refresh_kind);
+        let system = System.new_with_specifics(refresh_kind);
 
         PtyProcessInfo {
             system,
             refresh_kind: process_refresh_kind,
-            pid_getter: ProcessIdGetter::new(pty),
+            pid_getter: ProcessIdGetter.new(pty),
             current: None,
         }
     }
@@ -113,7 +113,7 @@ impl PtyProcessInfo {
         let cwd = process
             .cwd()
             .take()
-            .map_or(PathBuf::new(), |p| p.to_owned());
+            .map_or(PathBuf.new(), |p| p.to_owned());
 
         let info = ProcessInfo {
             name: process.name().to_owned(),

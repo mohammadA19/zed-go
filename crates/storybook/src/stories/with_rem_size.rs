@@ -1,23 +1,23 @@
-use gpui::{AnyElement, Hsla, Render};
-use story::Story;
+use gpui.{AnyElement, Hsla, Render};
+use story.Story;
 
-use ui::{prelude::*, WithRemSize};
+use ui.{prelude.*, WithRemSize};
 
 pub struct WithRemSizeStory;
 
 impl Render for WithRemSizeStory {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        Story::container().child(
-            Example::new(16., gpui::red())
+        Story.container().child(
+            Example.new(16., gpui.red())
                 .child(
-                    Example::new(24., gpui::green())
-                        .child(Example::new(8., gpui::blue()))
-                        .child(Example::new(16., gpui::yellow())),
+                    Example.new(24., gpui.green())
+                        .child(Example.new(8., gpui.blue()))
+                        .child(Example.new(16., gpui.yellow())),
                 )
                 .child(
-                    Example::new(12., gpui::green())
-                        .child(Example::new(48., gpui::blue()))
-                        .child(Example::new(16., gpui::yellow())),
+                    Example.new(12., gpui.green())
+                        .child(Example.new(48., gpui.blue()))
+                        .child(Example.new(16., gpui.yellow())),
                 ),
         )
     }

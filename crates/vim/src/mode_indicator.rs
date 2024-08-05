@@ -1,8 +1,8 @@
-use gpui::{div, Element, Render, Subscription, ViewContext};
-use itertools::Itertools;
-use workspace::{item::ItemHandle, ui::prelude::*, StatusItemView};
+use gpui.{div, Element, Render, Subscription, ViewContext};
+use itertools.Itertools;
+use workspace.{item.ItemHandle, ui.prelude.*, StatusItemView};
 
-use crate::{state::Mode, Vim};
+use crate.{state.Mode, Vim};
 
 /// The ModeIndicator displays the current mode in the status bar.
 pub struct ModeIndicator {
@@ -16,7 +16,7 @@ impl ModeIndicator {
     /// Construct a new mode indicator in this window.
     pub fn new(cx: &mut ViewContext<Self>) -> Self {
         let _subscriptions = vec![
-            cx.observe_global::<Vim>(|this, cx| this.update_mode(cx)),
+            cx.observe_global.<Vim>(|this, cx| this.update_mode(cx)),
             cx.observe_pending_input(|this, cx| {
                 this.update_pending_keys(cx);
                 cx.notify();
@@ -57,7 +57,7 @@ impl ModeIndicator {
 
     fn vim<'a>(&self, cx: &'a mut ViewContext<Self>) -> Option<&'a Vim> {
         // In some tests Vim isn't enabled, so we use try_global.
-        cx.try_global::<Vim>().filter(|vim| vim.enabled)
+        cx.try_global.<Vim>().filter(|vim| vim.enabled)
     }
 
     fn current_operators_description(&self, vim: &Vim) -> String {
@@ -74,7 +74,7 @@ impl ModeIndicator {
                     .map(|item| item.id().to_string()),
             )
             .chain(vim.state().post_count.map(|count| format!("{}", count)))
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
             .join("")
     }
 }
@@ -87,9 +87,9 @@ impl Render for ModeIndicator {
 
         let pending = self.pending_keys.as_ref().unwrap_or(&self.operators);
 
-        Label::new(format!("{} -- {} --", pending, mode))
-            .size(LabelSize::Small)
-            .line_height_style(LineHeightStyle::UiLabel)
+        Label.new(format!("{} -- {} --", pending, mode))
+            .size(LabelSize.Small)
+            .line_height_style(LineHeightStyle.UiLabel)
             .into_any_element()
     }
 }

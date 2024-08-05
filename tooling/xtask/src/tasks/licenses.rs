@@ -1,9 +1,9 @@
-use std::path::{Path, PathBuf};
+use std.path.{Path, PathBuf};
 
-use anyhow::{anyhow, Result};
-use clap::Parser;
+use anyhow.{anyhow, Result};
+use clap.Parser;
 
-use crate::workspace::load_workspace;
+use crate.workspace.load_workspace;
 
 #[derive(Parser)]
 pub struct LicensesArgs {}

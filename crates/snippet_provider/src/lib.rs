@@ -1,23 +1,23 @@
 mod format;
 mod registry;
 
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-    time::Duration,
+use std.{
+    path.{Path, PathBuf},
+    sync.Arc,
+    time.Duration,
 };
 
-use anyhow::Result;
-use collections::{BTreeMap, BTreeSet, HashMap};
-use format::VSSnippetsFile;
-use fs::Fs;
-use futures::stream::StreamExt;
-use gpui::{AppContext, AsyncAppContext, Context, Model, ModelContext, Task, WeakModel};
-pub use registry::*;
-use util::ResultExt;
+use anyhow.Result;
+use collections.{BTreeMap, BTreeSet, HashMap};
+use format.VSSnippetsFile;
+use fs.Fs;
+use futures.stream.StreamExt;
+use gpui.{AppContext, AsyncAppContext, Context, Model, ModelContext, Task, WeakModel};
+pub use registry.*;
+use util.ResultExt;
 
 pub fn init(cx: &mut AppContext) {
-    SnippetRegistry::init_global(cx);
+    SnippetRegistry.init_global(cx);
 }
 
 // Is `None` if the snippet file is global.
@@ -40,10 +40,10 @@ fn file_to_snippets(file_contents: VSSnippetsFile) -> Vec<Arc<Snippet>> {
             .description
             .map(|description| description.to_string());
         let body = snippet.body.to_string();
-        if snippet::Snippet::parse(&body).log_err().is_none() {
+        if snippet.Snippet.parse(&body).log_err().is_none() {
             continue;
         };
-        snippets.push(Arc::new(Snippet {
+        snippets.push(Arc.new(Snippet {
             body,
             prefix: prefixes,
             description,
@@ -96,7 +96,7 @@ async fn process_updates(
                 let Some(file_contents) = contents else {
                     return;
                 };
-                let Ok(as_json) = serde_json::from_str::<VSSnippetsFile>(&file_contents) else {
+                let Ok(as_json) = serde_json.from_str.<VSSnippetsFile>(&file_contents) else {
                     return;
                 };
                 let snippets = file_to_snippets(as_json);
@@ -118,10 +118,10 @@ async fn initial_scan(
     let entries = fs.read_dir(&path).await;
     if let Ok(entries) = entries {
         let entries = entries
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
             .await
             .into_iter()
-            .collect::<Result<Vec<_>>>()?;
+            .collect.<Result<Vec<_>>>()?;
         process_updates(this, entries, cx).await?;
     }
     Ok(())
@@ -141,7 +141,7 @@ impl SnippetProvider {
         cx.new_model(move |cx| {
             let mut this = Self {
                 fs,
-                snippets: Default::default(),
+                snippets: Default.default(),
             };
 
             let mut task_handles = vec![];
@@ -149,7 +149,7 @@ impl SnippetProvider {
                 task_handles.push(this.watch_directory(&dir, cx));
             }
             cx.spawn(|_, _| async move {
-                futures::future::join_all(task_handles).await;
+                futures.future.join_all(task_handles).await;
             })
             .detach();
 
@@ -159,12 +159,12 @@ impl SnippetProvider {
 
     /// Add directory to be watched for content changes
     fn watch_directory(&mut self, path: &Path, cx: &mut ModelContext<Self>) -> Task<Result<()>> {
-        let path: Arc<Path> = Arc::from(path);
+        let path: Arc<Path> = Arc.from(path);
 
         cx.spawn(|this, mut cx| async move {
             let fs = this.update(&mut cx, |this, _| this.fs.clone())?;
             let watched_path = path.clone();
-            let watcher = fs.watch(&watched_path, Duration::from_secs(1));
+            let watcher = fs.watch(&watched_path, Duration.from_secs(1));
             initial_scan(this.clone(), path, cx.clone()).await?;
 
             let (mut entries, _) = watcher.await;
@@ -189,7 +189,7 @@ impl SnippetProvider {
             .flat_map(|(_, snippets)| snippets.into_iter())
             .collect();
 
-        let Some(registry) = SnippetRegistry::try_global(cx) else {
+        let Some(registry) = SnippetRegistry.try_global(cx) else {
             return user_snippets;
         };
 

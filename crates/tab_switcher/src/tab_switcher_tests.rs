@@ -1,22 +1,22 @@
-use super::*;
-use editor::Editor;
-use gpui::{TestAppContext, VisualTestContext};
-use menu::SelectPrev;
-use project::{Project, ProjectPath};
-use serde_json::json;
-use std::path::Path;
-use workspace::{AppState, Workspace};
+use super.*;
+use editor.Editor;
+use gpui.{TestAppContext, VisualTestContext};
+use menu.SelectPrev;
+use project.{Project, ProjectPath};
+use serde_json.json;
+use std.path.Path;
+use workspace.{AppState, Workspace};
 
-#[ctor::ctor]
+#[ctor.ctor]
 fn init_logger() {
-    if std::env::var("RUST_LOG").is_ok() {
-        env_logger::init();
+    if std.env.var("RUST_LOG").is_ok() {
+        env_logger.init();
     }
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_open_with_prev_tab_selected_and_cycle_on_toggle_action(
-    cx: &mut gpui::TestAppContext,
+    cx: &mut gpui.TestAppContext,
 ) {
     let app_state = init_test(cx);
 
@@ -34,8 +34,8 @@ async fn test_open_with_prev_tab_selected_and_cycle_on_toggle_action(
         )
         .await;
 
-    let project = Project::test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
-    let (workspace, cx) = cx.add_window_view(|cx| Workspace::test_new(project.clone(), cx));
+    let project = Project.test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
+    let (workspace, cx) = cx.add_window_view(|cx| Workspace.test_new(project.clone(), cx));
 
     let tab_1 = open_buffer("1.txt", &workspace, cx).await;
     let tab_2 = open_buffer("2.txt", &workspace, cx).await;
@@ -72,8 +72,8 @@ async fn test_open_with_prev_tab_selected_and_cycle_on_toggle_action(
     });
 }
 
-#[gpui::test]
-async fn test_open_with_last_tab_selected(cx: &mut gpui::TestAppContext) {
+#[gpui.test]
+async fn test_open_with_last_tab_selected(cx: &mut gpui.TestAppContext) {
     let app_state = init_test(cx);
 
     app_state
@@ -89,8 +89,8 @@ async fn test_open_with_last_tab_selected(cx: &mut gpui::TestAppContext) {
         )
         .await;
 
-    let project = Project::test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
-    let (workspace, cx) = cx.add_window_view(|cx| Workspace::test_new(project.clone(), cx));
+    let project = Project.test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
+    let (workspace, cx) = cx.add_window_view(|cx| Workspace.test_new(project.clone(), cx));
 
     let tab_1 = open_buffer("1.txt", &workspace, cx).await;
     let tab_2 = open_buffer("2.txt", &workspace, cx).await;
@@ -106,8 +106,8 @@ async fn test_open_with_last_tab_selected(cx: &mut gpui::TestAppContext) {
     });
 }
 
-#[gpui::test]
-async fn test_open_item_on_modifiers_release(cx: &mut gpui::TestAppContext) {
+#[gpui.test]
+async fn test_open_item_on_modifiers_release(cx: &mut gpui.TestAppContext) {
     let app_state = init_test(cx);
 
     app_state
@@ -122,13 +122,13 @@ async fn test_open_item_on_modifiers_release(cx: &mut gpui::TestAppContext) {
         )
         .await;
 
-    let project = Project::test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
-    let (workspace, cx) = cx.add_window_view(|cx| Workspace::test_new(project.clone(), cx));
+    let project = Project.test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
+    let (workspace, cx) = cx.add_window_view(|cx| Workspace.test_new(project.clone(), cx));
 
     let tab_1 = open_buffer("1.txt", &workspace, cx).await;
     let tab_2 = open_buffer("2.txt", &workspace, cx).await;
 
-    cx.simulate_modifiers_change(Modifiers::control());
+    cx.simulate_modifiers_change(Modifiers.control());
     let tab_switcher = open_tab_switcher(false, &workspace, cx);
     tab_switcher.update(cx, |tab_switcher, _| {
         assert_eq!(tab_switcher.delegate.matches.len(), 2);
@@ -136,34 +136,34 @@ async fn test_open_item_on_modifiers_release(cx: &mut gpui::TestAppContext) {
         assert_match_selection(tab_switcher, 1, tab_1.boxed_clone());
     });
 
-    cx.simulate_modifiers_change(Modifiers::none());
+    cx.simulate_modifiers_change(Modifiers.none());
     cx.read(|cx| {
-        let active_editor = workspace.read(cx).active_item_as::<Editor>(cx).unwrap();
+        let active_editor = workspace.read(cx).active_item_as.<Editor>(cx).unwrap();
         assert_eq!(active_editor.read(cx).title(cx), "1.txt");
     });
     assert_tab_switcher_is_closed(workspace, cx);
 }
 
-#[gpui::test]
-async fn test_open_on_empty_pane(cx: &mut gpui::TestAppContext) {
+#[gpui.test]
+async fn test_open_on_empty_pane(cx: &mut gpui.TestAppContext) {
     let app_state = init_test(cx);
     app_state.fs.as_fake().insert_tree("/root", json!({})).await;
 
-    let project = Project::test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
-    let (workspace, cx) = cx.add_window_view(|cx| Workspace::test_new(project.clone(), cx));
+    let project = Project.test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
+    let (workspace, cx) = cx.add_window_view(|cx| Workspace.test_new(project.clone(), cx));
 
-    cx.simulate_modifiers_change(Modifiers::control());
+    cx.simulate_modifiers_change(Modifiers.control());
     let tab_switcher = open_tab_switcher(false, &workspace, cx);
     tab_switcher.update(cx, |tab_switcher, _| {
         assert!(tab_switcher.delegate.matches.is_empty());
     });
 
-    cx.simulate_modifiers_change(Modifiers::none());
+    cx.simulate_modifiers_change(Modifiers.none());
     assert_tab_switcher_is_closed(workspace, cx);
 }
 
-#[gpui::test]
-async fn test_open_with_single_item(cx: &mut gpui::TestAppContext) {
+#[gpui.test]
+async fn test_open_with_single_item(cx: &mut gpui.TestAppContext) {
     let app_state = init_test(cx);
     app_state
         .fs
@@ -171,8 +171,8 @@ async fn test_open_with_single_item(cx: &mut gpui::TestAppContext) {
         .insert_tree("/root", json!({"1.txt": "Single file"}))
         .await;
 
-    let project = Project::test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
-    let (workspace, cx) = cx.add_window_view(|cx| Workspace::test_new(project.clone(), cx));
+    let project = Project.test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
+    let (workspace, cx) = cx.add_window_view(|cx| Workspace.test_new(project.clone(), cx));
 
     let tab = open_buffer("1.txt", &workspace, cx).await;
 
@@ -183,8 +183,8 @@ async fn test_open_with_single_item(cx: &mut gpui::TestAppContext) {
     });
 }
 
-#[gpui::test]
-async fn test_close_selected_item(cx: &mut gpui::TestAppContext) {
+#[gpui.test]
+async fn test_close_selected_item(cx: &mut gpui.TestAppContext) {
     let app_state = init_test(cx);
     app_state
         .fs
@@ -198,13 +198,13 @@ async fn test_close_selected_item(cx: &mut gpui::TestAppContext) {
         )
         .await;
 
-    let project = Project::test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
-    let (workspace, cx) = cx.add_window_view(|cx| Workspace::test_new(project.clone(), cx));
+    let project = Project.test(app_state.fs.clone(), ["/root".as_ref()], cx).await;
+    let (workspace, cx) = cx.add_window_view(|cx| Workspace.test_new(project.clone(), cx));
 
     let tab_1 = open_buffer("1.txt", &workspace, cx).await;
     let tab_2 = open_buffer("2.txt", &workspace, cx).await;
 
-    cx.simulate_modifiers_change(Modifiers::control());
+    cx.simulate_modifiers_change(Modifiers.control());
     let tab_switcher = open_tab_switcher(false, &workspace, cx);
     tab_switcher.update(cx, |tab_switcher, _| {
         assert_eq!(tab_switcher.delegate.matches.len(), 2);
@@ -212,7 +212,7 @@ async fn test_close_selected_item(cx: &mut gpui::TestAppContext) {
         assert_match_selection(tab_switcher, 1, tab_1.boxed_clone());
     });
 
-    cx.simulate_modifiers_change(Modifiers::control());
+    cx.simulate_modifiers_change(Modifiers.control());
     cx.dispatch_action(CloseSelectedItem);
     tab_switcher.update(cx, |tab_switcher, _| {
         assert_eq!(tab_switcher.delegate.matches.len(), 1);
@@ -220,9 +220,9 @@ async fn test_close_selected_item(cx: &mut gpui::TestAppContext) {
     });
 
     // Still switches tab on modifiers release
-    cx.simulate_modifiers_change(Modifiers::none());
+    cx.simulate_modifiers_change(Modifiers.none());
     cx.read(|cx| {
-        let active_editor = workspace.read(cx).active_item_as::<Editor>(cx).unwrap();
+        let active_editor = workspace.read(cx).active_item_as.<Editor>(cx).unwrap();
         assert_eq!(active_editor.read(cx).title(cx), "2.txt");
     });
     assert_tab_switcher_is_closed(workspace, cx);
@@ -230,13 +230,13 @@ async fn test_close_selected_item(cx: &mut gpui::TestAppContext) {
 
 fn init_test(cx: &mut TestAppContext) -> Arc<AppState> {
     cx.update(|cx| {
-        let state = AppState::test(cx);
-        theme::init(theme::LoadThemes::JustBase, cx);
-        language::init(cx);
-        super::init(cx);
-        editor::init(cx);
-        workspace::init_settings(cx);
-        Project::init_settings(cx);
+        let state = AppState.test(cx);
+        theme.init(theme.LoadThemes.JustBase, cx);
+        language.init(cx);
+        super.init(cx);
+        editor.init(cx);
+        workspace.init_settings(cx);
+        Project.init_settings(cx);
         state
     })
 }
@@ -258,7 +258,7 @@ fn get_active_tab_switcher(
 ) -> View<Picker<TabSwitcherDelegate>> {
     workspace.update(cx, |workspace, cx| {
         workspace
-            .active_modal::<TabSwitcher>(cx)
+            .active_modal.<TabSwitcher>(cx)
             .expect("tab switcher is not open")
             .read(cx)
             .picker
@@ -269,7 +269,7 @@ fn get_active_tab_switcher(
 async fn open_buffer(
     file_path: &str,
     workspace: &View<Workspace>,
-    cx: &mut gpui::VisualTestContext,
+    cx: &mut gpui.VisualTestContext,
 ) -> Box<dyn ItemHandle> {
     let project = workspace.update(cx, |workspace, _| workspace.project().clone());
     let worktree_id = project.update(cx, |project, cx| {
@@ -278,7 +278,7 @@ async fn open_buffer(
     });
     let project_path = ProjectPath {
         worktree_id,
-        path: Arc::from(Path::new(file_path)),
+        path: Arc.from(Path.new(file_path)),
     };
     workspace
         .update(cx, move |workspace, cx| {
@@ -320,7 +320,7 @@ fn assert_match_at_position(
 fn assert_tab_switcher_is_closed(workspace: View<Workspace>, cx: &mut VisualTestContext) {
     workspace.update(cx, |workspace, cx| {
         assert!(
-            workspace.active_modal::<TabSwitcher>(cx).is_none(),
+            workspace.active_modal.<TabSwitcher>(cx).is_none(),
             "tab switcher is still open"
         );
     });

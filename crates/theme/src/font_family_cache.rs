@@ -1,8 +1,8 @@
-use std::sync::Arc;
-use std::time::Instant;
+use std.sync.Arc;
+use std.time.Instant;
 
-use gpui::{AppContext, Global, ReadGlobal, SharedString};
-use parking_lot::RwLock;
+use gpui.{AppContext, Global, ReadGlobal, SharedString};
+use parking_lot.RwLock;
 
 #[derive(Default)]
 struct FontFamilyCacheState {
@@ -26,11 +26,11 @@ impl Global for GlobalFontFamilyCache {}
 
 impl FontFamilyCache {
     pub fn init_global(cx: &mut AppContext) {
-        cx.default_global::<GlobalFontFamilyCache>();
+        cx.default_global.<GlobalFontFamilyCache>();
     }
 
     pub fn global(cx: &AppContext) -> Arc<Self> {
-        GlobalFontFamilyCache::global(cx).0.clone()
+        GlobalFontFamilyCache.global(cx).0.clone()
     }
 
     pub fn list_font_families(&self, cx: &AppContext) -> Vec<SharedString> {
@@ -43,9 +43,9 @@ impl FontFamilyCache {
             .text_system()
             .all_font_names()
             .into_iter()
-            .map(SharedString::from)
+            .map(SharedString.from)
             .collect();
-        lock.loaded_at = Some(Instant::now());
+        lock.loaded_at = Some(Instant.now());
 
         lock.font_families.clone()
     }

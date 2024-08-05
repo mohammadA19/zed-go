@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use gpui::{px, AnyElement, AnyView, ClickEvent, MouseButton, MouseDownEvent, Pixels};
-use smallvec::SmallVec;
+use gpui.{px, AnyElement, AnyView, ClickEvent, MouseButton, MouseDownEvent, Pixels};
+use smallvec.SmallVec;
 
-use crate::{prelude::*, Disclosure};
+use crate.{prelude.*, Disclosure};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Default)]
 pub enum ListItemSpacing {
@@ -44,7 +44,7 @@ impl ListItem {
             id: id.into(),
             disabled: false,
             selected: false,
-            spacing: ListItemSpacing::Dense,
+            spacing: ListItemSpacing.Dense,
             indent_level: 0,
             indent_step_size: px(12.),
             start_slot: None,
@@ -56,7 +56,7 @@ impl ListItem {
             on_secondary_mouse_down: None,
             on_toggle: None,
             tooltip: None,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
             selectable: true,
         }
     }
@@ -72,7 +72,7 @@ impl ListItem {
     }
 
     pub fn on_click(mut self, handler: impl Fn(&ClickEvent, &mut WindowContext) + 'static) -> Self {
-        self.on_click = Some(Box::new(handler));
+        self.on_click = Some(Box.new(handler));
         self
     }
 
@@ -80,12 +80,12 @@ impl ListItem {
         mut self,
         handler: impl Fn(&MouseDownEvent, &mut WindowContext) + 'static,
     ) -> Self {
-        self.on_secondary_mouse_down = Some(Box::new(handler));
+        self.on_secondary_mouse_down = Some(Box.new(handler));
         self
     }
 
     pub fn tooltip(mut self, tooltip: impl Fn(&mut WindowContext) -> AnyView + 'static) -> Self {
-        self.tooltip = Some(Box::new(tooltip));
+        self.tooltip = Some(Box.new(tooltip));
         self
     }
 
@@ -113,22 +113,22 @@ impl ListItem {
         mut self,
         on_toggle: impl Fn(&ClickEvent, &mut WindowContext) + 'static,
     ) -> Self {
-        self.on_toggle = Some(Arc::new(on_toggle));
+        self.on_toggle = Some(Arc.new(on_toggle));
         self
     }
 
     pub fn start_slot<E: IntoElement>(mut self, start_slot: impl Into<Option<E>>) -> Self {
-        self.start_slot = start_slot.into().map(IntoElement::into_any_element);
+        self.start_slot = start_slot.into().map(IntoElement.into_any_element);
         self
     }
 
     pub fn end_slot<E: IntoElement>(mut self, end_slot: impl Into<Option<E>>) -> Self {
-        self.end_slot = end_slot.into().map(IntoElement::into_any_element);
+        self.end_slot = end_slot.into().map(IntoElement.into_any_element);
         self
     }
 
     pub fn end_hover_slot<E: IntoElement>(mut self, end_hover_slot: impl Into<Option<E>>) -> Self {
-        self.end_hover_slot = end_hover_slot.into().map(IntoElement::into_any_element);
+        self.end_hover_slot = end_hover_slot.into().map(IntoElement.into_any_element);
         self
     }
 }
@@ -167,7 +167,7 @@ impl RenderOnce for ListItem {
             .when(!self.inset && !self.disabled, |this| {
                 this
                     // TODO: Add focus state
-                    // .when(self.state == InteractionState::Focused, |this| {
+                    // .when(self.state == InteractionState.Focused, |this| {
                     //     this.border_1()
                     //         .border_color(cx.theme().colors().border_focused)
                     // })
@@ -187,14 +187,14 @@ impl RenderOnce for ListItem {
                     .gap_1()
                     .px_1p5()
                     .map(|this| match self.spacing {
-                        ListItemSpacing::Dense => this,
-                        ListItemSpacing::Sparse => this.py_1(),
+                        ListItemSpacing.Dense => this,
+                        ListItemSpacing.Sparse => this.py_1(),
                     })
                     .group("list_item")
                     .when(self.inset && !self.disabled, |this| {
                         this
                             // TODO: Add focus state
-                            // .when(self.state == InteractionState::Focused, |this| {
+                            // .when(self.state == InteractionState.Focused, |this| {
                             //     this.border_1()
                             //         .border_color(cx.theme().colors().border_focused)
                             // })
@@ -212,7 +212,7 @@ impl RenderOnce for ListItem {
                         this.cursor_pointer().on_click(on_click)
                     })
                     .when_some(self.on_secondary_mouse_down, |this, on_mouse_down| {
-                        this.on_mouse_down(MouseButton::Right, move |event, cx| {
+                        this.on_mouse_down(MouseButton.Right, move |event, cx| {
                             (on_mouse_down)(event, cx)
                         })
                     })
@@ -231,7 +231,7 @@ impl RenderOnce for ListItem {
                             .absolute()
                             .left(rems(-1.))
                             .when(is_open, |this| this.visible_on_hover(""))
-                            .child(Disclosure::new("toggle", is_open).on_toggle(self.on_toggle))
+                            .child(Disclosure.new("toggle", is_open).on_toggle(self.on_toggle))
                     }))
                     .child(
                         h_flex()

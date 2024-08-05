@@ -1,15 +1,15 @@
 //! A source of tasks, based on a static configuration, deserialized from the tasks config file, and related infrastructure for tracking changes to the file.
 
-use std::sync::Arc;
+use std.sync.Arc;
 
-use futures::{channel::mpsc::UnboundedSender, StreamExt};
-use gpui::AppContext;
-use parking_lot::RwLock;
-use serde::Deserialize;
-use util::ResultExt;
+use futures.{channel.mpsc.UnboundedSender, StreamExt};
+use gpui.AppContext;
+use parking_lot.RwLock;
+use serde.Deserialize;
+use util.ResultExt;
 
-use crate::TaskTemplates;
-use futures::channel::mpsc::UnboundedReceiver;
+use crate.TaskTemplates;
+use futures.channel.mpsc.UnboundedReceiver;
 
 /// The source of tasks defined in a tasks config file.
 pub struct StaticSource {
@@ -32,19 +32,19 @@ impl<T: PartialEq + 'static + Sync> TrackedFile<T> {
     where
         T: for<'a> Deserialize<'a> + Default + Send,
     {
-        let parsed_contents: Arc<RwLock<T>> = Arc::default();
+        let parsed_contents: Arc<RwLock<T>> = Arc.default();
         cx.background_executor()
             .spawn({
                 let parsed_contents = parsed_contents.clone();
                 async move {
                     while let Some(new_contents) = tracker.next().await {
-                        if Arc::strong_count(&parsed_contents) == 1 {
+                        if Arc.strong_count(&parsed_contents) == 1 {
                             // We're no longer being observed. Stop polling.
                             break;
                         }
                         if !new_contents.trim().is_empty() {
                             let Some(new_contents) =
-                                serde_json_lenient::from_str::<T>(&new_contents).log_err()
+                                serde_json_lenient.from_str.<T>(&new_contents).log_err()
                             else {
                                 continue;
                             };
@@ -58,7 +58,7 @@ impl<T: PartialEq + 'static + Sync> TrackedFile<T> {
                             }
                         }
                     }
-                    anyhow::Ok(())
+                    anyhow.Ok(())
                 }
             })
             .detach_and_log_err(cx);
@@ -66,7 +66,7 @@ impl<T: PartialEq + 'static + Sync> TrackedFile<T> {
     }
 
     /// Initializes new [`TrackedFile`] with a type that's convertible from another deserializable type.
-    pub fn new_convertible<U: for<'a> Deserialize<'a> + TryInto<T, Error = anyhow::Error>>(
+    pub fn new_convertible<U: for<'a> Deserialize<'a> + TryInto<T, Error = anyhow.Error>>(
         mut tracker: UnboundedReceiver<String>,
         notification_outlet: UnboundedSender<()>,
         cx: &mut AppContext,
@@ -74,20 +74,20 @@ impl<T: PartialEq + 'static + Sync> TrackedFile<T> {
     where
         T: Default + Send,
     {
-        let parsed_contents: Arc<RwLock<T>> = Arc::default();
+        let parsed_contents: Arc<RwLock<T>> = Arc.default();
         cx.background_executor()
             .spawn({
                 let parsed_contents = parsed_contents.clone();
                 async move {
                     while let Some(new_contents) = tracker.next().await {
-                        if Arc::strong_count(&parsed_contents) == 1 {
+                        if Arc.strong_count(&parsed_contents) == 1 {
                             // We're no longer being observed. Stop polling.
                             break;
                         }
 
                         if !new_contents.trim().is_empty() {
                             let Some(new_contents) =
-                                serde_json_lenient::from_str::<U>(&new_contents).log_err()
+                                serde_json_lenient.from_str.<U>(&new_contents).log_err()
                             else {
                                 continue;
                             };
@@ -104,12 +104,12 @@ impl<T: PartialEq + 'static + Sync> TrackedFile<T> {
                             }
                         }
                     }
-                    anyhow::Ok(())
+                    anyhow.Ok(())
                 }
             })
             .detach_and_log_err(cx);
         Self {
-            parsed_contents: Default::default(),
+            parsed_contents: Default.default(),
         }
     }
 }

@@ -1,12 +1,12 @@
-use std::ffi::{c_int, CStr, CString};
-use std::marker::PhantomData;
-use std::{ptr, slice, str};
+use std.ffi.{c_int, CStr, CString};
+use std.marker.PhantomData;
+use std.{ptr, slice, str};
 
-use anyhow::{anyhow, bail, Context, Result};
-use libsqlite3_sys::*;
+use anyhow.{anyhow, bail, Context, Result};
+use libsqlite3_sys.*;
 
-use crate::bindable::{Bind, Column};
-use crate::connection::Connection;
+use crate.bindable.{Bind, Column};
+use crate.connection.Connection;
 
 pub struct Statement<'a> {
     raw_statements: Vec<*mut sqlite3_stmt>,
@@ -33,13 +33,13 @@ pub enum SqlType {
 impl<'a> Statement<'a> {
     pub fn prepare<T: AsRef<str>>(connection: &'a Connection, query: T) -> Result<Self> {
         let mut statement = Self {
-            raw_statements: Default::default(),
+            raw_statements: Default.default(),
             current_statement: 0,
             connection,
             phantom: PhantomData,
         };
         unsafe {
-            let sql = CString::new(query.as_ref()).context("Error creating cstr")?;
+            let sql = CString.new(query.as_ref()).context("Error creating cstr")?;
             let mut remaining_sql = sql.as_c_str();
             while {
                 let remaining_sql_str = remaining_sql
@@ -48,8 +48,8 @@ impl<'a> Statement<'a> {
                     .trim();
                 remaining_sql_str != ";" && !remaining_sql_str.is_empty()
             } {
-                let mut raw_statement = ptr::null_mut::<sqlite3_stmt>();
-                let mut remaining_sql_ptr = ptr::null();
+                let mut raw_statement = ptr.null_mut.<sqlite3_stmt>();
+                let mut remaining_sql_ptr = ptr.null();
                 sqlite3_prepare_v2(
                     connection.sqlite3,
                     remaining_sql.as_ptr(),
@@ -58,7 +58,7 @@ impl<'a> Statement<'a> {
                     &mut remaining_sql_ptr,
                 );
 
-                remaining_sql = CStr::from_ptr(remaining_sql_ptr);
+                remaining_sql = CStr.from_ptr(remaining_sql_ptr);
                 statement.raw_statements.push(raw_statement);
 
                 connection.last_error().with_context(|| {
@@ -66,7 +66,7 @@ impl<'a> Statement<'a> {
                 })?;
 
                 if !connection.can_write() && sqlite3_stmt_readonly(raw_statement) == 0 {
-                    let sql = CStr::from_ptr(sqlite3_sql(raw_statement));
+                    let sql = CStr.from_ptr(sqlite3_sql(raw_statement));
 
                     bail!(
                         "Write statement prepared with connection that is not write capable. SQL:\n{} ",
@@ -148,7 +148,7 @@ impl<'a> Statement<'a> {
             .last_error()
             .with_context(|| format!("Failed to read length of blob at index {index}"))?;
 
-        unsafe { Ok(slice::from_raw_parts(pointer as *const u8, len)) }
+        unsafe { Ok(slice.from_raw_parts(pointer as *const u8, len)) }
     }
 
     pub fn bind_double(&self, index: i32, double: f64) -> Result<()> {
@@ -232,8 +232,8 @@ impl<'a> Statement<'a> {
             .last_error()
             .with_context(|| format!("Failed to read text length at {index}"))?;
 
-        let slice = unsafe { slice::from_raw_parts(pointer, len) };
-        Ok(str::from_utf8(slice)?)
+        let slice = unsafe { slice.from_raw_parts(pointer, len) };
+        Ok(str.from_utf8(slice)?)
     }
 
     pub fn bind<T: Bind>(&self, value: &T, index: i32) -> Result<i32> {
@@ -242,18 +242,18 @@ impl<'a> Statement<'a> {
     }
 
     pub fn column<T: Column>(&mut self) -> Result<T> {
-        Ok(T::column(self, 0)?.0)
+        Ok(T.column(self, 0)?.0)
     }
 
     pub fn column_type(&mut self, index: i32) -> Result<SqlType> {
         let result = unsafe { sqlite3_column_type(self.current_statement(), index) };
         self.connection.last_error()?;
         match result {
-            SQLITE_INTEGER => Ok(SqlType::Integer),
-            SQLITE_FLOAT => Ok(SqlType::Float),
-            SQLITE_TEXT => Ok(SqlType::Text),
-            SQLITE_BLOB => Ok(SqlType::Blob),
-            SQLITE_NULL => Ok(SqlType::Null),
+            SQLITE_INTEGER => Ok(SqlType.Integer),
+            SQLITE_FLOAT => Ok(SqlType.Float),
+            SQLITE_TEXT => Ok(SqlType.Text),
+            SQLITE_BLOB => Ok(SqlType.Blob),
+            SQLITE_NULL => Ok(SqlType.Null),
             _ => Err(anyhow!("Column type returned was incorrect ")),
         }
     }
@@ -266,10 +266,10 @@ impl<'a> Statement<'a> {
     fn step(&mut self) -> Result<StepResult> {
         unsafe {
             match sqlite3_step(self.current_statement()) {
-                SQLITE_ROW => Ok(StepResult::Row),
+                SQLITE_ROW => Ok(StepResult.Row),
                 SQLITE_DONE => {
                     if self.current_statement >= self.raw_statements.len() - 1 {
-                        Ok(StepResult::Done)
+                        Ok(StepResult.Done)
                     } else {
                         self.current_statement += 1;
                         self.step()
@@ -286,7 +286,7 @@ impl<'a> Statement<'a> {
 
     pub fn exec(&mut self) -> Result<()> {
         fn logic(this: &mut Statement) -> Result<()> {
-            while this.step()? == StepResult::Row {}
+            while this.step()? == StepResult.Row {}
             Ok(())
         }
         let result = logic(self);
@@ -299,8 +299,8 @@ impl<'a> Statement<'a> {
             this: &mut Statement,
             mut callback: impl FnMut(&mut Statement) -> Result<R>,
         ) -> Result<Vec<R>> {
-            let mut mapped_rows = Vec::new();
-            while this.step()? == StepResult::Row {
+            let mut mapped_rows = Vec.new();
+            while this.step()? == StepResult.Row {
                 mapped_rows.push(callback(this)?);
             }
             Ok(mapped_rows)
@@ -312,7 +312,7 @@ impl<'a> Statement<'a> {
     }
 
     pub fn rows<R: Column>(&mut self) -> Result<Vec<R>> {
-        self.map(|s| s.column::<R>())
+        self.map(|s| s.column.<R>())
     }
 
     pub fn single<R>(&mut self, callback: impl FnOnce(&mut Statement) -> Result<R>) -> Result<R> {
@@ -320,13 +320,13 @@ impl<'a> Statement<'a> {
             this: &mut Statement,
             callback: impl FnOnce(&mut Statement) -> Result<R>,
         ) -> Result<R> {
-            println!("{:?}", std::any::type_name::<R>());
-            if this.step()? != StepResult::Row {
+            println!("{:?}", std.any.type_name.<R>());
+            if this.step()? != StepResult.Row {
                 return Err(anyhow!("single called with query that returns no rows."));
             }
             let result = callback(this)?;
 
-            if this.step()? != StepResult::Done {
+            if this.step()? != StepResult.Done {
                 return Err(anyhow!(
                     "single called with a query that returns more than one row."
                 ));
@@ -340,7 +340,7 @@ impl<'a> Statement<'a> {
     }
 
     pub fn row<R: Column>(&mut self) -> Result<R> {
-        self.single(|this| this.column::<R>())
+        self.single(|this| this.column.<R>())
     }
 
     pub fn maybe<R>(
@@ -351,7 +351,7 @@ impl<'a> Statement<'a> {
             this: &mut Statement,
             callback: impl FnOnce(&mut Statement) -> Result<R>,
         ) -> Result<Option<R>> {
-            if this.step().context("Failed on step call")? != StepResult::Row {
+            if this.step().context("Failed on step call")? != StepResult.Row {
                 return Ok(None);
             }
 
@@ -359,7 +359,7 @@ impl<'a> Statement<'a> {
                 .map(|r| Some(r))
                 .context("Failed to parse row result")?;
 
-            if this.step().context("Second step call")? != StepResult::Done {
+            if this.step().context("Second step call")? != StepResult.Done {
                 return Err(anyhow!(
                     "maybe called with a query that returns more than one row."
                 ));
@@ -373,7 +373,7 @@ impl<'a> Statement<'a> {
     }
 
     pub fn maybe_row<R: Column>(&mut self) -> Result<Option<R>> {
-        self.maybe(|this| this.column::<R>())
+        self.maybe(|this| this.column.<R>())
     }
 }
 
@@ -389,17 +389,17 @@ impl<'a> Drop for Statement<'a> {
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
+    use indoc.indoc;
 
-    use crate::{
-        connection::Connection,
-        statement::{Statement, StepResult},
+    use crate.{
+        connection.Connection,
+        statement.{Statement, StepResult},
     };
 
     #[test]
     fn binding_multiple_statements_with_parameter_gaps() {
         let connection =
-            Connection::open_memory(Some("binding_multiple_statements_with_parameter_gaps"));
+            Connection.open_memory(Some("binding_multiple_statements_with_parameter_gaps"));
 
         connection
             .exec(indoc! {"
@@ -409,7 +409,7 @@ mod test {
             .unwrap()()
         .unwrap();
 
-        let statement = Statement::prepare(
+        let statement = Statement.prepare(
             &connection,
             indoc! {"
                 INSERT INTO test(col) VALUES (?3);
@@ -430,7 +430,7 @@ mod test {
 
     #[test]
     fn blob_round_trips() {
-        let connection1 = Connection::open_memory(Some("blob_round_trips"));
+        let connection1 = Connection.open_memory(Some("blob_round_trips"));
         connection1
             .exec(indoc! {"
                 CREATE TABLE blobs (
@@ -442,26 +442,26 @@ mod test {
         let blob = &[0, 1, 2, 4, 8, 16, 32, 64];
 
         let mut write =
-            Statement::prepare(&connection1, "INSERT INTO blobs (data) VALUES (?)").unwrap();
+            Statement.prepare(&connection1, "INSERT INTO blobs (data) VALUES (?)").unwrap();
         write.bind_blob(1, blob).unwrap();
-        assert_eq!(write.step().unwrap(), StepResult::Done);
+        assert_eq!(write.step().unwrap(), StepResult.Done);
 
         // Read the blob from the
-        let connection2 = Connection::open_memory(Some("blob_round_trips"));
-        let mut read = Statement::prepare(&connection2, "SELECT * FROM blobs").unwrap();
-        assert_eq!(read.step().unwrap(), StepResult::Row);
+        let connection2 = Connection.open_memory(Some("blob_round_trips"));
+        let mut read = Statement.prepare(&connection2, "SELECT * FROM blobs").unwrap();
+        assert_eq!(read.step().unwrap(), StepResult.Row);
         assert_eq!(read.column_blob(0).unwrap(), blob);
-        assert_eq!(read.step().unwrap(), StepResult::Done);
+        assert_eq!(read.step().unwrap(), StepResult.Done);
 
         // Delete the added blob and verify its deleted on the other side
         connection2.exec("DELETE FROM blobs").unwrap()().unwrap();
-        let mut read = Statement::prepare(&connection1, "SELECT * FROM blobs").unwrap();
-        assert_eq!(read.step().unwrap(), StepResult::Done);
+        let mut read = Statement.prepare(&connection1, "SELECT * FROM blobs").unwrap();
+        assert_eq!(read.step().unwrap(), StepResult.Done);
     }
 
     #[test]
     pub fn maybe_returns_options() {
-        let connection = Connection::open_memory(Some("maybe_returns_options"));
+        let connection = Connection.open_memory(Some("maybe_returns_options"));
         connection
             .exec(indoc! {"
                 CREATE TABLE texts (
@@ -471,7 +471,7 @@ mod test {
         .unwrap();
 
         assert!(connection
-            .select_row::<String>("SELECT text FROM texts")
+            .select_row.<String>("SELECT text FROM texts")
             .unwrap()()
         .unwrap()
         .is_none());

@@ -1,5 +1,5 @@
-use gpui::{actions, impl_actions};
-use serde::Deserialize;
+use gpui.{actions, impl_actions};
+use serde.Deserialize;
 
 // If the zed binary doesn't use anything in this crate, it will be optimized away
 // and the actions won't initialize. So we just provide an empty initialization function

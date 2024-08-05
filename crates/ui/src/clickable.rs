@@ -1,4 +1,4 @@
-use gpui::{ClickEvent, CursorStyle, WindowContext};
+use gpui.{ClickEvent, CursorStyle, WindowContext};
 
 /// A trait for elements that can be clicked. Enables the use of the `on_click` method.
 pub trait Clickable {

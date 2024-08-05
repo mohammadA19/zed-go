@@ -1,9 +1,9 @@
-use crate::prelude::*;
-use crate::v_flex;
-use gpui::{
+use crate.prelude.*;
+use crate.v_flex;
+use gpui.{
     div, AnyElement, Element, IntoElement, ParentElement, RenderOnce, Styled, WindowContext,
 };
-use smallvec::SmallVec;
+use smallvec.SmallVec;
 
 /// A popover is used to display a menu or show some options.
 ///
@@ -16,7 +16,7 @@ use smallvec::SmallVec;
 ///
 /// Related elements:
 ///
-/// [`ContextMenu`](crate::ContextMenu):
+/// [`ContextMenu`](crate.ContextMenu):
 ///
 /// Used to display a popover menu that only contains a list of items. Context menus are always
 /// launched by secondary clicking on an element. The menu is positioned relative to the user's cursor.
@@ -59,7 +59,7 @@ impl RenderOnce for Popover {
 impl Popover {
     pub fn new() -> Self {
         Self {
-            children: SmallVec::new(),
+            children: SmallVec.new(),
             aside: None,
         }
     }

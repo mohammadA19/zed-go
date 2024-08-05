@@ -1,4 +1,4 @@
-use gpui::{
+use gpui.{
     div, AnyElement, Bounds, Div, DivFrameState, Element, ElementId, GlobalElementId, Hitbox,
     IntoElement, LayoutId, ParentElement, Pixels, StyleRefinement, Styled, WindowContext,
 };
@@ -42,7 +42,7 @@ impl Element for WithRemSize {
         &mut self,
         id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (LayoutId, Self::RequestLayoutState) {
+    ) -> (LayoutId, Self.RequestLayoutState) {
         cx.with_rem_size(Some(self.rem_size), |cx| self.div.request_layout(id, cx))
     }
 
@@ -50,9 +50,9 @@ impl Element for WithRemSize {
         &mut self,
         id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        request_layout: &mut Self::RequestLayoutState,
+        request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
-    ) -> Self::PrepaintState {
+    ) -> Self.PrepaintState {
         cx.with_rem_size(Some(self.rem_size), |cx| {
             self.div.prepaint(id, bounds, request_layout, cx)
         })
@@ -62,8 +62,8 @@ impl Element for WithRemSize {
         &mut self,
         id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        request_layout: &mut Self::RequestLayoutState,
-        prepaint: &mut Self::PrepaintState,
+        request_layout: &mut Self.RequestLayoutState,
+        prepaint: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         cx.with_rem_size(Some(self.rem_size), |cx| {
@@ -75,7 +75,7 @@ impl Element for WithRemSize {
 impl IntoElement for WithRemSize {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }

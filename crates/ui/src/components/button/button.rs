@@ -1,11 +1,11 @@
-use gpui::{AnyView, DefiniteLength};
+use gpui.{AnyView, DefiniteLength};
 
-use crate::{prelude::*, ElevationIndex, IconPosition, KeyBinding, Spacing};
-use crate::{
+use crate.{prelude.*, ElevationIndex, IconPosition, KeyBinding, Spacing};
+use crate.{
     ButtonCommon, ButtonLike, ButtonSize, ButtonStyle, IconName, IconSize, Label, LineHeightStyle,
 };
 
-use super::button_icon::ButtonIcon;
+use super.button_icon.ButtonIcon;
 
 /// An element that creates a button with a label and an optional icon.
 ///
@@ -23,9 +23,9 @@ use super::button_icon::ButtonIcon;
 /// indicates what action will be performed when the button is clicked.
 ///
 /// ```
-/// use ui::prelude::*;
+/// use ui.prelude.*;
 ///
-/// Button::new("button_id", "Click me!")
+/// Button.new("button_id", "Click me!")
 ///     .on_click(|event, cx| {
 ///         // Handle click event
 ///     });
@@ -36,25 +36,25 @@ use super::button_icon::ButtonIcon;
 /// a trigger for a popover menu, where clicking the button toggles the visibility of the menu.
 ///
 /// ```
-/// use ui::prelude::*;
+/// use ui.prelude.*;
 ///
-/// Button::new("button_id", "Click me!")
-///     .icon(IconName::Check)
+/// Button.new("button_id", "Click me!")
+///     .icon(IconName.Check)
 ///     .selected(true)
 ///     .on_click(|event, cx| {
 ///         // Handle click event
 ///     });
 /// ```
 ///
-/// To change the style of the button when it is selected use the [`selected_style`][Button::selected_style] method.
+/// To change the style of the button when it is selected use the [`selected_style`][Button.selected_style] method.
 ///
 /// ```
-/// use ui::prelude::*;
-/// use ui::TintColor;
+/// use ui.prelude.*;
+/// use ui.TintColor;
 ///
-/// Button::new("button_id", "Click me!")
+/// Button.new("button_id", "Click me!")
 ///     .selected(true)
-///     .selected_style(ButtonStyle::Tinted(TintColor::Accent))
+///     .selected_style(ButtonStyle.Tinted(TintColor.Accent))
 ///     .on_click(|event, cx| {
 ///         // Handle click event
 ///     });
@@ -65,9 +65,9 @@ use super::button_icon::ButtonIcon;
 /// The button's content, including text and icons, is centered by default.
 ///
 /// ```
-/// use ui::prelude::*;
+/// use ui.prelude.*;
 ///
-/// let button = Button::new("button_id", "Click me!")
+/// let button = Button.new("button_id", "Click me!")
 ///     .full_width()
 ///     .on_click(|event, cx| {
 ///         // Handle click event
@@ -98,7 +98,7 @@ impl Button {
     /// builder pattern methods provided by this struct.
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {
         Self {
-            base: ButtonLike::new(id),
+            base: ButtonLike.new(id),
             label: label.into(),
             label_color: None,
             label_size: None,
@@ -126,7 +126,7 @@ impl Button {
 
     /// Sets the label used when the button is in a selected state.
     pub fn selected_label<L: Into<SharedString>>(mut self, label: impl Into<Option<L>>) -> Self {
-        self.selected_label = label.into().map(Into::into);
+        self.selected_label = label.into().map(Into.into);
         self
     }
 
@@ -176,16 +176,16 @@ impl Selectable for Button {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// Button::new("button_id", "Click me!")
+    /// Button.new("button_id", "Click me!")
     ///     .selected(true)
     ///     .on_click(|event, cx| {
     ///         // Handle click event
     ///     });
     /// ```
     ///
-    /// Use [`selected_style`](Button::selected_style) to change the style of the button when it is selected.
+    /// Use [`selected_style`](Button.selected_style) to change the style of the button when it is selected.
     fn selected(mut self, selected: bool) -> Self {
         self.base = self.base.selected(selected);
         self
@@ -198,12 +198,12 @@ impl SelectableButton for Button {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
-    /// use ui::TintColor;
+    /// use ui.prelude.*;
+    /// use ui.TintColor;
     ///
-    /// Button::new("button_id", "Click me!")
+    /// Button.new("button_id", "Click me!")
     ///     .selected(true)
-    ///     .selected_style(ButtonStyle::Tinted(TintColor::Accent))
+    ///     .selected_style(ButtonStyle.Tinted(TintColor.Accent))
     ///     .on_click(|event, cx| {
     ///         // Handle click event
     ///     });
@@ -224,9 +224,9 @@ impl Disableable for Button {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// Button::new("button_id", "Click me!")
+    /// Button.new("button_id", "Click me!")
     ///     .disabled(true)
     ///     .on_click(|event, cx| {
     ///         // Handle click event
@@ -244,13 +244,13 @@ impl Clickable for Button {
     /// Sets the click event handler for the button.
     fn on_click(
         mut self,
-        handler: impl Fn(&gpui::ClickEvent, &mut WindowContext) + 'static,
+        handler: impl Fn(&gpui.ClickEvent, &mut WindowContext) + 'static,
     ) -> Self {
         self.base = self.base.on_click(handler);
         self
     }
 
-    fn cursor_style(mut self, cursor_style: gpui::CursorStyle) -> Self {
+    fn cursor_style(mut self, cursor_style: gpui.CursorStyle) -> Self {
         self.base = self.base.cursor_style(cursor_style);
         self
     }
@@ -265,9 +265,9 @@ impl FixedWidth for Button {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// Button::new("button_id", "Click me!")
+    /// Button.new("button_id", "Click me!")
     ///     .width(px(100.).into())
     ///     .on_click(|event, cx| {
     ///         // Handle click event
@@ -285,9 +285,9 @@ impl FixedWidth for Button {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
+    /// use ui.prelude.*;
     ///
-    /// Button::new("button_id", "Click me!")
+    /// Button.new("button_id", "Click me!")
     ///     .full_width()
     ///     .on_click(|event, cx| {
     ///         // Handle click event
@@ -328,12 +328,12 @@ impl ButtonCommon for Button {
     /// # Examples
     ///
     /// ```
-    /// use ui::prelude::*;
-    /// use ui::Tooltip;
+    /// use ui.prelude.*;
+    /// use ui.Tooltip;
     ///
-    /// Button::new("button_id", "Click me!")
+    /// Button.new("button_id", "Click me!")
     ///     .tooltip(move |cx| {
-    ///         Tooltip::text("This is a tooltip", cx)
+    ///         Tooltip.text("This is a tooltip", cx)
     ///     })
     ///     .on_click(|event, cx| {
     ///         // Handle click event
@@ -364,19 +364,19 @@ impl RenderOnce for Button {
             .unwrap_or(self.label);
 
         let label_color = if is_disabled {
-            Color::Disabled
+            Color.Disabled
         } else if is_selected {
-            Color::Selected
+            Color.Selected
         } else {
             self.label_color.unwrap_or_default()
         };
 
         self.base.child(
             h_flex()
-                .gap(Spacing::Small.rems(cx))
-                .when(self.icon_position == Some(IconPosition::Start), |this| {
+                .gap(Spacing.Small.rems(cx))
+                .when(self.icon_position == Some(IconPosition.Start), |this| {
                     this.children(self.icon.map(|icon| {
-                        ButtonIcon::new(icon)
+                        ButtonIcon.new(icon)
                             .disabled(is_disabled)
                             .selected(is_selected)
                             .selected_icon(self.selected_icon)
@@ -386,19 +386,19 @@ impl RenderOnce for Button {
                 })
                 .child(
                     h_flex()
-                        .gap(Spacing::Medium.rems(cx))
+                        .gap(Spacing.Medium.rems(cx))
                         .justify_between()
                         .child(
-                            Label::new(label)
+                            Label.new(label)
                                 .color(label_color)
                                 .size(self.label_size.unwrap_or_default())
-                                .line_height_style(LineHeightStyle::UiLabel),
+                                .line_height_style(LineHeightStyle.UiLabel),
                         )
                         .children(self.key_binding),
                 )
-                .when(self.icon_position != Some(IconPosition::Start), |this| {
+                .when(self.icon_position != Some(IconPosition.Start), |this| {
                     this.children(self.icon.map(|icon| {
-                        ButtonIcon::new(icon)
+                        ButtonIcon.new(icon)
                             .disabled(is_disabled)
                             .selected(is_selected)
                             .selected_icon(self.selected_icon)

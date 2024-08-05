@@ -1,9 +1,9 @@
-use anyhow::{Context, Result};
+use anyhow.{Context, Result};
 
-use crate::{
-    bindable::{Bind, Column},
-    connection::Connection,
-    statement::Statement,
+use crate.{
+    bindable.{Bind, Column},
+    connection.Connection,
+    statement.Statement,
 };
 
 impl Connection {
@@ -13,7 +13,7 @@ impl Connection {
     /// (such as those which make schema changes), preparation will fail.
     /// Use a true migration instead.
     pub fn exec<'a>(&'a self, query: &str) -> Result<impl 'a + FnMut() -> Result<()>> {
-        let mut statement = Statement::prepare(self, query)?;
+        let mut statement = Statement.prepare(self, query)?;
         Ok(move || statement.exec())
     }
 
@@ -28,7 +28,7 @@ impl Connection {
         &'a self,
         query: &str,
     ) -> Result<impl 'a + FnMut(B) -> Result<()>> {
-        let mut statement = Statement::prepare(self, query)?;
+        let mut statement = Statement.prepare(self, query)?;
         Ok(move |bindings| statement.with_bindings(&bindings)?.exec())
     }
 
@@ -41,8 +41,8 @@ impl Connection {
         &'a self,
         query: &str,
     ) -> Result<impl 'a + FnMut() -> Result<Vec<C>>> {
-        let mut statement = Statement::prepare(self, query)?;
-        Ok(move || statement.rows::<C>())
+        let mut statement = Statement.prepare(self, query)?;
+        Ok(move || statement.rows.<C>())
     }
 
     /// Prepare a statement which takes a binding and returns a `Vec<C>`.
@@ -54,8 +54,8 @@ impl Connection {
         &'a self,
         query: &str,
     ) -> Result<impl 'a + FnMut(B) -> Result<Vec<C>>> {
-        let mut statement = Statement::prepare(self, query)?;
-        Ok(move |bindings| statement.with_bindings(&bindings)?.rows::<C>())
+        let mut statement = Statement.prepare(self, query)?;
+        Ok(move |bindings| statement.with_bindings(&bindings)?.rows.<C>())
     }
 
     /// Prepare a statement that selects a single row from the database.
@@ -69,8 +69,8 @@ impl Connection {
         &'a self,
         query: &str,
     ) -> Result<impl 'a + FnMut() -> Result<Option<C>>> {
-        let mut statement = Statement::prepare(self, query)?;
-        Ok(move || statement.maybe_row::<C>())
+        let mut statement = Statement.prepare(self, query)?;
+        Ok(move || statement.maybe_row.<C>())
     }
 
     /// Prepare a statement which takes a binding and selects a single row
@@ -84,12 +84,12 @@ impl Connection {
         &'a self,
         query: &str,
     ) -> Result<impl 'a + FnMut(B) -> Result<Option<C>>> {
-        let mut statement = Statement::prepare(self, query)?;
+        let mut statement = Statement.prepare(self, query)?;
         Ok(move |bindings| {
             statement
                 .with_bindings(&bindings)
                 .context("Bindings failed")?
-                .maybe_row::<C>()
+                .maybe_row.<C>()
                 .context("Maybe row failed")
         })
     }

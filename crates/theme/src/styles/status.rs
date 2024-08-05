@@ -1,10 +1,10 @@
-use gpui::Hsla;
-use refineable::Refineable;
+use gpui.Hsla;
+use refineable.Refineable;
 
-use crate::{blue, grass, neutral, red, yellow};
+use crate.{blue, grass, neutral, red, yellow};
 
 #[derive(Refineable, Clone, Debug)]
-#[refineable(Debug, serde::Deserialize)]
+#[refineable(Debug, serde.Deserialize)]
 pub struct StatusColors {
     /// Indicates some kind of conflict, like a file changed on disk while it was open, or
     /// merge conflicts in a Git repository.

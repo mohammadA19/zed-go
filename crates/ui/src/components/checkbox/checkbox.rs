@@ -1,7 +1,7 @@
-use gpui::{div, prelude::*, ElementId, IntoElement, Styled, WindowContext};
+use gpui.{div, prelude.*, ElementId, IntoElement, Styled, WindowContext};
 
-use crate::prelude::*;
-use crate::{Color, Icon, IconName, Selection};
+use crate.prelude.*;
+use crate.{Color, Icon, IconName, Selection};
 
 /// # Checkbox
 ///
@@ -32,7 +32,7 @@ impl Checkbox {
     }
 
     pub fn on_click(mut self, handler: impl Fn(&Selection, &mut WindowContext) + 'static) -> Self {
-        self.on_click = Some(Box::new(handler));
+        self.on_click = Some(Box.new(handler));
         self
     }
 }
@@ -42,27 +42,27 @@ impl RenderOnce for Checkbox {
         let group_id = format!("checkbox_group_{:?}", self.id);
 
         let icon = match self.checked {
-            Selection::Selected => Some(Icon::new(IconName::Check).size(IconSize::Small).color(
+            Selection.Selected => Some(Icon.new(IconName.Check).size(IconSize.Small).color(
                 if self.disabled {
-                    Color::Disabled
+                    Color.Disabled
                 } else {
-                    Color::Selected
+                    Color.Selected
                 },
             )),
-            Selection::Indeterminate => Some(
-                Icon::new(IconName::Dash)
-                    .size(IconSize::Small)
+            Selection.Indeterminate => Some(
+                Icon.new(IconName.Dash)
+                    .size(IconSize.Small)
                     .color(if self.disabled {
-                        Color::Disabled
+                        Color.Disabled
                     } else {
-                        Color::Selected
+                        Color.Selected
                     }),
             ),
-            Selection::Unselected => None,
+            Selection.Unselected => None,
         };
 
         let selected =
-            self.checked == Selection::Selected || self.checked == Selection::Indeterminate;
+            self.checked == Selection.Selected || self.checked == Selection.Indeterminate;
 
         let (bg_color, border_color) = match (self.disabled, selected) {
             (true, _) => (
@@ -83,7 +83,7 @@ impl RenderOnce for Checkbox {
             .id(self.id)
             .justify_center()
             .items_center()
-            .size(crate::styles::custom_spacing(cx, 20.))
+            .size(crate.styles.custom_spacing(cx, 20.))
             .group(group_id.clone())
             .child(
                 div()
@@ -91,8 +91,8 @@ impl RenderOnce for Checkbox {
                     .flex_none()
                     .justify_center()
                     .items_center()
-                    .m(Spacing::Small.px(cx))
-                    .size(crate::styles::custom_spacing(cx, 16.))
+                    .m(Spacing.Small.px(cx))
+                    .size(crate.styles.custom_spacing(cx, 16.))
                     .rounded_sm()
                     .bg(bg_color)
                     .border_1()

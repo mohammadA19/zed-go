@@ -1,13 +1,13 @@
-use crate::{motion::Motion, normal::yank::copy_selections_content, object::Object, Vim};
-use collections::{HashMap, HashSet};
-use editor::{
-    display_map::{DisplaySnapshot, ToDisplayPoint},
-    scroll::Autoscroll,
+use crate.{motion.Motion, normal.yank.copy_selections_content, object.Object, Vim};
+use collections.{HashMap, HashSet};
+use editor.{
+    display_map.{DisplaySnapshot, ToDisplayPoint},
+    scroll.Autoscroll,
     Bias, DisplayPoint,
 };
-use gpui::WindowContext;
-use language::{Point, Selection};
-use multi_buffer::MultiBufferRow;
+use gpui.WindowContext;
+use language.{Point, Selection};
+use multi_buffer.MultiBufferRow;
 
 pub fn delete_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &mut WindowContext) {
     vim.stop_recording();
@@ -15,15 +15,15 @@ pub fn delete_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &m
         let text_layout_details = editor.text_layout_details(cx);
         editor.transact(cx, |editor, cx| {
             editor.set_clip_at_line_ends(false, cx);
-            let mut original_columns: HashMap<_, _> = Default::default();
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            let mut original_columns: HashMap<_, _> = Default.default();
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     let original_head = selection.head();
                     original_columns.insert(selection.id, original_head.column());
                     motion.expand_selection(map, selection, times, true, &text_layout_details);
 
-                    // Motion::NextWordStart on an empty line should delete it.
-                    if let Motion::NextWordStart {
+                    // Motion.NextWordStart on an empty line should delete it.
+                    if let Motion.NextWordStart {
                         ignore_punctuation: _,
                     } = motion
                     {
@@ -36,8 +36,8 @@ pub fn delete_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &m
                             selection.end = map
                                 .buffer_snapshot
                                 .clip_point(
-                                    Point::new(selection.start.to_point(&map).row + 1, 0),
-                                    Bias::Left,
+                                    Point.new(selection.start.to_point(&map).row + 1, 0),
+                                    Bias.Left,
                                 )
                                 .to_display_point(map)
                         }
@@ -49,7 +49,7 @@ pub fn delete_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &m
 
             // Fixup cursor position after the deletion
             editor.set_clip_at_line_ends(true, cx);
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     let mut cursor = selection.head();
                     if motion.linewise() {
@@ -57,7 +57,7 @@ pub fn delete_motion(vim: &mut Vim, motion: Motion, times: Option<usize>, cx: &m
                             *cursor.column_mut() = *column
                         }
                     }
-                    cursor = map.clip_point(cursor, Bias::Left);
+                    cursor = map.clip_point(cursor, Bias.Left);
                     selection.collapse_to(cursor, selection.goal)
                 });
             });
@@ -72,21 +72,21 @@ pub fn delete_object(vim: &mut Vim, object: Object, around: bool, cx: &mut Windo
             editor.set_clip_at_line_ends(false, cx);
             // Emulates behavior in vim where if we expanded backwards to include a newline
             // the cursor gets set back to the start of the line
-            let mut should_move_to_start: HashSet<_> = Default::default();
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            let mut should_move_to_start: HashSet<_> = Default.default();
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     object.expand_selection(map, selection, around);
-                    let offset_range = selection.map(|p| p.to_offset(map, Bias::Left)).range();
+                    let offset_range = selection.map(|p| p.to_offset(map, Bias.Left)).range();
                     let mut move_selection_start_to_previous_line =
                         |map: &DisplaySnapshot, selection: &mut Selection<DisplayPoint>| {
-                            let start = selection.start.to_offset(map, Bias::Left);
+                            let start = selection.start.to_offset(map, Bias.Left);
                             if selection.start.row().0 > 0 {
                                 should_move_to_start.insert(selection.id);
                                 selection.start = (start - '\n'.len_utf8()).to_display_point(map);
                             }
                         };
-                    let range = selection.start.to_offset(map, Bias::Left)
-                        ..selection.end.to_offset(map, Bias::Right);
+                    let range = selection.start.to_offset(map, Bias.Left)
+                        ..selection.end.to_offset(map, Bias.Right);
                     let contains_only_newlines = map
                         .buffer_chars_at(range.start)
                         .take_while(|(_, p)| p < &range.end)
@@ -101,7 +101,7 @@ pub fn delete_object(vim: &mut Vim, object: Object, around: bool, cx: &mut Windo
                     // If expanded range contains only newlines and
                     // the object is around or sentence, expand to include a newline
                     // at the end or start
-                    if (around || object == Object::Sentence) && contains_only_newlines {
+                    if (around || object == Object.Sentence) && contains_only_newlines {
                         if end_at_newline {
                             move_selection_end_to_next_line(map, selection);
                         } else {
@@ -112,7 +112,7 @@ pub fn delete_object(vim: &mut Vim, object: Object, around: bool, cx: &mut Windo
                     // Does post-processing for the trailing newline and EOF
                     // when not cancelled.
                     let cancelled = around && selection.start == selection.end;
-                    if object == Object::Paragraph && !cancelled {
+                    if object == Object.Paragraph && !cancelled {
                         // EOF check should be done before including a trailing newline.
                         if ends_at_eof(map, selection) {
                             move_selection_start_to_previous_line(map, selection);
@@ -129,13 +129,13 @@ pub fn delete_object(vim: &mut Vim, object: Object, around: bool, cx: &mut Windo
 
             // Fixup cursor position after the deletion
             editor.set_clip_at_line_ends(true, cx);
-            editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+            editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                 s.move_with(|map, selection| {
                     let mut cursor = selection.head();
                     if should_move_to_start.contains(&selection.id) {
                         *cursor.column_mut() = 0;
                     }
-                    cursor = map.clip_point(cursor, Bias::Left);
+                    cursor = map.clip_point(cursor, Bias.Left);
                     selection.collapse_to(cursor, selection.goal)
                 });
             });
@@ -144,7 +144,7 @@ pub fn delete_object(vim: &mut Vim, object: Object, around: bool, cx: &mut Windo
 }
 
 fn move_selection_end_to_next_line(map: &DisplaySnapshot, selection: &mut Selection<DisplayPoint>) {
-    let end = selection.end.to_offset(map, Bias::Left);
+    let end = selection.end.to_offset(map, Bias.Left);
     selection.end = (end + '\n'.len_utf8()).to_display_point(map);
 }
 
@@ -154,16 +154,16 @@ fn ends_at_eof(map: &DisplaySnapshot, selection: &mut Selection<DisplayPoint>) -
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
+    use indoc.indoc;
 
-    use crate::{
-        state::Mode,
-        test::{NeovimBackedTestContext, VimTestContext},
+    use crate.{
+        state.Mode,
+        test.{NeovimBackedTestContext, VimTestContext},
     };
 
-    #[gpui::test]
-    async fn test_delete_h(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_h(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("d h", "Teˇst").await.assert_matches();
         cx.simulate("d h", "Tˇest").await.assert_matches();
         cx.simulate("d h", "ˇTest").await.assert_matches();
@@ -177,9 +177,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_l(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_l(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("d l", "ˇTest").await.assert_matches();
         cx.simulate("d l", "Teˇst").await.assert_matches();
         cx.simulate("d l", "Tesˇt").await.assert_matches();
@@ -193,9 +193,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_w(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_w(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "d w",
             indoc! {"
@@ -239,9 +239,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_next_word_end(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_next_word_end(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("d e", "Teˇst Test\n").await.assert_matches();
         cx.simulate("d e", "Tˇest test\n").await.assert_matches();
         cx.simulate(
@@ -266,9 +266,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_b(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_b(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("d b", "Teˇst Test").await.assert_matches();
         cx.simulate("d b", "Test ˇtest").await.assert_matches();
         cx.simulate("d b", "Test1 test2 ˇtest3")
@@ -297,9 +297,9 @@ mod test {
             .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_end_of_line(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_end_of_line(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "d $",
             indoc! {"
@@ -319,9 +319,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_0(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_0(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "d 0",
             indoc! {"
@@ -341,9 +341,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_k(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_k(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "d k",
             indoc! {"
@@ -381,9 +381,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_j(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_j(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "d j",
             indoc! {"
@@ -422,9 +422,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_end_of_document(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_end_of_document(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "d shift-g",
             indoc! {"
@@ -467,9 +467,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_delete_gg(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_gg(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "d g g",
             indoc! {"
@@ -512,47 +512,47 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_cancel_delete_operator(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_cancel_delete_operator(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.set_state(
             indoc! {"
                 The quick brown
                 fox juˇmps over
                 the lazy dog"},
-            Mode::Normal,
+            Mode.Normal,
         );
 
         // Canceling operator twice reverts to normal mode with no active operator
         cx.simulate_keystrokes("d escape k");
         assert_eq!(cx.active_operator(), None);
-        assert_eq!(cx.mode(), Mode::Normal);
+        assert_eq!(cx.mode(), Mode.Normal);
         cx.assert_editor_state(indoc! {"
             The quˇick brown
             fox jumps over
             the lazy dog"});
     }
 
-    #[gpui::test]
-    async fn test_unbound_command_cancels_pending_operator(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_unbound_command_cancels_pending_operator(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.set_state(
             indoc! {"
                 The quick brown
                 fox juˇmps over
                 the lazy dog"},
-            Mode::Normal,
+            Mode.Normal,
         );
 
         // Canceling operator twice reverts to normal mode with no active operator
         cx.simulate_keystrokes("d y");
         assert_eq!(cx.active_operator(), None);
-        assert_eq!(cx.mode(), Mode::Normal);
+        assert_eq!(cx.mode(), Mode.Normal);
     }
 
-    #[gpui::test]
-    async fn test_delete_with_counts(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_with_counts(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.set_shared_state(indoc! {"
                 The ˇquick brown
                 fox jumps over
@@ -583,9 +583,9 @@ mod test {
         the ˇlazy dog"});
     }
 
-    #[gpui::test]
-    async fn test_delete_to_adjacent_character(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_delete_to_adjacent_character(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate("d t x", "ˇax").await.assert_matches();
         cx.simulate("d t x", "aˇx").await.assert_matches();
     }

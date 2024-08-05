@@ -1,9 +1,9 @@
-use gpui::{
+use gpui.{
     div, green, red, HighlightStyle, InteractiveText, IntoElement, ParentElement, Render, Styled,
     StyledText, View, VisualContext, WindowContext,
 };
-use indoc::indoc;
-use story::*;
+use indoc.indoc;
+use story.*;
 
 pub struct TextStory;
 
@@ -14,14 +14,14 @@ impl TextStory {
 }
 
 impl Render for TextStory {
-    fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
-        StoryContainer::new("Text Story", "crates/storybook/src/stories/text.rs")
+    fn render(&mut self, cx: &mut gpui.ViewContext<Self>) -> impl IntoElement {
+        StoryContainer.new("Text Story", "crates/storybook/src/stories/text.rs")
             .children(
                 vec![
 
-            StorySection::new()
+            StorySection.new()
                 .child(
-                    StoryItem::new("Default", div().bg(gpui::blue()).child("Hello World!"))
+                    StoryItem.new("Default", div().bg(gpui.blue()).child("Hello World!"))
                         .usage(indoc! {r##"
                             div()
                                 .child("Hello World!")
@@ -29,7 +29,7 @@ impl Render for TextStory {
                         }),
                 )
                 .child(
-                    StoryItem::new("Wrapping Text",
+                    StoryItem.new("Wrapping Text",
                         div().max_w_96()
                             .child(
                                 concat!(
@@ -48,7 +48,7 @@ impl Render for TextStory {
                     })
                 )
                 .child(
-                    StoryItem::new("tbd",
+                    StoryItem.new("tbd",
                     div().flex().w_96().child(div().overflow_hidden().child(concat!(
                             "flex-row. width 96. overflow-hidden. The quick brown fox jumps over the lazy dog. ",
                             "Meanwhile, the lazy dog decided it was time for a change. ",
@@ -57,7 +57,7 @@ impl Render for TextStory {
                     )
                 )
                 .child(
-                    StoryItem::new("Text in Horizontal Flex",
+                    StoryItem.new("Text in Horizontal Flex",
                         div().flex().w_96().bg(red()).child(concat!(
                                         "flex-row. width 96. The quick brown fox jumps over the lazy dog. ",
                                         "Meanwhile, the lazy dog decided it was time for a change. ",
@@ -76,13 +76,13 @@ impl Render for TextStory {
                     })
                 )
                 .child(
-                    StoryItem::new("Interactive Text",
-                        InteractiveText::new(
+                    StoryItem.new("Interactive Text",
+                        InteractiveText.new(
                             "interactive",
-                            StyledText::new("Hello world, how is it going?").with_highlights(&cx.text_style(), [
+                            StyledText.new("Hello world, how is it going?").with_highlights(&cx.text_style(), [
                                 (6..11, HighlightStyle {
                                     background_color: Some(green()),
-                                    ..Default::default()
+                                    ..Default.default()
                                 }),
                             ]),
                         )
@@ -91,12 +91,12 @@ impl Render for TextStory {
                         })
                     )
                     .usage(indoc! {r##"
-                        InteractiveText::new(
+                        InteractiveText.new(
                             "interactive",
-                            StyledText::new("Hello world, how is it going?").with_highlights(&cx.text_style(), [
+                            StyledText.new("Hello world, how is it going?").with_highlights(&cx.text_style(), [
                                 (6..11, HighlightStyle {
                                     background_color: Some(green()),
-                                    ..Default::default()
+                                    ..Default.default()
                                 }),
                             ]),
                         )

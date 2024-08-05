@@ -1,40 +1,40 @@
-use std::sync::OnceLock;
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
+use std.sync.OnceLock;
+use std.{
+    ffi.OsStr,
+    path.{Path, PathBuf},
 };
 
-use globset::{Glob, GlobSet, GlobSetBuilder};
-use serde::{Deserialize, Serialize};
+use globset.{Glob, GlobSet, GlobSetBuilder};
+use serde.{Deserialize, Serialize};
 
 /// Returns the path to the user's home directory.
 pub fn home_dir() -> &'static PathBuf {
-    static HOME_DIR: OnceLock<PathBuf> = OnceLock::new();
-    HOME_DIR.get_or_init(|| dirs::home_dir().expect("failed to determine home directory"))
+    static HOME_DIR: OnceLock<PathBuf> = OnceLock.new();
+    HOME_DIR.get_or_init(|| dirs.home_dir().expect("failed to determine home directory"))
 }
 
 pub trait PathExt {
     fn compact(&self) -> PathBuf;
     fn icon_stem_or_suffix(&self) -> Option<&str>;
     fn extension_or_hidden_file_name(&self) -> Option<&str>;
-    fn try_from_bytes<'a>(bytes: &'a [u8]) -> anyhow::Result<Self>
+    fn try_from_bytes<'a>(bytes: &'a [u8]) -> anyhow.Result<Self>
     where
         Self: From<&'a Path>,
     {
         #[cfg(unix)]
         {
-            use std::os::unix::prelude::OsStrExt;
-            Ok(Self::from(Path::new(OsStr::from_bytes(bytes))))
+            use std.os.unix.prelude.OsStrExt;
+            Ok(Self.from(Path.new(OsStr.from_bytes(bytes))))
         }
         #[cfg(windows)]
         {
-            use anyhow::anyhow;
-            use tendril::fmt::{Format, WTF8};
-            WTF8::validate(bytes)
+            use anyhow.anyhow;
+            use tendril.fmt.{Format, WTF8};
+            WTF8.validate(bytes)
                 .then(|| {
                     // Safety: bytes are valid WTF-8 sequence.
-                    Self::from(Path::new(unsafe {
-                        OsStr::from_encoded_bytes_unchecked(bytes)
+                    Self.from(Path.new(unsafe {
+                        OsStr.from_encoded_bytes_unchecked(bytes)
                     }))
                 })
                 .ok_or_else(|| anyhow!("Invalid WTF-8 sequence: {bytes:?}"))
@@ -55,7 +55,7 @@ impl<T: AsRef<Path>> PathExt for T {
         if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
             match self.as_ref().strip_prefix(home_dir().as_path()) {
                 Ok(relative_path) => {
-                    let mut shortened_path = PathBuf::new();
+                    let mut shortened_path = PathBuf.new();
                     shortened_path.push("~");
                     shortened_path.push(relative_path);
                     shortened_path
@@ -117,13 +117,13 @@ impl PathWithPosition {
     /// If the suffix parsing fails, the whole string is parsed as a path.
     pub fn parse_str(s: &str) -> Self {
         let fallback = |fallback_str| Self {
-            path: Path::new(fallback_str).to_path_buf(),
+            path: Path.new(fallback_str).to_path_buf(),
             row: None,
             column: None,
         };
 
         let trimmed = s.trim();
-        let path = Path::new(trimmed);
+        let path = Path.new(trimmed);
         let maybe_file_name_with_row_col = path
             .file_name()
             .unwrap_or_default()
@@ -150,12 +150,12 @@ impl PathWithPosition {
                     let (row_parse_result, maybe_col_str) =
                         match maybe_row_and_col_str.split_once(FILE_ROW_COLUMN_DELIMITER) {
                             Some((maybe_row_str, maybe_col_str)) => {
-                                (maybe_row_str.parse::<u32>(), maybe_col_str.trim())
+                                (maybe_row_str.parse.<u32>(), maybe_col_str.trim())
                             }
-                            None => (maybe_row_and_col_str.parse::<u32>(), ""),
+                            None => (maybe_row_and_col_str.parse.<u32>(), ""),
                         };
 
-                    let path = Path::new(path_without_suffix).to_path_buf();
+                    let path = Path.new(path_without_suffix).to_path_buf();
 
                     match row_parse_result {
                         Ok(row) => {
@@ -168,7 +168,7 @@ impl PathWithPosition {
                             } else {
                                 let (maybe_col_str, _) =
                                     maybe_col_str.split_once(':').unwrap_or((maybe_col_str, ""));
-                                match maybe_col_str.parse::<u32>() {
+                                match maybe_col_str.parse.<u32>() {
                                     Ok(col) => Self {
                                         path,
                                         row: Some(row),
@@ -225,8 +225,8 @@ pub struct PathMatcher {
     glob: GlobSet,
 }
 
-// impl std::fmt::Display for PathMatcher {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+// impl std.fmt.Display for PathMatcher {
+//     fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
 //         self.sources.fmt(f)
 //     }
 // }
@@ -240,13 +240,13 @@ impl PartialEq for PathMatcher {
 impl Eq for PathMatcher {}
 
 impl PathMatcher {
-    pub fn new(globs: &[String]) -> Result<Self, globset::Error> {
+    pub fn new(globs: &[String]) -> Result<Self, globset.Error> {
         let globs = globs
             .into_iter()
-            .map(|glob| Glob::new(&glob))
-            .collect::<Result<Vec<_>, _>>()?;
+            .map(|glob| Glob.new(&glob))
+            .collect.<Result<Vec<_>, _>>()?;
         let sources = globs.iter().map(|glob| glob.glob().to_owned()).collect();
-        let mut glob_builder = GlobSetBuilder::new();
+        let mut glob_builder = GlobSetBuilder.new();
         for single_glob in globs {
             glob_builder.add(single_glob);
         }
@@ -269,7 +269,7 @@ impl PathMatcher {
 
     fn check_with_end_separator(&self, path: &Path) -> bool {
         let path_str = path.to_string_lossy();
-        let separator = std::path::MAIN_SEPARATOR_STR;
+        let separator = std.path.MAIN_SEPARATOR_STR;
         if path_str.ends_with(separator) {
             self.glob.is_match(path)
         } else {
@@ -280,7 +280,7 @@ impl PathMatcher {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn path_with_position_parsing_positive() {
@@ -288,7 +288,7 @@ mod tests {
             (
                 "test_file.rs",
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row: None,
                     column: None,
                 },
@@ -296,7 +296,7 @@ mod tests {
             (
                 "test_file.rs:1",
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row: Some(1),
                     column: None,
                 },
@@ -304,7 +304,7 @@ mod tests {
             (
                 "test_file.rs:1:2",
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row: Some(1),
                     column: Some(2),
                 },
@@ -312,7 +312,7 @@ mod tests {
         ];
 
         for (input, expected) in input_and_expected {
-            let actual = PathWithPosition::parse_str(input);
+            let actual = PathWithPosition.parse_str(input);
             assert_eq!(
                 actual, expected,
                 "For positive case input str '{input}', got a parse mismatch"
@@ -325,18 +325,18 @@ mod tests {
         for (input, row, column) in [
             ("test_file.rs:a", None, None),
             ("test_file.rs:a:b", None, None),
-            ("test_file.rs::", None, None),
-            ("test_file.rs::1", None, None),
-            ("test_file.rs:1::", Some(1), None),
-            ("test_file.rs::1:2", None, None),
-            ("test_file.rs:1::2", Some(1), None),
+            ("test_file.rs.", None, None),
+            ("test_file.rs.1", None, None),
+            ("test_file.rs:1.", Some(1), None),
+            ("test_file.rs.1:2", None, None),
+            ("test_file.rs:1.2", Some(1), None),
             ("test_file.rs:1:2:3", Some(1), Some(2)),
         ] {
-            let actual = PathWithPosition::parse_str(input);
+            let actual = PathWithPosition.parse_str(input);
             assert_eq!(
                 actual,
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row,
                     column,
                 },
@@ -353,7 +353,7 @@ mod tests {
             (
                 "test_file.rs:",
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row: None,
                     column: None,
                 },
@@ -361,7 +361,7 @@ mod tests {
             (
                 "test_file.rs:1:",
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row: Some(1),
                     column: None,
                 },
@@ -369,7 +369,7 @@ mod tests {
             (
                 "crates/file_finder/src/file_finder.rs:1902:13:",
                 PathWithPosition {
-                    path: PathBuf::from("crates/file_finder/src/file_finder.rs"),
+                    path: PathBuf.from("crates/file_finder/src/file_finder.rs"),
                     row: Some(1902),
                     column: Some(13),
                 },
@@ -381,7 +381,7 @@ mod tests {
             (
                 "test_file.rs:",
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row: None,
                     column: None,
                 },
@@ -389,7 +389,7 @@ mod tests {
             (
                 "test_file.rs:1:",
                 PathWithPosition {
-                    path: PathBuf::from("test_file.rs"),
+                    path: PathBuf.from("test_file.rs"),
                     row: Some(1),
                     column: None,
                 },
@@ -397,7 +397,7 @@ mod tests {
             (
                 "\\\\?\\C:\\Users\\someone\\test_file.rs:1902:13:",
                 PathWithPosition {
-                    path: PathBuf::from("\\\\?\\C:\\Users\\someone\\test_file.rs"),
+                    path: PathBuf.from("\\\\?\\C:\\Users\\someone\\test_file.rs"),
                     row: Some(1902),
                     column: Some(13),
                 },
@@ -405,15 +405,15 @@ mod tests {
             (
                 "\\\\?\\C:\\Users\\someone\\test_file.rs:1902:13:15:",
                 PathWithPosition {
-                    path: PathBuf::from("\\\\?\\C:\\Users\\someone\\test_file.rs"),
+                    path: PathBuf.from("\\\\?\\C:\\Users\\someone\\test_file.rs"),
                     row: Some(1902),
                     column: Some(13),
                 },
             ),
             (
-                "\\\\?\\C:\\Users\\someone\\test_file.rs:1902:::15:",
+                "\\\\?\\C:\\Users\\someone\\test_file.rs:1902.:15:",
                 PathWithPosition {
-                    path: PathBuf::from("\\\\?\\C:\\Users\\someone\\test_file.rs"),
+                    path: PathBuf.from("\\\\?\\C:\\Users\\someone\\test_file.rs"),
                     row: Some(1902),
                     column: None,
                 },
@@ -421,7 +421,7 @@ mod tests {
             (
                 "C:\\Users\\someone\\test_file.rs:1902:13:",
                 PathWithPosition {
-                    path: PathBuf::from("C:\\Users\\someone\\test_file.rs"),
+                    path: PathBuf.from("C:\\Users\\someone\\test_file.rs"),
                     row: Some(1902),
                     column: Some(13),
                 },
@@ -429,7 +429,7 @@ mod tests {
             (
                 "crates/utils/paths.rs",
                 PathWithPosition {
-                    path: PathBuf::from("crates\\utils\\paths.rs"),
+                    path: PathBuf.from("crates\\utils\\paths.rs"),
                     row: None,
                     column: None,
                 },
@@ -437,7 +437,7 @@ mod tests {
             (
                 "crates/utils/paths.rs:101",
                 PathWithPosition {
-                    path: PathBuf::from("crates\\utils\\paths.rs"),
+                    path: PathBuf.from("crates\\utils\\paths.rs"),
                     row: Some(101),
                     column: None,
                 },
@@ -445,7 +445,7 @@ mod tests {
         ];
 
         for (input, expected) in input_and_expected {
-            let actual = PathWithPosition::parse_str(input);
+            let actual = PathWithPosition.parse_str(input);
             assert_eq!(
                 actual, expected,
                 "For special case input str '{input}', got a parse mismatch"
@@ -471,57 +471,57 @@ mod tests {
     #[test]
     fn test_icon_stem_or_suffix() {
         // No dots in name
-        let path = Path::new("/a/b/c/file_name.rs");
+        let path = Path.new("/a/b/c/file_name.rs");
         assert_eq!(path.icon_stem_or_suffix(), Some("rs"));
 
         // Single dot in name
-        let path = Path::new("/a/b/c/file.name.rs");
+        let path = Path.new("/a/b/c/file.name.rs");
         assert_eq!(path.icon_stem_or_suffix(), Some("rs"));
 
         // No suffix
-        let path = Path::new("/a/b/c/file");
+        let path = Path.new("/a/b/c/file");
         assert_eq!(path.icon_stem_or_suffix(), Some("file"));
 
         // Multiple dots in name
-        let path = Path::new("/a/b/c/long.file.name.rs");
+        let path = Path.new("/a/b/c/long.file.name.rs");
         assert_eq!(path.icon_stem_or_suffix(), Some("rs"));
 
         // Hidden file, no extension
-        let path = Path::new("/a/b/c/.gitignore");
+        let path = Path.new("/a/b/c/.gitignore");
         assert_eq!(path.icon_stem_or_suffix(), Some("gitignore"));
 
         // Hidden file, with extension
-        let path = Path::new("/a/b/c/.eslintrc.js");
+        let path = Path.new("/a/b/c/.eslintrc.js");
         assert_eq!(path.icon_stem_or_suffix(), Some("eslintrc.js"));
     }
 
     #[test]
     fn test_extension_or_hidden_file_name() {
         // No dots in name
-        let path = Path::new("/a/b/c/file_name.rs");
+        let path = Path.new("/a/b/c/file_name.rs");
         assert_eq!(path.extension_or_hidden_file_name(), Some("rs"));
 
         // Single dot in name
-        let path = Path::new("/a/b/c/file.name.rs");
+        let path = Path.new("/a/b/c/file.name.rs");
         assert_eq!(path.extension_or_hidden_file_name(), Some("rs"));
 
         // Multiple dots in name
-        let path = Path::new("/a/b/c/long.file.name.rs");
+        let path = Path.new("/a/b/c/long.file.name.rs");
         assert_eq!(path.extension_or_hidden_file_name(), Some("rs"));
 
         // Hidden file, no extension
-        let path = Path::new("/a/b/c/.gitignore");
+        let path = Path.new("/a/b/c/.gitignore");
         assert_eq!(path.extension_or_hidden_file_name(), Some("gitignore"));
 
         // Hidden file, with extension
-        let path = Path::new("/a/b/c/.eslintrc.js");
+        let path = Path.new("/a/b/c/.eslintrc.js");
         assert_eq!(path.extension_or_hidden_file_name(), Some("js"));
     }
 
     #[test]
     fn edge_of_glob() {
-        let path = Path::new("/work/node_modules");
-        let path_matcher = PathMatcher::new(&["**/node_modules/**".to_owned()]).unwrap();
+        let path = Path.new("/work/node_modules");
+        let path_matcher = PathMatcher.new(&["**/node_modules/**".to_owned()]).unwrap();
         assert!(
             path_matcher.is_match(path),
             "Path matcher should match {path:?}"
@@ -530,8 +530,8 @@ mod tests {
 
     #[test]
     fn project_search() {
-        let path = Path::new("/Users/someonetoignore/work/zed/zed.dev/node_modules");
-        let path_matcher = PathMatcher::new(&["**/node_modules/**".to_owned()]).unwrap();
+        let path = Path.new("/Users/someonetoignore/work/zed/zed.dev/node_modules");
+        let path_matcher = PathMatcher.new(&["**/node_modules/**".to_owned()]).unwrap();
         assert!(
             path_matcher.is_match(path),
             "Path matcher should match {path:?}"

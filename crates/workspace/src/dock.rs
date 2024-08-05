@@ -1,19 +1,19 @@
-use crate::persistence::model::DockData;
-use crate::{status_bar::StatusItemView, Workspace};
-use crate::{DraggedDock, Event, Pane};
-use client::proto;
-use gpui::{
+use crate.persistence.model.DockData;
+use crate.{status_bar.StatusItemView, Workspace};
+use crate.{DraggedDock, Event, Pane};
+use client.proto;
+use gpui.{
     deferred, div, px, Action, AnchorCorner, AnyView, AppContext, Axis, Entity, EntityId,
     EventEmitter, FocusHandle, FocusableView, IntoElement, KeyContext, MouseButton, MouseDownEvent,
     MouseUpEvent, ParentElement, Render, SharedString, StyleRefinement, Styled, Subscription, View,
     ViewContext, VisualContext, WeakView, WindowContext,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::SettingsStore;
-use std::sync::Arc;
-use ui::{h_flex, ContextMenu, IconButton, Tooltip};
-use ui::{prelude::*, right_click_menu};
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.SettingsStore;
+use std.sync.Arc;
+use ui.{h_flex, ContextMenu, IconButton, Tooltip};
+use ui.{prelude.*, right_click_menu};
 
 const RESIZE_HANDLE_SIZE: Pixels = Pixels(6.);
 
@@ -24,7 +24,7 @@ pub enum PanelEvent {
     Close,
 }
 
-pub use proto::PanelId;
+pub use proto.PanelId;
 
 pub trait Panel: FocusableView + EventEmitter<PanelEvent> {
     fn persistent_name() -> &'static str;
@@ -33,7 +33,7 @@ pub trait Panel: FocusableView + EventEmitter<PanelEvent> {
     fn set_position(&mut self, position: DockPosition, cx: &mut ViewContext<Self>);
     fn size(&self, cx: &WindowContext) -> Pixels;
     fn set_size(&mut self, size: Option<Pixels>, cx: &mut ViewContext<Self>);
-    fn icon(&self, cx: &WindowContext) -> Option<ui::IconName>;
+    fn icon(&self, cx: &WindowContext) -> Option<ui.IconName>;
     fn icon_tooltip(&self, cx: &WindowContext) -> Option<&'static str>;
     fn toggle_action(&self) -> Box<dyn Action>;
     fn icon_label(&self, _: &WindowContext) -> Option<String> {
@@ -50,7 +50,7 @@ pub trait Panel: FocusableView + EventEmitter<PanelEvent> {
     fn pane(&self) -> Option<View<Pane>> {
         None
     }
-    fn remote_id() -> Option<proto::PanelId> {
+    fn remote_id() -> Option<proto.PanelId> {
         None
     }
 }
@@ -64,11 +64,11 @@ pub trait PanelHandle: Send + Sync {
     fn is_zoomed(&self, cx: &WindowContext) -> bool;
     fn set_zoomed(&self, zoomed: bool, cx: &mut WindowContext);
     fn set_active(&self, active: bool, cx: &mut WindowContext);
-    fn remote_id(&self) -> Option<proto::PanelId>;
+    fn remote_id(&self) -> Option<proto.PanelId>;
     fn pane(&self, cx: &WindowContext) -> Option<View<Pane>>;
     fn size(&self, cx: &WindowContext) -> Pixels;
     fn set_size(&self, size: Option<Pixels>, cx: &mut WindowContext);
-    fn icon(&self, cx: &WindowContext) -> Option<ui::IconName>;
+    fn icon(&self, cx: &WindowContext) -> Option<ui.IconName>;
     fn icon_tooltip(&self, cx: &WindowContext) -> Option<&'static str>;
     fn toggle_action(&self, cx: &WindowContext) -> Box<dyn Action>;
     fn icon_label(&self, cx: &WindowContext) -> Option<String>;
@@ -81,11 +81,11 @@ where
     T: Panel,
 {
     fn panel_id(&self) -> EntityId {
-        Entity::entity_id(self)
+        Entity.entity_id(self)
     }
 
     fn persistent_name(&self) -> &'static str {
-        T::persistent_name()
+        T.persistent_name()
     }
 
     fn position(&self, cx: &WindowContext) -> DockPosition {
@@ -117,7 +117,7 @@ where
     }
 
     fn remote_id(&self) -> Option<PanelId> {
-        T::remote_id()
+        T.remote_id()
     }
 
     fn size(&self, cx: &WindowContext) -> Pixels {
@@ -128,7 +128,7 @@ where
         self.update(cx, |this, cx| this.set_size(size, cx))
     }
 
-    fn icon(&self, cx: &WindowContext) -> Option<ui::IconName> {
+    fn icon(&self, cx: &WindowContext) -> Option<ui.IconName> {
         self.read(cx).icon(cx)
     }
 
@@ -189,16 +189,16 @@ pub enum DockPosition {
 impl DockPosition {
     fn to_label(&self) -> &'static str {
         match self {
-            Self::Left => "left",
-            Self::Bottom => "bottom",
-            Self::Right => "right",
+            Self.Left => "left",
+            Self.Bottom => "bottom",
+            Self.Right => "right",
         }
     }
 
     pub fn axis(&self) -> Axis {
         match self {
-            Self::Left | Self::Right => Axis::Horizontal,
-            Self::Bottom => Axis::Vertical,
+            Self.Left | Self.Right => Axis.Horizontal,
+            Self.Bottom => Axis.Vertical,
         }
     }
 }
@@ -223,14 +223,14 @@ impl Dock {
                 }
             });
             let zoom_subscription = cx.subscribe(&workspace, |dock, workspace, e: &Event, cx| {
-                if matches!(e, Event::ZoomChanged) {
+                if matches!(e, Event.ZoomChanged) {
                     let is_zoomed = workspace.read(cx).zoomed.is_some();
                     dock.resizeable = !is_zoomed;
                 }
             });
             Self {
                 position,
-                panel_entries: Default::default(),
+                panel_entries: Default.default(),
                 active_panel_index: 0,
                 is_open: false,
                 focus_handle: focus_handle.clone(),
@@ -256,7 +256,7 @@ impl Dock {
                     workspace.zoomed = None;
                     workspace.zoomed_position = None;
                 }
-                cx.emit(Event::ZoomChanged);
+                cx.emit(Event.ZoomChanged);
                 workspace.dismiss_zoomed_items_to_reveal(Some(position), cx);
                 workspace.update_active_view_for_followers(cx)
             }
@@ -269,7 +269,7 @@ impl Dock {
                     if panel.is_zoomed(cx) {
                         workspace.zoomed = Some(panel.to_any().downgrade());
                         workspace.zoomed_position = Some(position);
-                        cx.emit(Event::ZoomChanged);
+                        cx.emit(Event.ZoomChanged);
                         return;
                     }
                 }
@@ -277,7 +277,7 @@ impl Dock {
             if workspace.zoomed_position == Some(position) {
                 workspace.zoomed = None;
                 workspace.zoomed_position = None;
-                cx.emit(Event::ZoomChanged);
+                cx.emit(Event.ZoomChanged);
             }
         })
         .detach();
@@ -302,7 +302,7 @@ impl Dock {
     pub fn panel_index_for_type<T: Panel>(&self) -> Option<usize> {
         self.panel_entries
             .iter()
-            .position(|entry| entry.panel.to_any().downcast::<T>().is_ok())
+            .position(|entry| entry.panel.to_any().downcast.<T>().is_ok())
     }
 
     pub fn panel_index_for_persistent_name(
@@ -366,7 +366,7 @@ impl Dock {
     ) {
         let subscriptions = [
             cx.observe(&panel, |_, _, cx| cx.notify()),
-            cx.observe_global::<SettingsStore>({
+            cx.observe_global.<SettingsStore>({
                 let workspace = workspace.clone();
                 let panel = panel.clone();
 
@@ -381,9 +381,9 @@ impl Dock {
                             workspace.zoomed_position = Some(new_position);
                         }
                         match new_position {
-                            DockPosition::Left => &workspace.left_dock,
-                            DockPosition::Bottom => &workspace.bottom_dock,
-                            DockPosition::Right => &workspace.right_dock,
+                            DockPosition.Left => &workspace.left_dock,
+                            DockPosition.Bottom => &workspace.bottom_dock,
+                            DockPosition.Right => &workspace.right_dock,
                         }
                         .clone()
                     }) else {
@@ -392,7 +392,7 @@ impl Dock {
 
                     let was_visible = this.is_open()
                         && this.visible_panel().map_or(false, |active_panel| {
-                            active_panel.panel_id() == Entity::entity_id(&panel)
+                            active_panel.panel_id() == Entity.entity_id(&panel)
                         });
 
                     this.remove_panel(&panel, cx);
@@ -408,7 +408,7 @@ impl Dock {
                 }
             }),
             cx.subscribe(&panel, move |this, panel, event, cx| match event {
-                PanelEvent::ZoomIn => {
+                PanelEvent.ZoomIn => {
                     this.set_panel_zoomed(&panel.to_any(), true, cx);
                     if !panel.focus_handle(cx).contains_focused(cx) {
                         cx.focus_view(&panel);
@@ -417,38 +417,38 @@ impl Dock {
                         .update(cx, |workspace, cx| {
                             workspace.zoomed = Some(panel.downgrade().into());
                             workspace.zoomed_position = Some(panel.read(cx).position(cx));
-                            cx.emit(Event::ZoomChanged);
+                            cx.emit(Event.ZoomChanged);
                         })
                         .ok();
                 }
-                PanelEvent::ZoomOut => {
+                PanelEvent.ZoomOut => {
                     this.set_panel_zoomed(&panel.to_any(), false, cx);
                     workspace
                         .update(cx, |workspace, cx| {
                             if workspace.zoomed_position == Some(this.position) {
                                 workspace.zoomed = None;
                                 workspace.zoomed_position = None;
-                                cx.emit(Event::ZoomChanged);
+                                cx.emit(Event.ZoomChanged);
                             }
                             cx.notify();
                         })
                         .ok();
                 }
-                PanelEvent::Activate => {
+                PanelEvent.Activate => {
                     if let Some(ix) = this
                         .panel_entries
                         .iter()
-                        .position(|entry| entry.panel.panel_id() == Entity::entity_id(&panel))
+                        .position(|entry| entry.panel.panel_id() == Entity.entity_id(&panel))
                     {
                         this.set_open(true, cx);
                         this.activate_panel(ix, cx);
                         cx.focus_view(&panel);
                     }
                 }
-                PanelEvent::Close => {
+                PanelEvent.Close => {
                     if this
                         .visible_panel()
-                        .map_or(false, |p| p.panel_id() == Entity::entity_id(&panel))
+                        .map_or(false, |p| p.panel_id() == Entity.entity_id(&panel))
                     {
                         this.set_open(false, cx);
                     }
@@ -457,7 +457,7 @@ impl Dock {
         ];
 
         self.panel_entries.push(PanelEntry {
-            panel: Arc::new(panel.clone()),
+            panel: Arc.new(panel.clone()),
             _subscriptions: subscriptions,
         });
 
@@ -492,7 +492,7 @@ impl Dock {
         if let Some(panel_ix) = self
             .panel_entries
             .iter()
-            .position(|entry| entry.panel.panel_id() == Entity::entity_id(panel))
+            .position(|entry| entry.panel.panel_id() == Entity.entity_id(panel))
         {
             if panel_ix == self.active_panel_index {
                 self.active_panel_index = 0;
@@ -577,14 +577,14 @@ impl Dock {
 
     pub fn toggle_action(&self) -> Box<dyn Action> {
         match self.position {
-            DockPosition::Left => crate::ToggleLeftDock.boxed_clone(),
-            DockPosition::Bottom => crate::ToggleBottomDock.boxed_clone(),
-            DockPosition::Right => crate::ToggleRightDock.boxed_clone(),
+            DockPosition.Left => crate.ToggleLeftDock.boxed_clone(),
+            DockPosition.Bottom => crate.ToggleBottomDock.boxed_clone(),
+            DockPosition.Right => crate.ToggleRightDock.boxed_clone(),
         }
     }
 
     fn dispatch_context() -> KeyContext {
-        let mut dispatch_context = KeyContext::new_with_defaults();
+        let mut dispatch_context = KeyContext.new_with_defaults();
         dispatch_context.add("Dock");
 
         dispatch_context
@@ -593,7 +593,7 @@ impl Dock {
 
 impl Render for Dock {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let dispatch_context = Self::dispatch_context();
+        let dispatch_context = Self.dispatch_context();
         if let Some(entry) = self.visible_entry() {
             let size = entry.panel.size(cx);
 
@@ -606,13 +606,13 @@ impl Render for Dock {
                         cx.new_view(|_| dock.clone())
                     })
                     .on_mouse_down(
-                        MouseButton::Left,
+                        MouseButton.Left,
                         cx.listener(|_, _: &MouseDownEvent, cx| {
                             cx.stop_propagation();
                         }),
                     )
                     .on_mouse_up(
-                        MouseButton::Left,
+                        MouseButton.Left,
                         cx.listener(|v, e: &MouseUpEvent, cx| {
                             if e.click_count == 2 {
                                 v.resize_active_panel(None, cx);
@@ -622,7 +622,7 @@ impl Render for Dock {
                     )
                     .occlude();
                 match self.position() {
-                    DockPosition::Left => deferred(
+                    DockPosition.Left => deferred(
                         handle
                             .absolute()
                             .right(-RESIZE_HANDLE_SIZE / 2.)
@@ -631,7 +631,7 @@ impl Render for Dock {
                             .w(RESIZE_HANDLE_SIZE)
                             .cursor_col_resize(),
                     ),
-                    DockPosition::Bottom => deferred(
+                    DockPosition.Bottom => deferred(
                         handle
                             .absolute()
                             .top(-RESIZE_HANDLE_SIZE / 2.)
@@ -640,7 +640,7 @@ impl Render for Dock {
                             .h(RESIZE_HANDLE_SIZE)
                             .cursor_row_resize(),
                     ),
-                    DockPosition::Right => deferred(
+                    DockPosition.Right => deferred(
                         handle
                             .absolute()
                             .top(px(0.))
@@ -660,25 +660,25 @@ impl Render for Dock {
                 .border_color(cx.theme().colors().border)
                 .overflow_hidden()
                 .map(|this| match self.position().axis() {
-                    Axis::Horizontal => this.w(size).h_full().flex_row(),
-                    Axis::Vertical => this.h(size).w_full().flex_col(),
+                    Axis.Horizontal => this.w(size).h_full().flex_row(),
+                    Axis.Vertical => this.h(size).w_full().flex_col(),
                 })
                 .map(|this| match self.position() {
-                    DockPosition::Left => this.border_r_1(),
-                    DockPosition::Right => this.border_l_1(),
-                    DockPosition::Bottom => this.border_t_1(),
+                    DockPosition.Left => this.border_r_1(),
+                    DockPosition.Right => this.border_l_1(),
+                    DockPosition.Bottom => this.border_t_1(),
                 })
                 .child(
                     div()
                         .map(|this| match self.position().axis() {
-                            Axis::Horizontal => this.min_w(size).h_full(),
-                            Axis::Vertical => this.min_h(size).w_full(),
+                            Axis.Horizontal => this.min_w(size).h_full(),
+                            Axis.Vertical => this.min_h(size).w_full(),
                         })
                         .child(
                             entry
                                 .panel
                                 .to_any()
-                                .cached(StyleRefinement::default().v_flex().size_full()),
+                                .cached(StyleRefinement.default().v_flex().size_full()),
                         ),
                 )
                 .when(self.resizeable, |this| this.child(create_resize_handle()))
@@ -705,9 +705,9 @@ impl Render for PanelButtons {
         let dock_position = dock.position;
 
         let (menu_anchor, menu_attach) = match dock.position {
-            DockPosition::Left => (AnchorCorner::BottomLeft, AnchorCorner::TopLeft),
-            DockPosition::Bottom | DockPosition::Right => {
-                (AnchorCorner::BottomRight, AnchorCorner::TopRight)
+            DockPosition.Left => (AnchorCorner.BottomLeft, AnchorCorner.TopLeft),
+            DockPosition.Bottom | DockPosition.Right => {
+                (AnchorCorner.BottomRight, AnchorCorner.TopRight)
             }
         };
 
@@ -739,12 +739,12 @@ impl Render for PanelButtons {
                     right_click_menu(name)
                         .menu(move |cx| {
                             const POSITIONS: [DockPosition; 3] = [
-                                DockPosition::Left,
-                                DockPosition::Right,
-                                DockPosition::Bottom,
+                                DockPosition.Left,
+                                DockPosition.Right,
+                                DockPosition.Bottom,
                             ];
 
-                            ContextMenu::build(cx, |mut menu, cx| {
+                            ContextMenu.build(cx, |mut menu, cx| {
                                 for position in POSITIONS {
                                     if position != dock_position
                                         && panel.position_is_valid(position, cx)
@@ -765,15 +765,15 @@ impl Render for PanelButtons {
                         .anchor(menu_anchor)
                         .attach(menu_attach)
                         .trigger(
-                            IconButton::new(name, icon)
-                                .icon_size(IconSize::Small)
+                            IconButton.new(name, icon)
+                                .icon_size(IconSize.Small)
                                 .selected(is_active_button)
                                 .on_click({
                                     let action = action.boxed_clone();
                                     move |_, cx| cx.dispatch_action(action.boxed_clone())
                                 })
                                 .tooltip(move |cx| {
-                                    Tooltip::for_action(tooltip.clone(), &*action, cx)
+                                    Tooltip.for_action(tooltip.clone(), &*action, cx)
                                 }),
                         ),
                 )
@@ -786,7 +786,7 @@ impl Render for PanelButtons {
 impl StatusItemView for PanelButtons {
     fn set_active_pane_item(
         &mut self,
-        _active_pane_item: Option<&dyn crate::ItemHandle>,
+        _active_pane_item: Option<&dyn crate.ItemHandle>,
         _cx: &mut ViewContext<Self>,
     ) {
         // Nothing to do, panel buttons don't depend on the active center item
@@ -795,8 +795,8 @@ impl StatusItemView for PanelButtons {
 
 #[cfg(any(test, feature = "test-support"))]
 pub mod test {
-    use super::*;
-    use gpui::{actions, div, ViewContext, WindowContext};
+    use super.*;
+    use gpui.{actions, div, ViewContext, WindowContext};
 
     pub struct TestPanel {
         pub position: DockPosition,
@@ -832,17 +832,17 @@ pub mod test {
             "TestPanel"
         }
 
-        fn position(&self, _: &gpui::WindowContext) -> super::DockPosition {
+        fn position(&self, _: &gpui.WindowContext) -> super.DockPosition {
             self.position
         }
 
-        fn position_is_valid(&self, _: super::DockPosition) -> bool {
+        fn position_is_valid(&self, _: super.DockPosition) -> bool {
             true
         }
 
         fn set_position(&mut self, position: DockPosition, cx: &mut ViewContext<Self>) {
             self.position = position;
-            cx.update_global::<SettingsStore, _>(|_, _| {});
+            cx.update_global.<SettingsStore, _>(|_, _| {});
         }
 
         fn size(&self, _: &WindowContext) -> Pixels {
@@ -853,7 +853,7 @@ pub mod test {
             self.size = size.unwrap_or(px(300.));
         }
 
-        fn icon(&self, _: &WindowContext) -> Option<ui::IconName> {
+        fn icon(&self, _: &WindowContext) -> Option<ui.IconName> {
             None
         }
 

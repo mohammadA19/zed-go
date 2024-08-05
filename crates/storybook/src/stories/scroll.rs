@@ -1,6 +1,6 @@
-use gpui::{div, prelude::*, px, Render, SharedString, Styled, View, WindowContext};
-use ui::prelude::*;
-use ui::Tooltip;
+use gpui.{div, prelude.*, px, Render, SharedString, Styled, View, WindowContext};
+use ui.prelude.*;
+use ui.Tooltip;
 
 pub struct ScrollStory;
 
@@ -11,7 +11,7 @@ impl ScrollStory {
 }
 
 impl Render for ScrollStory {
-    fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut gpui.ViewContext<Self>) -> impl IntoElement {
         let theme = cx.theme();
         let color_1 = theme.status().created;
         let color_2 = theme.status().modified;
@@ -28,7 +28,7 @@ impl Render for ScrollStory {
                     .flex()
                     .flex_row()
                     .children((0..10).map(|column| {
-                        let id = SharedString::from(format!("{}, {}", row, column));
+                        let id = SharedString.from(format!("{}, {}", row, column));
                         let bg = if row % 2 == column % 2 {
                             color_1
                         } else {
@@ -36,7 +36,7 @@ impl Render for ScrollStory {
                         };
                         div()
                             .id(id)
-                            .tooltip(move |cx| Tooltip::text(format!("{}, {}", row, column), cx))
+                            .tooltip(move |cx| Tooltip.text(format!("{}, {}", row, column), cx))
                             .bg(bg)
                             .size(px(100_f32))
                             .when(row >= 5 && column >= 5, |d| {

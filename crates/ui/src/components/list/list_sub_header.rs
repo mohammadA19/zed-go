@@ -1,5 +1,5 @@
-use crate::prelude::*;
-use crate::{h_flex, Icon, IconName, IconSize, Label};
+use crate.prelude.*;
+use crate.{h_flex, Icon, IconName, IconSize, Label};
 
 #[derive(IntoElement)]
 pub struct ListSubHeader {
@@ -59,9 +59,9 @@ impl RenderOnce for ListSubHeader {
                         .items_center()
                         .children(
                             self.start_slot
-                                .map(|i| Icon::new(i).color(Color::Muted).size(IconSize::Small)),
+                                .map(|i| Icon.new(i).color(Color.Muted).size(IconSize.Small)),
                         )
-                        .child(Label::new(self.label.clone()).color(Color::Muted)),
+                        .child(Label.new(self.label.clone()).color(Color.Muted)),
                 ),
         )
     }

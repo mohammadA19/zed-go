@@ -1,18 +1,18 @@
-use crate::{
-    item::{Item, ItemEvent},
+use crate.{
+    item.{Item, ItemEvent},
     ItemNavHistory, WorkspaceId,
 };
-use anyhow::Result;
-use call::participant::{Frame, RemoteVideoTrack};
-use client::{proto::PeerId, User};
-use futures::StreamExt;
-use gpui::{
+use anyhow.Result;
+use call.participant.{Frame, RemoteVideoTrack};
+use client.{proto.PeerId, User};
+use futures.StreamExt;
+use gpui.{
     div, img, AppContext, EventEmitter, FocusHandle, FocusableView, InteractiveElement,
     ParentElement, Render, SharedString, Styled, Task, View, ViewContext, VisualContext,
     WindowContext,
 };
-use std::sync::{Arc, Weak};
-use ui::{prelude::*, Icon, IconName};
+use std.sync.{Arc, Weak};
+use ui.{prelude.*, Icon, IconName};
 
 pub enum Event {
     Close,
@@ -38,11 +38,11 @@ impl SharedScreen {
         cx.focus_handle();
         let mut frames = track.frames();
         Self {
-            track: Arc::downgrade(track),
+            track: Arc.downgrade(track),
             frame: None,
             peer_id,
             user,
-            nav_history: Default::default(),
+            nav_history: Default.default(),
             _maintain_frame: cx.spawn(|this, mut cx| async move {
                 while let Some(frame) = frames.next().await {
                     this.update(&mut cx, |this, cx| {
@@ -50,7 +50,7 @@ impl SharedScreen {
                         cx.notify();
                     })?;
                 }
-                this.update(&mut cx, |_, cx| cx.emit(Event::Close))?;
+                this.update(&mut cx, |_, cx| cx.emit(Event.Close))?;
                 Ok(())
             }),
             focus: cx.focus_handle(),
@@ -89,12 +89,12 @@ impl Item for SharedScreen {
 
     fn deactivated(&mut self, cx: &mut ViewContext<Self>) {
         if let Some(nav_history) = self.nav_history.as_mut() {
-            nav_history.push::<()>(None, cx);
+            nav_history.push.<()>(None, cx);
         }
     }
 
     fn tab_icon(&self, _cx: &WindowContext) -> Option<Icon> {
-        Some(Icon::new(IconName::Screen))
+        Some(Icon.new(IconName.Screen))
     }
 
     fn tab_content_text(&self, _cx: &WindowContext) -> Option<SharedString> {
@@ -115,12 +115,12 @@ impl Item for SharedScreen {
         cx: &mut ViewContext<Self>,
     ) -> Option<View<Self>> {
         let track = self.track.upgrade()?;
-        Some(cx.new_view(|cx| Self::new(&track, self.peer_id, self.user.clone(), cx)))
+        Some(cx.new_view(|cx| Self.new(&track, self.peer_id, self.user.clone(), cx)))
     }
 
-    fn to_item_events(event: &Self::Event, mut f: impl FnMut(ItemEvent)) {
+    fn to_item_events(event: &Self.Event, mut f: impl FnMut(ItemEvent)) {
         match event {
-            Event::Close => f(ItemEvent::CloseItem),
+            Event.Close => f(ItemEvent.CloseItem),
         }
     }
 }

@@ -1,6 +1,6 @@
-use gpui::AnyView;
+use gpui.AnyView;
 
-use crate::prelude::*;
+use crate.prelude.*;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum AudioStatus {
@@ -23,14 +23,14 @@ impl AvatarAudioStatusIndicator {
     }
 
     pub fn tooltip(mut self, tooltip: impl Fn(&mut WindowContext) -> AnyView + 'static) -> Self {
-        self.tooltip = Some(Box::new(tooltip));
+        self.tooltip = Some(Box.new(tooltip));
         self
     }
 }
 
 impl RenderOnce for AvatarAudioStatusIndicator {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let icon_size = IconSize::Indicator;
+        let icon_size = IconSize.Indicator;
 
         let width_in_px = icon_size.rems() * cx.rem_size();
         let padding_x = px(4.);
@@ -50,12 +50,12 @@ impl RenderOnce for AvatarAudioStatusIndicator {
                     .bg(cx.theme().status().error_background)
                     .rounded_md()
                     .child(
-                        Icon::new(match self.audio_status {
-                            AudioStatus::Muted => IconName::MicMute,
-                            AudioStatus::Deafened => IconName::AudioOff,
+                        Icon.new(match self.audio_status {
+                            AudioStatus.Muted => IconName.MicMute,
+                            AudioStatus.Deafened => IconName.AudioOff,
                         })
                         .size(icon_size)
-                        .color(Color::Error),
+                        .color(Color.Error),
                     )
                     .when_some(self.tooltip, |this, tooltip| {
                         this.tooltip(move |cx| tooltip(cx))

@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate.prelude.*;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 pub enum Availability {
@@ -20,7 +20,7 @@ impl AvatarAvailabilityIndicator {
         }
     }
 
-    /// Sets the size of the [`Avatar`](crate::Avatar) this indicator appears on.
+    /// Sets the size of the [`Avatar`](crate.Avatar) this indicator appears on.
     pub fn avatar_size(mut self, size: impl Into<Option<Pixels>>) -> Self {
         self.avatar_size = size.into();
         self
@@ -41,8 +41,8 @@ impl RenderOnce for AvatarAvailabilityIndicator {
             .size(indicator_size)
             .rounded(indicator_size)
             .bg(match self.availability {
-                Availability::Free => cx.theme().status().created,
-                Availability::Busy => cx.theme().status().deleted,
+                Availability.Free => cx.theme().status().created,
+                Availability.Busy => cx.theme().status().deleted,
             })
     }
 }

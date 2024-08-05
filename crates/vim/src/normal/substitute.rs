@@ -1,26 +1,26 @@
-use editor::movement;
-use gpui::{actions, ViewContext, WindowContext};
-use language::Point;
-use workspace::Workspace;
+use editor.movement;
+use gpui.{actions, ViewContext, WindowContext};
+use language.Point;
+use workspace.Workspace;
 
-use crate::{motion::Motion, normal::yank::copy_selections_content, Mode, Vim};
+use crate.{motion.Motion, normal.yank.copy_selections_content, Mode, Vim};
 
 actions!(vim, [Substitute, SubstituteLine]);
 
 pub(crate) fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
     workspace.register_action(|_: &mut Workspace, _: &Substitute, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.start_recording(cx);
             let count = vim.take_count(cx);
-            substitute(vim, count, vim.state().mode == Mode::VisualLine, cx);
+            substitute(vim, count, vim.state().mode == Mode.VisualLine, cx);
         })
     });
 
     workspace.register_action(|_: &mut Workspace, _: &SubstituteLine, cx| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.start_recording(cx);
-            if matches!(vim.state().mode, Mode::VisualBlock | Mode::Visual) {
-                vim.switch_mode(Mode::VisualLine, false, cx)
+            if matches!(vim.state().mode, Mode.VisualBlock | Mode.Visual) {
+                vim.switch_mode(Mode.VisualLine, false, cx)
             }
             let count = vim.take_count(cx);
             substitute(vim, count, true, cx)
@@ -37,7 +37,7 @@ pub fn substitute(vim: &mut Vim, count: Option<usize>, line_mode: bool, cx: &mut
             editor.change_selections(None, cx, |s| {
                 s.move_with(|map, selection| {
                     if selection.start == selection.end {
-                        Motion::Right.expand_selection(
+                        Motion.Right.expand_selection(
                             map,
                             selection,
                             count,
@@ -49,16 +49,16 @@ pub fn substitute(vim: &mut Vim, count: Option<usize>, line_mode: bool, cx: &mut
                         // in Visual mode when the selection contains the newline at the end
                         // of the line, we should exclude it.
                         if !selection.is_empty() && selection.end.column() == 0 {
-                            selection.end = movement::left(map, selection.end);
+                            selection.end = movement.left(map, selection.end);
                         }
-                        Motion::CurrentLine.expand_selection(
+                        Motion.CurrentLine.expand_selection(
                             map,
                             selection,
                             None,
                             false,
                             &text_layout_details,
                         );
-                        if let Some((point, _)) = (Motion::FirstNonWhitespace {
+                        if let Some((point, _)) = (Motion.FirstNonWhitespace {
                             display_lines: false,
                         })
                         .move_point(
@@ -74,54 +74,54 @@ pub fn substitute(vim: &mut Vim, count: Option<usize>, line_mode: bool, cx: &mut
                 })
             });
             copy_selections_content(vim, editor, line_mode, cx);
-            let selections = editor.selections.all::<Point>(cx).into_iter();
+            let selections = editor.selections.all.<Point>(cx).into_iter();
             let edits = selections.map(|selection| (selection.start..selection.end, ""));
             editor.edit(edits, cx);
         });
     });
-    vim.switch_mode(Mode::Insert, true, cx);
+    vim.switch_mode(Mode.Insert, true, cx);
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        state::Mode,
-        test::{NeovimBackedTestContext, VimTestContext},
+    use crate.{
+        state.Mode,
+        test.{NeovimBackedTestContext, VimTestContext},
     };
-    use indoc::indoc;
+    use indoc.indoc;
 
-    #[gpui::test]
-    async fn test_substitute(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_substitute(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
 
         // supports a single cursor
-        cx.set_state(indoc! {"ˇabc\n"}, Mode::Normal);
+        cx.set_state(indoc! {"ˇabc\n"}, Mode.Normal);
         cx.simulate_keystrokes("s x");
         cx.assert_editor_state("xˇbc\n");
 
         // supports a selection
-        cx.set_state(indoc! {"a«bcˇ»\n"}, Mode::Visual);
+        cx.set_state(indoc! {"a«bcˇ»\n"}, Mode.Visual);
         cx.assert_editor_state("a«bcˇ»\n");
         cx.simulate_keystrokes("s x");
         cx.assert_editor_state("axˇ\n");
 
         // supports counts
-        cx.set_state(indoc! {"ˇabc\n"}, Mode::Normal);
+        cx.set_state(indoc! {"ˇabc\n"}, Mode.Normal);
         cx.simulate_keystrokes("2 s x");
         cx.assert_editor_state("xˇc\n");
 
         // supports multiple cursors
-        cx.set_state(indoc! {"a«bcˇ»deˇffg\n"}, Mode::Normal);
+        cx.set_state(indoc! {"a«bcˇ»deˇffg\n"}, Mode.Normal);
         cx.simulate_keystrokes("2 s x");
         cx.assert_editor_state("axˇdexˇg\n");
 
         // does not read beyond end of line
-        cx.set_state(indoc! {"ˇabc\n"}, Mode::Normal);
+        cx.set_state(indoc! {"ˇabc\n"}, Mode.Normal);
         cx.simulate_keystrokes("5 s x");
         cx.assert_editor_state("xˇ\n");
 
         // it handles multibyte characters
-        cx.set_state(indoc! {"ˇcàfé\n"}, Mode::Normal);
+        cx.set_state(indoc! {"ˇcàfé\n"}, Mode.Normal);
         cx.simulate_keystrokes("4 s");
         cx.assert_editor_state("ˇ\n");
 
@@ -135,7 +135,7 @@ mod test {
             alpha
               beˇta
             gamma"},
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("shift-v s");
         cx.assert_editor_state(indoc! {"
@@ -144,9 +144,9 @@ mod test {
             gamma"});
     }
 
-    #[gpui::test]
-    async fn test_visual_change(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_change(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("The quick ˇbrown").await;
         cx.simulate_shared_keystrokes("v w c").await;
@@ -182,9 +182,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_visual_line_change(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_visual_line_change(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.simulate(
             "shift-v c",
             indoc! {"
@@ -231,9 +231,9 @@ mod test {
         .assert_matches();
     }
 
-    #[gpui::test]
-    async fn test_substitute_line(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_substitute_line(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
 
         let initial_state = indoc! {"
                     The quick brown

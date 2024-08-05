@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde.{Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -117,7 +117,7 @@ pub struct ActivationRequest {
 #[serde(rename_all = "camelCase")]
 pub struct SupermavenSetMessage {
     pub key: String,
-    pub value: serde_json::Value,
+    pub value: serde_json.Value,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

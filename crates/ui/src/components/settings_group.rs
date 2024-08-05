@@ -1,7 +1,7 @@
-use gpui::AnyElement;
-use smallvec::SmallVec;
+use gpui.AnyElement;
+use smallvec.SmallVec;
 
-use crate::{prelude::*, ListHeader};
+use crate.{prelude.*, ListHeader};
 
 /// A group of settings.
 #[derive(IntoElement)]
@@ -14,7 +14,7 @@ impl SettingsGroup {
     pub fn new(header: impl Into<SharedString>) -> Self {
         Self {
             header: header.into(),
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 }
@@ -30,7 +30,7 @@ impl RenderOnce for SettingsGroup {
         v_flex()
             .p_1()
             .gap_2()
-            .child(ListHeader::new(self.header))
+            .child(ListHeader.new(self.header))
             .children(self.children)
     }
 }

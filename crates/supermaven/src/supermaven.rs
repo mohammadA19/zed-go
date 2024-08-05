@@ -1,48 +1,48 @@
 mod messages;
 mod supermaven_completion_provider;
 
-pub use supermaven_completion_provider::*;
+pub use supermaven_completion_provider.*;
 
-use anyhow::{Context as _, Result};
+use anyhow.{Context as _, Result};
 #[allow(unused_imports)]
-use client::{proto, Client};
-use collections::BTreeMap;
+use client.{proto, Client};
+use collections.BTreeMap;
 
-use futures::{channel::mpsc, io::BufReader, AsyncBufReadExt, StreamExt};
-use gpui::{
+use futures.{channel.mpsc, io.BufReader, AsyncBufReadExt, StreamExt};
+use gpui.{
     actions, AppContext, AsyncAppContext, EntityId, Global, Model, ModelContext, Task, WeakModel,
 };
-use language::{
-    language_settings::all_language_settings, Anchor, Buffer, BufferSnapshot, ToOffset,
+use language.{
+    language_settings.all_language_settings, Anchor, Buffer, BufferSnapshot, ToOffset,
 };
-use messages::*;
-use postage::watch;
-use serde::{Deserialize, Serialize};
-use settings::SettingsStore;
-use smol::{
-    io::AsyncWriteExt,
-    process::{Child, ChildStdin, ChildStdout, Command},
+use messages.*;
+use postage.watch;
+use serde.{Deserialize, Serialize};
+use settings.SettingsStore;
+use smol.{
+    io.AsyncWriteExt,
+    process.{Child, ChildStdin, ChildStdout, Command},
 };
-use std::{path::PathBuf, process::Stdio, sync::Arc};
-use ui::prelude::*;
-use util::ResultExt;
+use std.{path.PathBuf, process.Stdio, sync.Arc};
+use ui.prelude.*;
+use util.ResultExt;
 
 actions!(supermaven, [SignOut]);
 
 pub fn init(client: Arc<Client>, cx: &mut AppContext) {
-    let supermaven = cx.new_model(|_| Supermaven::Starting);
-    Supermaven::set_global(supermaven.clone(), cx);
+    let supermaven = cx.new_model(|_| Supermaven.Starting);
+    Supermaven.set_global(supermaven.clone(), cx);
 
     let mut provider = all_language_settings(None, cx).inline_completions.provider;
-    if provider == language::language_settings::InlineCompletionProvider::Supermaven {
+    if provider == language.language_settings.InlineCompletionProvider.Supermaven {
         supermaven.update(cx, |supermaven, cx| supermaven.start(client.clone(), cx));
     }
 
-    cx.observe_global::<SettingsStore>(move |cx| {
+    cx.observe_global.<SettingsStore>(move |cx| {
         let new_provider = all_language_settings(None, cx).inline_completions.provider;
         if new_provider != provider {
             provider = new_provider;
-            if provider == language::language_settings::InlineCompletionProvider::Supermaven {
+            if provider == language.language_settings.InlineCompletionProvider.Supermaven {
                 supermaven.update(cx, |supermaven, cx| supermaven.start(client.clone(), cx));
             } else {
                 supermaven.update(cx, |supermaven, _cx| supermaven.stop());
@@ -52,7 +52,7 @@ pub fn init(client: Arc<Client>, cx: &mut AppContext) {
     .detach();
 
     cx.on_action(|_: &SignOut, cx| {
-        if let Some(supermaven) = Supermaven::global(cx) {
+        if let Some(supermaven) = Supermaven.global(cx) {
             supermaven.update(cx, |supermaven, _cx| supermaven.sign_out());
         }
     });
@@ -60,9 +60,9 @@ pub fn init(client: Arc<Client>, cx: &mut AppContext) {
 
 pub enum Supermaven {
     Starting,
-    FailedDownload { error: anyhow::Error },
+    FailedDownload { error: anyhow.Error },
     Spawned(SupermavenAgent),
-    Error { error: anyhow::Error },
+    Error { error: anyhow.Error },
 }
 
 #[derive(Clone)]
@@ -79,7 +79,7 @@ impl Global for SupermavenGlobal {}
 
 impl Supermaven {
     pub fn global(cx: &AppContext) -> Option<Model<Self>> {
-        cx.try_global::<SupermavenGlobal>()
+        cx.try_global.<SupermavenGlobal>()
             .map(|model| model.0.clone())
     }
 
@@ -88,17 +88,17 @@ impl Supermaven {
     }
 
     pub fn start(&mut self, client: Arc<Client>, cx: &mut ModelContext<Self>) {
-        if let Self::Starting = self {
+        if let Self.Starting = self {
             cx.spawn(|this, mut cx| async move {
                 let binary_path =
-                    supermaven_api::get_supermaven_agent_path(client.http_client()).await?;
+                    supermaven_api.get_supermaven_agent_path(client.http_client()).await?;
 
                 this.update(&mut cx, |this, cx| {
-                    if let Self::Starting = this {
+                    if let Self.Starting = this {
                         *this =
-                            Self::Spawned(SupermavenAgent::new(binary_path, client.clone(), cx)?);
+                            Self.Spawned(SupermavenAgent.new(binary_path, client.clone(), cx)?);
                     }
-                    anyhow::Ok(())
+                    anyhow.Ok(())
                 })
             })
             .detach_and_log_err(cx)
@@ -106,11 +106,11 @@ impl Supermaven {
     }
 
     pub fn stop(&mut self) {
-        *self = Self::Starting;
+        *self = Self.Starting;
     }
 
     pub fn is_enabled(&self) -> bool {
-        matches!(self, Self::Spawned { .. })
+        matches!(self, Self.Spawned { .. })
     }
 
     pub fn complete(
@@ -119,13 +119,13 @@ impl Supermaven {
         cursor_position: Anchor,
         cx: &AppContext,
     ) -> Option<SupermavenCompletion> {
-        if let Self::Spawned(agent) = self {
+        if let Self.Spawned(agent) = self {
             let buffer_id = buffer.entity_id();
             let buffer = buffer.read(cx);
             let path = buffer
                 .file()
                 .and_then(|file| Some(file.as_local()?.abs_path(cx)))
-                .unwrap_or_else(|| PathBuf::from("untitled"))
+                .unwrap_or_else(|| PathBuf.from("untitled"))
                 .to_string_lossy()
                 .to_string();
             let content = buffer.text();
@@ -133,29 +133,29 @@ impl Supermaven {
             let state_id = agent.next_state_id;
             agent.next_state_id.0 += 1;
 
-            let (updates_tx, mut updates_rx) = watch::channel();
-            postage::stream::Stream::try_recv(&mut updates_rx).unwrap();
+            let (updates_tx, mut updates_rx) = watch.channel();
+            postage.stream.Stream.try_recv(&mut updates_rx).unwrap();
 
             agent.states.insert(
                 state_id,
                 SupermavenCompletionState {
                     buffer_id,
                     prefix_anchor: cursor_position,
-                    text: String::new(),
-                    dedent: String::new(),
+                    text: String.new(),
+                    dedent: String.new(),
                     updates_tx,
                 },
             );
             let _ = agent
                 .outgoing_tx
-                .unbounded_send(OutboundMessage::StateUpdate(StateUpdateMessage {
+                .unbounded_send(OutboundMessage.StateUpdate(StateUpdateMessage {
                     new_id: state_id.0.to_string(),
                     updates: vec![
-                        StateUpdate::FileUpdate(FileUpdateMessage {
+                        StateUpdate.FileUpdate(FileUpdateMessage {
                             path: path.clone(),
                             content,
                         }),
-                        StateUpdate::CursorUpdate(CursorPositionUpdateMessage { path, offset }),
+                        StateUpdate.CursorUpdate(CursorPositionUpdateMessage { path, offset }),
                     ],
                 }));
 
@@ -174,7 +174,7 @@ impl Supermaven {
         cursor_position: Anchor,
         cx: &AppContext,
     ) -> Option<&str> {
-        if let Self::Spawned(agent) = self {
+        if let Self.Spawned(agent) = self {
             find_relevant_completion(
                 &agent.states,
                 buffer.entity_id(),
@@ -187,15 +187,15 @@ impl Supermaven {
     }
 
     pub fn sign_out(&mut self) {
-        if let Self::Spawned(agent) = self {
+        if let Self.Spawned(agent) = self {
             agent
                 .outgoing_tx
-                .unbounded_send(OutboundMessage::Logout)
+                .unbounded_send(OutboundMessage.Logout)
                 .ok();
             // The account status will get set to RequiresActivation or Ready when the next
             // message from the agent comes in. Until that happens, set the status to Unknown
             // to disable the button.
-            agent.account_status = AccountStatus::Unknown;
+            agent.account_status = AccountStatus.Unknown;
         }
     }
 }
@@ -245,7 +245,7 @@ pub struct SupermavenAgent {
     _process: Child,
     next_state_id: SupermavenCompletionStateId,
     states: BTreeMap<SupermavenCompletionStateId, SupermavenCompletionState>,
-    outgoing_tx: mpsc::UnboundedSender<OutboundMessage>,
+    outgoing_tx: mpsc.UnboundedSender<OutboundMessage>,
     _handle_outgoing_messages: Task<Result<()>>,
     _handle_incoming_messages: Task<Result<()>>,
     pub account_status: AccountStatus,
@@ -260,11 +260,11 @@ impl SupermavenAgent {
         client: Arc<Client>,
         cx: &mut ModelContext<Supermaven>,
     ) -> Result<Self> {
-        let mut process = Command::new(&binary_path)
+        let mut process = Command.new(&binary_path)
             .arg("stdio")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
+            .stdin(Stdio.piped())
+            .stdout(Stdio.piped())
+            .stderr(Stdio.piped())
             .kill_on_drop(true)
             .spawn()
             .context("failed to start the binary")?;
@@ -278,7 +278,7 @@ impl SupermavenAgent {
             .take()
             .context("failed to get stdout for process")?;
 
-        let (outgoing_tx, outgoing_rx) = mpsc::unbounded();
+        let (outgoing_tx, outgoing_rx) = mpsc.unbounded();
 
         cx.spawn({
             let client = client.clone();
@@ -287,45 +287,45 @@ impl SupermavenAgent {
                 let mut status = client.status();
                 while let Some(status) = status.next().await {
                     if status.is_connected() {
-                        let api_key = client.request(proto::GetSupermavenApiKey {}).await?.api_key;
+                        let api_key = client.request(proto.GetSupermavenApiKey {}).await?.api_key;
                         outgoing_tx
-                            .unbounded_send(OutboundMessage::SetApiKey(SetApiKey { api_key }))
+                            .unbounded_send(OutboundMessage.SetApiKey(SetApiKey { api_key }))
                             .ok();
                         this.update(&mut cx, |this, cx| {
-                            if let Supermaven::Spawned(this) = this {
-                                this.account_status = AccountStatus::Ready;
+                            if let Supermaven.Spawned(this) = this {
+                                this.account_status = AccountStatus.Ready;
                                 cx.notify();
                             }
                         })?;
                         break;
                     }
                 }
-                return anyhow::Ok(());
+                return anyhow.Ok(());
             }
         })
         .detach();
 
         Ok(Self {
             _process: process,
-            next_state_id: SupermavenCompletionStateId::default(),
-            states: BTreeMap::default(),
+            next_state_id: SupermavenCompletionStateId.default(),
+            states: BTreeMap.default(),
             outgoing_tx,
             _handle_outgoing_messages: cx
-                .spawn(|_, _cx| Self::handle_outgoing_messages(outgoing_rx, stdin)),
+                .spawn(|_, _cx| Self.handle_outgoing_messages(outgoing_rx, stdin)),
             _handle_incoming_messages: cx
-                .spawn(|this, cx| Self::handle_incoming_messages(this, stdout, cx)),
-            account_status: AccountStatus::Unknown,
+                .spawn(|this, cx| Self.handle_incoming_messages(this, stdout, cx)),
+            account_status: AccountStatus.Unknown,
             service_tier: None,
             client,
         })
     }
 
     async fn handle_outgoing_messages(
-        mut outgoing: mpsc::UnboundedReceiver<OutboundMessage>,
+        mut outgoing: mpsc.UnboundedReceiver<OutboundMessage>,
         mut stdin: ChildStdin,
     ) -> Result<()> {
         while let Some(message) = outgoing.next().await {
-            let bytes = serde_json::to_vec(&message)?;
+            let bytes = serde_json.to_vec(&message)?;
             stdin.write_all(&bytes).await?;
             stdin.write_all(&[b'\n']).await?;
         }
@@ -339,7 +339,7 @@ impl SupermavenAgent {
     ) -> Result<()> {
         const MESSAGE_PREFIX: &str = "SM-MESSAGE ";
 
-        let stdout = BufReader::new(stdout);
+        let stdout = BufReader.new(stdout);
         let mut lines = stdout.lines();
         while let Some(line) = lines.next().await {
             let Some(line) = line.context("failed to read line from stdout").log_err() else {
@@ -348,7 +348,7 @@ impl SupermavenAgent {
             let Some(line) = line.strip_prefix(MESSAGE_PREFIX) else {
                 continue;
             };
-            let Some(message) = serde_json::from_str::<SupermavenMessage>(&line)
+            let Some(message) = serde_json.from_str.<SupermavenMessage>(&line)
                 .with_context(|| format!("failed to deserialize line from stdout: {:?}", line))
                 .log_err()
             else {
@@ -356,10 +356,10 @@ impl SupermavenAgent {
             };
 
             this.update(&mut cx, |this, _cx| {
-                if let Supermaven::Spawned(this) = this {
+                if let Supermaven.Spawned(this) = this {
                     this.handle_message(message);
                 }
-                Task::ready(anyhow::Ok(()))
+                Task.ready(anyhow.Ok(()))
             })?
             .await?;
         }
@@ -369,37 +369,37 @@ impl SupermavenAgent {
 
     fn handle_message(&mut self, message: SupermavenMessage) {
         match message {
-            SupermavenMessage::ActivationRequest(request) => {
+            SupermavenMessage.ActivationRequest(request) => {
                 self.account_status = match request.activate_url {
-                    Some(activate_url) => AccountStatus::NeedsActivation {
+                    Some(activate_url) => AccountStatus.NeedsActivation {
                         activate_url: activate_url.clone(),
                     },
-                    None => AccountStatus::Ready,
+                    None => AccountStatus.Ready,
                 };
             }
-            SupermavenMessage::ActivationSuccess => {
-                self.account_status = AccountStatus::Ready;
+            SupermavenMessage.ActivationSuccess => {
+                self.account_status = AccountStatus.Ready;
             }
-            SupermavenMessage::ServiceTier { service_tier } => {
-                self.account_status = AccountStatus::Ready;
+            SupermavenMessage.ServiceTier { service_tier } => {
+                self.account_status = AccountStatus.Ready;
                 self.service_tier = Some(service_tier);
             }
-            SupermavenMessage::Response(response) => {
+            SupermavenMessage.Response(response) => {
                 let state_id = SupermavenCompletionStateId(response.state_id.parse().unwrap());
                 if let Some(state) = self.states.get_mut(&state_id) {
                     for item in &response.items {
                         match item {
-                            ResponseItem::Text { text } => state.text.push_str(text),
-                            ResponseItem::Dedent { text } => state.dedent.push_str(text),
+                            ResponseItem.Text { text } => state.text.push_str(text),
+                            ResponseItem.Dedent { text } => state.dedent.push_str(text),
                             _ => {}
                         }
                     }
                     *state.updates_tx.borrow_mut() = ();
                 }
             }
-            SupermavenMessage::Passthrough { passthrough } => self.handle_message(*passthrough),
+            SupermavenMessage.Passthrough { passthrough } => self.handle_message(*passthrough),
             _ => {
-                log::warn!("unhandled message: {:?}", message);
+                log.warn!("unhandled message: {:?}", message);
             }
         }
     }
@@ -414,10 +414,10 @@ pub struct SupermavenCompletionState {
     prefix_anchor: Anchor,
     text: String,
     dedent: String,
-    updates_tx: watch::Sender<()>,
+    updates_tx: watch.Sender<()>,
 }
 
 pub struct SupermavenCompletion {
     pub id: SupermavenCompletionStateId,
-    pub updates: watch::Receiver<()>,
+    pub updates: watch.Receiver<()>,
 }

@@ -1,6 +1,6 @@
-use crate::prelude::*;
-use gpui::{AnyElement, StyleRefinement};
-use smallvec::SmallVec;
+use crate.prelude.*;
+use gpui.{AnyElement, StyleRefinement};
+use smallvec.SmallVec;
 
 /// A facepile is a collection of faces stacked horizontally–
 /// always with the leftmost face on top and descending in z-index
@@ -15,7 +15,7 @@ pub struct Facepile {
 
 impl Facepile {
     pub fn empty() -> Self {
-        Self::new(SmallVec::new())
+        Self.new(SmallVec.new())
     }
 
     pub fn new(faces: SmallVec<[AnyElement; 2]>) -> Self {
@@ -35,7 +35,7 @@ impl Facepile {
         self.base.style()
     }
 
-    gpui::padding_style_methods!({
+    gpui.padding_style_methods!({
         visibility: pub
     });
 }

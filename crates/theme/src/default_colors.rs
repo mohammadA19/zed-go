@@ -1,8 +1,8 @@
-use gpui::{Hsla, Rgba};
+use gpui.{Hsla, Rgba};
 
-use crate::scale::{ColorScaleSet, ColorScales};
-use crate::ColorScale;
-use crate::{SystemColors, ThemeColors};
+use crate.scale.{ColorScaleSet, ColorScales};
+use crate.ColorScale;
+use crate.{SystemColors, ThemeColors};
 
 pub(crate) fn neutral() -> ColorScaleSet {
     sand()
@@ -15,7 +15,7 @@ pub(crate) fn neutral() -> ColorScaleSet {
 // not specify a value for each color (and thus should fall back to the defaults).
 impl ThemeColors {
     pub fn light() -> Self {
-        let system = SystemColors::default();
+        let system = SystemColors.default();
 
         Self {
             border: neutral().light().step_6(),
@@ -62,8 +62,8 @@ impl ThemeColors {
             pane_group_border: neutral().light().step_6(),
             scrollbar_thumb_background: neutral().light_alpha().step_3(),
             scrollbar_thumb_hover_background: neutral().light_alpha().step_4(),
-            scrollbar_thumb_border: gpui::transparent_black(),
-            scrollbar_track_background: gpui::transparent_black(),
+            scrollbar_thumb_border: gpui.transparent_black(),
+            scrollbar_track_background: gpui.transparent_black(),
             scrollbar_track_border: neutral().light().step_5(),
             editor_foreground: neutral().light().step_12(),
             editor_background: neutral().light().step_1(),
@@ -113,7 +113,7 @@ impl ThemeColors {
     }
 
     pub fn dark() -> Self {
-        let system = SystemColors::default();
+        let system = SystemColors.default();
 
         Self {
             border: neutral().dark().step_6(),
@@ -160,8 +160,8 @@ impl ThemeColors {
             pane_group_border: neutral().dark().step_6(),
             scrollbar_thumb_background: neutral().dark_alpha().step_3(),
             scrollbar_thumb_hover_background: neutral().dark_alpha().step_4(),
-            scrollbar_thumb_border: gpui::transparent_black(),
-            scrollbar_track_background: gpui::transparent_black(),
+            scrollbar_thumb_border: gpui.transparent_black(),
+            scrollbar_track_background: gpui.transparent_black(),
             scrollbar_track_border: neutral().dark().step_5(),
             editor_foreground: neutral().dark().step_12(),
             editor_background: neutral().dark().step_1(),
@@ -222,18 +222,18 @@ struct StaticColorScaleSet {
 }
 
 impl TryFrom<StaticColorScaleSet> for ColorScaleSet {
-    type Error = anyhow::Error;
+    type Error = anyhow.Error;
 
-    fn try_from(value: StaticColorScaleSet) -> Result<Self, Self::Error> {
-        fn to_color_scale(scale: StaticColorScale) -> Result<ColorScale, anyhow::Error> {
+    fn try_from(value: StaticColorScaleSet) -> Result<Self, Self.Error> {
+        fn to_color_scale(scale: StaticColorScale) -> Result<ColorScale, anyhow.Error> {
             scale
                 .into_iter()
-                .map(|color| Rgba::try_from(color).map(Hsla::from))
-                .collect::<Result<Vec<_>, _>>()
-                .map(ColorScale::from_iter)
+                .map(|color| Rgba.try_from(color).map(Hsla.from))
+                .collect.<Result<Vec<_>, _>>()
+                .map(ColorScale.from_iter)
         }
 
-        Ok(Self::new(
+        Ok(Self.new(
             value.scale,
             to_color_scale(value.light)?,
             to_color_scale(value.light_alpha)?,

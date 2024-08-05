@@ -1,7 +1,7 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use crate::{h_flex, prelude::*, Disclosure, Label};
-use gpui::{AnyElement, ClickEvent};
+use crate.{h_flex, prelude.*, Disclosure, Label};
+use gpui.{AnyElement, ClickEvent};
 
 #[derive(IntoElement)]
 pub struct ListHeader {
@@ -44,22 +44,22 @@ impl ListHeader {
         mut self,
         on_toggle: impl Fn(&ClickEvent, &mut WindowContext) + 'static,
     ) -> Self {
-        self.on_toggle = Some(Arc::new(on_toggle));
+        self.on_toggle = Some(Arc.new(on_toggle));
         self
     }
 
     pub fn start_slot<E: IntoElement>(mut self, start_slot: impl Into<Option<E>>) -> Self {
-        self.start_slot = start_slot.into().map(IntoElement::into_any_element);
+        self.start_slot = start_slot.into().map(IntoElement.into_any_element);
         self
     }
 
     pub fn end_slot<E: IntoElement>(mut self, end_slot: impl Into<Option<E>>) -> Self {
-        self.end_slot = end_slot.into().map(IntoElement::into_any_element);
+        self.end_slot = end_slot.into().map(IntoElement.into_any_element);
         self
     }
 
     pub fn end_hover_slot<E: IntoElement>(mut self, end_hover_slot: impl Into<Option<E>>) -> Self {
-        self.end_hover_slot = end_hover_slot.into().map(IntoElement::into_any_element);
+        self.end_hover_slot = end_hover_slot.into().map(IntoElement.into_any_element);
         self
     }
 
@@ -100,7 +100,7 @@ impl RenderOnce for ListHeader {
                         h_flex()
                             .gap_1()
                             .children(self.toggle.map(|is_open| {
-                                Disclosure::new("toggle", is_open).on_toggle(self.on_toggle.clone())
+                                Disclosure.new("toggle", is_open).on_toggle(self.on_toggle.clone())
                             }))
                             .child(
                                 div()
@@ -109,7 +109,7 @@ impl RenderOnce for ListHeader {
                                     .gap_1()
                                     .items_center()
                                     .children(self.start_slot)
-                                    .child(Label::new(self.label.clone()).color(Color::Muted))
+                                    .child(Label.new(self.label.clone()).color(Color.Muted))
                                     .when_some(self.on_toggle, |this, on_toggle| {
                                         this.on_click(move |event, cx| on_toggle(event, cx))
                                     }),

@@ -1,16 +1,16 @@
-use gpui::{px, size, Context, UpdateGlobal};
-use indoc::indoc;
-use settings::SettingsStore;
-use std::{
-    ops::{Deref, DerefMut},
+use gpui.{px, size, Context, UpdateGlobal};
+use indoc.indoc;
+use settings.SettingsStore;
+use std.{
+    ops.{Deref, DerefMut},
     panic, thread,
 };
 
-use language::language_settings::{AllLanguageSettings, SoftWrap};
-use util::test::marked_text_offsets;
+use language.language_settings.{AllLanguageSettings, SoftWrap};
+use util.test.marked_text_offsets;
 
-use super::{neovim_connection::NeovimConnection, VimTestContext};
-use crate::{state::Mode, Vim};
+use super.{neovim_connection.NeovimConnection, VimTestContext};
+use crate.{state.Mode, Vim};
 
 pub struct NeovimBackedTestContext {
     cx: VimTestContext,
@@ -138,14 +138,14 @@ impl SharedClipboard {
 }
 
 impl NeovimBackedTestContext {
-    pub async fn new(cx: &mut gpui::TestAppContext) -> NeovimBackedTestContext {
+    pub async fn new(cx: &mut gpui.TestAppContext) -> NeovimBackedTestContext {
         #[cfg(feature = "neovim")]
         cx.executor().allow_parking();
         // rust stores the name of the test on the current thread.
         // We use this to automatically name a file that will store
         // the neovim connection's requests/responses so that we can
         // run without neovim on CI.
-        let thread = thread::current();
+        let thread = thread.current();
         let test_name = thread
             .name()
             .expect("thread is not named")
@@ -154,23 +154,23 @@ impl NeovimBackedTestContext {
             .unwrap()
             .to_string();
         Self {
-            cx: VimTestContext::new(cx, true).await,
-            neovim: NeovimConnection::new(test_name).await,
+            cx: VimTestContext.new(cx, true).await,
+            neovim: NeovimConnection.new(test_name).await,
 
             last_set_state: None,
-            recent_keystrokes: Default::default(),
+            recent_keystrokes: Default.default(),
         }
     }
 
     pub async fn set_shared_state(&mut self, marked_text: &str) {
         let mode = if marked_text.contains('»') {
-            Mode::Visual
+            Mode.Visual
         } else {
-            Mode::Normal
+            Mode.Normal
         };
         self.set_state(marked_text, mode);
         self.last_set_state = Some(marked_text.to_string());
-        self.recent_keystrokes = Vec::new();
+        self.recent_keystrokes = Vec.new();
         self.neovim.set_state(marked_text).await;
     }
 
@@ -199,9 +199,9 @@ impl NeovimBackedTestContext {
             .await;
 
         self.update(|cx| {
-            SettingsStore::update_global(cx, |settings, cx| {
-                settings.update_user_settings::<AllLanguageSettings>(cx, |settings| {
-                    settings.defaults.soft_wrap = Some(SoftWrap::PreferredLineLength);
+            SettingsStore.update_global(cx, |settings, cx| {
+                settings.update_user_settings.<AllLanguageSettings>(cx, |settings| {
+                    settings.defaults.soft_wrap = Some(SoftWrap.PreferredLineLength);
                     settings.defaults.preferred_line_length = Some(columns);
                 });
             })
@@ -258,7 +258,7 @@ impl NeovimBackedTestContext {
             state: self.shared_state().await,
             neovim: self.neovim.read_register(register).await,
             editor: self.update(|cx| {
-                Vim::read(cx)
+                Vim.read(cx)
                     .workspace_state
                     .registers
                     .get(&register)
@@ -305,32 +305,32 @@ impl NeovimBackedTestContext {
             }
         }
 
-        SharedState::default()
+        SharedState.default()
     }
 }
 
 impl Deref for NeovimBackedTestContext {
     type Target = VimTestContext;
 
-    fn deref(&self) -> &Self::Target {
+    fn deref(&self) -> &Self.Target {
         &self.cx
     }
 }
 
 impl DerefMut for NeovimBackedTestContext {
-    fn deref_mut(&mut self) -> &mut Self::Target {
+    fn deref_mut(&mut self) -> &mut Self.Target {
         &mut self.cx
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::test::NeovimBackedTestContext;
-    use gpui::TestAppContext;
+    use crate.test.NeovimBackedTestContext;
+    use gpui.TestAppContext;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn neovim_backed_test_context_works(cx: &mut TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.shared_state().await.assert_matches();
         cx.set_shared_state("This is a tesˇt").await;
         cx.shared_state().await.assert_matches();

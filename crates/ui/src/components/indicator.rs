@@ -1,4 +1,4 @@
-use crate::{prelude::*, AnyIcon};
+use crate.{prelude.*, AnyIcon};
 
 #[derive(Default)]
 enum IndicatorKind {
@@ -17,22 +17,22 @@ pub struct Indicator {
 impl Indicator {
     pub fn dot() -> Self {
         Self {
-            kind: IndicatorKind::Dot,
-            color: Color::Default,
+            kind: IndicatorKind.Dot,
+            color: Color.Default,
         }
     }
 
     pub fn bar() -> Self {
         Self {
-            kind: IndicatorKind::Bar,
-            color: Color::Default,
+            kind: IndicatorKind.Bar,
+            color: Color.Default,
         }
     }
 
     pub fn icon(icon: impl Into<AnyIcon>) -> Self {
         Self {
-            kind: IndicatorKind::Icon(icon.into()),
-            color: Color::Default,
+            kind: IndicatorKind.Icon(icon.into()),
+            color: Color.Default,
         }
     }
 
@@ -47,14 +47,14 @@ impl RenderOnce for Indicator {
         let container = div().flex_none();
 
         match self.kind {
-            IndicatorKind::Icon(icon) => container
+            IndicatorKind.Icon(icon) => container
                 .child(icon.map(|icon| icon.custom_size(rems_from_px(8.)).color(self.color))),
-            IndicatorKind::Dot => container
+            IndicatorKind.Dot => container
                 .w_1p5()
                 .h_1p5()
                 .rounded_full()
                 .bg(self.color.color(cx)),
-            IndicatorKind::Bar => container
+            IndicatorKind.Bar => container
                 .w_full()
                 .h_1p5()
                 .rounded_t_md()

@@ -1,8 +1,8 @@
-use std::{fmt::Debug, ops::Add};
-use sum_tree::{Dimension, Edit, Item, KeyedItem, SumTree, Summary};
+use std.{fmt.Debug, ops.Add};
+use sum_tree.{Dimension, Edit, Item, KeyedItem, SumTree, Summary};
 
 pub trait Operation: Clone + Debug {
-    fn lamport_timestamp(&self) -> clock::Lamport;
+    fn lamport_timestamp(&self) -> clock.Lamport;
 }
 
 #[derive(Clone, Debug)]
@@ -12,7 +12,7 @@ struct OperationItem<T>(T);
 pub struct OperationQueue<T: Operation>(SumTree<OperationItem<T>>);
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub struct OperationKey(clock::Lamport);
+pub struct OperationKey(clock.Lamport);
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct OperationSummary {
@@ -21,20 +21,20 @@ pub struct OperationSummary {
 }
 
 impl OperationKey {
-    pub fn new(timestamp: clock::Lamport) -> Self {
+    pub fn new(timestamp: clock.Lamport) -> Self {
         Self(timestamp)
     }
 }
 
 impl<T: Operation> Default for OperationQueue<T> {
     fn default() -> Self {
-        OperationQueue::new()
+        OperationQueue.new()
     }
 }
 
 impl<T: Operation> OperationQueue<T> {
     pub fn new() -> Self {
-        OperationQueue(SumTree::new())
+        OperationQueue(SumTree.new())
     }
 
     pub fn len(&self) -> usize {
@@ -50,7 +50,7 @@ impl<T: Operation> OperationQueue<T> {
         ops.dedup_by_key(|op| op.lamport_timestamp());
         self.0.edit(
             ops.into_iter()
-                .map(|op| Edit::Insert(OperationItem(op)))
+                .map(|op| Edit.Insert(OperationItem(op)))
                 .collect(),
             &(),
         );
@@ -58,7 +58,7 @@ impl<T: Operation> OperationQueue<T> {
 
     pub fn drain(&mut self) -> Self {
         let clone = self.clone();
-        self.0 = SumTree::new();
+        self.0 = SumTree.new();
         clone
     }
 
@@ -99,9 +99,9 @@ impl<'a> Dimension<'a, OperationSummary> for OperationKey {
 impl<T: Operation> Item for OperationItem<T> {
     type Summary = OperationSummary;
 
-    fn summary(&self) -> Self::Summary {
+    fn summary(&self) -> Self.Summary {
         OperationSummary {
-            key: OperationKey::new(self.0.lamport_timestamp()),
+            key: OperationKey.new(self.0.lamport_timestamp()),
             len: 1,
         }
     }
@@ -110,20 +110,20 @@ impl<T: Operation> Item for OperationItem<T> {
 impl<T: Operation> KeyedItem for OperationItem<T> {
     type Key = OperationKey;
 
-    fn key(&self) -> Self::Key {
-        OperationKey::new(self.0.lamport_timestamp())
+    fn key(&self) -> Self.Key {
+        OperationKey.new(self.0.lamport_timestamp())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_len() {
-        let mut clock = clock::Lamport::new(0);
+        let mut clock = clock.Lamport.new(0);
 
-        let mut queue = OperationQueue::new();
+        let mut queue = OperationQueue.new();
         assert_eq!(queue.len(), 0);
 
         queue.insert(vec![
@@ -143,10 +143,10 @@ mod tests {
     }
 
     #[derive(Clone, Debug, Eq, PartialEq)]
-    struct TestOperation(clock::Lamport);
+    struct TestOperation(clock.Lamport);
 
     impl Operation for TestOperation {
-        fn lamport_timestamp(&self) -> clock::Lamport {
+        fn lamport_timestamp(&self) -> clock.Lamport {
             self.0
         }
     }

@@ -1,4 +1,4 @@
-use zed_extension_api::{self as zed, Result};
+use zed_extension_api.{self as zed, Result};
 
 pub struct Rubocop {}
 
@@ -9,7 +9,7 @@ impl Rubocop {
         Self {}
     }
 
-    pub fn server_script_path(&mut self, worktree: &zed::Worktree) -> Result<String> {
+    pub fn server_script_path(&mut self, worktree: &zed.Worktree) -> Result<String> {
         let path = worktree.which("rubocop").ok_or_else(|| {
             "rubocop must be installed manually. Install it with `gem install rubocop` or specify the 'binary' path to it via local settings.".to_string()
         })?;

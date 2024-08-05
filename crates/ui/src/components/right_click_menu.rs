@@ -1,6 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
+use std.{cell.RefCell, rc.Rc};
 
-use gpui::{
+use gpui.{
     anchored, deferred, div, AnchorCorner, AnyElement, Bounds, DismissEvent, DispatchPhase,
     Element, ElementId, GlobalElementId, Hitbox, InteractiveElement, IntoElement, LayoutId,
     ManagedView, MouseButton, MouseDownEvent, ParentElement, Pixels, Point, View, VisualContext,
@@ -17,12 +17,12 @@ pub struct RightClickMenu<M: ManagedView> {
 
 impl<M: ManagedView> RightClickMenu<M> {
     pub fn menu(mut self, f: impl Fn(&mut WindowContext) -> View<M> + 'static) -> Self {
-        self.menu_builder = Some(Rc::new(f));
+        self.menu_builder = Some(Rc.new(f));
         self
     }
 
     pub fn trigger<E: IntoElement + 'static>(mut self, e: E) -> Self {
-        self.child_builder = Some(Box::new(move |_| e.into_any_element()));
+        self.child_builder = Some(Box.new(move |_| e.into_any_element()));
         self
     }
 
@@ -45,7 +45,7 @@ impl<M: ManagedView> RightClickMenu<M> {
         cx: &mut WindowContext,
         f: impl FnOnce(&mut Self, &mut MenuHandleElementState<M>, &mut WindowContext) -> R,
     ) -> R {
-        cx.with_optional_element_state::<MenuHandleElementState<M>, _>(
+        cx.with_optional_element_state.<MenuHandleElementState<M>, _>(
             Some(global_id),
             |element_state, cx| {
                 let mut element_state = element_state.unwrap().unwrap_or_default();
@@ -75,8 +75,8 @@ pub struct MenuHandleElementState<M> {
 impl<M> Clone for MenuHandleElementState<M> {
     fn clone(&self) -> Self {
         Self {
-            menu: Rc::clone(&self.menu),
-            position: Rc::clone(&self.position),
+            menu: Rc.clone(&self.menu),
+            position: Rc.clone(&self.position),
         }
     }
 }
@@ -84,8 +84,8 @@ impl<M> Clone for MenuHandleElementState<M> {
 impl<M> Default for MenuHandleElementState<M> {
     fn default() -> Self {
         Self {
-            menu: Rc::default(),
-            position: Rc::default(),
+            menu: Rc.default(),
+            position: Rc.default(),
         }
     }
 }
@@ -113,7 +113,7 @@ impl<M: ManagedView> Element for RightClickMenu<M> {
         &mut self,
         id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+    ) -> (gpui.LayoutId, Self.RequestLayoutState) {
         self.with_element_state(id.unwrap(), cx, |this, element_state, cx| {
             let mut menu_layout_id = None;
 
@@ -142,7 +142,7 @@ impl<M: ManagedView> Element for RightClickMenu<M> {
                 .map(|child_element| child_element.request_layout(cx));
 
             let layout_id = cx.request_layout(
-                gpui::Style::default(),
+                gpui.Style.default(),
                 menu_layout_id.into_iter().chain(child_layout_id),
             );
 
@@ -161,7 +161,7 @@ impl<M: ManagedView> Element for RightClickMenu<M> {
         &mut self,
         _id: Option<&GlobalElementId>,
         bounds: Bounds<Pixels>,
-        request_layout: &mut Self::RequestLayoutState,
+        request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) -> PrepaintState {
         let hitbox = cx.insert_hitbox(bounds, false);
@@ -185,9 +185,9 @@ impl<M: ManagedView> Element for RightClickMenu<M> {
     fn paint(
         &mut self,
         id: Option<&GlobalElementId>,
-        _bounds: Bounds<gpui::Pixels>,
-        request_layout: &mut Self::RequestLayoutState,
-        prepaint_state: &mut Self::PrepaintState,
+        _bounds: Bounds<gpui.Pixels>,
+        request_layout: &mut Self.RequestLayoutState,
+        prepaint_state: &mut Self.PrepaintState,
         cx: &mut WindowContext,
     ) {
         self.with_element_state(id.unwrap(), cx, |this, element_state, cx| {
@@ -211,8 +211,8 @@ impl<M: ManagedView> Element for RightClickMenu<M> {
 
             let hitbox_id = prepaint_state.hitbox.id;
             cx.on_mouse_event(move |event: &MouseDownEvent, phase, cx| {
-                if phase == DispatchPhase::Bubble
-                    && event.button == MouseButton::Right
+                if phase == DispatchPhase.Bubble
+                    && event.button == MouseButton.Right
                     && hitbox_id.is_hovered(cx)
                 {
                     cx.stop_propagation();
@@ -253,7 +253,7 @@ impl<M: ManagedView> Element for RightClickMenu<M> {
 impl<M: ManagedView> IntoElement for RightClickMenu<M> {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }

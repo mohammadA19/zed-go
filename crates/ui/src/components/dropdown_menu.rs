@@ -1,6 +1,6 @@
-use gpui::{AnchorCorner, ClickEvent, CursorStyle, MouseButton, View};
+use gpui.{AnchorCorner, ClickEvent, CursorStyle, MouseButton, View};
 
-use crate::{prelude::*, ContextMenu, PopoverMenu};
+use crate.{prelude.*, ContextMenu, PopoverMenu};
 
 #[derive(IntoElement)]
 pub struct DropdownMenu {
@@ -41,11 +41,11 @@ impl Disableable for DropdownMenu {
 
 impl RenderOnce for DropdownMenu {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        PopoverMenu::new(self.id)
+        PopoverMenu.new(self.id)
             .full_width(self.full_width)
             .menu(move |_cx| Some(self.menu.clone()))
-            .trigger(DropdownMenuTrigger::new(self.label).full_width(self.full_width))
-            .attach(AnchorCorner::BottomLeft)
+            .trigger(DropdownMenuTrigger.new(self.label).full_width(self.full_width))
+            .attach(AnchorCorner.BottomLeft)
     }
 }
 
@@ -66,7 +66,7 @@ impl DropdownMenuTrigger {
             full_width: false,
             selected: false,
             disabled: false,
-            cursor_style: CursorStyle::default(),
+            cursor_style: CursorStyle.default(),
             on_click: None,
         }
     }
@@ -93,7 +93,7 @@ impl Selectable for DropdownMenuTrigger {
 
 impl Clickable for DropdownMenuTrigger {
     fn on_click(mut self, handler: impl Fn(&ClickEvent, &mut WindowContext) + 'static) -> Self {
-        self.on_click = Some(Box::new(handler));
+        self.on_click = Some(Box.new(handler));
         self
     }
 
@@ -131,22 +131,22 @@ impl RenderOnce for DropdownMenuTrigger {
                     el.cursor_pointer()
                 }
             })
-            .child(Label::new(self.label).color(if disabled {
-                Color::Disabled
+            .child(Label.new(self.label).color(if disabled {
+                Color.Disabled
             } else {
-                Color::Default
+                Color.Default
             }))
             .child(
-                Icon::new(IconName::ChevronUpDown)
-                    .size(IconSize::XSmall)
+                Icon.new(IconName.ChevronUpDown)
+                    .size(IconSize.XSmall)
                     .color(if disabled {
-                        Color::Disabled
+                        Color.Disabled
                     } else {
-                        Color::Muted
+                        Color.Muted
                     }),
             )
             .when_some(self.on_click.filter(|_| !disabled), |el, on_click| {
-                el.on_mouse_down(MouseButton::Left, |_, cx| cx.prevent_default())
+                el.on_mouse_down(MouseButton.Left, |_, cx| cx.prevent_default())
                     .on_click(move |event, cx| {
                         cx.stop_propagation();
                         (on_click)(event, cx)

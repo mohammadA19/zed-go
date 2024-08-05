@@ -1,7 +1,7 @@
-use anyhow::Result;
-use indoc::formatdoc;
+use anyhow.Result;
+use indoc.formatdoc;
 
-use crate::connection::Connection;
+use crate.connection.Connection;
 
 impl Connection {
     // Run a set of commands within the context of a `SAVEPOINT name`. If the callback
@@ -53,13 +53,13 @@ impl Connection {
 
 #[cfg(test)]
 mod tests {
-    use crate::connection::Connection;
-    use anyhow::Result;
-    use indoc::indoc;
+    use crate.connection.Connection;
+    use anyhow.Result;
+    use indoc.indoc;
 
     #[test]
     fn test_nested_savepoints() -> Result<()> {
-        let connection = Connection::open_memory(Some("nested_savepoints"));
+        let connection = Connection.open_memory(Some("nested_savepoints"));
 
         connection
             .exec(indoc! {"
@@ -77,35 +77,35 @@ mod tests {
             connection.exec_bound("INSERT INTO text(text, idx) VALUES (?, ?)")?((save1_text, 1))?;
 
             assert!(connection
-                .with_savepoint("second", || -> Result<Option<()>, anyhow::Error> {
+                .with_savepoint("second", || -> Result<Option<()>, anyhow.Error> {
                     connection.exec_bound("INSERT INTO text(text, idx) VALUES (?, ?)")?((
                         save2_text, 2,
                     ))?;
 
                     assert_eq!(
                         connection
-                            .select::<String>("SELECT text FROM text ORDER BY text.idx ASC")?(
+                            .select.<String>("SELECT text FROM text ORDER BY text.idx ASC")?(
                         )?,
                         vec![save1_text, save2_text],
                     );
 
-                    anyhow::bail!("Failed second save point :(")
+                    anyhow.bail!("Failed second save point :(")
                 })
                 .err()
                 .is_some());
 
             assert_eq!(
-                connection.select::<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
+                connection.select.<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
                 vec![save1_text],
             );
 
-            connection.with_savepoint_rollback::<(), _>("second", || {
+            connection.with_savepoint_rollback.<(), _>("second", || {
                 connection.exec_bound("INSERT INTO text(text, idx) VALUES (?, ?)")?((
                     save2_text, 2,
                 ))?;
 
                 assert_eq!(
-                    connection.select::<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
+                    connection.select.<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
                     vec![save1_text, save2_text],
                 );
 
@@ -113,7 +113,7 @@ mod tests {
             })?;
 
             assert_eq!(
-                connection.select::<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
+                connection.select.<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
                 vec![save1_text],
             );
 
@@ -123,7 +123,7 @@ mod tests {
                 ))?;
 
                 assert_eq!(
-                    connection.select::<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
+                    connection.select.<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
                     vec![save1_text, save2_text],
                 );
 
@@ -131,7 +131,7 @@ mod tests {
             })?;
 
             assert_eq!(
-                connection.select::<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
+                connection.select.<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
                 vec![save1_text, save2_text],
             );
 
@@ -139,7 +139,7 @@ mod tests {
         })?;
 
         assert_eq!(
-            connection.select::<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
+            connection.select.<String>("SELECT text FROM text ORDER BY text.idx ASC")?()?,
             vec![save1_text, save2_text],
         );
 

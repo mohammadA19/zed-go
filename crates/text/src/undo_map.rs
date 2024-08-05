@@ -1,6 +1,6 @@
-use crate::UndoOperation;
-use std::cmp;
-use sum_tree::{Bias, SumTree};
+use crate.UndoOperation;
+use std.cmp;
+use sum_tree.{Bias, SumTree};
 
 #[derive(Copy, Clone, Debug)]
 struct UndoMapEntry {
@@ -8,33 +8,33 @@ struct UndoMapEntry {
     undo_count: u32,
 }
 
-impl sum_tree::Item for UndoMapEntry {
+impl sum_tree.Item for UndoMapEntry {
     type Summary = UndoMapKey;
 
-    fn summary(&self) -> Self::Summary {
+    fn summary(&self) -> Self.Summary {
         self.key
     }
 }
 
-impl sum_tree::KeyedItem for UndoMapEntry {
+impl sum_tree.KeyedItem for UndoMapEntry {
     type Key = UndoMapKey;
 
-    fn key(&self) -> Self::Key {
+    fn key(&self) -> Self.Key {
         self.key
     }
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 struct UndoMapKey {
-    edit_id: clock::Lamport,
-    undo_id: clock::Lamport,
+    edit_id: clock.Lamport,
+    undo_id: clock.Lamport,
 }
 
-impl sum_tree::Summary for UndoMapKey {
+impl sum_tree.Summary for UndoMapKey {
     type Context = ();
 
-    fn add_summary(&mut self, summary: &Self, _: &Self::Context) {
-        *self = cmp::max(*self, *summary);
+    fn add_summary(&mut self, summary: &Self, _: &Self.Context) {
+        *self = cmp.max(*self, *summary);
     }
 }
 
@@ -47,7 +47,7 @@ impl UndoMap {
             .counts
             .iter()
             .map(|(edit_id, count)| {
-                sum_tree::Edit::Insert(UndoMapEntry {
+                sum_tree.Edit.Insert(UndoMapEntry {
                     key: UndoMapKey {
                         edit_id: *edit_id,
                         undo_id: undo.timestamp,
@@ -55,22 +55,22 @@ impl UndoMap {
                     undo_count: *count,
                 })
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         self.0.edit(edits, &());
     }
 
-    pub fn is_undone(&self, edit_id: clock::Lamport) -> bool {
+    pub fn is_undone(&self, edit_id: clock.Lamport) -> bool {
         self.undo_count(edit_id) % 2 == 1
     }
 
-    pub fn was_undone(&self, edit_id: clock::Lamport, version: &clock::Global) -> bool {
-        let mut cursor = self.0.cursor::<UndoMapKey>();
+    pub fn was_undone(&self, edit_id: clock.Lamport, version: &clock.Global) -> bool {
+        let mut cursor = self.0.cursor.<UndoMapKey>();
         cursor.seek(
             &UndoMapKey {
                 edit_id,
-                undo_id: Default::default(),
+                undo_id: Default.default(),
             },
-            Bias::Left,
+            Bias.Left,
             &(),
         );
 
@@ -81,21 +81,21 @@ impl UndoMap {
             }
 
             if version.observed(entry.key.undo_id) {
-                undo_count = cmp::max(undo_count, entry.undo_count);
+                undo_count = cmp.max(undo_count, entry.undo_count);
             }
         }
 
         undo_count % 2 == 1
     }
 
-    pub fn undo_count(&self, edit_id: clock::Lamport) -> u32 {
-        let mut cursor = self.0.cursor::<UndoMapKey>();
+    pub fn undo_count(&self, edit_id: clock.Lamport) -> u32 {
+        let mut cursor = self.0.cursor.<UndoMapKey>();
         cursor.seek(
             &UndoMapKey {
                 edit_id,
-                undo_id: Default::default(),
+                undo_id: Default.default(),
             },
-            Bias::Left,
+            Bias.Left,
             &(),
         );
 
@@ -105,7 +105,7 @@ impl UndoMap {
                 break;
             }
 
-            undo_count = cmp::max(undo_count, entry.undo_count);
+            undo_count = cmp.max(undo_count, entry.undo_count);
         }
         undo_count
     }

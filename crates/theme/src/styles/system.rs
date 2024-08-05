@@ -1,4 +1,4 @@
-use gpui::{hsla, Hsla};
+use gpui.{hsla, Hsla};
 
 #[derive(Clone)]
 pub struct SystemColors {

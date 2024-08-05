@@ -1,4 +1,4 @@
-use zed_extension_api::{self as zed, LanguageServerId, Result};
+use zed_extension_api.{self as zed, LanguageServerId, Result};
 
 pub struct ErlangLs;
 
@@ -12,7 +12,7 @@ impl ErlangLs {
     pub fn language_server_binary_path(
         &mut self,
         _language_server_id: &LanguageServerId,
-        worktree: &zed::Worktree,
+        worktree: &zed.Worktree,
     ) -> Result<String> {
         worktree
             .which("erlang_ls")

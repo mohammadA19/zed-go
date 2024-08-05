@@ -1,4 +1,4 @@
-use time::{OffsetDateTime, UtcOffset};
+use time.{OffsetDateTime, UtcOffset};
 
 /// The formatting style for a timestamp.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,16 +26,16 @@ pub fn format_localized_timestamp(
     let reference_local = reference.to_offset(timezone);
 
     match format {
-        TimestampFormat::Absolute => {
+        TimestampFormat.Absolute => {
             format_absolute_timestamp(timestamp_local, reference_local, false)
         }
-        TimestampFormat::EnhancedAbsolute => {
+        TimestampFormat.EnhancedAbsolute => {
             format_absolute_timestamp(timestamp_local, reference_local, true)
         }
-        TimestampFormat::MediumAbsolute => {
+        TimestampFormat.MediumAbsolute => {
             format_absolute_timestamp_medium(timestamp_local, reference_local)
         }
-        TimestampFormat::Relative => format_relative_time(timestamp_local, reference_local)
+        TimestampFormat.Relative => format_relative_time(timestamp_local, reference_local)
             .unwrap_or_else(|| format_relative_date(timestamp_local, reference_local)),
     }
 }
@@ -50,22 +50,22 @@ fn format_absolute_timestamp(
         if !enhanced_date_formatting {
             return format!(
                 "{} {}",
-                macos::format_date(&timestamp),
-                macos::format_time(&timestamp)
+                macos.format_date(&timestamp),
+                macos.format_time(&timestamp)
             );
         }
 
         let timestamp_date = timestamp.date();
         let reference_date = reference.date();
         if timestamp_date == reference_date {
-            format!("Today at {}", macos::format_time(&timestamp))
+            format!("Today at {}", macos.format_time(&timestamp))
         } else if reference_date.previous_day() == Some(timestamp_date) {
-            format!("Yesterday at {}", macos::format_time(&timestamp))
+            format!("Yesterday at {}", macos.format_time(&timestamp))
         } else {
             format!(
                 "{} {}",
-                macos::format_date(&timestamp),
-                macos::format_time(&timestamp)
+                macos.format_date(&timestamp),
+                macos.format_time(&timestamp)
             )
         }
     }
@@ -83,7 +83,7 @@ fn format_absolute_timestamp_medium(
 ) -> String {
     #[cfg(target_os = "macos")]
     {
-        macos::format_date_medium(&timestamp)
+        macos.format_date_medium(&timestamp)
     }
     #[cfg(not(target_os = "macos"))]
     {
@@ -237,9 +237,9 @@ pub fn format_timestamp_naive(
 
 #[cfg(not(target_os = "macos"))]
 fn format_timestamp_fallback(timestamp: OffsetDateTime, reference: OffsetDateTime) -> String {
-    static CURRENT_LOCALE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    static CURRENT_LOCALE: std.sync.OnceLock<String> = std.sync.OnceLock.new();
     let current_locale = CURRENT_LOCALE
-        .get_or_init(|| sys_locale::get_locale().unwrap_or_else(|| String::from("en-US")));
+        .get_or_init(|| sys_locale.get_locale().unwrap_or_else(|| String.from("en-US")));
 
     let is_12_hour_time = is_12_hour_time_by_locale(current_locale.as_str());
     format_timestamp_naive(timestamp, reference, is_12_hour_time)
@@ -265,35 +265,35 @@ fn is_12_hour_time_by_locale(locale: &str) -> bool {
 
 #[cfg(target_os = "macos")]
 mod macos {
-    use core_foundation::base::TCFType;
-    use core_foundation::date::CFAbsoluteTime;
-    use core_foundation::string::CFString;
-    use core_foundation_sys::date_formatter::CFDateFormatterCreateStringWithAbsoluteTime;
-    use core_foundation_sys::date_formatter::CFDateFormatterRef;
-    use core_foundation_sys::locale::CFLocaleRef;
-    use core_foundation_sys::{
-        base::kCFAllocatorDefault,
-        date_formatter::{
+    use core_foundation.base.TCFType;
+    use core_foundation.date.CFAbsoluteTime;
+    use core_foundation.string.CFString;
+    use core_foundation_sys.date_formatter.CFDateFormatterCreateStringWithAbsoluteTime;
+    use core_foundation_sys.date_formatter.CFDateFormatterRef;
+    use core_foundation_sys.locale.CFLocaleRef;
+    use core_foundation_sys.{
+        base.kCFAllocatorDefault,
+        date_formatter.{
             kCFDateFormatterMediumStyle, kCFDateFormatterNoStyle, kCFDateFormatterShortStyle,
             CFDateFormatterCreate,
         },
-        locale::CFLocaleCopyCurrent,
+        locale.CFLocaleCopyCurrent,
     };
 
-    pub fn format_time(timestamp: &time::OffsetDateTime) -> String {
+    pub fn format_time(timestamp: &time.OffsetDateTime) -> String {
         format_with_date_formatter(timestamp, TIME_FORMATTER.with(|f| *f))
     }
 
-    pub fn format_date(timestamp: &time::OffsetDateTime) -> String {
+    pub fn format_date(timestamp: &time.OffsetDateTime) -> String {
         format_with_date_formatter(timestamp, DATE_FORMATTER.with(|f| *f))
     }
 
-    pub fn format_date_medium(timestamp: &time::OffsetDateTime) -> String {
+    pub fn format_date_medium(timestamp: &time.OffsetDateTime) -> String {
         format_with_date_formatter(timestamp, MEDIUM_DATE_FORMATTER.with(|f| *f))
     }
 
     fn format_with_date_formatter(
-        timestamp: &time::OffsetDateTime,
+        timestamp: &time.OffsetDateTime,
         fmt: CFDateFormatterRef,
     ) -> String {
         const UNIX_TO_CF_ABSOLUTE_TIME_OFFSET: i64 = 978307200;
@@ -306,7 +306,7 @@ mod macos {
                 fmt,
                 cf_absolute_time,
             );
-            CFString::wrap_under_create_rule(s).to_string()
+            CFString.wrap_under_create_rule(s).to_string()
         }
     }
 
@@ -342,7 +342,7 @@ mod macos {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_format_24_hour_time() {
@@ -572,9 +572,9 @@ mod tests {
         let mut current_timestamp = reference;
 
         let mut next_month = || {
-            if current_timestamp.month() == time::Month::January {
+            if current_timestamp.month() == time.Month.January {
                 current_timestamp = current_timestamp
-                    .replace_month(time::Month::December)
+                    .replace_month(time.Month.December)
                     .unwrap()
                     .replace_year(current_timestamp.year() - 1)
                     .unwrap();
@@ -644,7 +644,7 @@ mod tests {
     }
 
     fn test_timezone() -> UtcOffset {
-        UtcOffset::from_hms(0, 0, 0).expect("Valid timezone offset")
+        UtcOffset.from_hms(0, 0, 0).expect("Valid timezone offset")
     }
 
     fn create_offset_datetime(
@@ -655,9 +655,9 @@ mod tests {
         minute: u8,
         second: u8,
     ) -> OffsetDateTime {
-        let date = time::Date::from_calendar_date(year, time::Month::try_from(month).unwrap(), day)
+        let date = time.Date.from_calendar_date(year, time.Month.try_from(month).unwrap(), day)
             .unwrap();
-        let time = time::Time::from_hms(hour, minute, second).unwrap();
+        let time = time.Time.from_hms(hour, minute, second).unwrap();
         let date = date.with_time(time).assume_utc(); // Assume UTC for simplicity
         date.to_offset(test_timezone())
     }

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local, NaiveDateTime};
+use chrono.{DateTime, Local, NaiveDateTime};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DateTimeType {
@@ -13,8 +13,8 @@ impl DateTimeType {
     /// If the [`DateTimeType`] is a [`DateTime<Local>`], it will be converted to a [`NaiveDateTime`].
     pub fn to_naive(&self) -> NaiveDateTime {
         match self {
-            DateTimeType::Naive(naive) => *naive,
-            DateTimeType::Local(local) => local.naive_local(),
+            DateTimeType.Naive(naive) => *naive,
+            DateTimeType.Local(local) => local.naive_local(),
         }
     }
 }
@@ -39,7 +39,7 @@ impl FormatDistance {
     }
 
     pub fn from_now(date: DateTimeType) -> Self {
-        Self::new(date, DateTimeType::Local(Local::now()))
+        Self.new(date, DateTimeType.Local(Local.now()))
     }
 
     pub fn to_string(self) -> String {
@@ -255,25 +255,25 @@ pub fn format_distance_from_now(
     add_suffix: bool,
     hide_prefix: bool,
 ) -> String {
-    let now = chrono::offset::Local::now().naive_local();
+    let now = chrono.offset.Local.now().naive_local();
 
     format_distance(datetime, now, include_seconds, add_suffix, hide_prefix)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use chrono::NaiveDateTime;
+    use super.*;
+    use chrono.NaiveDateTime;
 
     #[test]
     fn test_format_distance() {
-        let date = DateTimeType::Naive(
+        let date = DateTimeType.Naive(
             #[allow(deprecated)]
-            NaiveDateTime::from_timestamp_opt(9600, 0).expect("Invalid NaiveDateTime for date"),
+            NaiveDateTime.from_timestamp_opt(9600, 0).expect("Invalid NaiveDateTime for date"),
         );
-        let base_date = DateTimeType::Naive(
+        let base_date = DateTimeType.Naive(
             #[allow(deprecated)]
-            NaiveDateTime::from_timestamp_opt(0, 0).expect("Invalid NaiveDateTime for base_date"),
+            NaiveDateTime.from_timestamp_opt(0, 0).expect("Invalid NaiveDateTime for base_date"),
         );
 
         assert_eq!(
@@ -284,13 +284,13 @@ mod tests {
 
     #[test]
     fn test_format_distance_with_suffix() {
-        let date = DateTimeType::Naive(
+        let date = DateTimeType.Naive(
             #[allow(deprecated)]
-            NaiveDateTime::from_timestamp_opt(9600, 0).expect("Invalid NaiveDateTime for date"),
+            NaiveDateTime.from_timestamp_opt(9600, 0).expect("Invalid NaiveDateTime for date"),
         );
-        let base_date = DateTimeType::Naive(
+        let base_date = DateTimeType.Naive(
             #[allow(deprecated)]
-            NaiveDateTime::from_timestamp_opt(0, 0).expect("Invalid NaiveDateTime for base_date"),
+            NaiveDateTime.from_timestamp_opt(0, 0).expect("Invalid NaiveDateTime for base_date"),
         );
 
         assert_eq!(
@@ -301,12 +301,12 @@ mod tests {
 
     #[test]
     fn test_format_distance_from_hms() {
-        let date = DateTimeType::Naive(
-            NaiveDateTime::parse_from_str("1969-07-20T11:22:33Z", "%Y-%m-%dT%H:%M:%SZ")
+        let date = DateTimeType.Naive(
+            NaiveDateTime.parse_from_str("1969-07-20T11:22:33Z", "%Y-%m-%dT%H:%M:%SZ")
                 .expect("Invalid NaiveDateTime for date"),
         );
-        let base_date = DateTimeType::Naive(
-            NaiveDateTime::parse_from_str("2024-02-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ")
+        let base_date = DateTimeType.Naive(
+            NaiveDateTime.parse_from_str("2024-02-01T00:00:00Z", "%Y-%m-%dT%H:%M:%SZ")
                 .expect("Invalid NaiveDateTime for base_date"),
         );
 

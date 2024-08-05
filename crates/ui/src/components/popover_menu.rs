@@ -1,13 +1,13 @@
-use std::{cell::RefCell, rc::Rc};
+use std.{cell.RefCell, rc.Rc};
 
-use gpui::{
-    anchored, deferred, div, point, prelude::FluentBuilder, px, size, AnchorCorner, AnyElement,
+use gpui.{
+    anchored, deferred, div, point, prelude.FluentBuilder, px, size, AnchorCorner, AnyElement,
     Bounds, DismissEvent, DispatchPhase, Element, ElementId, GlobalElementId, HitboxId,
     InteractiveElement, IntoElement, LayoutId, Length, ManagedView, MouseDownEvent, ParentElement,
     Pixels, Point, Style, View, VisualContext, WindowContext,
 };
 
-use crate::prelude::*;
+use crate.prelude.*;
 
 pub trait PopoverTrigger: IntoElement + Clickable + Selectable + 'static {}
 
@@ -23,7 +23,7 @@ impl<M> Clone for PopoverMenuHandle<M> {
 
 impl<M> Default for PopoverMenuHandle<M> {
     fn default() -> Self {
-        Self(Rc::default())
+        Self(Rc.default())
     }
 }
 
@@ -84,7 +84,7 @@ impl<M: ManagedView> PopoverMenu<M> {
             id: id.into(),
             child_builder: None,
             menu_builder: None,
-            anchor: AnchorCorner::TopLeft,
+            anchor: AnchorCorner.TopLeft,
             attach: None,
             offset: None,
             trigger_handle: None,
@@ -98,7 +98,7 @@ impl<M: ManagedView> PopoverMenu<M> {
     }
 
     pub fn menu(mut self, f: impl Fn(&mut WindowContext) -> Option<View<M>> + 'static) -> Self {
-        self.menu_builder = Some(Rc::new(f));
+        self.menu_builder = Some(Rc.new(f));
         self
     }
 
@@ -108,7 +108,7 @@ impl<M: ManagedView> PopoverMenu<M> {
     }
 
     pub fn trigger<T: PopoverTrigger>(mut self, t: T) -> Self {
-        self.child_builder = Some(Box::new(|menu, builder| {
+        self.child_builder = Some(Box.new(|menu, builder| {
             let open = menu.borrow().is_some();
             t.selected(open)
                 .when_some(builder, |el, builder| {
@@ -140,10 +140,10 @@ impl<M: ManagedView> PopoverMenu<M> {
 
     fn resolved_attach(&self) -> AnchorCorner {
         self.attach.unwrap_or_else(|| match self.anchor {
-            AnchorCorner::TopLeft => AnchorCorner::BottomLeft,
-            AnchorCorner::TopRight => AnchorCorner::BottomRight,
-            AnchorCorner::BottomLeft => AnchorCorner::TopLeft,
-            AnchorCorner::BottomRight => AnchorCorner::TopRight,
+            AnchorCorner.TopLeft => AnchorCorner.BottomLeft,
+            AnchorCorner.TopRight => AnchorCorner.BottomRight,
+            AnchorCorner.BottomLeft => AnchorCorner.TopLeft,
+            AnchorCorner.BottomRight => AnchorCorner.TopRight,
         })
     }
 
@@ -152,8 +152,8 @@ impl<M: ManagedView> PopoverMenu<M> {
             // Default offset = 4px padding + 1px border
             let offset = rems_from_px(5.) * cx.rem_size();
             match self.anchor {
-                AnchorCorner::TopRight | AnchorCorner::BottomRight => point(offset, px(0.)),
-                AnchorCorner::TopLeft | AnchorCorner::BottomLeft => point(-offset, px(0.)),
+                AnchorCorner.TopRight | AnchorCorner.BottomRight => point(offset, px(0.)),
+                AnchorCorner.TopLeft | AnchorCorner.BottomLeft => point(-offset, px(0.)),
             }
         })
     }
@@ -193,7 +193,7 @@ pub struct PopoverMenuElementState<M> {
 impl<M> Clone for PopoverMenuElementState<M> {
     fn clone(&self) -> Self {
         Self {
-            menu: Rc::clone(&self.menu),
+            menu: Rc.clone(&self.menu),
             child_bounds: self.child_bounds,
         }
     }
@@ -202,7 +202,7 @@ impl<M> Clone for PopoverMenuElementState<M> {
 impl<M> Default for PopoverMenuElementState<M> {
     fn default() -> Self {
         Self {
-            menu: Rc::default(),
+            menu: Rc.default(),
             child_bounds: None,
         }
     }
@@ -226,7 +226,7 @@ impl<M: ManagedView> Element for PopoverMenu<M> {
         &mut self,
         global_id: Option<&GlobalElementId>,
         cx: &mut WindowContext,
-    ) -> (gpui::LayoutId, Self::RequestLayoutState) {
+    ) -> (gpui.LayoutId, Self.RequestLayoutState) {
         cx.with_element_state(
             global_id.unwrap(),
             |element_state: Option<PopoverMenuElementState<M>>, cx| {
@@ -265,9 +265,9 @@ impl<M: ManagedView> Element for PopoverMenu<M> {
                     .as_mut()
                     .map(|child_element| child_element.request_layout(cx));
 
-                let mut style = Style::default();
+                let mut style = Style.default();
                 if self.full_width {
-                    style.size = size(relative(1.).into(), Length::Auto);
+                    style.size = size(relative(1.).into(), Length.Auto);
                 }
 
                 let layout_id =
@@ -292,7 +292,7 @@ impl<M: ManagedView> Element for PopoverMenu<M> {
         &mut self,
         global_id: Option<&GlobalElementId>,
         _bounds: Bounds<Pixels>,
-        request_layout: &mut Self::RequestLayoutState,
+        request_layout: &mut Self.RequestLayoutState,
         cx: &mut WindowContext,
     ) -> Option<HitboxId> {
         if let Some(child) = request_layout.child_element.as_mut() {
@@ -320,8 +320,8 @@ impl<M: ManagedView> Element for PopoverMenu<M> {
     fn paint(
         &mut self,
         _id: Option<&GlobalElementId>,
-        _: Bounds<gpui::Pixels>,
-        request_layout: &mut Self::RequestLayoutState,
+        _: Bounds<gpui.Pixels>,
+        request_layout: &mut Self.RequestLayoutState,
         child_hitbox: &mut Option<HitboxId>,
         cx: &mut WindowContext,
     ) {
@@ -336,7 +336,7 @@ impl<M: ManagedView> Element for PopoverMenu<M> {
                 // Mouse-downing outside the menu dismisses it, so we don't
                 // want a click on the toggle to re-open it.
                 cx.on_mouse_event(move |_: &MouseDownEvent, phase, cx| {
-                    if phase == DispatchPhase::Bubble && child_hitbox.is_hovered(cx) {
+                    if phase == DispatchPhase.Bubble && child_hitbox.is_hovered(cx) {
                         cx.stop_propagation()
                     }
                 })
@@ -348,7 +348,7 @@ impl<M: ManagedView> Element for PopoverMenu<M> {
 impl<M: ManagedView> IntoElement for PopoverMenu<M> {
     type Element = Self;
 
-    fn into_element(self) -> Self::Element {
+    fn into_element(self) -> Self.Element {
         self
     }
 }

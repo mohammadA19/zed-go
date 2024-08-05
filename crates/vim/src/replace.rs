@@ -1,29 +1,29 @@
-use crate::{
-    motion::{self},
-    state::Mode,
+use crate.{
+    motion.{self},
+    state.Mode,
     Vim,
 };
-use editor::{display_map::ToDisplayPoint, Bias, ToPoint};
-use gpui::{actions, ViewContext, WindowContext};
-use language::{AutoindentMode, Point};
-use std::ops::Range;
-use std::sync::Arc;
-use workspace::Workspace;
+use editor.{display_map.ToDisplayPoint, Bias, ToPoint};
+use gpui.{actions, ViewContext, WindowContext};
+use language.{AutoindentMode, Point};
+use std.ops.Range;
+use std.sync.Arc;
+use workspace.Workspace;
 
 actions!(vim, [ToggleReplace, UndoReplace]);
 
 pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
     workspace.register_action(|_, _: &ToggleReplace, cx: &mut ViewContext<Workspace>| {
-        Vim::update(cx, |vim, cx| {
+        Vim.update(cx, |vim, cx| {
             vim.update_state(|state| state.replacements = vec![]);
             vim.start_recording(cx);
-            vim.switch_mode(Mode::Replace, false, cx);
+            vim.switch_mode(Mode.Replace, false, cx);
         });
     });
 
     workspace.register_action(|_, _: &UndoReplace, cx: &mut ViewContext<Workspace>| {
-        Vim::update(cx, |vim, cx| {
-            if vim.state().mode != Mode::Replace {
+        Vim.update(cx, |vim, cx| {
+            if vim.state().mode != Mode.Replace {
                 return;
             }
             let count = vim.take_count(cx);
@@ -33,12 +33,12 @@ pub fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
 }
 
 pub(crate) fn multi_replace(text: Arc<str>, cx: &mut WindowContext) {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.update_active_editor(cx, |vim, editor, cx| {
             editor.transact(cx, |editor, cx| {
                 editor.set_clip_at_line_ends(false, cx);
                 let map = editor.snapshot(cx);
-                let display_selections = editor.selections.all::<Point>(cx);
+                let display_selections = editor.selections.all.<Point>(cx);
 
                 // Handles all string that require manipulation, including inserts and replaces
                 let edits = display_selections
@@ -50,7 +50,7 @@ pub(crate) fn multi_replace(text: Arc<str>, cx: &mut WindowContext) {
                         // we don't do a replace, we need insert a "\n"
                         if !is_new_line {
                             range.end.column += 1;
-                            range.end = map.buffer_snapshot.clip_point(range.end, Bias::Right);
+                            range.end = map.buffer_snapshot.clip_point(range.end, Bias.Right);
                         }
                         let replace_range = map.buffer_snapshot.anchor_before(range.start)
                             ..map.buffer_snapshot.anchor_after(range.end);
@@ -65,13 +65,13 @@ pub(crate) fn multi_replace(text: Arc<str>, cx: &mut WindowContext) {
                         });
                         (replace_range, text.clone())
                     })
-                    .collect::<Vec<_>>();
+                    .collect.<Vec<_>>();
 
                 editor.buffer().update(cx, |buffer, cx| {
                     buffer.edit(
                         edits.clone(),
-                        Some(AutoindentMode::Block {
-                            original_indent_columns: Vec::new(),
+                        Some(AutoindentMode.Block {
+                            original_indent_columns: Vec.new(),
                         }),
                         cx,
                     );
@@ -91,13 +91,13 @@ fn undo_replace(vim: &mut Vim, maybe_times: Option<usize>, cx: &mut WindowContex
         editor.transact(cx, |editor, cx| {
             editor.set_clip_at_line_ends(false, cx);
             let map = editor.snapshot(cx);
-            let selections = editor.selections.all::<Point>(cx);
+            let selections = editor.selections.all.<Point>(cx);
             let mut new_selections = vec![];
             let edits: Vec<(Range<Point>, String)> = selections
                 .into_iter()
                 .filter_map(|selection| {
                     let end = selection.head();
-                    let start = motion::backspace(
+                    let start = motion.backspace(
                         &map,
                         end.to_display_point(&map),
                         maybe_times.unwrap_or(1),
@@ -123,7 +123,7 @@ fn undo_replace(vim: &mut Vim, maybe_times: Option<usize>, cx: &mut WindowContex
                     }
                     Some((edit_range, undo?))
                 })
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
             editor.buffer().update(cx, |buffer, cx| {
                 buffer.edit(edits, None, cx);
@@ -139,25 +139,25 @@ fn undo_replace(vim: &mut Vim, maybe_times: Option<usize>, cx: &mut WindowContex
 
 #[cfg(test)]
 mod test {
-    use indoc::indoc;
+    use indoc.indoc;
 
-    use crate::{
-        state::Mode,
-        test::{NeovimBackedTestContext, VimTestContext},
+    use crate.{
+        state.Mode,
+        test.{NeovimBackedTestContext, VimTestContext},
     };
 
-    #[gpui::test]
-    async fn test_enter_and_exit_replace_mode(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_enter_and_exit_replace_mode(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
         cx.simulate_keystrokes("shift-r");
-        assert_eq!(cx.mode(), Mode::Replace);
+        assert_eq!(cx.mode(), Mode.Replace);
         cx.simulate_keystrokes("escape");
-        assert_eq!(cx.mode(), Mode::Normal);
+        assert_eq!(cx.mode(), Mode.Normal);
     }
 
-    #[gpui::test]
-    async fn test_replace_mode(cx: &mut gpui::TestAppContext) {
-        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_replace_mode(cx: &mut gpui.TestAppContext) {
+        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext.new(cx).await;
 
         // test normal replace
         cx.set_shared_state(indoc! {"
@@ -216,7 +216,7 @@ mod test {
             ˇThe quick brown
             fox jumps over
             the lazy ˇdog."},
-            Mode::Normal,
+            Mode.Normal,
         );
         cx.simulate_keystrokes("shift-r O n e");
         cx.assert_state(
@@ -224,7 +224,7 @@ mod test {
             Oneˇ quick brown
             fox jumps over
             the lazy Oneˇ."},
-            Mode::Replace,
+            Mode.Replace,
         );
         cx.simulate_keystrokes("enter T w o");
         cx.assert_state(
@@ -234,13 +234,13 @@ mod test {
             fox jumps over
             the lazy One
             Twoˇ"},
-            Mode::Replace,
+            Mode.Replace,
         );
     }
 
-    #[gpui::test]
-    async fn test_replace_mode_with_counts(cx: &mut gpui::TestAppContext) {
-        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_replace_mode_with_counts(cx: &mut gpui.TestAppContext) {
+        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("ˇhello\n").await;
         cx.simulate_shared_keystrokes("3 shift-r - escape").await;
@@ -252,9 +252,9 @@ mod test {
         cx.shared_state().await.assert_eq("abcabcabˇc\n");
     }
 
-    #[gpui::test]
-    async fn test_replace_mode_repeat(cx: &mut gpui::TestAppContext) {
-        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_replace_mode_repeat(cx: &mut gpui.TestAppContext) {
+        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext.new(cx).await;
 
         cx.set_shared_state("ˇhello world\n").await;
         cx.simulate_shared_keystrokes("shift-r - - - escape 4 l .")
@@ -262,9 +262,9 @@ mod test {
         cx.shared_state().await.assert_eq("---lo --ˇ-ld\n");
     }
 
-    #[gpui::test]
-    async fn test_replace_mode_undo(cx: &mut gpui::TestAppContext) {
-        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_replace_mode_undo(cx: &mut gpui.TestAppContext) {
+        let mut cx: NeovimBackedTestContext = NeovimBackedTestContext.new(cx).await;
 
         const UNDO_REPLACE_EXAMPLES: &[&'static str] = &[
             // replace undo with single line
@@ -302,23 +302,23 @@ mod test {
         }
     }
 
-    #[gpui::test]
-    async fn test_replace_multicursor(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
-        cx.set_state("ˇabcˇabcabc", Mode::Normal);
+    #[gpui.test]
+    async fn test_replace_multicursor(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
+        cx.set_state("ˇabcˇabcabc", Mode.Normal);
         cx.simulate_keystrokes("shift-r 1 2 3 4");
-        cx.assert_state("1234ˇ234ˇbc", Mode::Replace);
-        assert_eq!(cx.mode(), Mode::Replace);
+        cx.assert_state("1234ˇ234ˇbc", Mode.Replace);
+        assert_eq!(cx.mode(), Mode.Replace);
         cx.simulate_keystrokes("backspace backspace backspace backspace backspace");
-        cx.assert_state("ˇabˇcabcabc", Mode::Replace);
+        cx.assert_state("ˇabˇcabcabc", Mode.Replace);
     }
 
-    #[gpui::test]
-    async fn test_replace_undo(cx: &mut gpui::TestAppContext) {
-        let mut cx = VimTestContext::new(cx, true).await;
+    #[gpui.test]
+    async fn test_replace_undo(cx: &mut gpui.TestAppContext) {
+        let mut cx = VimTestContext.new(cx, true).await;
 
-        cx.set_state("ˇaaaa", Mode::Normal);
+        cx.set_state("ˇaaaa", Mode.Normal);
         cx.simulate_keystrokes("0 shift-r b b b escape u");
-        cx.assert_state("ˇaaaa", Mode::Normal);
+        cx.assert_state("ˇaaaa", Mode.Normal);
     }
 }

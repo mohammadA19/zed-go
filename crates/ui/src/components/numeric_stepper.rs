@@ -1,6 +1,6 @@
-use gpui::ClickEvent;
+use gpui.ClickEvent;
 
-use crate::{prelude::*, IconButtonShape};
+use crate.{prelude.*, IconButtonShape};
 
 #[derive(IntoElement)]
 pub struct NumericStepper {
@@ -23,8 +23,8 @@ impl NumericStepper {
         Self {
             id: id.into(),
             value: value.into(),
-            on_decrement: Box::new(on_decrement),
-            on_increment: Box::new(on_increment),
+            on_decrement: Box.new(on_decrement),
+            on_increment: Box.new(on_increment),
             reserve_space_for_reset: false,
             on_reset: None,
         }
@@ -39,15 +39,15 @@ impl NumericStepper {
         mut self,
         on_reset: impl Fn(&ClickEvent, &mut WindowContext) + 'static,
     ) -> Self {
-        self.on_reset = Some(Box::new(on_reset));
+        self.on_reset = Some(Box.new(on_reset));
         self
     }
 }
 
 impl RenderOnce for NumericStepper {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let shape = IconButtonShape::Square;
-        let icon_size = IconSize::Small;
+        let shape = IconButtonShape.Square;
+        let icon_size = IconSize.Small;
 
         h_flex()
             .id(self.id)
@@ -55,7 +55,7 @@ impl RenderOnce for NumericStepper {
             .map(|element| {
                 if let Some(on_reset) = self.on_reset {
                     element.child(
-                        IconButton::new("reset", IconName::RotateCcw)
+                        IconButton.new("reset", IconName.RotateCcw)
                             .shape(shape)
                             .icon_size(icon_size)
                             .on_click(on_reset),
@@ -78,14 +78,14 @@ impl RenderOnce for NumericStepper {
                     .rounded_sm()
                     .bg(cx.theme().colors().editor_background)
                     .child(
-                        IconButton::new("decrement", IconName::Dash)
+                        IconButton.new("decrement", IconName.Dash)
                             .shape(shape)
                             .icon_size(icon_size)
                             .on_click(self.on_decrement),
                     )
-                    .child(Label::new(self.value))
+                    .child(Label.new(self.value))
                     .child(
-                        IconButton::new("increment", IconName::Plus)
+                        IconButton.new("increment", IconName.Plus)
                             .shape(shape)
                             .icon_size(icon_size)
                             .on_click(self.on_increment),

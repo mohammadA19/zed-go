@@ -1,23 +1,23 @@
-use ::settings::Settings;
-use editor::{tasks::task_context, Editor};
-use gpui::{AppContext, Task as AsyncTask, ViewContext, WindowContext};
-use modal::TasksModal;
-use project::{Location, WorktreeId};
-use workspace::tasks::schedule_task;
-use workspace::{tasks::schedule_resolved_task, Workspace};
+use .settings.Settings;
+use editor.{tasks.task_context, Editor};
+use gpui.{AppContext, Task as AsyncTask, ViewContext, WindowContext};
+use modal.TasksModal;
+use project.{Location, WorktreeId};
+use workspace.tasks.schedule_task;
+use workspace.{tasks.schedule_resolved_task, Workspace};
 
 mod modal;
 mod settings;
 
-pub use modal::{Rerun, Spawn};
+pub use modal.{Rerun, Spawn};
 
 pub fn init(cx: &mut AppContext) {
-    settings::TaskSettings::register(cx);
+    settings.TaskSettings.register(cx);
     cx.observe_new_views(
         |workspace: &mut Workspace, _: &mut ViewContext<Workspace>| {
             workspace
                 .register_action(spawn_task_or_modal)
-                .register_action(move |workspace, action: &modal::Rerun, cx| {
+                .register_action(move |workspace, action: &modal.Rerun, cx| {
                     if let Some((task_source_kind, mut last_scheduled_task)) =
                         workspace.project().update(cx, |project, cx| {
                             project
@@ -97,7 +97,7 @@ fn toggle_modal(workspace: &mut Workspace, cx: &mut ViewContext<'_, Workspace>) 
                     project.is_local() || project.ssh_connection_string(cx).is_some()
                 }) {
                     workspace.toggle_modal(cx, |cx| {
-                        TasksModal::new(project, task_context, workspace_handle, cx)
+                        TasksModal.new(project, task_context, workspace_handle, cx)
                     })
                 }
             })
@@ -108,7 +108,7 @@ fn toggle_modal(workspace: &mut Workspace, cx: &mut ViewContext<'_, Workspace>) 
 fn spawn_task_with_name(
     name: String,
     cx: &mut ViewContext<Workspace>,
-) -> AsyncTask<anyhow::Result<()>> {
+) -> AsyncTask<anyhow.Result<()>> {
     cx.spawn(|workspace, mut cx| async move {
         let context_task =
             workspace.update(&mut cx, |workspace, cx| task_context(workspace, cx))?;
@@ -140,7 +140,7 @@ fn spawn_task_with_name(
         if !did_spawn {
             workspace
                 .update(&mut cx, |workspace, cx| {
-                    spawn_task_or_modal(workspace, &Spawn::default(), cx);
+                    spawn_task_or_modal(workspace, &Spawn.default(), cx);
                 })
                 .ok();
         }
@@ -159,7 +159,7 @@ fn active_item_selection_properties(
         .and_then(|item| item.project_path(cx))
         .map(|path| path.worktree_id);
     let location = active_item
-        .and_then(|active_item| active_item.act_as::<Editor>(cx))
+        .and_then(|active_item| active_item.act_as.<Editor>(cx))
         .and_then(|editor| {
             editor.update(cx, |editor, cx| {
                 let selection = editor.selections.newest_anchor();
@@ -180,23 +180,23 @@ fn active_item_selection_properties(
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::Arc};
+    use std.{collections.HashMap, sync.Arc};
 
-    use editor::Editor;
-    use gpui::{Entity, TestAppContext};
-    use language::{Language, LanguageConfig};
-    use project::{BasicContextProvider, FakeFs, Project};
-    use serde_json::json;
-    use task::{TaskContext, TaskVariables, VariableName};
-    use ui::VisualContext;
-    use workspace::{AppState, Workspace};
+    use editor.Editor;
+    use gpui.{Entity, TestAppContext};
+    use language.{Language, LanguageConfig};
+    use project.{BasicContextProvider, FakeFs, Project};
+    use serde_json.json;
+    use task.{TaskContext, TaskVariables, VariableName};
+    use ui.VisualContext;
+    use workspace.{AppState, Workspace};
 
-    use crate::task_context;
+    use crate.task_context;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_default_language_context(cx: &mut TestAppContext) {
         init_test(cx);
-        let fs = FakeFs::new(cx.executor());
+        let fs = FakeFs.new(cx.executor());
         fs.insert_tree(
             "/dir",
             json!({
@@ -222,11 +222,11 @@ mod tests {
             }),
         )
         .await;
-        let project = Project::test(fs, ["/dir".as_ref()], cx).await;
-        let rust_language = Arc::new(
-            Language::new(
-                LanguageConfig::default(),
-                Some(tree_sitter_rust::language()),
+        let project = Project.test(fs, ["/dir".as_ref()], cx).await;
+        let rust_language = Arc.new(
+            Language.new(
+                LanguageConfig.default(),
+                Some(tree_sitter_rust.language()),
             )
             .with_outline_query(
                 r#"(function_item
@@ -234,13 +234,13 @@ mod tests {
             name: (_) @name) @item"#,
             )
             .unwrap()
-            .with_context_provider(Some(Arc::new(BasicContextProvider::new(project.clone())))),
+            .with_context_provider(Some(Arc.new(BasicContextProvider.new(project.clone())))),
         );
 
-        let typescript_language = Arc::new(
-            Language::new(
-                LanguageConfig::default(),
-                Some(tree_sitter_typescript::language_typescript()),
+        let typescript_language = Arc.new(
+            Language.new(
+                LanguageConfig.default(),
+                Some(tree_sitter_typescript.language_typescript()),
             )
             .with_outline_query(
                 r#"(function_declaration
@@ -252,13 +252,13 @@ mod tests {
                       ")" @context)) @item"#,
             )
             .unwrap()
-            .with_context_provider(Some(Arc::new(BasicContextProvider::new(project.clone())))),
+            .with_context_provider(Some(Arc.new(BasicContextProvider.new(project.clone())))),
         );
 
         let worktree_id = project.update(cx, |project, cx| {
             project.worktrees(cx).next().unwrap().read(cx).id()
         });
-        let (workspace, cx) = cx.add_window_view(|cx| Workspace::test_new(project.clone(), cx));
+        let (workspace, cx) = cx.add_window_view(|cx| Workspace.test_new(project.clone(), cx));
 
         let buffer1 = workspace
             .update(cx, |this, cx| {
@@ -270,7 +270,7 @@ mod tests {
         buffer1.update(cx, |this, cx| {
             this.set_language(Some(typescript_language), cx)
         });
-        let editor1 = cx.new_view(|cx| Editor::for_buffer(buffer1, Some(project.clone()), cx));
+        let editor1 = cx.new_view(|cx| Editor.for_buffer(buffer1, Some(project.clone()), cx));
         let buffer2 = workspace
             .update(cx, |this, cx| {
                 this.project().update(cx, |this, cx| {
@@ -280,12 +280,12 @@ mod tests {
             .await
             .unwrap();
         buffer2.update(cx, |this, cx| this.set_language(Some(rust_language), cx));
-        let editor2 = cx.new_view(|cx| Editor::for_buffer(buffer2, Some(project), cx));
+        let editor2 = cx.new_view(|cx| Editor.for_buffer(buffer2, Some(project), cx));
 
         let first_context = workspace
             .update(cx, |workspace, cx| {
-                workspace.add_item_to_center(Box::new(editor1.clone()), cx);
-                workspace.add_item_to_center(Box::new(editor2.clone()), cx);
+                workspace.add_item_to_center(Box.new(editor1.clone()), cx);
+                workspace.add_item_to_center(Box.new(editor2.clone()), cx);
                 assert_eq!(
                     workspace.active_item(cx).unwrap().item_id(),
                     editor2.entity_id()
@@ -297,17 +297,17 @@ mod tests {
             first_context,
             TaskContext {
                 cwd: Some("/dir".into()),
-                task_variables: TaskVariables::from_iter([
-                    (VariableName::File, "/dir/rust/b.rs".into()),
-                    (VariableName::Filename, "b.rs".into()),
-                    (VariableName::RelativeFile, "rust/b.rs".into()),
-                    (VariableName::Dirname, "/dir/rust".into()),
-                    (VariableName::Stem, "b".into()),
-                    (VariableName::WorktreeRoot, "/dir".into()),
-                    (VariableName::Row, "1".into()),
-                    (VariableName::Column, "1".into()),
+                task_variables: TaskVariables.from_iter([
+                    (VariableName.File, "/dir/rust/b.rs".into()),
+                    (VariableName.Filename, "b.rs".into()),
+                    (VariableName.RelativeFile, "rust/b.rs".into()),
+                    (VariableName.Dirname, "/dir/rust".into()),
+                    (VariableName.Stem, "b".into()),
+                    (VariableName.WorktreeRoot, "/dir".into()),
+                    (VariableName.Row, "1".into()),
+                    (VariableName.Column, "1".into()),
                 ]),
-                project_env: HashMap::default(),
+                project_env: HashMap.default(),
             }
         );
 
@@ -322,19 +322,19 @@ mod tests {
                 .await,
             TaskContext {
                 cwd: Some("/dir".into()),
-                task_variables: TaskVariables::from_iter([
-                    (VariableName::File, "/dir/rust/b.rs".into()),
-                    (VariableName::Filename, "b.rs".into()),
-                    (VariableName::RelativeFile, "rust/b.rs".into()),
-                    (VariableName::Dirname, "/dir/rust".into()),
-                    (VariableName::Stem, "b".into()),
-                    (VariableName::WorktreeRoot, "/dir".into()),
-                    (VariableName::Row, "1".into()),
-                    (VariableName::Column, "15".into()),
-                    (VariableName::SelectedText, "is_i".into()),
-                    (VariableName::Symbol, "this_is_a_rust_file".into()),
+                task_variables: TaskVariables.from_iter([
+                    (VariableName.File, "/dir/rust/b.rs".into()),
+                    (VariableName.Filename, "b.rs".into()),
+                    (VariableName.RelativeFile, "rust/b.rs".into()),
+                    (VariableName.Dirname, "/dir/rust".into()),
+                    (VariableName.Stem, "b".into()),
+                    (VariableName.WorktreeRoot, "/dir".into()),
+                    (VariableName.Row, "1".into()),
+                    (VariableName.Column, "15".into()),
+                    (VariableName.SelectedText, "is_i".into()),
+                    (VariableName.Symbol, "this_is_a_rust_file".into()),
                 ]),
-                project_env: HashMap::default(),
+                project_env: HashMap.default(),
             }
         );
 
@@ -348,31 +348,31 @@ mod tests {
                 .await,
             TaskContext {
                 cwd: Some("/dir".into()),
-                task_variables: TaskVariables::from_iter([
-                    (VariableName::File, "/dir/a.ts".into()),
-                    (VariableName::Filename, "a.ts".into()),
-                    (VariableName::RelativeFile, "a.ts".into()),
-                    (VariableName::Dirname, "/dir".into()),
-                    (VariableName::Stem, "a".into()),
-                    (VariableName::WorktreeRoot, "/dir".into()),
-                    (VariableName::Row, "1".into()),
-                    (VariableName::Column, "1".into()),
-                    (VariableName::Symbol, "this_is_a_test".into()),
+                task_variables: TaskVariables.from_iter([
+                    (VariableName.File, "/dir/a.ts".into()),
+                    (VariableName.Filename, "a.ts".into()),
+                    (VariableName.RelativeFile, "a.ts".into()),
+                    (VariableName.Dirname, "/dir".into()),
+                    (VariableName.Stem, "a".into()),
+                    (VariableName.WorktreeRoot, "/dir".into()),
+                    (VariableName.Row, "1".into()),
+                    (VariableName.Column, "1".into()),
+                    (VariableName.Symbol, "this_is_a_test".into()),
                 ]),
-                project_env: HashMap::default(),
+                project_env: HashMap.default(),
             }
         );
     }
 
     pub(crate) fn init_test(cx: &mut TestAppContext) -> Arc<AppState> {
         cx.update(|cx| {
-            let state = AppState::test(cx);
-            file_icons::init((), cx);
-            language::init(cx);
-            crate::init(cx);
-            editor::init(cx);
-            workspace::init_settings(cx);
-            Project::init_settings(cx);
+            let state = AppState.test(cx);
+            file_icons.init((), cx);
+            language.init(cx);
+            crate.init(cx);
+            editor.init(cx);
+            workspace.init_settings(cx);
+            Project.init_settings(cx);
             state
         })
     }

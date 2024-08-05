@@ -1,19 +1,19 @@
-use gpui::{div, img, px, IntoElement, ParentElement, Render, Styled, ViewContext};
-use story::Story;
+use gpui.{div, img, px, IntoElement, ParentElement, Render, Styled, ViewContext};
+use story.Story;
 
-use crate::{ActiveTheme, PlayerColors};
+use crate.{ActiveTheme, PlayerColors};
 
 pub struct PlayerStory;
 
 impl Render for PlayerStory {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        Story::container().child(
+        Story.container().child(
             div()
                 .flex()
                 .flex_col()
                 .gap_4()
-                .child(Story::title_for::<PlayerColors>())
-                .child(Story::label("Player Colors"))
+                .child(Story.title_for.<PlayerColors>())
+                .child(Story.label("Player Colors"))
                 .child(
                     div()
                         .flex()
@@ -44,7 +44,7 @@ impl Render for PlayerStory {
                             ),
                         ),
                 )
-                .child(Story::label("Avatar Rings"))
+                .child(Story.label("Avatar Rings"))
                 .child(div().flex().gap_1().children(
                     cx.theme().players().0.clone().iter_mut().map(|player| {
                         div()
@@ -56,11 +56,11 @@ impl Render for PlayerStory {
                                 img("https://avatars.githubusercontent.com/u/1714999?v=4")
                                     .rounded_full()
                                     .size_6()
-                                    .bg(gpui::red()),
+                                    .bg(gpui.red()),
                             )
                     }),
                 ))
-                .child(Story::label("Player Backgrounds"))
+                .child(Story.label("Player Backgrounds"))
                 .child(div().flex().gap_1().children(
                     cx.theme().players().0.clone().iter_mut().map(|player| {
                         div()
@@ -84,7 +84,7 @@ impl Render for PlayerStory {
                                         img("https://avatars.githubusercontent.com/u/1714999?v=4")
                                             .rounded_full()
                                             .size(px(24.))
-                                            .bg(gpui::red()),
+                                            .bg(gpui.red()),
                                     ),
                             )
                             .child(
@@ -99,7 +99,7 @@ impl Render for PlayerStory {
                                         img("https://avatars.githubusercontent.com/u/1714999?v=4")
                                             .rounded_full()
                                             .size(px(24.))
-                                            .bg(gpui::red()),
+                                            .bg(gpui.red()),
                                     ),
                             )
                             .child(
@@ -114,12 +114,12 @@ impl Render for PlayerStory {
                                         img("https://avatars.githubusercontent.com/u/1714999?v=4")
                                             .rounded_full()
                                             .size(px(24.))
-                                            .bg(gpui::red()),
+                                            .bg(gpui.red()),
                                     ),
                             )
                     }),
                 ))
-                .child(Story::label("Player Selections"))
+                .child(Story.label("Player Selections"))
                 .child(div().flex().flex_col().gap_px().children(
                     cx.theme().players().0.clone().iter_mut().map(|player| {
                         div()

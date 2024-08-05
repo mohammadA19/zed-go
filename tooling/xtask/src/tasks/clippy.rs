@@ -1,7 +1,7 @@
-use std::process::Command;
+use std.process.Command;
 
-use anyhow::{bail, Context, Result};
-use clap::Parser;
+use anyhow.{bail, Context, Result};
+use clap.Parser;
 
 #[derive(Parser)]
 pub struct ClippyArgs {
@@ -15,9 +15,9 @@ pub struct ClippyArgs {
 }
 
 pub fn run_clippy(args: ClippyArgs) -> Result<()> {
-    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
+    let cargo = std.env.var("CARGO").unwrap_or_else(|_| "cargo".to_string());
 
-    let mut clippy_command = Command::new(&cargo);
+    let mut clippy_command = Command.new(&cargo);
     clippy_command.arg("clippy");
 
     if let Some(package) = args.package.as_ref() {
@@ -45,7 +45,7 @@ pub fn run_clippy(args: ClippyArgs) -> Result<()> {
         clippy_command
             .get_args()
             .map(|arg| arg.to_str().unwrap())
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
             .join(" ")
     );
 

@@ -1,5 +1,5 @@
-use gpui::{hsla, point, px, BoxShadow};
-use smallvec::{smallvec, SmallVec};
+use gpui.{hsla, point, px, BoxShadow};
+use smallvec.{smallvec, SmallVec};
 
 #[doc = include_str!("docs/elevation.md")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -11,7 +11,7 @@ pub enum Elevation {
 
 impl Into<Elevation> for ElevationIndex {
     fn into(self) -> Elevation {
-        Elevation::ElevationIndex(self)
+        Elevation.ElevationIndex(self)
     }
 }
 
@@ -28,16 +28,16 @@ pub enum ElevationIndex {
 impl ElevationIndex {
     pub fn shadow(self) -> SmallVec<[BoxShadow; 2]> {
         match self {
-            ElevationIndex::Surface => smallvec![],
+            ElevationIndex.Surface => smallvec![],
 
-            ElevationIndex::ElevatedSurface => smallvec![BoxShadow {
+            ElevationIndex.ElevatedSurface => smallvec![BoxShadow {
                 color: hsla(0., 0., 0., 0.12),
                 offset: point(px(0.), px(2.)),
                 blur_radius: px(3.),
                 spread_radius: px(0.),
             }],
 
-            ElevationIndex::ModalSurface => smallvec![
+            ElevationIndex.ModalSurface => smallvec![
                 BoxShadow {
                     color: hsla(0., 0., 0., 0.12),
                     offset: point(px(0.), px(2.)),

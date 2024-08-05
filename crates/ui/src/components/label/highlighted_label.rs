@@ -1,8 +1,8 @@
-use std::ops::Range;
+use std.ops.Range;
 
-use gpui::{FontWeight, HighlightStyle, StyledText};
+use gpui.{FontWeight, HighlightStyle, StyledText};
 
-use crate::{prelude::*, LabelCommon, LabelLike, LabelSize, LineHeightStyle};
+use crate.{prelude.*, LabelCommon, LabelLike, LabelSize, LineHeightStyle};
 
 #[derive(IntoElement)]
 pub struct HighlightedLabel {
@@ -16,7 +16,7 @@ impl HighlightedLabel {
     /// Characters are identified by UTF-8 byte position.
     pub fn new(label: impl Into<SharedString>, highlight_indices: Vec<usize>) -> Self {
         Self {
-            base: LabelLike::new(),
+            base: LabelLike.new(),
             label: label.into(),
             highlight_indices,
         }
@@ -61,7 +61,7 @@ pub fn highlight_ranges(
     style: HighlightStyle,
 ) -> Vec<(Range<usize>, HighlightStyle)> {
     let mut highlight_indices = indices.iter().copied().peekable();
-    let mut highlights: Vec<(Range<usize>, HighlightStyle)> = Vec::new();
+    let mut highlights: Vec<(Range<usize>, HighlightStyle)> = Vec.new();
 
     while let Some(start_ix) = highlight_indices.next() {
         let mut end_ix = start_ix;
@@ -93,7 +93,7 @@ impl RenderOnce for HighlightedLabel {
             &self.highlight_indices,
             HighlightStyle {
                 color: Some(highlight_color),
-                ..Default::default()
+                ..Default.default()
             },
         );
 
@@ -101,6 +101,6 @@ impl RenderOnce for HighlightedLabel {
         text_style.color = self.base.color.color(cx);
 
         self.base
-            .child(StyledText::new(self.label).with_highlights(&text_style, highlights))
+            .child(StyledText.new(self.label).with_highlights(&text_style, highlights))
     }
 }

@@ -17,23 +17,23 @@ mod schema;
 mod settings;
 mod styles;
 
-use std::sync::Arc;
+use std.sync.Arc;
 
-use ::settings::{Settings, SettingsStore};
-pub use default_colors::*;
-pub use default_theme::*;
-pub use font_family_cache::*;
-pub use registry::*;
-pub use scale::*;
-pub use schema::*;
-pub use settings::*;
-pub use styles::*;
+use .settings.{Settings, SettingsStore};
+pub use default_colors.*;
+pub use default_theme.*;
+pub use font_family_cache.*;
+pub use registry.*;
+pub use scale.*;
+pub use schema.*;
+pub use settings.*;
+pub use styles.*;
 
-use gpui::{
+use gpui.{
     px, AppContext, AssetSource, Hsla, Pixels, SharedString, WindowAppearance,
     WindowBackgroundAppearance,
 };
-use serde::Deserialize;
+use serde.Deserialize;
 
 #[derive(Debug, PartialEq, Clone, Copy, Deserialize)]
 pub enum Appearance {
@@ -47,8 +47,8 @@ pub const CLIENT_SIDE_DECORATION_SHADOW: Pixels = px(10.0);
 impl Appearance {
     pub fn is_light(&self) -> bool {
         match self {
-            Self::Light => true,
-            Self::Dark => false,
+            Self.Light => true,
+            Self.Dark => false,
         }
     }
 }
@@ -56,8 +56,8 @@ impl Appearance {
 impl From<WindowAppearance> for Appearance {
     fn from(value: WindowAppearance) -> Self {
         match value {
-            WindowAppearance::Dark | WindowAppearance::VibrantDark => Self::Dark,
-            WindowAppearance::Light | WindowAppearance::VibrantLight => Self::Light,
+            WindowAppearance.Dark | WindowAppearance.VibrantDark => Self.Dark,
+            WindowAppearance.Light | WindowAppearance.VibrantLight => Self.Light,
         }
     }
 }
@@ -74,21 +74,21 @@ pub enum LoadThemes {
 
 pub fn init(themes_to_load: LoadThemes, cx: &mut AppContext) {
     let (assets, load_user_themes) = match themes_to_load {
-        LoadThemes::JustBase => (Box::new(()) as Box<dyn AssetSource>, false),
-        LoadThemes::All(assets) => (assets, true),
+        LoadThemes.JustBase => (Box.new(()) as Box<dyn AssetSource>, false),
+        LoadThemes.All(assets) => (assets, true),
     };
-    ThemeRegistry::set_global(assets, cx);
+    ThemeRegistry.set_global(assets, cx);
 
     if load_user_themes {
-        ThemeRegistry::global(cx).load_bundled_themes();
+        ThemeRegistry.global(cx).load_bundled_themes();
     }
 
-    ThemeSettings::register(cx);
-    FontFamilyCache::init_global(cx);
+    ThemeSettings.register(cx);
+    FontFamilyCache.init_global(cx);
 
-    let mut prev_buffer_font_size = ThemeSettings::get_global(cx).buffer_font_size;
-    cx.observe_global::<SettingsStore>(move |cx| {
-        let buffer_font_size = ThemeSettings::get_global(cx).buffer_font_size;
+    let mut prev_buffer_font_size = ThemeSettings.get_global(cx).buffer_font_size;
+    cx.observe_global.<SettingsStore>(move |cx| {
+        let buffer_font_size = ThemeSettings.get_global(cx).buffer_font_size;
         if buffer_font_size != prev_buffer_font_size {
             prev_buffer_font_size = buffer_font_size;
             reset_buffer_font_size(cx);
@@ -103,7 +103,7 @@ pub trait ActiveTheme {
 
 impl ActiveTheme for AppContext {
     fn theme(&self) -> &Arc<Theme> {
-        &ThemeSettings::get_global(self).active_theme
+        &ThemeSettings.get_global(self).active_theme
     }
 }
 

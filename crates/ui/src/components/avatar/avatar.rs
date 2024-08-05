@@ -1,6 +1,6 @@
-use crate::prelude::*;
+use crate.prelude.*;
 
-use gpui::{img, AnyElement, Hsla, ImageSource, Img, IntoElement, Styled};
+use gpui.{img, AnyElement, Hsla, ImageSource, Img, IntoElement, Styled};
 
 /// The shape of an [`Avatar`].
 #[derive(Debug, Default, PartialEq, Clone)]
@@ -17,12 +17,12 @@ pub enum AvatarShape {
 /// # Examples
 ///
 /// ```
-/// use ui::{Avatar, AvatarShape};
+/// use ui.{Avatar, AvatarShape};
 ///
-/// Avatar::new("path/to/image.png")
-///     .shape(AvatarShape::Circle)
+/// Avatar.new("path/to/image.png")
+///     .shape(AvatarShape.Circle)
 ///     .grayscale(true)
-///     .border_color(gpui::red());
+///     .border_color(gpui.red());
 /// ```
 #[derive(IntoElement)]
 pub struct Avatar {
@@ -50,14 +50,14 @@ impl Avatar {
     /// # Examples
     ///
     /// ```
-    /// use ui::{Avatar, AvatarShape};
+    /// use ui.{Avatar, AvatarShape};
     ///
-    /// Avatar::new("path/to/image.png").shape(AvatarShape::Circle);
+    /// Avatar.new("path/to/image.png").shape(AvatarShape.Circle);
     /// ```
     pub fn shape(mut self, shape: AvatarShape) -> Self {
         self.image = match shape {
-            AvatarShape::Circle => self.image.rounded_full(),
-            AvatarShape::RoundedRectangle => self.image.rounded_md(),
+            AvatarShape.Circle => self.image.rounded_full(),
+            AvatarShape.RoundedRectangle => self.image.rounded_md(),
         };
         self
     }
@@ -67,9 +67,9 @@ impl Avatar {
     /// # Examples
     ///
     /// ```
-    /// use ui::{Avatar, AvatarShape};
+    /// use ui.{Avatar, AvatarShape};
     ///
-    /// let avatar = Avatar::new("path/to/image.png").grayscale(true);
+    /// let avatar = Avatar.new("path/to/image.png").grayscale(true);
     /// ```
     pub fn grayscale(mut self, grayscale: bool) -> Self {
         self.image = self.image.grayscale(grayscale);
@@ -83,12 +83,12 @@ impl Avatar {
 
     /// Size overrides the avatar size. By default they are 1rem.
     pub fn size<L: Into<AbsoluteLength>>(mut self, size: impl Into<Option<L>>) -> Self {
-        self.size = size.into().map(Into::into);
+        self.size = size.into().map(Into.into);
         self
     }
 
     pub fn indicator<E: IntoElement>(mut self, indicator: impl Into<Option<E>>) -> Self {
-        self.indicator = indicator.into().map(IntoElement::into_any_element);
+        self.indicator = indicator.into().map(IntoElement.into_any_element);
         self
     }
 }
@@ -96,7 +96,7 @@ impl Avatar {
 impl RenderOnce for Avatar {
     fn render(mut self, cx: &mut WindowContext) -> impl IntoElement {
         if self.image.style().corner_radii.top_left.is_none() {
-            self = self.shape(AvatarShape::Circle);
+            self = self.shape(AvatarShape.Circle);
         }
 
         let border_width = if self.border_color.is_some() {

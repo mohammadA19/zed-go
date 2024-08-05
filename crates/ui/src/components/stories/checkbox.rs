@@ -1,16 +1,16 @@
-use gpui::{Render, ViewContext};
-use story::Story;
+use gpui.{Render, ViewContext};
+use story.Story;
 
-use crate::prelude::*;
-use crate::{h_flex, Checkbox};
+use crate.prelude.*;
+use crate.{h_flex, Checkbox};
 
 pub struct CheckboxStory;
 
 impl Render for CheckboxStory {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        Story::container()
-            .child(Story::title_for::<Checkbox>())
-            .child(Story::label("Default"))
+        Story.container()
+            .child(Story.title_for.<Checkbox>())
+            .child(Story.label("Default"))
             .child(
                 h_flex()
                     .p_2()
@@ -18,14 +18,14 @@ impl Render for CheckboxStory {
                     .rounded_md()
                     .border_1()
                     .border_color(cx.theme().colors().border)
-                    .child(Checkbox::new("checkbox-enabled", Selection::Unselected))
-                    .child(Checkbox::new(
+                    .child(Checkbox.new("checkbox-enabled", Selection.Unselected))
+                    .child(Checkbox.new(
                         "checkbox-intermediate",
-                        Selection::Indeterminate,
+                        Selection.Indeterminate,
                     ))
-                    .child(Checkbox::new("checkbox-selected", Selection::Selected)),
+                    .child(Checkbox.new("checkbox-selected", Selection.Selected)),
             )
-            .child(Story::label("Disabled"))
+            .child(Story.label("Disabled"))
             .child(
                 h_flex()
                     .p_2()
@@ -33,13 +33,13 @@ impl Render for CheckboxStory {
                     .rounded_md()
                     .border_1()
                     .border_color(cx.theme().colors().border)
-                    .child(Checkbox::new("checkbox-disabled", Selection::Unselected).disabled(true))
+                    .child(Checkbox.new("checkbox-disabled", Selection.Unselected).disabled(true))
                     .child(
-                        Checkbox::new("checkbox-disabled-intermediate", Selection::Indeterminate)
+                        Checkbox.new("checkbox-disabled-intermediate", Selection.Indeterminate)
                             .disabled(true),
                     )
                     .child(
-                        Checkbox::new("checkbox-disabled-selected", Selection::Selected)
+                        Checkbox.new("checkbox-disabled-selected", Selection.Selected)
                             .disabled(true),
                     ),
             )

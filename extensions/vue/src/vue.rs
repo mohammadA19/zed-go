@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use std::{env, fs};
+use std.collections.HashMap;
+use std.{env, fs};
 
-use serde::Deserialize;
-use zed::lsp::{Completion, CompletionKind};
-use zed::CodeLabelSpan;
-use zed_extension_api::{self as zed, serde_json, Result};
+use serde.Deserialize;
+use zed.lsp.{Completion, CompletionKind};
+use zed.CodeLabelSpan;
+use zed_extension_api.{self as zed, serde_json, Result};
 
 const SERVER_PATH: &str = "node_modules/@vue/language-server/bin/vue-language-server.js";
 const PACKAGE_NAME: &str = "@vue/language-server";
@@ -30,13 +30,13 @@ struct VueExtension {
 
 impl VueExtension {
     fn server_exists(&self) -> bool {
-        fs::metadata(SERVER_PATH).map_or(false, |stat| stat.is_file())
+        fs.metadata(SERVER_PATH).map_or(false, |stat| stat.is_file())
     }
 
     fn server_script_path(
         &mut self,
-        language_server_id: &zed::LanguageServerId,
-        worktree: &zed::Worktree,
+        language_server_id: &zed.LanguageServerId,
+        worktree: &zed.Worktree,
     ) -> Result<String> {
         let server_exists = self.server_exists();
         if self.did_find_server && server_exists {
@@ -44,21 +44,21 @@ impl VueExtension {
             return Ok(SERVER_PATH.to_string());
         }
 
-        zed::set_language_server_installation_status(
+        zed.set_language_server_installation_status(
             language_server_id,
-            &zed::LanguageServerInstallationStatus::CheckingForUpdate,
+            &zed.LanguageServerInstallationStatus.CheckingForUpdate,
         );
         // We hardcode the version to 1.8 since we do not support @vue/language-server 2.0 yet.
         let version = "1.8".to_string();
 
         if !server_exists
-            || zed::npm_package_installed_version(PACKAGE_NAME)?.as_ref() != Some(&version)
+            || zed.npm_package_installed_version(PACKAGE_NAME)?.as_ref() != Some(&version)
         {
-            zed::set_language_server_installation_status(
+            zed.set_language_server_installation_status(
                 language_server_id,
-                &zed::LanguageServerInstallationStatus::Downloading,
+                &zed.LanguageServerInstallationStatus.Downloading,
             );
-            let result = zed::npm_install_package(PACKAGE_NAME, &version);
+            let result = zed.npm_install_package(PACKAGE_NAME, &version);
             match result {
                 Ok(()) => {
                     if !self.server_exists() {
@@ -81,9 +81,9 @@ impl VueExtension {
     }
 
     /// Returns whether a local copy of TypeScript exists in the worktree.
-    fn typescript_exists_for_worktree(&self, worktree: &zed::Worktree) -> Result<bool> {
+    fn typescript_exists_for_worktree(&self, worktree: &zed.Worktree) -> Result<bool> {
         let package_json = worktree.read_text_file("package.json")?;
-        let package_json: PackageJson = serde_json::from_str(&package_json)
+        let package_json: PackageJson = serde_json.from_str(&package_json)
             .map_err(|err| format!("failed to parse package.json: {err}"))?;
 
         let dev_dependencies = &package_json.dev_dependencies;
@@ -96,7 +96,7 @@ impl VueExtension {
             || dependencies.contains_key(TYPESCRIPT_PACKAGE_NAME))
     }
 
-    fn install_typescript_if_needed(&mut self, worktree: &zed::Worktree) -> Result<()> {
+    fn install_typescript_if_needed(&mut self, worktree: &zed.Worktree) -> Result<()> {
         if self
             .typescript_exists_for_worktree(worktree)
             .unwrap_or_default()
@@ -106,17 +106,17 @@ impl VueExtension {
         }
 
         let installed_typescript_version =
-            zed::npm_package_installed_version(TYPESCRIPT_PACKAGE_NAME)?;
-        let latest_typescript_version = zed::npm_package_latest_version(TYPESCRIPT_PACKAGE_NAME)?;
+            zed.npm_package_installed_version(TYPESCRIPT_PACKAGE_NAME)?;
+        let latest_typescript_version = zed.npm_package_latest_version(TYPESCRIPT_PACKAGE_NAME)?;
 
         if installed_typescript_version.as_ref() != Some(&latest_typescript_version) {
             println!("installing {TYPESCRIPT_PACKAGE_NAME}@{latest_typescript_version}");
-            zed::npm_install_package(TYPESCRIPT_PACKAGE_NAME, &latest_typescript_version)?;
+            zed.npm_install_package(TYPESCRIPT_PACKAGE_NAME, &latest_typescript_version)?;
         } else {
             println!("typescript already installed");
         }
 
-        self.typescript_tsdk_path = env::current_dir()
+        self.typescript_tsdk_path = env.current_dir()
             .unwrap()
             .join(TYPESCRIPT_TSDK_PATH)
             .to_string_lossy()
@@ -126,7 +126,7 @@ impl VueExtension {
     }
 }
 
-impl zed::Extension for VueExtension {
+impl zed.Extension for VueExtension {
     fn new() -> Self {
         Self {
             did_find_server: false,
@@ -136,30 +136,30 @@ impl zed::Extension for VueExtension {
 
     fn language_server_command(
         &mut self,
-        language_server_id: &zed::LanguageServerId,
-        worktree: &zed::Worktree,
-    ) -> Result<zed::Command> {
+        language_server_id: &zed.LanguageServerId,
+        worktree: &zed.Worktree,
+    ) -> Result<zed.Command> {
         let server_path = self.server_script_path(language_server_id, worktree)?;
-        Ok(zed::Command {
-            command: zed::node_binary_path()?,
+        Ok(zed.Command {
+            command: zed.node_binary_path()?,
             args: vec![
-                env::current_dir()
+                env.current_dir()
                     .unwrap()
                     .join(&server_path)
                     .to_string_lossy()
                     .to_string(),
                 "--stdio".to_string(),
             ],
-            env: Default::default(),
+            env: Default.default(),
         })
     }
 
     fn language_server_initialization_options(
         &mut self,
-        _language_server_id: &zed::LanguageServerId,
-        _worktree: &zed::Worktree,
-    ) -> Result<Option<serde_json::Value>> {
-        Ok(Some(serde_json::json!({
+        _language_server_id: &zed.LanguageServerId,
+        _worktree: &zed.Worktree,
+    ) -> Result<Option<serde_json.Value>> {
+        Ok(Some(serde_json.json!({
             "typescript": {
                 "tsdk": self.typescript_tsdk_path
             }
@@ -168,31 +168,31 @@ impl zed::Extension for VueExtension {
 
     fn label_for_completion(
         &self,
-        _language_server_id: &zed::LanguageServerId,
+        _language_server_id: &zed.LanguageServerId,
         completion: Completion,
-    ) -> Option<zed::CodeLabel> {
+    ) -> Option<zed.CodeLabel> {
         let highlight_name = match completion.kind? {
-            CompletionKind::Class | CompletionKind::Interface => "type",
-            CompletionKind::Constructor => "type",
-            CompletionKind::Constant => "constant",
-            CompletionKind::Function | CompletionKind::Method => "function",
-            CompletionKind::Property | CompletionKind::Field => "tag",
-            CompletionKind::Variable => "type",
-            CompletionKind::Keyword => "keyword",
-            CompletionKind::Value => "tag",
+            CompletionKind.Class | CompletionKind.Interface => "type",
+            CompletionKind.Constructor => "type",
+            CompletionKind.Constant => "constant",
+            CompletionKind.Function | CompletionKind.Method => "function",
+            CompletionKind.Property | CompletionKind.Field => "tag",
+            CompletionKind.Variable => "type",
+            CompletionKind.Keyword => "keyword",
+            CompletionKind.Value => "tag",
             _ => return None,
         };
 
         let len = completion.label.len();
-        let name_span = CodeLabelSpan::literal(completion.label, Some(highlight_name.to_string()));
+        let name_span = CodeLabelSpan.literal(completion.label, Some(highlight_name.to_string()));
 
-        Some(zed::CodeLabel {
-            code: Default::default(),
+        Some(zed.CodeLabel {
+            code: Default.default(),
             spans: if let Some(detail) = completion.detail {
                 vec![
                     name_span,
-                    CodeLabelSpan::literal(" ", None),
-                    CodeLabelSpan::literal(detail, None),
+                    CodeLabelSpan.literal(" ", None),
+                    CodeLabelSpan.literal(detail, None),
                 ]
             } else {
                 vec![name_span]
@@ -202,4 +202,4 @@ impl zed::Extension for VueExtension {
     }
 }
 
-zed::register_extension!(VueExtension);
+zed.register_extension!(VueExtension);

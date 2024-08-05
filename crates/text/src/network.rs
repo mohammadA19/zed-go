@@ -1,9 +1,9 @@
-use std::fmt::Debug;
+use std.fmt.Debug;
 
-use clock::ReplicaId;
-use collections::{BTreeMap, HashSet};
+use clock.ReplicaId;
+use collections.{BTreeMap, HashSet};
 
-pub struct Network<T: Clone, R: rand::Rng> {
+pub struct Network<T: Clone, R: rand.Rng> {
     inboxes: BTreeMap<ReplicaId, Vec<Envelope<T>>>,
     disconnected_peers: HashSet<ReplicaId>,
     rng: R,
@@ -14,17 +14,17 @@ struct Envelope<T: Clone> {
     message: T,
 }
 
-impl<T: Clone, R: rand::Rng> Network<T, R> {
+impl<T: Clone, R: rand.Rng> Network<T, R> {
     pub fn new(rng: R) -> Self {
         Network {
-            inboxes: BTreeMap::default(),
-            disconnected_peers: HashSet::default(),
+            inboxes: BTreeMap.default(),
+            disconnected_peers: HashSet.default(),
             rng,
         }
     }
 
     pub fn add_peer(&mut self, id: ReplicaId) {
-        self.inboxes.insert(id, Vec::new());
+        self.inboxes.insert(id, Vec.new());
     }
 
     pub fn disconnect_peer(&mut self, id: ReplicaId) {

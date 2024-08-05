@@ -1,6 +1,6 @@
-use gpui::{Hsla, IntoElement};
+use gpui.{Hsla, IntoElement};
 
-use crate::prelude::*;
+use crate.prelude.*;
 
 enum DividerDirection {
     Horizontal,
@@ -18,8 +18,8 @@ pub enum DividerColor {
 impl DividerColor {
     pub fn hsla(self, cx: &WindowContext) -> Hsla {
         match self {
-            DividerColor::Border => cx.theme().colors().border,
-            DividerColor::BorderVariant => cx.theme().colors().border_variant,
+            DividerColor.Border => cx.theme().colors().border,
+            DividerColor.BorderVariant => cx.theme().colors().border_variant,
         }
     }
 }
@@ -35,10 +35,10 @@ impl RenderOnce for Divider {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
         div()
             .map(|this| match self.direction {
-                DividerDirection::Horizontal => {
+                DividerDirection.Horizontal => {
                     this.h_px().w_full().when(self.inset, |this| this.mx_1p5())
                 }
-                DividerDirection::Vertical => {
+                DividerDirection.Vertical => {
                     this.w_px().h_full().when(self.inset, |this| this.my_1p5())
                 }
             })
@@ -49,16 +49,16 @@ impl RenderOnce for Divider {
 impl Divider {
     pub fn horizontal() -> Self {
         Self {
-            direction: DividerDirection::Horizontal,
-            color: DividerColor::default(),
+            direction: DividerDirection.Horizontal,
+            color: DividerColor.default(),
             inset: false,
         }
     }
 
     pub fn vertical() -> Self {
         Self {
-            direction: DividerDirection::Vertical,
-            color: DividerColor::default(),
+            direction: DividerDirection.Vertical,
+            color: DividerColor.default(),
             inset: false,
         }
     }

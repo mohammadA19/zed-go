@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use crate::prelude::*;
+use crate.prelude.*;
 
 /// A [`Checkbox`] that has a [`Label`].
 #[derive(IntoElement)]
@@ -22,7 +22,7 @@ impl RadioWithLabel {
             id: id.into(),
             label,
             selected,
-            on_click: Arc::new(on_click),
+            on_click: Arc.new(on_click),
         }
     }
 }
@@ -34,7 +34,7 @@ impl RenderOnce for RadioWithLabel {
         let border_width = rems_from_px(1.);
         h_flex()
             .id(self.id)
-            .gap(Spacing::Large.rems(cx))
+            .gap(Spacing.Large.rems(cx))
             .group("")
             .child(
                 div()

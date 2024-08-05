@@ -1,12 +1,12 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use gpui::WindowBackgroundAppearance;
+use gpui.WindowBackgroundAppearance;
 
-use crate::AccentColors;
+use crate.AccentColors;
 
-use crate::{
+use crate.{
     default_color_scales,
-    one_themes::{one_dark, one_family},
+    one_themes.{one_dark, one_family},
     Appearance, PlayerColors, StatusColors, SyntaxTheme, SystemColors, Theme, ThemeColors,
     ThemeFamily, ThemeStyles,
 };
@@ -15,15 +15,15 @@ fn zed_pro_daylight() -> Theme {
     Theme {
         id: "zed_pro_daylight".to_string(),
         name: "Zed Pro Daylight".into(),
-        appearance: Appearance::Light,
+        appearance: Appearance.Light,
         styles: ThemeStyles {
-            window_background_appearance: WindowBackgroundAppearance::Opaque,
-            system: SystemColors::default(),
-            colors: ThemeColors::light(),
-            status: StatusColors::light(),
-            player: PlayerColors::light(),
-            syntax: Arc::new(SyntaxTheme::default()),
-            accents: AccentColors::light(),
+            window_background_appearance: WindowBackgroundAppearance.Opaque,
+            system: SystemColors.default(),
+            colors: ThemeColors.light(),
+            status: StatusColors.light(),
+            player: PlayerColors.light(),
+            syntax: Arc.new(SyntaxTheme.default()),
+            accents: AccentColors.light(),
         },
     }
 }
@@ -32,15 +32,15 @@ pub(crate) fn zed_pro_moonlight() -> Theme {
     Theme {
         id: "zed_pro_moonlight".to_string(),
         name: "Zed Pro Moonlight".into(),
-        appearance: Appearance::Dark,
+        appearance: Appearance.Dark,
         styles: ThemeStyles {
-            window_background_appearance: WindowBackgroundAppearance::Opaque,
-            system: SystemColors::default(),
-            colors: ThemeColors::dark(),
-            status: StatusColors::dark(),
-            player: PlayerColors::dark(),
-            syntax: Arc::new(SyntaxTheme::default()),
-            accents: AccentColors::dark(),
+            window_background_appearance: WindowBackgroundAppearance.Opaque,
+            system: SystemColors.default(),
+            colors: ThemeColors.dark(),
+            status: StatusColors.dark(),
+            player: PlayerColors.dark(),
+            syntax: Arc.new(SyntaxTheme.default()),
+            accents: AccentColors.dark(),
         },
     }
 }

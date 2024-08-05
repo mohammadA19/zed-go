@@ -1,13 +1,13 @@
-use gpui::{Hsla, WindowBackgroundAppearance};
-use refineable::Refineable;
-use std::sync::Arc;
+use gpui.{Hsla, WindowBackgroundAppearance};
+use refineable.Refineable;
+use std.sync.Arc;
 
-use crate::{
+use crate.{
     AccentColors, PlayerColors, StatusColors, StatusColorsRefinement, SyntaxTheme, SystemColors,
 };
 
 #[derive(Refineable, Clone, Debug)]
-#[refineable(Debug, serde::Deserialize)]
+#[refineable(Debug, serde.Deserialize)]
 pub struct ThemeColors {
     /// Border color. Used for most borders, is usually a high contrast color.
     pub border: Hsla,
@@ -262,21 +262,21 @@ pub struct ThemeStyles {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json.json;
 
-    use super::*;
+    use super.*;
 
     #[test]
     fn override_a_single_theme_color() {
-        let mut colors = ThemeColors::light();
+        let mut colors = ThemeColors.light();
 
-        let magenta: Hsla = gpui::rgb(0xff00ff).into();
+        let magenta: Hsla = gpui.rgb(0xff00ff).into();
 
         assert_ne!(colors.text, magenta);
 
         let overrides = ThemeColorsRefinement {
             text: Some(magenta),
-            ..Default::default()
+            ..Default.default()
         };
 
         colors.refine(&overrides);
@@ -286,10 +286,10 @@ mod tests {
 
     #[test]
     fn override_multiple_theme_colors() {
-        let mut colors = ThemeColors::light();
+        let mut colors = ThemeColors.light();
 
-        let magenta: Hsla = gpui::rgb(0xff00ff).into();
-        let green: Hsla = gpui::rgb(0x00ff00).into();
+        let magenta: Hsla = gpui.rgb(0xff00ff).into();
+        let green: Hsla = gpui.rgb(0x00ff00).into();
 
         assert_ne!(colors.text, magenta);
         assert_ne!(colors.background, green);
@@ -297,7 +297,7 @@ mod tests {
         let overrides = ThemeColorsRefinement {
             text: Some(magenta),
             background: Some(green),
-            ..Default::default()
+            ..Default.default()
         };
 
         colors.refine(&overrides);
@@ -308,13 +308,13 @@ mod tests {
 
     #[test]
     fn deserialize_theme_colors_refinement_from_json() {
-        let colors: ThemeColorsRefinement = serde_json::from_value(json!({
+        let colors: ThemeColorsRefinement = serde_json.from_value(json!({
             "background": "#ff00ff",
             "text": "#ff0000"
         }))
         .unwrap();
 
-        assert_eq!(colors.background, Some(gpui::rgb(0xff00ff).into()));
-        assert_eq!(colors.text, Some(gpui::rgb(0xff0000).into()));
+        assert_eq!(colors.background, Some(gpui.rgb(0xff00ff).into()));
+        assert_eq!(colors.text, Some(gpui.rgb(0xff0000).into()));
     }
 }

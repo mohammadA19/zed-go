@@ -1,20 +1,20 @@
-use gpui::{
+use gpui.{
     div, AppContext, EventEmitter, FocusHandle, FocusableView, FontWeight, InteractiveElement,
     IntoElement, ParentElement, PromptHandle, PromptLevel, PromptResponse, Render,
     RenderablePromptHandle, Styled, ViewContext, VisualContext, WindowContext,
 };
-use settings::Settings;
-use theme::ThemeSettings;
-use ui::{
+use settings.Settings;
+use theme.ThemeSettings;
+use ui.{
     h_flex, v_flex, ButtonCommon, ButtonStyle, Clickable, ElevationIndex, FluentBuilder, LabelSize,
     TintColor,
 };
-use workspace::ui::StyledExt;
+use workspace.ui.StyledExt;
 
 pub fn init(cx: &mut AppContext) {
     cx.set_prompt_builder(fallback_prompt_renderer)
 }
-/// Use this function in conjunction with [AppContext::set_prompt_renderer] to force
+/// Use this function in conjunction with [AppContext.set_prompt_renderer] to force
 /// GPUI to always use the fallback prompt renderer.
 pub fn fallback_prompt_renderer(
     level: PromptLevel,
@@ -28,8 +28,8 @@ pub fn fallback_prompt_renderer(
         |cx| FallbackPromptRenderer {
             _level: level,
             message: message.to_string(),
-            detail: detail.map(ToString::to_string),
-            actions: actions.iter().map(ToString::to_string).collect(),
+            detail: detail.map(ToString.to_string),
+            actions: actions.iter().map(ToString.to_string).collect(),
             focus: cx.focus_handle(),
             active_action_id: 0,
         }
@@ -49,27 +49,27 @@ pub struct FallbackPromptRenderer {
 }
 
 impl FallbackPromptRenderer {
-    fn confirm(&mut self, _: &menu::Confirm, cx: &mut ViewContext<Self>) {
+    fn confirm(&mut self, _: &menu.Confirm, cx: &mut ViewContext<Self>) {
         cx.emit(PromptResponse(self.active_action_id));
     }
 
-    fn cancel(&mut self, _: &menu::Cancel, cx: &mut ViewContext<Self>) {
+    fn cancel(&mut self, _: &menu.Cancel, cx: &mut ViewContext<Self>) {
         if let Some(ix) = self.actions.iter().position(|a| a == "Cancel") {
             cx.emit(PromptResponse(ix));
         }
     }
 
-    fn select_first(&mut self, _: &menu::SelectFirst, cx: &mut ViewContext<Self>) {
+    fn select_first(&mut self, _: &menu.SelectFirst, cx: &mut ViewContext<Self>) {
         self.active_action_id = self.actions.len().saturating_sub(1);
         cx.notify();
     }
 
-    fn select_last(&mut self, _: &menu::SelectLast, cx: &mut ViewContext<Self>) {
+    fn select_last(&mut self, _: &menu.SelectLast, cx: &mut ViewContext<Self>) {
         self.active_action_id = 0;
         cx.notify();
     }
 
-    fn select_next(&mut self, _: &menu::SelectNext, cx: &mut ViewContext<Self>) {
+    fn select_next(&mut self, _: &menu.SelectNext, cx: &mut ViewContext<Self>) {
         if self.active_action_id > 0 {
             self.active_action_id -= 1;
         } else {
@@ -78,7 +78,7 @@ impl FallbackPromptRenderer {
         cx.notify();
     }
 
-    fn select_prev(&mut self, _: &menu::SelectPrev, cx: &mut ViewContext<Self>) {
+    fn select_prev(&mut self, _: &menu.SelectPrev, cx: &mut ViewContext<Self>) {
         self.active_action_id = (self.active_action_id + 1) % self.actions.len();
         cx.notify();
     }
@@ -86,18 +86,18 @@ impl FallbackPromptRenderer {
 
 impl Render for FallbackPromptRenderer {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let settings = ThemeSettings::get_global(cx);
+        let settings = ThemeSettings.get_global(cx);
         let font_family = settings.ui_font.family.clone();
         let prompt = v_flex()
             .key_context("Prompt")
             .cursor_default()
             .track_focus(&self.focus)
-            .on_action(cx.listener(Self::confirm))
-            .on_action(cx.listener(Self::cancel))
-            .on_action(cx.listener(Self::select_next))
-            .on_action(cx.listener(Self::select_prev))
-            .on_action(cx.listener(Self::select_first))
-            .on_action(cx.listener(Self::select_last))
+            .on_action(cx.listener(Self.confirm))
+            .on_action(cx.listener(Self.cancel))
+            .on_action(cx.listener(Self.select_next))
+            .on_action(cx.listener(Self.select_prev))
+            .on_action(cx.listener(Self.select_first))
+            .on_action(cx.listener(Self.select_last))
             .elevation_3(cx)
             .w_72()
             .overflow_hidden()
@@ -107,26 +107,26 @@ impl Render for FallbackPromptRenderer {
             .child(
                 div()
                     .w_full()
-                    .font_weight(FontWeight::BOLD)
+                    .font_weight(FontWeight.BOLD)
                     .child(self.message.clone())
-                    .text_color(ui::Color::Default.color(cx)),
+                    .text_color(ui.Color.Default.color(cx)),
             )
             .children(self.detail.clone().map(|detail| {
                 div()
                     .w_full()
                     .text_xs()
-                    .text_color(ui::Color::Muted.color(cx))
+                    .text_color(ui.Color.Muted.color(cx))
                     .child(detail)
             }))
             .child(h_flex().justify_end().gap_2().children(
                 self.actions.iter().enumerate().rev().map(|(ix, action)| {
-                    ui::Button::new(ix, action.clone())
-                        .label_size(LabelSize::Large)
-                        .style(ButtonStyle::Filled)
+                    ui.Button.new(ix, action.clone())
+                        .label_size(LabelSize.Large)
+                        .style(ButtonStyle.Filled)
                         .when(ix == self.active_action_id, |el| {
-                            el.style(ButtonStyle::Tinted(TintColor::Accent))
+                            el.style(ButtonStyle.Tinted(TintColor.Accent))
                         })
-                        .layer(ElevationIndex::ModalSurface)
+                        .layer(ElevationIndex.ModalSurface)
                         .on_click(cx.listener(move |_, _, cx| {
                             cx.emit(PromptResponse(ix));
                         }))
@@ -157,7 +157,7 @@ impl Render for FallbackPromptRenderer {
 impl EventEmitter<PromptResponse> for FallbackPromptRenderer {}
 
 impl FocusableView for FallbackPromptRenderer {
-    fn focus_handle(&self, _: &crate::AppContext) -> FocusHandle {
+    fn focus_handle(&self, _: &crate.AppContext) -> FocusHandle {
         self.focus.clone()
     }
 }

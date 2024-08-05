@@ -1,9 +1,9 @@
-use std::fs;
+use std.fs;
 
-use zed::lsp::{Completion, CompletionKind, Symbol};
-use zed::{CodeLabel, CodeLabelSpan, LanguageServerId};
-use zed_extension_api::settings::LspSettings;
-use zed_extension_api::{self as zed, Result};
+use zed.lsp.{Completion, CompletionKind, Symbol};
+use zed.{CodeLabel, CodeLabelSpan, LanguageServerId};
+use zed_extension_api.settings.LspSettings;
+use zed_extension_api.{self as zed, Result};
 
 pub struct LexicalBinary {
     pub path: String,
@@ -26,9 +26,9 @@ impl Lexical {
     pub fn language_server_binary(
         &mut self,
         language_server_id: &LanguageServerId,
-        worktree: &zed::Worktree,
+        worktree: &zed.Worktree,
     ) -> Result<LexicalBinary> {
-        let binary_settings = LspSettings::for_worktree("lexical", worktree)
+        let binary_settings = LspSettings.for_worktree("lexical", worktree)
             .ok()
             .and_then(|lsp_settings| lsp_settings.binary);
         let binary_args = binary_settings
@@ -50,7 +50,7 @@ impl Lexical {
         }
 
         if let Some(path) = &self.cached_binary_path {
-            if fs::metadata(path).map_or(false, |stat| stat.is_file()) {
+            if fs.metadata(path).map_or(false, |stat| stat.is_file()) {
                 return Ok(LexicalBinary {
                     path: path.clone(),
                     args: binary_args,
@@ -58,13 +58,13 @@ impl Lexical {
             }
         }
 
-        zed::set_language_server_installation_status(
+        zed.set_language_server_installation_status(
             &language_server_id,
-            &zed::LanguageServerInstallationStatus::CheckingForUpdate,
+            &zed.LanguageServerInstallationStatus.CheckingForUpdate,
         );
-        let release = zed::latest_github_release(
+        let release = zed.latest_github_release(
             "lexical-lsp/lexical",
-            zed::GithubReleaseOptions {
+            zed.GithubReleaseOptions {
                 require_assets: true,
                 pre_release: false,
             },
@@ -81,27 +81,27 @@ impl Lexical {
         let version_dir = format!("lexical-{}", release.version);
         let binary_path = format!("{version_dir}/lexical/bin/start_lexical.sh");
 
-        if !fs::metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
-            zed::set_language_server_installation_status(
+        if !fs.metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
+            zed.set_language_server_installation_status(
                 &language_server_id,
-                &zed::LanguageServerInstallationStatus::Downloading,
+                &zed.LanguageServerInstallationStatus.Downloading,
             );
 
-            zed::download_file(
+            zed.download_file(
                 &asset.download_url,
                 &version_dir,
-                zed::DownloadedFileType::Zip,
+                zed.DownloadedFileType.Zip,
             )
             .map_err(|e| format!("failed to download file: {e}"))?;
 
-            zed::make_file_executable(&binary_path)?;
+            zed.make_file_executable(&binary_path)?;
 
             let entries =
-                fs::read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
+                fs.read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
             for entry in entries {
                 let entry = entry.map_err(|e| format!("failed to load directory entry {e}"))?;
                 if entry.file_name().to_str() != Some(&version_dir) {
-                    fs::remove_dir_all(&entry.path()).ok();
+                    fs.remove_dir_all(&entry.path()).ok();
                 }
             }
         }
@@ -115,41 +115,41 @@ impl Lexical {
 
     pub fn label_for_completion(&self, completion: Completion) -> Option<CodeLabel> {
         match completion.kind? {
-            CompletionKind::Module
-            | CompletionKind::Class
-            | CompletionKind::Interface
-            | CompletionKind::Struct => {
+            CompletionKind.Module
+            | CompletionKind.Class
+            | CompletionKind.Interface
+            | CompletionKind.Struct => {
                 let name = completion.label;
                 let defmodule = "defmodule ";
                 let code = format!("{defmodule}{name}");
 
                 Some(CodeLabel {
                     code,
-                    spans: vec![CodeLabelSpan::code_range(
+                    spans: vec![CodeLabelSpan.code_range(
                         defmodule.len()..defmodule.len() + name.len(),
                     )],
                     filter_range: (0..name.len()).into(),
                 })
             }
-            CompletionKind::Function | CompletionKind::Constant => {
+            CompletionKind.Function | CompletionKind.Constant => {
                 let name = completion.label;
                 let def = "def ";
                 let code = format!("{def}{name}");
 
                 Some(CodeLabel {
                     code,
-                    spans: vec![CodeLabelSpan::code_range(def.len()..def.len() + name.len())],
+                    spans: vec![CodeLabelSpan.code_range(def.len()..def.len() + name.len())],
                     filter_range: (0..name.len()).into(),
                 })
             }
-            CompletionKind::Operator => {
+            CompletionKind.Operator => {
                 let name = completion.label;
                 let def_a = "def a ";
                 let code = format!("{def_a}{name} b");
 
                 Some(CodeLabel {
                     code,
-                    spans: vec![CodeLabelSpan::code_range(
+                    spans: vec![CodeLabelSpan.code_range(
                         def_a.len()..def_a.len() + name.len(),
                     )],
                     filter_range: (0..name.len()).into(),

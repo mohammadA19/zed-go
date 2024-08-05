@@ -1,16 +1,16 @@
-use collections::HashMap;
-use editor::{display_map::ToDisplayPoint, scroll::Autoscroll};
-use gpui::ViewContext;
-use language::{Bias, Point, SelectionGoal};
-use multi_buffer::MultiBufferRow;
-use ui::WindowContext;
-use workspace::Workspace;
+use collections.HashMap;
+use editor.{display_map.ToDisplayPoint, scroll.Autoscroll};
+use gpui.ViewContext;
+use language.{Bias, Point, SelectionGoal};
+use multi_buffer.MultiBufferRow;
+use ui.WindowContext;
+use workspace.Workspace;
 
-use crate::{
-    motion::Motion,
-    normal::{ChangeCase, ConvertToLowerCase, ConvertToUpperCase},
-    object::Object,
-    state::Mode,
+use crate.{
+    motion.Motion,
+    normal.{ChangeCase, ConvertToLowerCase, ConvertToUpperCase},
+    object.Object,
+    state.Mode,
     Vim,
 };
 
@@ -31,25 +31,25 @@ pub fn change_case_motion(
     vim.update_active_editor(cx, |_, editor, cx| {
         let text_layout_details = editor.text_layout_details(cx);
         editor.transact(cx, |editor, cx| {
-            let mut selection_starts: HashMap<_, _> = Default::default();
+            let mut selection_starts: HashMap<_, _> = Default.default();
             editor.change_selections(None, cx, |s| {
                 s.move_with(|map, selection| {
-                    let anchor = map.display_point_to_anchor(selection.head(), Bias::Left);
+                    let anchor = map.display_point_to_anchor(selection.head(), Bias.Left);
                     selection_starts.insert(selection.id, anchor);
                     motion.expand_selection(map, selection, times, false, &text_layout_details);
                 });
             });
             match mode {
-                CaseTarget::Lowercase => editor.convert_to_lower_case(&Default::default(), cx),
-                CaseTarget::Uppercase => editor.convert_to_upper_case(&Default::default(), cx),
-                CaseTarget::OppositeCase => {
-                    editor.convert_to_opposite_case(&Default::default(), cx)
+                CaseTarget.Lowercase => editor.convert_to_lower_case(&Default.default(), cx),
+                CaseTarget.Uppercase => editor.convert_to_upper_case(&Default.default(), cx),
+                CaseTarget.OppositeCase => {
+                    editor.convert_to_opposite_case(&Default.default(), cx)
                 }
             }
             editor.change_selections(None, cx, |s| {
                 s.move_with(|map, selection| {
                     let anchor = selection_starts.remove(&selection.id).unwrap();
-                    selection.collapse_to(anchor.to_display_point(map), SelectionGoal::None);
+                    selection.collapse_to(anchor.to_display_point(map), SelectionGoal.None);
                 });
             });
         });
@@ -66,27 +66,27 @@ pub fn change_case_object(
     vim.stop_recording();
     vim.update_active_editor(cx, |_, editor, cx| {
         editor.transact(cx, |editor, cx| {
-            let mut original_positions: HashMap<_, _> = Default::default();
+            let mut original_positions: HashMap<_, _> = Default.default();
             editor.change_selections(None, cx, |s| {
                 s.move_with(|map, selection| {
                     object.expand_selection(map, selection, around);
                     original_positions.insert(
                         selection.id,
-                        map.display_point_to_anchor(selection.start, Bias::Left),
+                        map.display_point_to_anchor(selection.start, Bias.Left),
                     );
                 });
             });
             match mode {
-                CaseTarget::Lowercase => editor.convert_to_lower_case(&Default::default(), cx),
-                CaseTarget::Uppercase => editor.convert_to_upper_case(&Default::default(), cx),
-                CaseTarget::OppositeCase => {
-                    editor.convert_to_opposite_case(&Default::default(), cx)
+                CaseTarget.Lowercase => editor.convert_to_lower_case(&Default.default(), cx),
+                CaseTarget.Uppercase => editor.convert_to_upper_case(&Default.default(), cx),
+                CaseTarget.OppositeCase => {
+                    editor.convert_to_opposite_case(&Default.default(), cx)
                 }
             }
             editor.change_selections(None, cx, |s| {
                 s.move_with(|map, selection| {
                     let anchor = original_positions.remove(&selection.id).unwrap();
-                    selection.collapse_to(anchor.to_display_point(map), SelectionGoal::None);
+                    selection.collapse_to(anchor.to_display_point(map), SelectionGoal.None);
                 });
             });
         });
@@ -96,9 +96,9 @@ pub fn change_case_object(
 pub fn change_case(_: &mut Workspace, _: &ChangeCase, cx: &mut ViewContext<Workspace>) {
     manipulate_text(cx, |c| {
         if c.is_lowercase() {
-            c.to_uppercase().collect::<Vec<char>>()
+            c.to_uppercase().collect.<Vec<char>>()
         } else {
-            c.to_lowercase().collect::<Vec<char>>()
+            c.to_lowercase().collect.<Vec<char>>()
         }
     })
 }
@@ -108,7 +108,7 @@ pub fn convert_to_upper_case(
     _: &ConvertToUpperCase,
     cx: &mut ViewContext<Workspace>,
 ) {
-    manipulate_text(cx, |c| c.to_uppercase().collect::<Vec<char>>())
+    manipulate_text(cx, |c| c.to_uppercase().collect.<Vec<char>>())
 }
 
 pub fn convert_to_lower_case(
@@ -116,53 +116,53 @@ pub fn convert_to_lower_case(
     _: &ConvertToLowerCase,
     cx: &mut ViewContext<Workspace>,
 ) {
-    manipulate_text(cx, |c| c.to_lowercase().collect::<Vec<char>>())
+    manipulate_text(cx, |c| c.to_lowercase().collect.<Vec<char>>())
 }
 
 fn manipulate_text<F>(cx: &mut ViewContext<Workspace>, transform: F)
 where
     F: Fn(char) -> Vec<char> + Copy,
 {
-    Vim::update(cx, |vim, cx| {
+    Vim.update(cx, |vim, cx| {
         vim.record_current_action(cx);
         vim.store_visual_marks(cx);
         let count = vim.take_count(cx).unwrap_or(1) as u32;
 
         vim.update_active_editor(cx, |vim, editor, cx| {
-            let mut ranges = Vec::new();
-            let mut cursor_positions = Vec::new();
+            let mut ranges = Vec.new();
+            let mut cursor_positions = Vec.new();
             let snapshot = editor.buffer().read(cx).snapshot(cx);
-            for selection in editor.selections.all::<Point>(cx) {
+            for selection in editor.selections.all.<Point>(cx) {
                 match vim.state().mode {
-                    Mode::VisualLine => {
-                        let start = Point::new(selection.start.row, 0);
-                        let end = Point::new(
+                    Mode.VisualLine => {
+                        let start = Point.new(selection.start.row, 0);
+                        let end = Point.new(
                             selection.end.row,
                             snapshot.line_len(MultiBufferRow(selection.end.row)),
                         );
                         ranges.push(start..end);
                         cursor_positions.push(start..start);
                     }
-                    Mode::Visual => {
+                    Mode.Visual => {
                         ranges.push(selection.start..selection.end);
                         cursor_positions.push(selection.start..selection.start);
                     }
-                    Mode::VisualBlock => {
+                    Mode.VisualBlock => {
                         ranges.push(selection.start..selection.end);
                         if cursor_positions.len() == 0 {
                             cursor_positions.push(selection.start..selection.start);
                         }
                     }
-                    Mode::Insert | Mode::Normal | Mode::Replace => {
+                    Mode.Insert | Mode.Normal | Mode.Replace => {
                         let start = selection.start;
                         let mut end = start;
                         for _ in 0..count {
-                            end = snapshot.clip_point(end + Point::new(0, 1), Bias::Right);
+                            end = snapshot.clip_point(end + Point.new(0, 1), Bias.Right);
                         }
                         ranges.push(start..end);
 
                         if end.column == snapshot.line_len(MultiBufferRow(end.row)) {
-                            end = snapshot.clip_point(end - Point::new(0, 1), Bias::Left);
+                            end = snapshot.clip_point(end - Point.new(0, 1), Bias.Left);
                         }
                         cursor_positions.push(end..end)
                     }
@@ -176,27 +176,27 @@ where
                             .text_for_range(range.start..range.end)
                             .flat_map(|s| s.chars())
                             .flat_map(|c| transform(c))
-                            .collect::<String>();
+                            .collect.<String>();
 
                         buffer.edit([(range, text)], None, cx)
                     })
                 }
-                editor.change_selections(Some(Autoscroll::fit()), cx, |s| {
+                editor.change_selections(Some(Autoscroll.fit()), cx, |s| {
                     s.select_ranges(cursor_positions)
                 })
             });
         });
-        vim.switch_mode(Mode::Normal, true, cx)
+        vim.switch_mode(Mode.Normal, true, cx)
     })
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{state::Mode, test::NeovimBackedTestContext};
+    use crate.{state.Mode, test.NeovimBackedTestContext};
 
-    #[gpui::test]
-    async fn test_change_case(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_case(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         cx.set_shared_state("ˇabC\n").await;
         cx.simulate_shared_keystrokes("~").await;
         cx.shared_state().await.assert_eq("AˇbC\n");
@@ -225,14 +225,14 @@ mod test {
         cx.shared_state().await.assert_eq("ˇAa\nBb\ncc");
 
         // works with multiple cursors (zed only)
-        cx.set_state("aˇßcdˇe\n", Mode::Normal);
+        cx.set_state("aˇßcdˇe\n", Mode.Normal);
         cx.simulate_keystrokes("~");
-        cx.assert_state("aSSˇcdˇE\n", Mode::Normal);
+        cx.assert_state("aSSˇcdˇE\n", Mode.Normal);
     }
 
-    #[gpui::test]
-    async fn test_convert_to_upper_case(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_convert_to_upper_case(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         // works in visual mode
         cx.set_shared_state("a😀C«dÉ1*fˇ»\n").await;
         cx.simulate_shared_keystrokes("U").await;
@@ -249,9 +249,9 @@ mod test {
         cx.shared_state().await.assert_eq("ˇAa\nBb\ncc");
     }
 
-    #[gpui::test]
-    async fn test_convert_to_lower_case(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_convert_to_lower_case(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         // works in visual mode
         cx.set_shared_state("A😀c«DÉ1*fˇ»\n").await;
         cx.simulate_shared_keystrokes("u").await;
@@ -268,9 +268,9 @@ mod test {
         cx.shared_state().await.assert_eq("ˇaa\nbb\nCc");
     }
 
-    #[gpui::test]
-    async fn test_change_case_motion(cx: &mut gpui::TestAppContext) {
-        let mut cx = NeovimBackedTestContext::new(cx).await;
+    #[gpui.test]
+    async fn test_change_case_motion(cx: &mut gpui.TestAppContext) {
+        let mut cx = NeovimBackedTestContext.new(cx).await;
         // works in visual mode
         cx.set_shared_state("ˇabc def").await;
         cx.simulate_shared_keystrokes("g shift-u w").await;

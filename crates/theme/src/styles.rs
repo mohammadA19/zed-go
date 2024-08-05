@@ -8,12 +8,12 @@ mod system;
 #[cfg(feature = "stories")]
 mod stories;
 
-pub use accents::*;
-pub use colors::*;
-pub use players::*;
-pub use status::*;
-pub use syntax::*;
-pub use system::*;
+pub use accents.*;
+pub use colors.*;
+pub use players.*;
+pub use status.*;
+pub use syntax.*;
+pub use system.*;
 
 #[cfg(feature = "stories")]
-pub use stories::*;
+pub use stories.*;

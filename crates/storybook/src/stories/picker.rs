@@ -1,9 +1,9 @@
-use fuzzy::StringMatchCandidate;
-use gpui::{div, prelude::*, KeyBinding, Render, SharedString, Styled, Task, View, WindowContext};
-use picker::{Picker, PickerDelegate};
-use std::sync::Arc;
-use ui::{prelude::*, ListItemSpacing};
-use ui::{Label, ListItem};
+use fuzzy.StringMatchCandidate;
+use gpui.{div, prelude.*, KeyBinding, Render, SharedString, Styled, Task, View, WindowContext};
+use picker.{Picker, PickerDelegate};
+use std.sync.Arc;
+use ui.{prelude.*, ListItemSpacing};
+use ui.{Label, ListItem};
 
 pub struct PickerStory {
     picker: View<Picker<Delegate>>,
@@ -49,20 +49,20 @@ impl PickerDelegate for Delegate {
         &self,
         ix: usize,
         selected: bool,
-        _cx: &mut gpui::ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem> {
+        _cx: &mut gpui.ViewContext<Picker<Self>>,
+    ) -> Option<Self.ListItem> {
         let Some(candidate_ix) = self.matches.get(ix) else {
             return None;
         };
-        // TASK: Make StringMatchCandidate::string a SharedString
-        let candidate = SharedString::from(self.candidates[*candidate_ix].string.clone());
+        // TASK: Make StringMatchCandidate.string a SharedString
+        let candidate = SharedString.from(self.candidates[*candidate_ix].string.clone());
 
         Some(
-            ListItem::new(ix)
+            ListItem.new(ix)
                 .inset(true)
-                .spacing(ListItemSpacing::Sparse)
+                .spacing(ListItemSpacing.Sparse)
                 .selected(selected)
-                .child(Label::new(candidate)),
+                .child(Label.new(candidate)),
         )
     }
 
@@ -70,12 +70,12 @@ impl PickerDelegate for Delegate {
         self.selected_ix
     }
 
-    fn set_selected_index(&mut self, ix: usize, cx: &mut gpui::ViewContext<Picker<Self>>) {
+    fn set_selected_index(&mut self, ix: usize, cx: &mut gpui.ViewContext<Picker<Self>>) {
         self.selected_ix = ix;
         cx.notify();
     }
 
-    fn confirm(&mut self, secondary: bool, _cx: &mut gpui::ViewContext<Picker<Self>>) {
+    fn confirm(&mut self, secondary: bool, _cx: &mut gpui.ViewContext<Picker<Self>>) {
         let candidate_ix = self.matches[self.selected_ix];
         let candidate = self.candidates[candidate_ix].string.clone();
 
@@ -86,31 +86,31 @@ impl PickerDelegate for Delegate {
         }
     }
 
-    fn dismissed(&mut self, cx: &mut gpui::ViewContext<Picker<Self>>) {
+    fn dismissed(&mut self, cx: &mut gpui.ViewContext<Picker<Self>>) {
         cx.quit();
     }
 
     fn update_matches(
         &mut self,
         query: String,
-        cx: &mut gpui::ViewContext<Picker<Self>>,
+        cx: &mut gpui.ViewContext<Picker<Self>>,
     ) -> Task<()> {
         let candidates = self.candidates.clone();
         self.matches = cx
             .background_executor()
-            .block(fuzzy::match_strings(
+            .block(fuzzy.match_strings(
                 &candidates,
                 &query,
                 true,
                 100,
-                &Default::default(),
+                &Default.default(),
                 cx.background_executor().clone(),
             ))
             .into_iter()
             .map(|r| r.candidate_id)
             .collect();
         self.selected_ix = 0;
-        Task::ready(())
+        Task.ready(())
     }
 }
 
@@ -118,26 +118,26 @@ impl PickerStory {
     pub fn new(cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             cx.bind_keys([
-                KeyBinding::new("up", menu::SelectPrev, Some("picker")),
-                KeyBinding::new("pageup", menu::SelectFirst, Some("picker")),
-                KeyBinding::new("shift-pageup", menu::SelectFirst, Some("picker")),
-                KeyBinding::new("ctrl-p", menu::SelectPrev, Some("picker")),
-                KeyBinding::new("down", menu::SelectNext, Some("picker")),
-                KeyBinding::new("pagedown", menu::SelectLast, Some("picker")),
-                KeyBinding::new("shift-pagedown", menu::SelectFirst, Some("picker")),
-                KeyBinding::new("ctrl-n", menu::SelectNext, Some("picker")),
-                KeyBinding::new("cmd-up", menu::SelectFirst, Some("picker")),
-                KeyBinding::new("cmd-down", menu::SelectLast, Some("picker")),
-                KeyBinding::new("enter", menu::Confirm, Some("picker")),
-                KeyBinding::new("ctrl-enter", menu::SecondaryConfirm, Some("picker")),
-                KeyBinding::new("cmd-enter", menu::SecondaryConfirm, Some("picker")),
-                KeyBinding::new("escape", menu::Cancel, Some("picker")),
-                KeyBinding::new("ctrl-c", menu::Cancel, Some("picker")),
+                KeyBinding.new("up", menu.SelectPrev, Some("picker")),
+                KeyBinding.new("pageup", menu.SelectFirst, Some("picker")),
+                KeyBinding.new("shift-pageup", menu.SelectFirst, Some("picker")),
+                KeyBinding.new("ctrl-p", menu.SelectPrev, Some("picker")),
+                KeyBinding.new("down", menu.SelectNext, Some("picker")),
+                KeyBinding.new("pagedown", menu.SelectLast, Some("picker")),
+                KeyBinding.new("shift-pagedown", menu.SelectFirst, Some("picker")),
+                KeyBinding.new("ctrl-n", menu.SelectNext, Some("picker")),
+                KeyBinding.new("cmd-up", menu.SelectFirst, Some("picker")),
+                KeyBinding.new("cmd-down", menu.SelectLast, Some("picker")),
+                KeyBinding.new("enter", menu.Confirm, Some("picker")),
+                KeyBinding.new("ctrl-enter", menu.SecondaryConfirm, Some("picker")),
+                KeyBinding.new("cmd-enter", menu.SecondaryConfirm, Some("picker")),
+                KeyBinding.new("escape", menu.Cancel, Some("picker")),
+                KeyBinding.new("ctrl-c", menu.Cancel, Some("picker")),
             ]);
 
             PickerStory {
                 picker: cx.new_view(|cx| {
-                    let mut delegate = Delegate::new(&[
+                    let mut delegate = Delegate.new(&[
                         "Baguette (France)",
                         "Baklava (Turkey)",
                         "Beef Wellington (UK)",
@@ -190,7 +190,7 @@ impl PickerStory {
                     ]);
                     delegate.update_matches("".into(), cx).detach();
 
-                    let picker = Picker::uniform_list(delegate, cx);
+                    let picker = Picker.uniform_list(delegate, cx);
                     picker.focus(cx);
                     picker
                 }),
@@ -200,7 +200,7 @@ impl PickerStory {
 }
 
 impl Render for PickerStory {
-    fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut gpui.ViewContext<Self>) -> impl IntoElement {
         div()
             .bg(cx.theme().styles.colors.background)
             .size_full()

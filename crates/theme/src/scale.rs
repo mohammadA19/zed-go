@@ -1,6 +1,6 @@
-use gpui::{AppContext, Hsla, SharedString};
+use gpui.{AppContext, Hsla, SharedString};
 
-use crate::{ActiveTheme, Appearance};
+use crate.{ActiveTheme, Appearance};
 
 /// A collection of colors that are used to style the UI.
 ///
@@ -24,18 +24,18 @@ impl ColorScaleStep {
 
     /// All of the steps in a [`ColorScale`].
     pub const ALL: [ColorScaleStep; 12] = [
-        Self::ONE,
-        Self::TWO,
-        Self::THREE,
-        Self::FOUR,
-        Self::FIVE,
-        Self::SIX,
-        Self::SEVEN,
-        Self::EIGHT,
-        Self::NINE,
-        Self::TEN,
-        Self::ELEVEN,
-        Self::TWELVE,
+        Self.ONE,
+        Self.TWO,
+        Self.THREE,
+        Self.FOUR,
+        Self.FIVE,
+        Self.SIX,
+        Self.SEVEN,
+        Self.EIGHT,
+        Self.NINE,
+        Self.TEN,
+        Self.ELEVEN,
+        Self.TWELVE,
     ];
 }
 
@@ -47,7 +47,7 @@ pub struct ColorScale(Vec<Hsla>);
 
 impl FromIterator<Hsla> for ColorScale {
     fn from_iter<T: IntoIterator<Item = Hsla>>(iter: T) -> Self {
-        Self(Vec::from_iter(iter))
+        Self(Vec.from_iter(iter))
     }
 }
 
@@ -65,7 +65,7 @@ impl ColorScale {
     ///
     #[inline]
     pub fn step_1(&self) -> Hsla {
-        self.step(ColorScaleStep::ONE)
+        self.step(ColorScaleStep.ONE)
     }
 
     /// `Step 2` - Used for both main application backgrounds and subtle component backgrounds.
@@ -73,7 +73,7 @@ impl ColorScale {
     /// Like `Step 1`, this step allows variations in background styles, from striped tables, sidebar backgrounds, to card backgrounds.
     #[inline]
     pub fn step_2(&self) -> Hsla {
-        self.step(ColorScaleStep::TWO)
+        self.step(ColorScaleStep.TWO)
     }
 
     /// `Step 3` - Used for UI component backgrounds in their normal states.
@@ -81,7 +81,7 @@ impl ColorScale {
     /// This step maintains accessibility by guaranteeing a contrast ratio of 4.5:1 with steps 11 and 12 for text. It could also suit hover states for transparent components.
     #[inline]
     pub fn step_3(&self) -> Hsla {
-        self.step(ColorScaleStep::THREE)
+        self.step(ColorScaleStep.THREE)
     }
 
     /// `Step 4` - Used for UI component backgrounds in their hover states.
@@ -89,13 +89,13 @@ impl ColorScale {
     /// Also suited for pressed or selected states of components with a transparent background.
     #[inline]
     pub fn step_4(&self) -> Hsla {
-        self.step(ColorScaleStep::FOUR)
+        self.step(ColorScaleStep.FOUR)
     }
 
     /// `Step 5` - Used for UI component backgrounds in their pressed or selected states.
     #[inline]
     pub fn step_5(&self) -> Hsla {
-        self.step(ColorScaleStep::FIVE)
+        self.step(ColorScaleStep.FIVE)
     }
 
     /// `Step 6` - Used for subtle borders on non-interactive components.
@@ -103,7 +103,7 @@ impl ColorScale {
     /// Its usage spans from sidebars' borders, headers' dividers, cards' outlines, to alerts' edges and separators.
     #[inline]
     pub fn step_6(&self) -> Hsla {
-        self.step(ColorScaleStep::SIX)
+        self.step(ColorScaleStep.SIX)
     }
 
     /// `Step 7` - Used for subtle borders on interactive components.
@@ -111,7 +111,7 @@ impl ColorScale {
     /// This step subtly delineates the boundary of elements users interact with.
     #[inline]
     pub fn step_7(&self) -> Hsla {
-        self.step(ColorScaleStep::SEVEN)
+        self.step(ColorScaleStep.SEVEN)
     }
 
     /// `Step 8` - Used for stronger borders on interactive components and focus rings.
@@ -119,7 +119,7 @@ impl ColorScale {
     /// It strengthens the visibility and accessibility of active elements and their focus states.
     #[inline]
     pub fn step_8(&self) -> Hsla {
-        self.step(ColorScaleStep::EIGHT)
+        self.step(ColorScaleStep.EIGHT)
     }
 
     /// `Step 9` - Used for solid backgrounds.
@@ -130,7 +130,7 @@ impl ColorScale {
     /// error, warning, and success indicators.
     #[inline]
     pub fn step_9(&self) -> Hsla {
-        self.step(ColorScaleStep::NINE)
+        self.step(ColorScaleStep.NINE)
     }
 
     /// `Step 10` - Used for hovered or active solid backgrounds, particularly when `Step 9` is their normal state.
@@ -138,19 +138,19 @@ impl ColorScale {
     /// May also be used for extremely low contrast text. This should be used sparingly, as it may be difficult to read.
     #[inline]
     pub fn step_10(&self) -> Hsla {
-        self.step(ColorScaleStep::TEN)
+        self.step(ColorScaleStep.TEN)
     }
 
     /// `Step 11` - Used for text and icons requiring low contrast or less emphasis.
     #[inline]
     pub fn step_11(&self) -> Hsla {
-        self.step(ColorScaleStep::ELEVEN)
+        self.step(ColorScaleStep.ELEVEN)
     }
 
     /// `Step 12` - Used for text and icons requiring high contrast or prominence.
     #[inline]
     pub fn step_12(&self) -> Hsla {
-        self.step(ColorScaleStep::TWELVE)
+        self.step(ColorScaleStep.TWELVE)
     }
 }
 
@@ -193,9 +193,9 @@ pub struct ColorScales {
 impl IntoIterator for ColorScales {
     type Item = ColorScaleSet;
 
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = std.vec.IntoIter<Self.Item>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_iter(self) -> Self.IntoIter {
         vec![
             self.gray,
             self.mauve,
@@ -283,15 +283,15 @@ impl ColorScaleSet {
 
     pub fn step(&self, cx: &AppContext, step: ColorScaleStep) -> Hsla {
         match cx.theme().appearance {
-            Appearance::Light => self.light().step(step),
-            Appearance::Dark => self.dark().step(step),
+            Appearance.Light => self.light().step(step),
+            Appearance.Dark => self.dark().step(step),
         }
     }
 
     pub fn step_alpha(&self, cx: &AppContext, step: ColorScaleStep) -> Hsla {
         match cx.theme().appearance {
-            Appearance::Light => self.light_alpha.step(step),
-            Appearance::Dark => self.dark_alpha.step(step),
+            Appearance.Light => self.light_alpha.step(step),
+            Appearance.Dark => self.dark_alpha.step(step),
         }
     }
 }

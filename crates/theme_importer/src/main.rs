@@ -2,22 +2,22 @@ mod assets;
 mod color;
 mod vscode;
 
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
+use std.fs.File;
+use std.io.Write;
+use std.path.PathBuf;
 
-use anyhow::{Context, Result};
-use clap::{Parser, Subcommand};
-use indexmap::IndexMap;
-use log::LevelFilter;
-use schemars::schema_for;
-use serde::Deserialize;
-use simplelog::ColorChoice;
-use simplelog::{TermLogger, TerminalMode};
-use theme::{Appearance, AppearanceContent, ThemeFamilyContent};
+use anyhow.{Context, Result};
+use clap.{Parser, Subcommand};
+use indexmap.IndexMap;
+use log.LevelFilter;
+use schemars.schema_for;
+use serde.Deserialize;
+use simplelog.ColorChoice;
+use simplelog.{TermLogger, TerminalMode};
+use theme.{Appearance, AppearanceContent, ThemeFamilyContent};
 
-use crate::vscode::VsCodeTheme;
-use crate::vscode::VsCodeThemeConverter;
+use crate.vscode.VsCodeTheme;
+use crate.vscode.VsCodeThemeConverter;
 
 #[derive(Debug, Deserialize)]
 struct FamilyMetadata {
@@ -44,8 +44,8 @@ pub enum ThemeAppearanceJson {
 impl From<ThemeAppearanceJson> for AppearanceContent {
     fn from(value: ThemeAppearanceJson) -> Self {
         match value {
-            ThemeAppearanceJson::Light => Self::Light,
-            ThemeAppearanceJson::Dark => Self::Dark,
+            ThemeAppearanceJson.Light => Self.Light,
+            ThemeAppearanceJson.Dark => Self.Dark,
         }
     }
 }
@@ -53,8 +53,8 @@ impl From<ThemeAppearanceJson> for AppearanceContent {
 impl From<ThemeAppearanceJson> for Appearance {
     fn from(value: ThemeAppearanceJson) -> Self {
         match value {
-            ThemeAppearanceJson::Light => Self::Light,
-            ThemeAppearanceJson::Dark => Self::Dark,
+            ThemeAppearanceJson.Light => Self.Light,
+            ThemeAppearanceJson.Dark => Self.Dark,
         }
     }
 }
@@ -91,10 +91,10 @@ enum Command {
 }
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = Args.parse();
 
     let log_config = {
-        let mut config = simplelog::ConfigBuilder::new();
+        let mut config = simplelog.ConfigBuilder.new();
 
         if !args.warn_on_missing {
             config.add_filter_ignore_str("theme_printer");
@@ -103,22 +103,22 @@ fn main() -> Result<()> {
         config.build()
     };
 
-    TermLogger::init(
-        LevelFilter::Trace,
+    TermLogger.init(
+        LevelFilter.Trace,
         log_config,
-        TerminalMode::Stderr,
-        ColorChoice::Auto,
+        TerminalMode.Stderr,
+        ColorChoice.Auto,
     )
     .expect("could not initialize logger");
 
     if let Some(command) = args.command {
         match command {
-            Command::PrintSchema => {
+            Command.PrintSchema => {
                 let theme_family_schema = schema_for!(ThemeFamilyContent);
 
                 println!(
                     "{}",
-                    serde_json::to_string_pretty(&theme_family_schema).unwrap()
+                    serde_json.to_string_pretty(&theme_family_schema).unwrap()
                 );
 
                 return Ok(());
@@ -128,37 +128,37 @@ fn main() -> Result<()> {
 
     let theme_file_path = args.theme_path;
 
-    let theme_file = match File::open(&theme_file_path) {
+    let theme_file = match File.open(&theme_file_path) {
         Ok(file) => file,
         Err(err) => {
-            log::info!("Failed to open file at path: {:?}", theme_file_path);
+            log.info!("Failed to open file at path: {:?}", theme_file_path);
             return Err(err)?;
         }
     };
 
-    let vscode_theme: VsCodeTheme = serde_json_lenient::from_reader(theme_file)
+    let vscode_theme: VsCodeTheme = serde_json_lenient.from_reader(theme_file)
         .context(format!("failed to parse theme {theme_file_path:?}"))?;
 
     let theme_metadata = ThemeMetadata {
         name: vscode_theme.name.clone().unwrap_or("".to_string()),
-        appearance: ThemeAppearanceJson::Dark,
+        appearance: ThemeAppearanceJson.Dark,
         file_name: "".to_string(),
     };
 
-    let converter = VsCodeThemeConverter::new(vscode_theme, theme_metadata, IndexMap::new());
+    let converter = VsCodeThemeConverter.new(vscode_theme, theme_metadata, IndexMap.new());
 
     let theme = converter.convert()?;
 
-    let theme_json = serde_json::to_string_pretty(&theme).unwrap();
+    let theme_json = serde_json.to_string_pretty(&theme).unwrap();
 
     if let Some(output) = args.output {
-        let mut file = File::create(output)?;
+        let mut file = File.create(output)?;
         file.write_all(theme_json.as_bytes())?;
     } else {
         println!("{}", theme_json);
     }
 
-    log::info!("Done!");
+    log.info!("Done!");
 
     Ok(())
 }

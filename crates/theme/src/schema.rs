@@ -1,22 +1,22 @@
-use anyhow::Result;
-use gpui::{FontStyle, FontWeight, HighlightStyle, Hsla, WindowBackgroundAppearance};
-use indexmap::IndexMap;
-use palette::FromColor;
-use schemars::gen::SchemaGenerator;
-use schemars::schema::{Schema, SchemaObject};
-use schemars::JsonSchema;
-use serde::{Deserialize, Deserializer, Serialize};
-use serde_json::Value;
-use serde_repr::{Deserialize_repr, Serialize_repr};
+use anyhow.Result;
+use gpui.{FontStyle, FontWeight, HighlightStyle, Hsla, WindowBackgroundAppearance};
+use indexmap.IndexMap;
+use palette.FromColor;
+use schemars.gen.SchemaGenerator;
+use schemars.schema.{Schema, SchemaObject};
+use schemars.JsonSchema;
+use serde.{Deserialize, Deserializer, Serialize};
+use serde_json.Value;
+use serde_repr.{Deserialize_repr, Serialize_repr};
 
-use crate::{StatusColorsRefinement, ThemeColorsRefinement};
+use crate.{StatusColorsRefinement, ThemeColorsRefinement};
 
 pub(crate) fn try_parse_color(color: &str) -> Result<Hsla> {
-    let rgba = gpui::Rgba::try_from(color)?;
-    let rgba = palette::rgb::Srgba::from_components((rgba.r, rgba.g, rgba.b, rgba.a));
-    let hsla = palette::Hsla::from_color(rgba);
+    let rgba = gpui.Rgba.try_from(color)?;
+    let rgba = palette.rgb.Srgba.from_components((rgba.r, rgba.g, rgba.b, rgba.a));
+    let hsla = palette.Hsla.from_color(rgba);
 
-    let hsla = gpui::hsla(
+    let hsla = gpui.hsla(
         hsla.hue.into_positive_degrees() / 360.,
         hsla.saturation,
         hsla.lightness,
@@ -45,9 +45,9 @@ pub enum WindowBackgroundContent {
 impl From<WindowBackgroundContent> for WindowBackgroundAppearance {
     fn from(value: WindowBackgroundContent) -> Self {
         match value {
-            WindowBackgroundContent::Opaque => WindowBackgroundAppearance::Opaque,
-            WindowBackgroundContent::Transparent => WindowBackgroundAppearance::Transparent,
-            WindowBackgroundContent::Blurred => WindowBackgroundAppearance::Blurred,
+            WindowBackgroundContent.Opaque => WindowBackgroundAppearance.Opaque,
+            WindowBackgroundContent.Transparent => WindowBackgroundAppearance.Transparent,
+            WindowBackgroundContent.Blurred => WindowBackgroundAppearance.Blurred,
         }
     }
 }
@@ -123,11 +123,11 @@ impl ThemeStyleContent {
                             .and_then(|color| try_parse_color(color).ok()),
                         font_style: style
                             .font_style
-                            .map(|font_style| FontStyle::from(font_style)),
+                            .map(|font_style| FontStyle.from(font_style)),
                         font_weight: style
                             .font_weight
-                            .map(|font_weight| FontWeight::from(font_weight)),
-                        ..Default::default()
+                            .map(|font_weight| FontWeight.from(font_weight)),
+                        ..Default.default()
                     },
                 )
             })
@@ -1254,9 +1254,9 @@ pub enum FontStyleContent {
 impl From<FontStyleContent> for FontStyle {
     fn from(value: FontStyleContent) -> Self {
         match value {
-            FontStyleContent::Normal => FontStyle::Normal,
-            FontStyleContent::Italic => FontStyle::Italic,
-            FontStyleContent::Oblique => FontStyle::Oblique,
+            FontStyleContent.Normal => FontStyle.Normal,
+            FontStyleContent.Italic => FontStyle.Italic,
+            FontStyleContent.Oblique => FontStyle.Oblique,
         }
     }
 }
@@ -1297,7 +1297,7 @@ impl JsonSchema for FontWeightContent {
                 800.into(),
                 900.into(),
             ]),
-            ..Default::default()
+            ..Default.default()
         }
         .into()
     }
@@ -1306,15 +1306,15 @@ impl JsonSchema for FontWeightContent {
 impl From<FontWeightContent> for FontWeight {
     fn from(value: FontWeightContent) -> Self {
         match value {
-            FontWeightContent::Thin => FontWeight::THIN,
-            FontWeightContent::ExtraLight => FontWeight::EXTRA_LIGHT,
-            FontWeightContent::Light => FontWeight::LIGHT,
-            FontWeightContent::Normal => FontWeight::NORMAL,
-            FontWeightContent::Medium => FontWeight::MEDIUM,
-            FontWeightContent::Semibold => FontWeight::SEMIBOLD,
-            FontWeightContent::Bold => FontWeight::BOLD,
-            FontWeightContent::ExtraBold => FontWeight::EXTRA_BOLD,
-            FontWeightContent::Black => FontWeight::BLACK,
+            FontWeightContent.Thin => FontWeight.THIN,
+            FontWeightContent.ExtraLight => FontWeight.EXTRA_LIGHT,
+            FontWeightContent.Light => FontWeight.LIGHT,
+            FontWeightContent.Normal => FontWeight.NORMAL,
+            FontWeightContent.Medium => FontWeight.MEDIUM,
+            FontWeightContent.Semibold => FontWeight.SEMIBOLD,
+            FontWeightContent.Bold => FontWeight.BOLD,
+            FontWeightContent.ExtraBold => FontWeight.EXTRA_BOLD,
+            FontWeightContent.Black => FontWeight.BLACK,
         }
     }
 }
@@ -1343,11 +1343,11 @@ impl HighlightStyleContent {
     }
 }
 
-fn treat_error_as_none<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+fn treat_error_as_none<'de, T, D>(deserializer: D) -> Result<Option<T>, D.Error>
 where
     T: Deserialize<'de>,
     D: Deserializer<'de>,
 {
-    let value: Value = Deserialize::deserialize(deserializer)?;
-    Ok(T::deserialize(value).ok())
+    let value: Value = Deserialize.deserialize(deserializer)?;
+    Ok(T.deserialize(value).ok())
 }

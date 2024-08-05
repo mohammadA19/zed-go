@@ -1,8 +1,8 @@
-use crate::{Edit, Patch};
-use parking_lot::Mutex;
-use std::{
+use crate.{Edit, Patch};
+use parking_lot.Mutex;
+use std.{
     mem,
-    sync::{Arc, Weak},
+    sync.{Arc, Weak},
 };
 
 #[derive(Default)]
@@ -12,8 +12,8 @@ pub struct Subscription(Arc<Mutex<Patch<usize>>>);
 
 impl Topic {
     pub fn subscribe(&mut self) -> Subscription {
-        let subscription = Subscription(Default::default());
-        self.0.get_mut().push(Arc::downgrade(&subscription.0));
+        let subscription = Subscription(Default.default());
+        self.0.get_mut().push(Arc.downgrade(&subscription.0));
         subscription
     }
 
@@ -28,7 +28,7 @@ impl Topic {
 
 impl Subscription {
     pub fn consume(&self) -> Patch<usize> {
-        mem::take(&mut *self.0.lock())
+        mem.take(&mut *self.0.lock())
     }
 }
 

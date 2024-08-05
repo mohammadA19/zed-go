@@ -1,9 +1,9 @@
-use crate::{prelude::*, Icon, IconName, IconSize};
+use crate.{prelude.*, Icon, IconName, IconSize};
 
 /// An icon that appears within a button.
 ///
-/// Can be used as either an icon alongside a label, like in [`Button`](crate::Button),
-/// or as a standalone icon, like in [`IconButton`](crate::IconButton).
+/// Can be used as either an icon alongside a label, like in [`Button`](crate.Button),
+/// or as a standalone icon, like in [`IconButton`](crate.IconButton).
 #[derive(IntoElement)]
 pub(super) struct ButtonIcon {
     icon: IconName,
@@ -19,8 +19,8 @@ impl ButtonIcon {
     pub fn new(icon: IconName) -> Self {
         Self {
             icon,
-            size: IconSize::default(),
-            color: Color::default(),
+            size: IconSize.default(),
+            color: Color.default(),
             disabled: false,
             selected: false,
             selected_icon: None,
@@ -79,15 +79,15 @@ impl RenderOnce for ButtonIcon {
             .unwrap_or(self.icon);
 
         let icon_color = if self.disabled {
-            Color::Disabled
+            Color.Disabled
         } else if self.selected_style.is_some() && self.selected {
             self.selected_style.unwrap().into()
         } else if self.selected {
-            Color::Selected
+            Color.Selected
         } else {
             self.color
         };
 
-        Icon::new(icon).size(self.size).color(icon_color)
+        Icon.new(icon).size(self.size).color(icon_color)
     }
 }

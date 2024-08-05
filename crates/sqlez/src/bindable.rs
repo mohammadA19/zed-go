@@ -1,12 +1,12 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
+use std.{
+    path.{Path, PathBuf},
+    sync.Arc,
 };
 
-use anyhow::{Context, Result};
-use util::paths::PathExt;
+use anyhow.{Context, Result};
+use util.paths.PathExt;
 
-use crate::statement::{SqlType, Statement};
+use crate.statement.{SqlType, Statement};
 
 pub trait StaticColumnCount {
     fn column_count() -> usize {
@@ -33,7 +33,7 @@ impl Bind for bool {
 
 impl Column for bool {
     fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
-        i32::column(statement, start_index)
+        i32.column(statement, start_index)
             .map(|(i, next_index)| (i != 0, next_index))
             .with_context(|| format!("Failed to read bool at index {start_index}"))
     }
@@ -83,7 +83,7 @@ impl Column for Vec<u8> {
             .column_blob(start_index)
             .with_context(|| format!("Failed to read Vec<u8> at index {start_index}"))?;
 
-        Ok((Vec::from(result), start_index + 1))
+        Ok((Vec.from(result), start_index + 1))
     }
 }
 
@@ -239,7 +239,7 @@ impl Bind for String {
 impl Column for Arc<str> {
     fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
         let result = statement.column_text(start_index)?;
-        Ok((Arc::from(result), start_index + 1))
+        Ok((Arc.from(result), start_index + 1))
     }
 }
 
@@ -252,7 +252,7 @@ impl Column for String {
 
 impl<T: StaticColumnCount> StaticColumnCount for Option<T> {
     fn column_count() -> usize {
-        T::column_count()
+        T.column_count()
     }
 }
 impl<T: Bind + StaticColumnCount> Bind for Option<T> {
@@ -260,7 +260,7 @@ impl<T: Bind + StaticColumnCount> Bind for Option<T> {
         if let Some(this) = self {
             this.bind(statement, start_index)
         } else {
-            for _ in 0..T::column_count() {
+            for _ in 0..T.column_count() {
                 statement.bind_null(start_index)?;
                 start_index += 1;
             }
@@ -271,17 +271,17 @@ impl<T: Bind + StaticColumnCount> Bind for Option<T> {
 
 impl<T: Column + StaticColumnCount> Column for Option<T> {
     fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
-        if let SqlType::Null = statement.column_type(start_index)? {
-            Ok((None, start_index + T::column_count() as i32))
+        if let SqlType.Null = statement.column_type(start_index)? {
+            Ok((None, start_index + T.column_count() as i32))
         } else {
-            T::column(statement, start_index).map(|(result, next_index)| (Some(result), next_index))
+            T.column(statement, start_index).map(|(result, next_index)| (Some(result), next_index))
         }
     }
 }
 
 impl<T: StaticColumnCount, const COUNT: usize> StaticColumnCount for [T; COUNT] {
     fn column_count() -> usize {
-        T::column_count() * COUNT
+        T.column_count() * COUNT
     }
 }
 impl<T: Bind, const COUNT: usize> Bind for [T; COUNT] {
@@ -322,26 +322,26 @@ impl Column for PathBuf {
     fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
         let blob = statement.column_blob(start_index)?;
 
-        PathBuf::try_from_bytes(blob).map(|path| (path, start_index + 1))
+        PathBuf.try_from_bytes(blob).map(|path| (path, start_index + 1))
     }
 }
 
-impl StaticColumnCount for uuid::Uuid {
+impl StaticColumnCount for uuid.Uuid {
     fn column_count() -> usize {
         1
     }
 }
 
-impl Bind for uuid::Uuid {
+impl Bind for uuid.Uuid {
     fn bind(&self, statement: &Statement, start_index: i32) -> Result<i32> {
         self.as_bytes().bind(statement, start_index)
     }
 }
 
-impl Column for uuid::Uuid {
+impl Column for uuid.Uuid {
     fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
-        let (bytes, next_index) = Column::column(statement, start_index)?;
-        Ok((uuid::Uuid::from_bytes(bytes), next_index))
+        let (bytes, next_index) = Column.column(statement, start_index)?;
+        Ok((uuid.Uuid.from_bytes(bytes), next_index))
     }
 }
 
@@ -368,7 +368,7 @@ macro_rules! impl_tuple_row_traits {
         impl<$($type: StaticColumnCount),+> StaticColumnCount for ($($type,)+) {
             fn column_count() -> usize {
                 let mut count = 0;
-                $(count += $type::column_count();)+
+                $(count += $type.column_count();)+
                 count
             }
         }
@@ -389,7 +389,7 @@ macro_rules! impl_tuple_row_traits {
                     (
                         $({
                             let value;
-                            (value, next_index) = $type::column(statement, next_index)?;
+                            (value, next_index) = $type.column(statement, next_index)?;
                             value
                         },)+
                     ),

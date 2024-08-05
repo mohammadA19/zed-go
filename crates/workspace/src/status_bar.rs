@@ -1,17 +1,17 @@
-use crate::{ItemHandle, Pane};
-use gpui::{
+use crate.{ItemHandle, Pane};
+use gpui.{
     AnyView, Decorations, IntoElement, ParentElement, Render, Styled, Subscription, View,
     ViewContext, WindowContext,
 };
-use std::any::TypeId;
-use theme::CLIENT_SIDE_DECORATION_ROUNDING;
-use ui::{h_flex, prelude::*};
-use util::ResultExt;
+use std.any.TypeId;
+use theme.CLIENT_SIDE_DECORATION_ROUNDING;
+use ui.{h_flex, prelude.*};
+use util.ResultExt;
 
 pub trait StatusItemView: Render {
     fn set_active_pane_item(
         &mut self,
-        active_pane_item: Option<&dyn crate::ItemHandle>,
+        active_pane_item: Option<&dyn crate.ItemHandle>,
         cx: &mut ViewContext<Self>,
     );
 }
@@ -38,13 +38,13 @@ impl Render for StatusBar {
         h_flex()
             .w_full()
             .justify_between()
-            .gap(Spacing::Large.rems(cx))
-            .py(Spacing::Small.rems(cx))
-            .px(Spacing::Large.rems(cx))
+            .gap(Spacing.Large.rems(cx))
+            .py(Spacing.Small.rems(cx))
+            .px(Spacing.Large.rems(cx))
             .bg(cx.theme().colors().status_bar_background)
             .map(|el| match cx.window_decorations() {
-                Decorations::Server => el,
-                Decorations::Client { tiling, .. } => el
+                Decorations.Server => el,
+                Decorations.Client { tiling, .. } => el
                     .when(!(tiling.bottom || tiling.right), |el| {
                         el.rounded_br(CLIENT_SIDE_DECORATION_ROUNDING)
                     })
@@ -64,14 +64,14 @@ impl Render for StatusBar {
 impl StatusBar {
     fn render_left_tools(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         h_flex()
-            .gap(Spacing::Large.rems(cx))
+            .gap(Spacing.Large.rems(cx))
             .overflow_x_hidden()
             .children(self.left_items.iter().map(|item| item.to_any()))
     }
 
     fn render_right_tools(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         h_flex()
-            .gap(Spacing::Large.rems(cx))
+            .gap(Spacing.Large.rems(cx))
             .children(self.right_items.iter().rev().map(|item| item.to_any()))
     }
 }
@@ -79,8 +79,8 @@ impl StatusBar {
 impl StatusBar {
     pub fn new(active_pane: &View<Pane>, cx: &mut ViewContext<Self>) -> Self {
         let mut this = Self {
-            left_items: Default::default(),
-            right_items: Default::default(),
+            left_items: Default.default(),
+            right_items: Default.default(),
             active_pane: active_pane.clone(),
             _observe_active_pane: cx
                 .observe(active_pane, |this, _, cx| this.update_active_pane_item(cx)),
@@ -96,7 +96,7 @@ impl StatusBar {
         let active_pane_item = self.active_pane.read(cx).active_item();
         item.set_active_pane_item(active_pane_item.as_deref(), cx);
 
-        self.left_items.push(Box::new(item));
+        self.left_items.push(Box.new(item));
         cx.notify();
     }
 
@@ -112,12 +112,12 @@ impl StatusBar {
         T: StatusItemView,
     {
         for (index, item) in self.left_items.iter().enumerate() {
-            if item.item_type() == TypeId::of::<T>() {
+            if item.item_type() == TypeId.of.<T>() {
                 return Some(index);
             }
         }
         for (index, item) in self.right_items.iter().enumerate() {
-            if item.item_type() == TypeId::of::<T>() {
+            if item.item_type() == TypeId.of.<T>() {
                 return Some(index + self.left_items.len());
             }
         }
@@ -136,10 +136,10 @@ impl StatusBar {
         item.set_active_pane_item(active_pane_item.as_deref(), cx);
 
         if position < self.left_items.len() {
-            self.left_items.insert(position + 1, Box::new(item))
+            self.left_items.insert(position + 1, Box.new(item))
         } else {
             self.right_items
-                .insert(position + 1 - self.left_items.len(), Box::new(item))
+                .insert(position + 1 - self.left_items.len(), Box.new(item))
         }
         cx.notify()
     }
@@ -160,7 +160,7 @@ impl StatusBar {
         let active_pane_item = self.active_pane.read(cx).active_item();
         item.set_active_pane_item(active_pane_item.as_deref(), cx);
 
-        self.right_items.push(Box::new(item));
+        self.right_items.push(Box.new(item));
         cx.notify();
     }
 
@@ -195,7 +195,7 @@ impl<T: StatusItemView> StatusItemViewHandle for View<T> {
     }
 
     fn item_type(&self) -> TypeId {
-        TypeId::of::<T>()
+        TypeId.of.<T>()
     }
 }
 

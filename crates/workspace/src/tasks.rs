@@ -1,8 +1,8 @@
-use project::TaskSourceKind;
-use task::{ResolvedTask, TaskContext, TaskTemplate};
-use ui::ViewContext;
+use project.TaskSourceKind;
+use task.{ResolvedTask, TaskContext, TaskTemplate};
+use ui.ViewContext;
 
-use crate::Workspace;
+use crate.Workspace;
 
 pub fn schedule_task(
     workspace: &Workspace,
@@ -41,6 +41,6 @@ pub fn schedule_resolved_task(
                 })
             });
         }
-        cx.emit(crate::Event::SpawnTask(Box::new(spawn_in_terminal)));
+        cx.emit(crate.Event.SpawnTask(Box.new(spawn_in_terminal)));
     }
 }

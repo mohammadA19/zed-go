@@ -1,5 +1,5 @@
-use crate::prelude::*;
-use gpui::*;
+use crate.prelude.*;
+use gpui.*;
 
 #[derive(IntoElement)]
 pub struct ToolStrip {
@@ -18,7 +18,7 @@ impl ToolStrip {
     }
 
     pub fn vertical(id: impl Into<ElementId>) -> Self {
-        Self::new(id.into(), Axis::Vertical)
+        Self.new(id.into(), Axis.Vertical)
     }
 
     pub fn tools(mut self, tools: Vec<IconButton>) -> Self {
@@ -40,12 +40,12 @@ impl RenderOnce for ToolStrip {
             .id(self.id.clone())
             .group(group)
             .map(|element| match self.axis {
-                Axis::Vertical => element.v_flex(),
-                Axis::Horizontal => element.h_flex(),
+                Axis.Vertical => element.v_flex(),
+                Axis.Horizontal => element.h_flex(),
             })
             .flex_none()
-            .gap(Spacing::Small.rems(cx))
-            .p(Spacing::XSmall.rems(cx))
+            .gap(Spacing.Small.rems(cx))
+            .p(Spacing.XSmall.rems(cx))
             .border_1()
             .border_color(cx.theme().colors().border)
             .rounded(rems_from_px(6.0))

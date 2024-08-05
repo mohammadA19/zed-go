@@ -1,14 +1,14 @@
 mod hexdocs;
 
-use std::fs;
-use zed::lsp::CompletionKind;
-use zed::{
+use std.fs;
+use zed.lsp.CompletionKind;
+use zed.{
     CodeLabel, CodeLabelSpan, HttpRequest, KeyValueStore, LanguageServerId, SlashCommand,
     SlashCommandArgumentCompletion, SlashCommandOutput, SlashCommandOutputSection,
 };
-use zed_extension_api::{self as zed, Result};
+use zed_extension_api.{self as zed, Result};
 
-use crate::hexdocs::convert_hexdocs_to_markdown;
+use crate.hexdocs.convert_hexdocs_to_markdown;
 
 struct GleamExtension {
     cached_binary_path: Option<String>,
@@ -18,43 +18,43 @@ impl GleamExtension {
     fn language_server_binary_path(
         &mut self,
         language_server_id: &LanguageServerId,
-        worktree: &zed::Worktree,
+        worktree: &zed.Worktree,
     ) -> Result<String> {
         if let Some(path) = worktree.which("gleam") {
             return Ok(path);
         }
 
         if let Some(path) = &self.cached_binary_path {
-            if fs::metadata(path).map_or(false, |stat| stat.is_file()) {
+            if fs.metadata(path).map_or(false, |stat| stat.is_file()) {
                 return Ok(path.clone());
             }
         }
 
-        zed::set_language_server_installation_status(
+        zed.set_language_server_installation_status(
             &language_server_id,
-            &zed::LanguageServerInstallationStatus::CheckingForUpdate,
+            &zed.LanguageServerInstallationStatus.CheckingForUpdate,
         );
-        let release = zed::latest_github_release(
+        let release = zed.latest_github_release(
             "gleam-lang/gleam",
-            zed::GithubReleaseOptions {
+            zed.GithubReleaseOptions {
                 require_assets: true,
                 pre_release: false,
             },
         )?;
 
-        let (platform, arch) = zed::current_platform();
+        let (platform, arch) = zed.current_platform();
         let asset_name = format!(
             "gleam-{version}-{arch}-{os}.tar.gz",
             version = release.version,
             arch = match arch {
-                zed::Architecture::Aarch64 => "aarch64",
-                zed::Architecture::X86 => "x86",
-                zed::Architecture::X8664 => "x86_64",
+                zed.Architecture.Aarch64 => "aarch64",
+                zed.Architecture.X86 => "x86",
+                zed.Architecture.X8664 => "x86_64",
             },
             os = match platform {
-                zed::Os::Mac => "apple-darwin",
-                zed::Os::Linux => "unknown-linux-musl",
-                zed::Os::Windows => "pc-windows-msvc",
+                zed.Os.Mac => "apple-darwin",
+                zed.Os.Linux => "unknown-linux-musl",
+                zed.Os.Windows => "pc-windows-msvc",
             },
         );
 
@@ -67,25 +67,25 @@ impl GleamExtension {
         let version_dir = format!("gleam-{}", release.version);
         let binary_path = format!("{version_dir}/gleam");
 
-        if !fs::metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
-            zed::set_language_server_installation_status(
+        if !fs.metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
+            zed.set_language_server_installation_status(
                 &language_server_id,
-                &zed::LanguageServerInstallationStatus::Downloading,
+                &zed.LanguageServerInstallationStatus.Downloading,
             );
 
-            zed::download_file(
+            zed.download_file(
                 &asset.download_url,
                 &version_dir,
-                zed::DownloadedFileType::GzipTar,
+                zed.DownloadedFileType.GzipTar,
             )
             .map_err(|e| format!("failed to download file: {e}"))?;
 
             let entries =
-                fs::read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
+                fs.read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
             for entry in entries {
                 let entry = entry.map_err(|e| format!("failed to load directory entry {e}"))?;
                 if entry.file_name().to_str() != Some(&version_dir) {
-                    fs::remove_dir_all(&entry.path()).ok();
+                    fs.remove_dir_all(&entry.path()).ok();
                 }
             }
         }
@@ -95,7 +95,7 @@ impl GleamExtension {
     }
 }
 
-impl zed::Extension for GleamExtension {
+impl zed.Extension for GleamExtension {
     fn new() -> Self {
         Self {
             cached_binary_path: None,
@@ -105,42 +105,42 @@ impl zed::Extension for GleamExtension {
     fn language_server_command(
         &mut self,
         language_server_id: &LanguageServerId,
-        worktree: &zed::Worktree,
-    ) -> Result<zed::Command> {
-        Ok(zed::Command {
+        worktree: &zed.Worktree,
+    ) -> Result<zed.Command> {
+        Ok(zed.Command {
             command: self.language_server_binary_path(language_server_id, worktree)?,
             args: vec!["lsp".to_string()],
-            env: Default::default(),
+            env: Default.default(),
         })
     }
 
     fn label_for_completion(
         &self,
         _language_server_id: &LanguageServerId,
-        completion: zed::lsp::Completion,
-    ) -> Option<zed::CodeLabel> {
+        completion: zed.lsp.Completion,
+    ) -> Option<zed.CodeLabel> {
         let name = &completion.label;
         let ty = strip_newlines_from_detail(&completion.detail?);
         let let_binding = "let a";
         let colon = ": ";
         let assignment = " = ";
         let call = match completion.kind? {
-            CompletionKind::Function | CompletionKind::Constructor => "()",
+            CompletionKind.Function | CompletionKind.Constructor => "()",
             _ => "",
         };
         let code = format!("{let_binding}{colon}{ty}{assignment}{name}{call}");
 
         Some(CodeLabel {
             spans: vec![
-                CodeLabelSpan::code_range({
+                CodeLabelSpan.code_range({
                     let start = let_binding.len() + colon.len() + ty.len() + assignment.len();
                     start..start + name.len()
                 }),
-                CodeLabelSpan::code_range({
+                CodeLabelSpan.code_range({
                     let start = let_binding.len();
                     start..start + colon.len()
                 }),
-                CodeLabelSpan::code_range({
+                CodeLabelSpan.code_range({
                     let start = let_binding.len() + colon.len();
                     start..start + ty.len()
                 }),
@@ -173,7 +173,7 @@ impl zed::Extension for GleamExtension {
                     run_command: true,
                 },
             ]),
-            _ => Ok(Vec::new()),
+            _ => Ok(Vec.new()),
         }
     }
 
@@ -181,7 +181,7 @@ impl zed::Extension for GleamExtension {
         &self,
         command: SlashCommand,
         argument: Option<String>,
-        worktree: Option<&zed::Worktree>,
+        worktree: Option<&zed.Worktree>,
     ) -> Result<SlashCommandOutput, String> {
         match command.name.as_str() {
             "gleam-docs" => {
@@ -191,22 +191,22 @@ impl zed::Extension for GleamExtension {
                 let package_name = components
                     .next()
                     .ok_or_else(|| "missing package name".to_string())?;
-                let module_path = components.map(ToString::to_string).collect::<Vec<_>>();
+                let module_path = components.map(ToString.to_string).collect.<Vec<_>>();
 
-                let response = zed::fetch(&HttpRequest {
+                let response = zed.fetch(&HttpRequest {
                     url: format!(
                         "https://hexdocs.pm/{package_name}{maybe_path}",
                         maybe_path = if !module_path.is_empty() {
                             format!("/{}.html", module_path.join("/"))
                         } else {
-                            String::new()
+                            String.new()
                         }
                     ),
                 })?;
 
                 let (markdown, _modules) = convert_hexdocs_to_markdown(response.body.as_bytes())?;
 
-                let mut text = String::new();
+                let mut text = String.new();
                 text.push_str(&markdown);
 
                 Ok(SlashCommandOutput {
@@ -220,7 +220,7 @@ impl zed::Extension for GleamExtension {
             "gleam-project" => {
                 let worktree = worktree.ok_or_else(|| "no worktree")?;
 
-                let mut text = String::new();
+                let mut text = String.new();
                 text.push_str("You are in a Gleam project.\n");
 
                 if let Some(gleam_toml) = worktree.read_text_file("gleam.toml").ok() {
@@ -247,13 +247,13 @@ impl zed::Extension for GleamExtension {
         database: &KeyValueStore,
     ) -> Result<(), String> {
         match provider.as_str() {
-            "gleam-hexdocs" => hexdocs::index(package, database),
+            "gleam-hexdocs" => hexdocs.index(package, database),
             _ => Ok(()),
         }
     }
 }
 
-zed::register_extension!(GleamExtension);
+zed.register_extension!(GleamExtension);
 
 /// Removes newlines from the completion detail.
 ///
@@ -268,13 +268,13 @@ fn strip_newlines_from_detail(detail: &str) -> String {
     let comma_delimited_parts = without_newlines.split(',');
     comma_delimited_parts
         .map(|part| part.trim())
-        .collect::<Vec<_>>()
+        .collect.<Vec<_>>()
         .join(", ")
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::strip_newlines_from_detail;
+    use crate.strip_newlines_from_detail;
 
     #[test]
     fn test_strip_newlines_from_detail() {

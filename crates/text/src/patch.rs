@@ -1,7 +1,7 @@
-use crate::Edit;
-use std::{
+use crate.Edit;
+use std.{
     cmp, mem,
-    ops::{Add, AddAssign, Sub},
+    ops.{Add, AddAssign, Sub},
 };
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
@@ -45,10 +45,10 @@ where
     pub fn compose(&self, new_edits_iter: impl IntoIterator<Item = Edit<T>>) -> Self {
         let mut old_edits_iter = self.0.iter().cloned().peekable();
         let mut new_edits_iter = new_edits_iter.into_iter().peekable();
-        let mut composed = Patch(Vec::new());
+        let mut composed = Patch(Vec.new());
 
-        let mut old_start = T::default();
-        let mut new_start = T::default();
+        let mut old_start = T.default();
+        let mut new_start = T.default();
         loop {
             let old_edit = old_edits_iter.peek_mut();
             let new_edit = new_edits_iter.peek_mut();
@@ -103,7 +103,7 @@ where
                     new_start += catchup;
 
                     let overshoot = new_edit.old.start - old_edit.new.start;
-                    let old_end = cmp::min(old_start + overshoot, old_edit.old.end);
+                    let old_end = cmp.min(old_start + overshoot, old_edit.old.end);
                     let new_end = new_start + overshoot;
                     composed.push(Edit {
                         old: old_start..old_end,
@@ -121,7 +121,7 @@ where
 
                     let overshoot = old_edit.new.start - new_edit.old.start;
                     let old_end = old_start + overshoot;
-                    let new_end = cmp::min(new_start + overshoot, new_edit.new.end);
+                    let new_end = cmp.min(new_start + overshoot, new_edit.new.end);
                     composed.push(Edit {
                         old: old_start..old_end,
                         new: new_start..new_end,
@@ -134,7 +134,7 @@ where
                 }
 
                 if old_edit.new.end > new_edit.old.end {
-                    let old_end = old_start + cmp::min(old_edit.old_len(), new_edit.old_len());
+                    let old_end = old_start + cmp.min(old_edit.old_len(), new_edit.old_len());
                     let new_end = new_start + new_edit.new_len();
                     composed.push(Edit {
                         old: old_start..old_end,
@@ -148,7 +148,7 @@ where
                     new_edits_iter.next();
                 } else {
                     let old_end = old_start + old_edit.old_len();
-                    let new_end = new_start + cmp::min(old_edit.new_len(), new_edit.new_len());
+                    let new_end = new_start + cmp.min(old_edit.new_len(), new_edit.new_len());
                     composed.push(Edit {
                         old: old_start..old_end,
                         new: new_start..new_end,
@@ -170,7 +170,7 @@ where
 
     pub fn invert(&mut self) -> &mut Self {
         for edit in &mut self.0 {
-            mem::swap(&mut edit.old, &mut edit.new);
+            mem.swap(&mut edit.old, &mut edit.new);
         }
         self
     }
@@ -225,38 +225,38 @@ where
 
 impl<T: Clone> IntoIterator for Patch<T> {
     type Item = Edit<T>;
-    type IntoIter = std::vec::IntoIter<Edit<T>>;
+    type IntoIter = std.vec.IntoIter<Edit<T>>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_iter(self) -> Self.IntoIter {
         self.0.into_iter()
     }
 }
 
 impl<'a, T: Clone> IntoIterator for &'a Patch<T> {
     type Item = Edit<T>;
-    type IntoIter = std::iter::Cloned<std::slice::Iter<'a, Edit<T>>>;
+    type IntoIter = std.iter.Cloned<std.slice.Iter<'a, Edit<T>>>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_iter(self) -> Self.IntoIter {
         self.0.iter().cloned()
     }
 }
 
 impl<'a, T: Clone> IntoIterator for &'a mut Patch<T> {
     type Item = Edit<T>;
-    type IntoIter = std::iter::Cloned<std::slice::Iter<'a, Edit<T>>>;
+    type IntoIter = std.iter.Cloned<std.slice.Iter<'a, Edit<T>>>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_iter(self) -> Self.IntoIter {
         self.0.iter().cloned()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use rand::prelude::*;
-    use std::env;
+    use super.*;
+    use rand.prelude.*;
+    use std.env;
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_one_disjoint_edit() {
         assert_patch_composition(
             Patch(vec![Edit {
@@ -301,7 +301,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_one_overlapping_edit() {
         assert_patch_composition(
             Patch(vec![Edit {
@@ -319,7 +319,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_two_disjoint_and_overlapping() {
         assert_patch_composition(
             Patch(vec![
@@ -355,7 +355,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_two_new_edits_overlapping_one_old_edit() {
         assert_patch_composition(
             Patch(vec![Edit {
@@ -421,7 +421,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_two_new_edits_touching_one_old_edit() {
         assert_patch_composition(
             Patch(vec![
@@ -457,7 +457,7 @@ mod tests {
         );
     }
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_old_to_new() {
         let patch = Patch(vec![
             Edit {
@@ -481,26 +481,26 @@ mod tests {
         assert_eq!(patch.old_to_new(9), 12);
     }
 
-    #[gpui::test(iterations = 100)]
+    #[gpui.test(iterations = 100)]
     fn test_random_patch_compositions(mut rng: StdRng) {
-        let operations = env::var("OPERATIONS")
+        let operations = env.var("OPERATIONS")
             .map(|i| i.parse().expect("invalid `OPERATIONS` variable"))
             .unwrap_or(20);
 
         let initial_chars = (0..rng.gen_range(0..=100))
             .map(|_| rng.gen_range(b'a'..=b'z') as char)
-            .collect::<Vec<_>>();
-        log::info!("initial chars: {:?}", initial_chars);
+            .collect.<Vec<_>>();
+        log.info!("initial chars: {:?}", initial_chars);
 
         // Generate two sequential patches
-        let mut patches = Vec::new();
+        let mut patches = Vec.new();
         let mut expected_chars = initial_chars.clone();
         for i in 0..2 {
-            log::info!("patch {}:", i);
+            log.info!("patch {}:", i);
 
             let mut delta = 0i32;
             let mut last_edit_end = 0;
-            let mut edits = Vec::new();
+            let mut edits = Vec.new();
 
             for _ in 0..operations {
                 if last_edit_end >= expected_chars.len() {
@@ -520,11 +520,11 @@ mod tests {
 
                 let new_chars = (0..new_len)
                     .map(|_| rng.gen_range(b'A'..=b'Z') as char)
-                    .collect::<Vec<_>>();
-                log::info!(
+                    .collect.<Vec<_>>();
+                log.info!(
                     "  editing {:?}: {:?}",
                     start..end,
-                    new_chars.iter().collect::<String>()
+                    new_chars.iter().collect.<String>()
                 );
                 edits.push(Edit {
                     old: (start as i32 - delta) as u32..(end as i32 - delta) as u32,
@@ -538,15 +538,15 @@ mod tests {
             patches.push(Patch(edits));
         }
 
-        log::info!("old patch: {:?}", &patches[0]);
-        log::info!("new patch: {:?}", &patches[1]);
-        log::info!("initial chars: {:?}", initial_chars);
-        log::info!("final chars: {:?}", expected_chars);
+        log.info!("old patch: {:?}", &patches[0]);
+        log.info!("new patch: {:?}", &patches[1]);
+        log.info!("initial chars: {:?}", initial_chars);
+        log.info!("final chars: {:?}", expected_chars);
 
         // Compose the patches, and verify that it has the same effect as applying the
         // two patches separately.
         let composed = patches[0].compose(&patches[1]);
-        log::info!("composed patch: {:?}", &composed);
+        log.info!("composed patch: {:?}", &composed);
 
         let mut actual_chars = initial_chars;
         for edit in composed.0 {
@@ -562,10 +562,10 @@ mod tests {
     }
 
     #[track_caller]
-    #[allow(clippy::almost_complete_range)]
+    #[allow(clippy.almost_complete_range)]
     fn assert_patch_composition(old: Patch<u32>, new: Patch<u32>, composed: Patch<u32>) {
-        let original = ('a'..'z').collect::<Vec<_>>();
-        let inserted = ('A'..'Z').collect::<Vec<_>>();
+        let original = ('a'..'z').collect.<Vec<_>>();
+        let inserted = ('A'..'Z').collect.<Vec<_>>();
 
         let mut expected = original.clone();
         apply_patch(&mut expected, &old, &inserted);
@@ -574,8 +574,8 @@ mod tests {
         let mut actual = original;
         apply_patch(&mut actual, &composed, &expected);
         assert_eq!(
-            actual.into_iter().collect::<String>(),
-            expected.into_iter().collect::<String>(),
+            actual.into_iter().collect.<String>(),
+            expected.into_iter().collect.<String>(),
             "expected patch is incorrect"
         );
 

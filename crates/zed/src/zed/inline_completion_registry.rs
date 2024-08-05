@@ -1,21 +1,21 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std.{cell.RefCell, rc.Rc, sync.Arc};
 
-use client::telemetry::Telemetry;
-use collections::HashMap;
-use copilot::{Copilot, CopilotCompletionProvider};
-use editor::{Editor, EditorMode};
-use gpui::{AnyWindowHandle, AppContext, Context, ViewContext, WeakView};
-use language::language_settings::all_language_settings;
-use settings::SettingsStore;
-use supermaven::{Supermaven, SupermavenCompletionProvider};
+use client.telemetry.Telemetry;
+use collections.HashMap;
+use copilot.{Copilot, CopilotCompletionProvider};
+use editor.{Editor, EditorMode};
+use gpui.{AnyWindowHandle, AppContext, Context, ViewContext, WeakView};
+use language.language_settings.all_language_settings;
+use settings.SettingsStore;
+use supermaven.{Supermaven, SupermavenCompletionProvider};
 
 pub fn init(telemetry: Arc<Telemetry>, cx: &mut AppContext) {
-    let editors: Rc<RefCell<HashMap<WeakView<Editor>, AnyWindowHandle>>> = Rc::default();
+    let editors: Rc<RefCell<HashMap<WeakView<Editor>, AnyWindowHandle>>> = Rc.default();
     cx.observe_new_views({
         let editors = editors.clone();
         let telemetry = telemetry.clone();
         move |editor: &mut Editor, cx: &mut ViewContext<Editor>| {
-            if editor.mode() != EditorMode::Full {
+            if editor.mode() != EditorMode.Full {
                 return;
             }
 
@@ -48,7 +48,7 @@ pub fn init(telemetry: Arc<Telemetry>, cx: &mut AppContext) {
         });
     }
 
-    cx.observe_global::<SettingsStore>(move |cx| {
+    cx.observe_global.<SettingsStore>(move |cx| {
         let new_provider = all_language_settings(None, cx).inline_completions.provider;
         if new_provider != provider {
             provider = new_provider;
@@ -70,31 +70,31 @@ fn register_backward_compatible_actions(editor: &mut Editor, cx: &mut ViewContex
     // the actions with the old names to not break people's keymaps.
     editor
         .register_action(cx.listener(
-            |editor, _: &copilot::Suggest, cx: &mut ViewContext<Editor>| {
-                editor.show_inline_completion(&Default::default(), cx);
+            |editor, _: &copilot.Suggest, cx: &mut ViewContext<Editor>| {
+                editor.show_inline_completion(&Default.default(), cx);
             },
         ))
         .detach();
     editor
         .register_action(cx.listener(
-            |editor, _: &copilot::NextSuggestion, cx: &mut ViewContext<Editor>| {
-                editor.next_inline_completion(&Default::default(), cx);
+            |editor, _: &copilot.NextSuggestion, cx: &mut ViewContext<Editor>| {
+                editor.next_inline_completion(&Default.default(), cx);
             },
         ))
         .detach();
     editor
         .register_action(cx.listener(
-            |editor, _: &copilot::PreviousSuggestion, cx: &mut ViewContext<Editor>| {
-                editor.previous_inline_completion(&Default::default(), cx);
+            |editor, _: &copilot.PreviousSuggestion, cx: &mut ViewContext<Editor>| {
+                editor.previous_inline_completion(&Default.default(), cx);
             },
         ))
         .detach();
     editor
         .register_action(cx.listener(
             |editor,
-             _: &editor::actions::AcceptPartialCopilotSuggestion,
+             _: &editor.actions.AcceptPartialCopilotSuggestion,
              cx: &mut ViewContext<Editor>| {
-                editor.accept_partial_inline_completion(&Default::default(), cx);
+                editor.accept_partial_inline_completion(&Default.default(), cx);
             },
         ))
         .detach();
@@ -102,14 +102,14 @@ fn register_backward_compatible_actions(editor: &mut Editor, cx: &mut ViewContex
 
 fn assign_inline_completion_provider(
     editor: &mut Editor,
-    provider: language::language_settings::InlineCompletionProvider,
+    provider: language.language_settings.InlineCompletionProvider,
     telemetry: &Arc<Telemetry>,
     cx: &mut ViewContext<Editor>,
 ) {
     match provider {
-        language::language_settings::InlineCompletionProvider::None => {}
-        language::language_settings::InlineCompletionProvider::Copilot => {
-            if let Some(copilot) = Copilot::global(cx) {
+        language.language_settings.InlineCompletionProvider.None => {}
+        language.language_settings.InlineCompletionProvider.Copilot => {
+            if let Some(copilot) = Copilot.global(cx) {
                 if let Some(buffer) = editor.buffer().read(cx).as_singleton() {
                     if buffer.read(cx).file().is_some() {
                         copilot.update(cx, |copilot, cx| {
@@ -118,15 +118,15 @@ fn assign_inline_completion_provider(
                     }
                 }
                 let provider = cx.new_model(|_| {
-                    CopilotCompletionProvider::new(copilot).with_telemetry(telemetry.clone())
+                    CopilotCompletionProvider.new(copilot).with_telemetry(telemetry.clone())
                 });
                 editor.set_inline_completion_provider(Some(provider), cx);
             }
         }
-        language::language_settings::InlineCompletionProvider::Supermaven => {
-            if let Some(supermaven) = Supermaven::global(cx) {
+        language.language_settings.InlineCompletionProvider.Supermaven => {
+            if let Some(supermaven) = Supermaven.global(cx) {
                 let provider = cx.new_model(|_| {
-                    SupermavenCompletionProvider::new(supermaven).with_telemetry(telemetry.clone())
+                    SupermavenCompletionProvider.new(supermaven).with_telemetry(telemetry.clone())
                 });
                 editor.set_inline_completion_provider(Some(provider), cx);
             }

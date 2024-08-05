@@ -1,20 +1,20 @@
-use gpui::{
-    div, hsla, prelude::*, px, rems, AnyElement, Div, ElementId, Hsla, SharedString, WindowContext,
+use gpui.{
+    div, hsla, prelude.*, px, rems, AnyElement, Div, ElementId, Hsla, SharedString, WindowContext,
 };
-use itertools::Itertools;
-use smallvec::SmallVec;
+use itertools.Itertools;
+use smallvec.SmallVec;
 
-use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std.path.PathBuf;
+use std.sync.atomic.{AtomicUsize, Ordering};
+use std.time.{SystemTime, UNIX_EPOCH};
 
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
+static COUNTER: AtomicUsize = AtomicUsize.new(0);
 
 pub fn reasonably_unique_id() -> String {
-    let now = SystemTime::now();
+    let now = SystemTime.now();
     let timestamp = now.duration_since(UNIX_EPOCH).unwrap();
 
-    let cnt = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let cnt = COUNTER.fetch_add(1, Ordering.Relaxed);
 
     let id = format!("{}_{}", timestamp.as_nanos(), cnt);
 
@@ -46,7 +46,7 @@ impl StoryColor {
 }
 
 pub fn story_color() -> StoryColor {
-    StoryColor::new()
+    StoryColor.new()
 }
 
 #[derive(IntoElement)]
@@ -61,7 +61,7 @@ impl StoryContainer {
         Self {
             title: title.into(),
             relative_path,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 }
@@ -90,12 +90,12 @@ impl RenderOnce for StoryContainer {
                     .bg(story_color().background)
                     .border_b_1()
                     .border_color(story_color().border)
-                    .child(Story::title(self.title))
+                    .child(Story.title(self.title))
                     .child(
                         div()
                             .text_xs()
                             .text_color(story_color().primary)
-                            .child(Story::open_story_link(self.relative_path)),
+                            .child(Story.open_story_link(self.relative_path)),
                     ),
             )
             .child(
@@ -147,12 +147,12 @@ impl Story {
                         .p_2()
                         .border_b_1()
                         .border_color(story_color().border)
-                        .child(Story::title_for::<T>())
+                        .child(Story.title_for.<T>())
                         .child(
                             div()
                                 .text_xs()
                                 .text_color(story_color().primary)
-                                .child(Story::open_story_link(relative_path)),
+                                .child(Story.open_story_link(relative_path)),
                         ),
                 )
                 .child(
@@ -167,24 +167,24 @@ impl Story {
     }
 
     pub fn open_story_link(relative_path: &'static str) -> impl Element {
-        let path = PathBuf::from_iter([relative_path]);
+        let path = PathBuf.from_iter([relative_path]);
 
         div()
             .flex()
             .gap_2()
             .text_xs()
             .text_color(story_color().primary)
-            .id(SharedString::from(format!("id_{}", relative_path)))
+            .id(SharedString.from(format!("id_{}", relative_path)))
             .on_click({
                 let path = path.clone();
 
                 move |_event, _cx| {
                     let path = format!("{}:0:0", path.to_string_lossy());
 
-                    std::process::Command::new("zed").arg(path).spawn().ok();
+                    std.process.Command.new("zed").arg(path).spawn().ok();
                 }
             })
-            .children(vec![div().child(Story::link("Open in Zed →"))])
+            .children(vec![div().child(Story.link("Open in Zed →"))])
     }
 
     pub fn title(title: impl Into<SharedString>) -> impl Element {
@@ -195,7 +195,7 @@ impl Story {
     }
 
     pub fn title_for<T>() -> impl Element {
-        Self::title(std::any::type_name::<T>())
+        Self.title(std.any.type_name.<T>())
     }
 
     pub fn section() -> Div {
@@ -219,10 +219,10 @@ impl Story {
             .size_full()
             .p_2()
             .max_w(rems(36.))
-            .bg(gpui::black())
+            .bg(gpui.black())
             .rounded_md()
             .text_sm()
-            .text_color(gpui::white())
+            .text_color(gpui.white())
             .overflow_hidden()
             .child(code.into())
     }
@@ -233,10 +233,10 @@ impl Story {
 
     pub fn link(link: impl Into<SharedString>) -> impl Element {
         div()
-            .id(ElementId::from(SharedString::from(reasonably_unique_id())))
+            .id(ElementId.from(SharedString.from(reasonably_unique_id())))
             .text_xs()
             .text_color(story_color().link)
-            .cursor(gpui::CursorStyle::PointingHand)
+            .cursor(gpui.CursorStyle.PointingHand)
             .child(link.into())
     }
 
@@ -255,7 +255,7 @@ impl Story {
             .child(label.into())
     }
 
-    /// Note: Not `ui::v_flex` as the `story` crate doesn't depend on the `ui` crate.
+    /// Note: Not `ui.v_flex` as the `story` crate doesn't depend on the `ui` crate.
     pub fn v_flex() -> Div {
         div().flex().flex_col().gap_1()
     }
@@ -298,11 +298,11 @@ impl RenderOnce for StoryItem {
             .gap_4()
             .w_full()
             .child(
-                Story::v_flex()
+                Story.v_flex()
                     .px_2()
                     .w_1_2()
                     .min_h_px()
-                    .child(Story::label(self.label))
+                    .child(Story.label(self.label))
                     .child(
                         div()
                             .rounded_md()
@@ -315,18 +315,18 @@ impl RenderOnce for StoryItem {
                             .child(self.item),
                     )
                     .when_some(self.description, |this, description| {
-                        this.child(Story::description(description))
+                        this.child(Story.description(description))
                     }),
             )
             .child(
-                Story::v_flex()
+                Story.v_flex()
                     .px_2()
                     .flex_none()
                     .w_1_2()
                     .min_h_px()
                     .when_some(self.usage, |this, usage| {
-                        this.child(Story::label("Example Usage"))
-                            .child(Story::code_block(usage))
+                        this.child(Story.label("Example Usage"))
+                            .child(Story.code_block(usage))
                     }),
             )
     }
@@ -342,7 +342,7 @@ impl StorySection {
     pub fn new() -> Self {
         Self {
             description: None,
-            children: SmallVec::new(),
+            children: SmallVec.new(),
         }
     }
 
@@ -354,20 +354,20 @@ impl StorySection {
 
 impl RenderOnce for StorySection {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        let children: SmallVec<[AnyElement; 2]> = SmallVec::from_iter(Itertools::intersperse_with(
+        let children: SmallVec<[AnyElement; 2]> = SmallVec.from_iter(Itertools.intersperse_with(
             self.children.into_iter(),
-            || Story::divider().into_any_element(),
+            || Story.divider().into_any_element(),
         ));
 
-        Story::section()
+        Story.section()
             // Section title
             .py_2()
             // Section description
             .when_some(self.description.clone(), |section, description| {
-                section.child(Story::description(description))
+                section.child(Story.description(description))
             })
             .child(div().flex().flex_col().gap_2().children(children))
-            .child(Story::divider())
+            .child(Story.divider())
     }
 }
 

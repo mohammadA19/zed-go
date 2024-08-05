@@ -1,9 +1,9 @@
-use gpui::{Action, AnyView, IntoElement, Render, VisualContext};
-use settings::Settings;
-use theme::ThemeSettings;
+use gpui.{Action, AnyView, IntoElement, Render, VisualContext};
+use settings.Settings;
+use theme.ThemeSettings;
 
-use crate::prelude::*;
-use crate::{h_flex, v_flex, Color, KeyBinding, Label, LabelSize, StyledExt};
+use crate.prelude.*;
+use crate.{h_flex, v_flex, Color, KeyBinding, Label, LabelSize, StyledExt};
 
 pub struct Tooltip {
     title: SharedString,
@@ -29,7 +29,7 @@ impl Tooltip {
         cx.new_view(|cx| Self {
             title: title.into(),
             meta: None,
-            key_binding: KeyBinding::for_action(action, cx),
+            key_binding: KeyBinding.for_action(action, cx),
         })
         .into()
     }
@@ -43,7 +43,7 @@ impl Tooltip {
         cx.new_view(|cx| Self {
             title: title.into(),
             meta: Some(meta.into()),
-            key_binding: action.and_then(|action| KeyBinding::for_action(action, cx)),
+            key_binding: action.and_then(|action| KeyBinding.for_action(action, cx)),
         })
         .into()
     }
@@ -79,7 +79,7 @@ impl Render for Tooltip {
                     }),
             )
             .when_some(self.meta.clone(), |this, meta| {
-                this.child(Label::new(meta).size(LabelSize::Small).color(Color::Muted))
+                this.child(Label.new(meta).size(LabelSize.Small).color(Color.Muted))
             })
         })
     }
@@ -89,7 +89,7 @@ pub fn tooltip_container<V>(
     cx: &mut ViewContext<V>,
     f: impl FnOnce(Div, &mut ViewContext<V>) -> Div,
 ) -> impl IntoElement {
-    let ui_font = ThemeSettings::get_global(cx).ui_font.clone();
+    let ui_font = ThemeSettings.get_global(cx).ui_font.clone();
 
     // padding to avoid tooltip appearing right below the mouse cursor
     div().pl_2().pt_2p5().child(
@@ -110,7 +110,7 @@ pub struct LinkPreview {
 
 impl LinkPreview {
     pub fn new(url: &str, cx: &mut WindowContext) -> AnyView {
-        let mut wrapped_url = String::new();
+        let mut wrapped_url = String.new();
         for (i, ch) in url.chars().enumerate() {
             if i == 500 {
                 wrapped_url.push('…');
@@ -132,9 +132,9 @@ impl Render for LinkPreview {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         tooltip_container(cx, |el, _| {
             el.child(
-                Label::new(self.link.clone())
-                    .size(LabelSize::XSmall)
-                    .color(Color::Muted),
+                Label.new(self.link.clone())
+                    .size(LabelSize.XSmall)
+                    .color(Color.Muted),
             )
         })
     }

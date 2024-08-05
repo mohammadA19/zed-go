@@ -1,17 +1,17 @@
-use super::base_keymap_setting::BaseKeymap;
-use client::telemetry::Telemetry;
-use fuzzy::{match_strings, StringMatch, StringMatchCandidate};
-use gpui::{
+use super.base_keymap_setting.BaseKeymap;
+use client.telemetry.Telemetry;
+use fuzzy.{match_strings, StringMatch, StringMatchCandidate};
+use gpui.{
     actions, AppContext, DismissEvent, EventEmitter, FocusableView, Render, Task, View,
     ViewContext, VisualContext, WeakView,
 };
-use picker::{Picker, PickerDelegate};
-use project::Fs;
-use settings::{update_settings_file, Settings};
-use std::sync::Arc;
-use ui::{prelude::*, ListItem, ListItemSpacing};
-use util::ResultExt;
-use workspace::{ui::HighlightedLabel, ModalView, Workspace};
+use picker.{Picker, PickerDelegate};
+use project.Fs;
+use settings.{update_settings_file, Settings};
+use std.sync.Arc;
+use ui.{prelude.*, ListItem, ListItemSpacing};
+use util.ResultExt;
+use workspace.{ui.HighlightedLabel, ModalView, Workspace};
 
 actions!(welcome, [ToggleBaseKeymapSelector]);
 
@@ -30,8 +30,8 @@ pub fn toggle(
     let fs = workspace.app_state().fs.clone();
     let telemetry = workspace.client().telemetry().clone();
     workspace.toggle_modal(cx, |cx| {
-        BaseKeymapSelector::new(
-            BaseKeymapSelectorDelegate::new(cx.view().downgrade(), fs, telemetry, cx),
+        BaseKeymapSelector.new(
+            BaseKeymapSelectorDelegate.new(cx.view().downgrade(), fs, telemetry, cx),
             cx,
         )
     });
@@ -42,7 +42,7 @@ pub struct BaseKeymapSelector {
 }
 
 impl FocusableView for BaseKeymapSelector {
-    fn focus_handle(&self, cx: &AppContext) -> gpui::FocusHandle {
+    fn focus_handle(&self, cx: &AppContext) -> gpui.FocusHandle {
         self.picker.focus_handle(cx)
     }
 }
@@ -55,7 +55,7 @@ impl BaseKeymapSelector {
         delegate: BaseKeymapSelectorDelegate,
         cx: &mut ViewContext<BaseKeymapSelector>,
     ) -> Self {
-        let picker = cx.new_view(|cx| Picker::uniform_list(delegate, cx));
+        let picker = cx.new_view(|cx| Picker.uniform_list(delegate, cx));
         Self { picker }
     }
 }
@@ -81,14 +81,14 @@ impl BaseKeymapSelectorDelegate {
         telemetry: Arc<Telemetry>,
         cx: &mut ViewContext<BaseKeymapSelector>,
     ) -> Self {
-        let base = BaseKeymap::get(None, cx);
-        let selected_index = BaseKeymap::OPTIONS
+        let base = BaseKeymap.get(None, cx);
+        let selected_index = BaseKeymap.OPTIONS
             .iter()
             .position(|(_, value)| value == base)
             .unwrap_or(0);
         Self {
             view: weak_view,
-            matches: Vec::new(),
+            matches: Vec.new(),
             selected_index,
             telemetry,
             fs,
@@ -97,7 +97,7 @@ impl BaseKeymapSelectorDelegate {
 }
 
 impl PickerDelegate for BaseKeymapSelectorDelegate {
-    type ListItem = ui::ListItem;
+    type ListItem = ui.ListItem;
 
     fn placeholder_text(&self, _cx: &mut WindowContext) -> Arc<str> {
         "Select a base keymap...".into()
@@ -125,14 +125,14 @@ impl PickerDelegate for BaseKeymapSelectorDelegate {
         cx: &mut ViewContext<Picker<BaseKeymapSelectorDelegate>>,
     ) -> Task<()> {
         let background = cx.background_executor().clone();
-        let candidates = BaseKeymap::names()
+        let candidates = BaseKeymap.names()
             .enumerate()
             .map(|(id, name)| StringMatchCandidate {
                 id,
                 char_bag: name.into(),
                 string: name.into(),
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         cx.spawn(|this, mut cx| async move {
             let matches = if query.is_empty() {
@@ -142,7 +142,7 @@ impl PickerDelegate for BaseKeymapSelectorDelegate {
                     .map(|(index, candidate)| StringMatch {
                         candidate_id: index,
                         string: candidate.string,
-                        positions: Vec::new(),
+                        positions: Vec.new(),
                         score: 0.0,
                     })
                     .collect()
@@ -152,7 +152,7 @@ impl PickerDelegate for BaseKeymapSelectorDelegate {
                     &query,
                     false,
                     100,
-                    &Default::default(),
+                    &Default.default(),
                     background,
                 )
                 .await
@@ -171,12 +171,12 @@ impl PickerDelegate for BaseKeymapSelectorDelegate {
 
     fn confirm(&mut self, _: bool, cx: &mut ViewContext<Picker<BaseKeymapSelectorDelegate>>) {
         if let Some(selection) = self.matches.get(self.selected_index) {
-            let base_keymap = BaseKeymap::from_names(&selection.string);
+            let base_keymap = BaseKeymap.from_names(&selection.string);
 
             self.telemetry
                 .report_setting_event("keymap", base_keymap.to_string());
 
-            update_settings_file::<BaseKeymap>(self.fs.clone(), cx, move |setting, _| {
+            update_settings_file.<BaseKeymap>(self.fs.clone(), cx, move |setting, _| {
                 *setting = Some(base_keymap)
             });
         }
@@ -200,16 +200,16 @@ impl PickerDelegate for BaseKeymapSelectorDelegate {
         &self,
         ix: usize,
         selected: bool,
-        _cx: &mut gpui::ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem> {
+        _cx: &mut gpui.ViewContext<Picker<Self>>,
+    ) -> Option<Self.ListItem> {
         let keymap_match = &self.matches[ix];
 
         Some(
-            ListItem::new(ix)
+            ListItem.new(ix)
                 .inset(true)
-                .spacing(ListItemSpacing::Sparse)
+                .spacing(ListItemSpacing.Sparse)
                 .selected(selected)
-                .child(HighlightedLabel::new(
+                .child(HighlightedLabel.new(
                     keymap_match.string.clone(),
                     keymap_match.positions.clone(),
                 )),

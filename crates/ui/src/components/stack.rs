@@ -1,6 +1,6 @@
-use gpui::{div, Div};
+use gpui.{div, Div};
 
-use crate::StyledExt;
+use crate.StyledExt;
 
 /// Horizontally stacks elements. Sets `flex()`, `flex_row()`, `items_center()`
 #[track_caller]

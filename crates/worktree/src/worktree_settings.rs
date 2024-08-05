@@ -1,11 +1,11 @@
-use std::path::Path;
+use std.path.Path;
 
-use anyhow::Context;
-use gpui::AppContext;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
-use util::paths::PathMatcher;
+use anyhow.Context;
+use gpui.AppContext;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
+use util.paths.PathMatcher;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct WorktreeSettings {
@@ -53,9 +53,9 @@ impl Settings for WorktreeSettings {
     type FileContent = WorktreeSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
+        sources: SettingsSources<Self.FileContent>,
         _: &mut AppContext,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow.Result<Self> {
         let result: WorktreeSettingsContent = sources.json_merge()?;
         let mut file_scan_exclusions = result.file_scan_exclusions.unwrap_or_default();
         let mut private_files = result.private_files.unwrap_or_default();
@@ -68,6 +68,6 @@ impl Settings for WorktreeSettings {
     }
 }
 
-fn path_matchers(values: &[String], context: &'static str) -> anyhow::Result<PathMatcher> {
-    PathMatcher::new(values).with_context(|| format!("Failed to parse globs from {}", context))
+fn path_matchers(values: &[String], context: &'static str) -> anyhow.Result<PathMatcher> {
+    PathMatcher.new(values).with_context(|| format!("Failed to parse globs from {}", context))
 }

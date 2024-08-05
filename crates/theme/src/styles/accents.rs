@@ -1,7 +1,7 @@
-use gpui::Hsla;
-use serde_derive::Deserialize;
+use gpui.Hsla;
+use serde_derive.Deserialize;
 
-use crate::{
+use crate.{
     amber, blue, cyan, gold, grass, indigo, iris, jade, lime, orange, pink, purple, tomato,
     try_parse_color, AccentContent,
 };
@@ -12,10 +12,10 @@ pub struct AccentColors(pub Vec<Hsla>);
 
 impl Default for AccentColors {
     /// Don't use this!
-    /// We have to have a default to be `[refineable::Refinable]`.
+    /// We have to have a default to be `[refineable.Refinable]`.
     /// TODO "Find a way to not need this for Refinable"
     fn default() -> Self {
-        Self::dark()
+        Self.dark()
     }
 }
 
@@ -76,7 +76,7 @@ impl AccentColors {
                     .as_ref()
                     .and_then(|color| try_parse_color(color).ok())
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         if !colors.is_empty() {
             self.0 = colors;

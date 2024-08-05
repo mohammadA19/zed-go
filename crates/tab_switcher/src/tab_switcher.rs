@@ -1,20 +1,20 @@
 #[cfg(test)]
 mod tab_switcher_tests;
 
-use collections::HashMap;
-use gpui::{
+use collections.HashMap;
+use gpui.{
     actions, impl_actions, rems, Action, AnyElement, AppContext, DismissEvent, EntityId,
     EventEmitter, FocusHandle, FocusableView, Modifiers, ModifiersChangedEvent, MouseButton,
     MouseUpEvent, ParentElement, Render, Styled, Task, View, ViewContext, VisualContext, WeakView,
 };
-use picker::{Picker, PickerDelegate};
-use serde::Deserialize;
-use std::sync::Arc;
-use ui::{prelude::*, ListItem, ListItemSpacing, Tooltip};
-use util::ResultExt;
-use workspace::{
-    item::{ItemHandle, TabContentParams},
-    pane::{render_item_indicator, tab_details, Event as PaneEvent},
+use picker.{Picker, PickerDelegate};
+use serde.Deserialize;
+use std.sync.Arc;
+use ui.{prelude.*, ListItem, ListItemSpacing, Tooltip};
+use util.ResultExt;
+use workspace.{
+    item.{ItemHandle, TabContentParams},
+    pane.{render_item_indicator, tab_details, Event as PaneEvent},
     ModalView, Pane, SaveIntent, Workspace,
 };
 
@@ -37,14 +37,14 @@ pub struct TabSwitcher {
 impl ModalView for TabSwitcher {}
 
 pub fn init(cx: &mut AppContext) {
-    cx.observe_new_views(TabSwitcher::register).detach();
+    cx.observe_new_views(TabSwitcher.register).detach();
 }
 
 impl TabSwitcher {
     fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
         workspace.register_action(|workspace, action: &Toggle, cx| {
-            let Some(tab_switcher) = workspace.active_modal::<Self>(cx) else {
-                Self::open(action, workspace, cx);
+            let Some(tab_switcher) = workspace.active_modal.<Self>(cx) else {
+                Self.open(action, workspace, cx);
                 return;
             };
 
@@ -77,14 +77,14 @@ impl TabSwitcher {
         }
 
         workspace.toggle_modal(cx, |cx| {
-            let delegate = TabSwitcherDelegate::new(action, cx.view().downgrade(), weak_pane, cx);
-            TabSwitcher::new(delegate, cx)
+            let delegate = TabSwitcherDelegate.new(action, cx.view().downgrade(), weak_pane, cx);
+            TabSwitcher.new(delegate, cx)
         });
     }
 
     fn new(delegate: TabSwitcherDelegate, cx: &mut ViewContext<Self>) -> Self {
         Self {
-            picker: cx.new_view(|cx| Picker::nonsearchable_uniform_list(delegate, cx)),
+            picker: cx.new_view(|cx| Picker.nonsearchable_uniform_list(delegate, cx)),
             init_modifiers: cx.modifiers().modified().then_some(cx.modifiers()),
         }
     }
@@ -102,7 +102,7 @@ impl TabSwitcher {
             if self.picker.read(cx).delegate.matches.is_empty() {
                 cx.emit(DismissEvent)
             } else {
-                cx.dispatch_action(menu::Confirm.boxed_clone());
+                cx.dispatch_action(menu.Confirm.boxed_clone());
             }
         }
     }
@@ -129,8 +129,8 @@ impl Render for TabSwitcher {
         v_flex()
             .key_context("TabSwitcher")
             .w(rems(PANEL_WIDTH_REMS))
-            .on_modifiers_changed(cx.listener(Self::handle_modifiers_changed))
-            .on_action(cx.listener(Self::handle_close_selected_item))
+            .on_modifiers_changed(cx.listener(Self.handle_modifiers_changed))
+            .on_action(cx.listener(Self.handle_close_selected_item))
             .child(self.picker.clone())
     }
 }
@@ -157,13 +157,13 @@ impl TabSwitcherDelegate {
         pane: WeakView<Pane>,
         cx: &mut ViewContext<TabSwitcher>,
     ) -> Self {
-        Self::subscribe_to_updates(&pane, cx);
+        Self.subscribe_to_updates(&pane, cx);
         Self {
             select_last: action.select_last,
             tab_switcher,
             selected_index: 0,
             pane,
-            matches: Vec::new(),
+            matches: Vec.new(),
         }
     }
 
@@ -173,7 +173,7 @@ impl TabSwitcherDelegate {
         };
         cx.subscribe(&pane, |tab_switcher, _, event, cx| {
             match event {
-                PaneEvent::AddItem { .. } | PaneEvent::RemovedItem { .. } | PaneEvent::Remove => {
+                PaneEvent.AddItem { .. } | PaneEvent.RemovedItem { .. } | PaneEvent.Remove => {
                     tab_switcher.picker.update(cx, |picker, cx| {
                         let selected_item_id = picker.delegate.selected_item_id();
                         picker.delegate.update_matches(cx);
@@ -196,7 +196,7 @@ impl TabSwitcherDelegate {
         };
 
         let pane = pane.read(cx);
-        let mut history_indices = HashMap::default();
+        let mut history_indices = HashMap.default();
         pane.activation_history().iter().rev().enumerate().for_each(
             |(history_index, history_entry)| {
                 history_indices.insert(history_entry.entity_id, history_index);
@@ -263,7 +263,7 @@ impl TabSwitcherDelegate {
             return;
         };
         pane.update(cx, |pane, cx| {
-            pane.close_item_by_id(tab_match.item.item_id(), SaveIntent::Close, cx)
+            pane.close_item_by_id(tab_match.item.item_id(), SaveIntent.Close, cx)
                 .detach_and_log_err(cx);
         });
     }
@@ -273,7 +273,7 @@ impl PickerDelegate for TabSwitcherDelegate {
     type ListItem = ListItem;
 
     fn placeholder_text(&self, _cx: &mut WindowContext) -> Arc<str> {
-        Arc::default()
+        Arc.default()
     }
 
     fn no_matches_text(&self, _cx: &mut WindowContext) -> SharedString {
@@ -294,7 +294,7 @@ impl PickerDelegate for TabSwitcherDelegate {
     }
 
     fn separators_after_indices(&self) -> Vec<usize> {
-        Vec::new()
+        Vec.new()
     }
 
     fn update_matches(
@@ -303,7 +303,7 @@ impl PickerDelegate for TabSwitcherDelegate {
         cx: &mut ViewContext<Picker<Self>>,
     ) -> Task<()> {
         self.update_matches(cx);
-        Task::ready(())
+        Task.ready(())
     }
 
     fn confirm(&mut self, _secondary: bool, cx: &mut ViewContext<Picker<TabSwitcherDelegate>>) {
@@ -329,7 +329,7 @@ impl PickerDelegate for TabSwitcherDelegate {
         ix: usize,
         selected: bool,
         cx: &mut ViewContext<Picker<Self>>,
-    ) -> Option<Self::ListItem> {
+    ) -> Option<Self.ListItem> {
         let tab_match = self
             .matches
             .get(ix)
@@ -345,7 +345,7 @@ impl PickerDelegate for TabSwitcherDelegate {
         let indicator_color = if let Some(ref indicator) = indicator {
             indicator.color
         } else {
-            Color::default()
+            Color.default()
         };
         let indicator = h_flex()
             .flex_shrink_0()
@@ -358,32 +358,32 @@ impl PickerDelegate for TabSwitcherDelegate {
             // as click's on list items.
             // See the same handler in Picker for more details.
             .on_mouse_up(
-                MouseButton::Right,
+                MouseButton.Right,
                 cx.listener(move |picker, _: &MouseUpEvent, cx| {
                     cx.stop_propagation();
                     picker.delegate.close_item_at(ix, cx);
                 }),
             )
             .child(
-                IconButton::new("close_tab", IconName::Close)
-                    .icon_size(IconSize::Small)
+                IconButton.new("close_tab", IconName.Close)
+                    .icon_size(IconSize.Small)
                     .icon_color(indicator_color)
-                    .tooltip(|cx| Tooltip::text("Close", cx)),
+                    .tooltip(|cx| Tooltip.text("Close", cx)),
             )
             .into_any_element();
 
         Some(
-            ListItem::new(ix)
-                .spacing(ListItemSpacing::Sparse)
+            ListItem.new(ix)
+                .spacing(ListItemSpacing.Sparse)
                 .inset(true)
                 .selected(selected)
                 .child(h_flex().w_full().child(label))
                 .map(|el| {
                     if self.selected_index == ix {
-                        el.end_slot::<AnyElement>(close_button)
+                        el.end_slot.<AnyElement>(close_button)
                     } else {
-                        el.end_slot::<AnyElement>(indicator)
-                            .end_hover_slot::<AnyElement>(close_button)
+                        el.end_slot.<AnyElement>(indicator)
+                            .end_hover_slot.<AnyElement>(close_button)
                     }
                 }),
         )

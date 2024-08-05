@@ -1,5 +1,5 @@
-use gpui::{AnyView, DismissEvent, FocusHandle, ManagedView, Subscription, View};
-use ui::prelude::*;
+use gpui.{AnyView, DismissEvent, FocusHandle, ManagedView, Subscription, View};
+use ui.prelude.*;
 
 pub enum DismissDecision {
     Dismiss(bool),
@@ -8,7 +8,7 @@ pub enum DismissDecision {
 
 pub trait ModalView: ManagedView {
     fn on_before_dismiss(&mut self, _: &mut ViewContext<Self>) -> DismissDecision {
-        DismissDecision::Dismiss(true)
+        DismissDecision.Dismiss(true)
     }
 
     fn fade_out_background(&self) -> bool {
@@ -62,7 +62,7 @@ impl ModalLayer {
         B: FnOnce(&mut ViewContext<V>) -> V,
     {
         if let Some(active_modal) = &self.active_modal {
-            let is_close = active_modal.modal.view().downcast::<V>().is_ok();
+            let is_close = active_modal.modal.view().downcast.<V>().is_ok();
             let did_close = self.hide_modal(cx);
             if is_close || !did_close {
                 return;
@@ -78,7 +78,7 @@ impl ModalLayer {
     {
         let focus_handle = cx.focus_handle();
         self.active_modal = Some(ActiveModal {
-            modal: Box::new(new_modal.clone()),
+            modal: Box.new(new_modal.clone()),
             _subscriptions: [
                 cx.subscribe(&new_modal, |this, _, _: &DismissEvent, cx| {
                     this.hide_modal(cx);
@@ -105,13 +105,13 @@ impl ModalLayer {
         };
 
         match active_modal.modal.on_before_dismiss(cx) {
-            DismissDecision::Dismiss(dismiss) => {
+            DismissDecision.Dismiss(dismiss) => {
                 self.dismiss_on_focus_lost = !dismiss;
                 if !dismiss {
                     return false;
                 }
             }
-            DismissDecision::Pending => {
+            DismissDecision.Pending => {
                 self.dismiss_on_focus_lost = false;
                 return false;
             }
@@ -133,7 +133,7 @@ impl ModalLayer {
         V: 'static,
     {
         let active_modal = self.active_modal.as_ref()?;
-        active_modal.modal.view().downcast::<V>().ok()
+        active_modal.modal.view().downcast.<V>().ok()
     }
 
     pub fn has_active_modal(&self) -> bool {

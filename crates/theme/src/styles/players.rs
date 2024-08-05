@@ -1,7 +1,7 @@
-use gpui::Hsla;
-use serde_derive::Deserialize;
+use gpui.Hsla;
+use serde_derive.Deserialize;
 
-use crate::{
+use crate.{
     amber, blue, jade, lime, orange, pink, purple, red, try_parse_color, PlayerColorContent,
 };
 
@@ -23,10 +23,10 @@ pub struct PlayerColors(pub Vec<PlayerColor>);
 
 impl Default for PlayerColors {
     /// Don't use this!
-    /// We have to have a default to be `[refineable::Refinable]`.
+    /// We have to have a default to be `[refineable.Refinable]`.
     /// TODO "Find a way to not need this for Refinable"
     fn default() -> Self {
-        Self::dark()
+        Self.dark()
     }
 }
 

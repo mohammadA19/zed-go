@@ -1,19 +1,19 @@
-use std::cell::RefCell;
-use std::collections::BTreeSet;
-use std::io::Read;
-use std::rc::Rc;
+use std.cell.RefCell;
+use std.collections.BTreeSet;
+use std.io.Read;
+use std.rc.Rc;
 
-use html_to_markdown::markdown::{
+use html_to_markdown.markdown.{
     HeadingHandler, ListHandler, ParagraphHandler, StyledTextHandler, TableHandler,
 };
-use html_to_markdown::{
+use html_to_markdown.{
     convert_html_to_markdown, HandleTag, HandlerOutcome, HtmlElement, MarkdownWriter,
     StartTagOutcome, TagHandler,
 };
-use zed_extension_api::{self as zed, HttpRequest, KeyValueStore, Result};
+use zed_extension_api.{self as zed, HttpRequest, KeyValueStore, Result};
 
 pub fn index(package: String, database: &KeyValueStore) -> Result<()> {
-    let response = zed::fetch(&HttpRequest {
+    let response = zed.fetch(&HttpRequest {
         url: format!("https://hexdocs.pm/{package}"),
     })?;
 
@@ -22,7 +22,7 @@ pub fn index(package: String, database: &KeyValueStore) -> Result<()> {
     database.insert(&package, &package_root_markdown)?;
 
     for module in modules {
-        let response = zed::fetch(&HttpRequest {
+        let response = zed.fetch(&HttpRequest {
             url: format!("https://hexdocs.pm/{package}/{module}.html"),
         })?;
 
@@ -35,16 +35,16 @@ pub fn index(package: String, database: &KeyValueStore) -> Result<()> {
 }
 
 pub fn convert_hexdocs_to_markdown(html: impl Read) -> Result<(String, Vec<String>)> {
-    let module_collector = Rc::new(RefCell::new(GleamModuleCollector::new()));
+    let module_collector = Rc.new(RefCell.new(GleamModuleCollector.new()));
 
     let mut handlers: Vec<TagHandler> = vec![
         module_collector.clone(),
-        Rc::new(RefCell::new(GleamChromeRemover)),
-        Rc::new(RefCell::new(NavSkipper::new(ParagraphHandler))),
-        Rc::new(RefCell::new(NavSkipper::new(HeadingHandler))),
-        Rc::new(RefCell::new(NavSkipper::new(ListHandler))),
-        Rc::new(RefCell::new(NavSkipper::new(TableHandler::new()))),
-        Rc::new(RefCell::new(NavSkipper::new(StyledTextHandler))),
+        Rc.new(RefCell.new(GleamChromeRemover)),
+        Rc.new(RefCell.new(NavSkipper.new(ParagraphHandler))),
+        Rc.new(RefCell.new(NavSkipper.new(HeadingHandler))),
+        Rc.new(RefCell.new(NavSkipper.new(ListHandler))),
+        Rc.new(RefCell.new(NavSkipper.new(TableHandler.new()))),
+        Rc.new(RefCell.new(NavSkipper.new(StyledTextHandler))),
     ];
 
     let markdown = convert_html_to_markdown(html, &mut handlers)
@@ -55,7 +55,7 @@ pub fn convert_hexdocs_to_markdown(html: impl Read) -> Result<(String, Vec<Strin
         .modules
         .iter()
         .cloned()
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
 
     Ok((markdown, modules))
 }
@@ -85,7 +85,7 @@ impl<T: HandleTag> HandleTag for NavSkipper<T> {
         writer: &mut MarkdownWriter,
     ) -> StartTagOutcome {
         if writer.is_inside("nav") {
-            return StartTagOutcome::Continue;
+            return StartTagOutcome.Continue;
         }
 
         self.handler.handle_tag_start(tag, writer)
@@ -101,7 +101,7 @@ impl<T: HandleTag> HandleTag for NavSkipper<T> {
 
     fn handle_text(&mut self, text: &str, writer: &mut MarkdownWriter) -> HandlerOutcome {
         if writer.is_inside("nav") {
-            return HandlerOutcome::Handled;
+            return HandlerOutcome.Handled;
         }
 
         self.handler.handle_text(text, writer)
@@ -125,17 +125,17 @@ impl HandleTag for GleamChromeRemover {
     ) -> StartTagOutcome {
         match tag.tag() {
             "head" | "script" | "style" | "svg" | "header" | "footer" => {
-                return StartTagOutcome::Skip;
+                return StartTagOutcome.Skip;
             }
             "a" => {
                 if tag.attr("onclick").is_some() {
-                    return StartTagOutcome::Skip;
+                    return StartTagOutcome.Skip;
                 }
             }
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 }
 
@@ -147,7 +147,7 @@ pub struct GleamModuleCollector {
 impl GleamModuleCollector {
     pub fn new() -> Self {
         Self {
-            modules: BTreeSet::new(),
+            modules: BTreeSet.new(),
             has_seen_modules_header: false,
         }
     }
@@ -184,7 +184,7 @@ impl HandleTag for GleamModuleCollector {
         match tag.tag() {
             "a" => {
                 if self.has_seen_modules_header && writer.is_inside("li") {
-                    if let Some(module_name) = Self::parse_module(tag) {
+                    if let Some(module_name) = Self.parse_module(tag) {
                         self.modules.insert(module_name);
                     }
                 }
@@ -192,7 +192,7 @@ impl HandleTag for GleamModuleCollector {
             _ => {}
         }
 
-        StartTagOutcome::Continue
+        StartTagOutcome.Continue
     }
 
     fn handle_text(&mut self, text: &str, writer: &mut MarkdownWriter) -> HandlerOutcome {
@@ -200,6 +200,6 @@ impl HandleTag for GleamModuleCollector {
             self.has_seen_modules_header = true;
         }
 
-        HandlerOutcome::NoOp
+        HandlerOutcome.NoOp
     }
 }

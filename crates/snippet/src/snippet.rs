@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Context, Result};
-use smallvec::SmallVec;
-use std::{collections::BTreeMap, ops::Range};
+use anyhow.{anyhow, Context, Result};
+use smallvec.SmallVec;
+use std.{collections.BTreeMap, ops.Range};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Snippet {
@@ -12,14 +12,14 @@ type TabStop = SmallVec<[Range<isize>; 2]>;
 
 impl Snippet {
     pub fn parse(source: &str) -> Result<Self> {
-        let mut text = String::with_capacity(source.len());
-        let mut tabstops = BTreeMap::new();
+        let mut text = String.with_capacity(source.len());
+        let mut tabstops = BTreeMap.new();
         parse_snippet(source, false, &mut text, &mut tabstops)
             .context("failed to parse snippet")?;
 
         let len = text.len() as isize;
         let final_tabstop = tabstops.remove(&0);
-        let mut tabstops = tabstops.into_values().collect::<Vec<_>>();
+        let mut tabstops = tabstops.into_values().collect.<Vec<_>>();
 
         if let Some(final_tabstop) = final_tabstop {
             tabstops.push(final_tabstop);
@@ -128,30 +128,30 @@ fn parse_int(source: &str) -> Result<(usize, &str)> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super.*;
 
     #[test]
     fn test_snippet_without_tabstops() {
-        let snippet = Snippet::parse("one-two-three").unwrap();
+        let snippet = Snippet.parse("one-two-three").unwrap();
         assert_eq!(snippet.text, "one-two-three");
         assert_eq!(tabstops(&snippet), &[vec![13..13]]);
     }
 
     #[test]
     fn test_snippet_with_tabstops() {
-        let snippet = Snippet::parse("one$1two").unwrap();
+        let snippet = Snippet.parse("one$1two").unwrap();
         assert_eq!(snippet.text, "onetwo");
         assert_eq!(tabstops(&snippet), &[vec![3..3], vec![6..6]]);
 
         // Multi-digit numbers
-        let snippet = Snippet::parse("one$123-$99-two").unwrap();
+        let snippet = Snippet.parse("one$123-$99-two").unwrap();
         assert_eq!(snippet.text, "one--two");
         assert_eq!(tabstops(&snippet), &[vec![4..4], vec![3..3], vec![8..8]]);
     }
 
     #[test]
     fn test_snippet_with_last_tabstop_at_end() {
-        let snippet = Snippet::parse(r#"foo.$1"#).unwrap();
+        let snippet = Snippet.parse(r#"foo.$1"#).unwrap();
 
         // If the final tabstop is already at the end of the text, don't insert
         // an additional tabstop at the end.
@@ -161,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_snippet_with_explicit_final_tabstop() {
-        let snippet = Snippet::parse(r#"<div class="$1">$0</div>"#).unwrap();
+        let snippet = Snippet.parse(r#"<div class="$1">$0</div>"#).unwrap();
 
         // If the final tabstop is explicitly specified via '$0', then
         // don't insert an additional tabstop at the end.
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn test_snippet_with_placeholders() {
-        let snippet = Snippet::parse("one${1:two}three${2:four}").unwrap();
+        let snippet = Snippet.parse("one${1:two}three${2:four}").unwrap();
         assert_eq!(snippet.text, "onetwothreefour");
         assert_eq!(
             tabstops(&snippet),
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_snippet_with_nested_placeholders() {
-        let snippet = Snippet::parse(
+        let snippet = Snippet.parse(
             "for (${1:var ${2:i} = 0; ${2:i} < ${3:${4:array}.length}; ${2:i}++}) {$0}",
         )
         .unwrap();
@@ -200,22 +200,22 @@ mod tests {
 
     #[test]
     fn test_snippet_parsing_with_escaped_chars() {
-        let snippet = Snippet::parse("\"\\$schema\": $1").unwrap();
+        let snippet = Snippet.parse("\"\\$schema\": $1").unwrap();
         assert_eq!(snippet.text, "\"$schema\": ");
         assert_eq!(tabstops(&snippet), &[vec![11..11]]);
 
-        let snippet = Snippet::parse("{a\\}").unwrap();
+        let snippet = Snippet.parse("{a\\}").unwrap();
         assert_eq!(snippet.text, "{a}");
         assert_eq!(tabstops(&snippet), &[vec![3..3]]);
 
         // backslash not functioning as an escape
-        let snippet = Snippet::parse("a\\b").unwrap();
+        let snippet = Snippet.parse("a\\b").unwrap();
         assert_eq!(snippet.text, "a\\b");
         assert_eq!(tabstops(&snippet), &[vec![3..3]]);
 
         // first backslash cancelling escaping that would
         // have happened with second backslash
-        let snippet = Snippet::parse("one\\\\$1two").unwrap();
+        let snippet = Snippet.parse("one\\\\$1two").unwrap();
         assert_eq!(snippet.text, "one\\two");
         assert_eq!(tabstops(&snippet), &[vec![4..4], vec![7..7]]);
     }

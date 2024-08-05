@@ -1,27 +1,27 @@
-use anyhow::Result;
-use indexmap::IndexMap;
-use strum::IntoEnumIterator;
-use theme::{
+use anyhow.Result;
+use indexmap.IndexMap;
+use strum.IntoEnumIterator;
+use theme.{
     FontStyleContent, FontWeightContent, HighlightStyleContent, StatusColorsContent,
     ThemeColorsContent, ThemeContent, ThemeStyleContent,
 };
 
-use crate::vscode::{VsCodeTheme, VsCodeTokenScope};
-use crate::ThemeMetadata;
+use crate.vscode.{VsCodeTheme, VsCodeTokenScope};
+use crate.ThemeMetadata;
 
-use super::ZedSyntaxToken;
+use super.ZedSyntaxToken;
 
 pub(crate) fn try_parse_font_weight(font_style: &str) -> Option<FontWeightContent> {
     match font_style {
-        style if style.contains("bold") => Some(FontWeightContent::Bold),
+        style if style.contains("bold") => Some(FontWeightContent.Bold),
         _ => None,
     }
 }
 
 pub(crate) fn try_parse_font_style(font_style: &str) -> Option<FontStyleContent> {
     match font_style {
-        style if style.contains("italic") => Some(FontStyleContent::Italic),
-        style if style.contains("oblique") => Some(FontStyleContent::Oblique),
+        style if style.contains("italic") => Some(FontStyleContent.Italic),
+        style if style.contains("oblique") => Some(FontStyleContent.Oblique),
         _ => None,
     }
 }
@@ -56,11 +56,11 @@ impl VsCodeThemeConverter {
             name: self.theme_metadata.name,
             appearance,
             style: ThemeStyleContent {
-                window_background_appearance: Some(theme::WindowBackgroundContent::Opaque),
-                accents: Vec::new(), //TODO can we read this from the theme?
+                window_background_appearance: Some(theme.WindowBackgroundContent.Opaque),
+                accents: Vec.new(), //TODO can we read this from the theme?
                 colors: theme_colors,
                 status: status_colors,
-                players: Vec::new(),
+                players: Vec.new(),
                 syntax: syntax_theme,
             },
         })
@@ -71,7 +71,7 @@ impl VsCodeThemeConverter {
 
         let vscode_base_status_colors = StatusColorsContent {
             hint: Some("#969696ff".to_string()),
-            ..Default::default()
+            ..Default.default()
         };
 
         Ok(StatusColorsContent {
@@ -104,7 +104,7 @@ impl VsCodeThemeConverter {
             warning: vscode_colors.editor_warning.foreground.clone(),
             warning_background: vscode_colors.editor_warning.background.clone(),
             warning_border: vscode_colors.editor_warning.border.clone(),
-            ..Default::default()
+            ..Default.default()
         })
     }
 
@@ -197,20 +197,20 @@ impl VsCodeThemeConverter {
             terminal_ansi_white: vscode_colors.terminal.ansi_white.clone(),
             terminal_ansi_bright_white: vscode_colors.terminal.ansi_bright_white.clone(),
             link_text_hover: vscode_colors.text_link.active_foreground.clone(),
-            ..Default::default()
+            ..Default.default()
         })
     }
 
     fn convert_syntax_theme(&self) -> Result<IndexMap<String, HighlightStyleContent>> {
-        let mut highlight_styles = IndexMap::new();
+        let mut highlight_styles = IndexMap.new();
 
-        for syntax_token in ZedSyntaxToken::iter() {
+        for syntax_token in ZedSyntaxToken.iter() {
             let override_match = self
                 .syntax_overrides
                 .get(&syntax_token.to_string())
                 .and_then(|scope| {
                     self.theme.token_colors.iter().find(|token_color| {
-                        token_color.scope == Some(VsCodeTokenScope::Many(scope.clone()))
+                        token_color.scope == Some(VsCodeTokenScope.Many(scope.clone()))
                     })
                 });
 
@@ -223,11 +223,11 @@ impl VsCodeThemeConverter {
                 });
 
             let Some(token_color) = best_match else {
-                log::warn!("No matching token color found for '{syntax_token}'");
+                log.warn!("No matching token color found for '{syntax_token}'");
                 continue;
             };
 
-            log::info!(
+            log.info!(
                 "Matched '{syntax_token}' to '{}'",
                 token_color
                     .name

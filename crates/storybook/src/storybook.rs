@@ -4,25 +4,25 @@ mod assets;
 mod stories;
 mod story_selector;
 
-use clap::Parser;
-use dialoguer::FuzzySelect;
-use gpui::{
+use clap.Parser;
+use dialoguer.FuzzySelect;
+use gpui.{
     div, px, size, AnyView, AppContext, Bounds, Render, ViewContext, VisualContext, WindowBounds,
     WindowOptions,
 };
-use log::LevelFilter;
-use project::Project;
-use settings::{KeymapFile, Settings};
-use simplelog::SimpleLogger;
-use strum::IntoEnumIterator;
-use theme::{ThemeRegistry, ThemeSettings};
-use ui::prelude::*;
+use log.LevelFilter;
+use project.Project;
+use settings.{KeymapFile, Settings};
+use simplelog.SimpleLogger;
+use strum.IntoEnumIterator;
+use theme.{ThemeRegistry, ThemeSettings};
+use ui.prelude.*;
 
-use crate::app_menus::app_menus;
-use crate::assets::Assets;
-use crate::story_selector::{ComponentStory, StorySelector};
-use actions::Quit;
-pub use indoc::indoc;
+use crate.app_menus.app_menus;
+use crate.assets.Assets;
+use crate.story_selector.{ComponentStory, StorySelector};
+use actions.Quit;
+pub use indoc.indoc;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -38,61 +38,61 @@ struct Args {
 }
 
 fn main() {
-    SimpleLogger::init(LevelFilter::Info, Default::default()).expect("could not initialize logger");
+    SimpleLogger.init(LevelFilter.Info, Default.default()).expect("could not initialize logger");
 
-    menu::init();
-    let args = Args::parse();
+    menu.init();
+    let args = Args.parse();
 
     let story_selector = args.story.unwrap_or_else(|| {
-        let stories = ComponentStory::iter().collect::<Vec<_>>();
+        let stories = ComponentStory.iter().collect.<Vec<_>>();
 
-        ctrlc::set_handler(move || {}).unwrap();
+        ctrlc.set_handler(move || {}).unwrap();
 
-        let result = FuzzySelect::new()
+        let result = FuzzySelect.new()
             .with_prompt("Choose a story to run:")
             .items(&stories)
             .interact();
 
         let Ok(selection) = result else {
-            dialoguer::console::Term::stderr().show_cursor().unwrap();
-            std::process::exit(0);
+            dialoguer.console.Term.stderr().show_cursor().unwrap();
+            std.process.exit(0);
         };
 
-        StorySelector::Component(stories[selection])
+        StorySelector.Component(stories[selection])
     });
     let theme_name = args.theme.unwrap_or("One Dark".to_string());
 
-    gpui::App::new().with_assets(Assets).run(move |cx| {
+    gpui.App.new().with_assets(Assets).run(move |cx| {
         load_embedded_fonts(cx).unwrap();
 
-        settings::init(cx);
-        theme::init(theme::LoadThemes::All(Box::new(Assets)), cx);
+        settings.init(cx);
+        theme.init(theme.LoadThemes.All(Box.new(Assets)), cx);
 
         let selector = story_selector;
 
-        let theme_registry = ThemeRegistry::global(cx);
-        let mut theme_settings = ThemeSettings::get_global(cx).clone();
+        let theme_registry = ThemeRegistry.global(cx);
+        let mut theme_settings = ThemeSettings.get_global(cx).clone();
         theme_settings.active_theme = theme_registry.get(&theme_name).unwrap();
-        ThemeSettings::override_global(theme_settings, cx);
+        ThemeSettings.override_global(theme_settings, cx);
 
-        language::init(cx);
-        editor::init(cx);
-        Project::init_settings(cx);
+        language.init(cx);
+        editor.init(cx);
+        Project.init_settings(cx);
         init(cx);
         load_storybook_keymap(cx);
         cx.set_menus(app_menus());
 
         let size = size(px(1500.), px(780.));
-        let bounds = Bounds::centered(None, size, cx);
+        let bounds = Bounds.centered(None, size, cx);
         let _window = cx.open_window(
             WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                ..Default::default()
+                window_bounds: Some(WindowBounds.Windowed(bounds)),
+                ..Default.default()
             },
             move |cx| {
-                theme::setup_ui_font(cx);
+                theme.setup_ui_font(cx);
 
-                cx.new_view(|cx| StoryWrapper::new(selector.story(cx)))
+                cx.new_view(|cx| StoryWrapper.new(selector.story(cx)))
             },
         );
 
@@ -122,9 +122,9 @@ impl Render for StoryWrapper {
     }
 }
 
-fn load_embedded_fonts(cx: &AppContext) -> gpui::Result<()> {
+fn load_embedded_fonts(cx: &AppContext) -> gpui.Result<()> {
     let font_paths = cx.asset_source().list("fonts")?;
-    let mut embedded_fonts = Vec::new();
+    let mut embedded_fonts = Vec.new();
     for font_path in font_paths {
         if font_path.ends_with(".ttf") {
             let font_bytes = cx
@@ -139,7 +139,7 @@ fn load_embedded_fonts(cx: &AppContext) -> gpui::Result<()> {
 }
 
 fn load_storybook_keymap(cx: &mut AppContext) {
-    KeymapFile::load_asset("keymaps/storybook.json", cx).unwrap();
+    KeymapFile.load_asset("keymaps/storybook.json", cx).unwrap();
 }
 
 pub fn init(cx: &mut AppContext) {
@@ -149,7 +149,7 @@ pub fn init(cx: &mut AppContext) {
 fn quit(_: &Quit, cx: &mut AppContext) {
     cx.spawn(|cx| async move {
         cx.update(|cx| cx.quit())?;
-        anyhow::Ok(())
+        anyhow.Ok(())
     })
     .detach_and_log_err(cx);
 }
