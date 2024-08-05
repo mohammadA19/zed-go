@@ -1,6 +1,6 @@
-use crate::db::{NotificationId, NotificationKindId, UserId};
-use sea_orm::entity::prelude::*;
-use time::PrimitiveDateTime;
+use crate.db.{NotificationId, NotificationKindId, UserId};
+use sea_orm.entity.prelude.*;
+use time.PrimitiveDateTime;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "notifications")]
@@ -19,9 +19,9 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::RecipientId",
-        to = "super::user::Column::Id"
+        belongs_to = "super.user.Entity",
+        from = "Column.RecipientId",
+        to = "super.user.Column.Id"
     )]
     Recipient,
 }

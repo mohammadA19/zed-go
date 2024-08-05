@@ -1,20 +1,20 @@
-use std::sync::{Arc, OnceLock};
+use std.sync.{Arc, OnceLock};
 
-use anyhow::anyhow;
-use axum::{
-    extract::{self, Query},
-    routing::get,
+use anyhow.anyhow;
+use axum.{
+    extract.{self, Query},
+    routing.get,
     Extension, Json, Router,
 };
-use chrono::{NaiveDateTime, SecondsFormat};
-use serde::{Deserialize, Serialize};
+use chrono.{NaiveDateTime, SecondsFormat};
+use serde.{Deserialize, Serialize};
 
-use crate::api::AuthenticatedUserParams;
-use crate::db::ContributorSelector;
-use crate::{AppState, Result};
+use crate.api.AuthenticatedUserParams;
+use crate.db.ContributorSelector;
+use crate.{AppState, Result};
 
 pub fn router() -> Router {
-    Router::new()
+    Router.new()
         .route("/contributors", get(get_contributors).post(add_contributor))
         .route("/contributor", get(check_is_contributor))
 }
@@ -32,11 +32,11 @@ struct CheckIsContributorParams {
 impl CheckIsContributorParams {
     fn as_contributor_selector(self) -> Result<ContributorSelector> {
         if let Some(github_user_id) = self.github_user_id {
-            return Ok(ContributorSelector::GitHubUserId { github_user_id });
+            return Ok(ContributorSelector.GitHubUserId { github_user_id });
         }
 
         if let Some(github_login) = self.github_login {
-            return Ok(ContributorSelector::GitHubLogin { github_login });
+            return Ok(ContributorSelector.GitHubLogin { github_login });
         }
 
         Err(anyhow!(
@@ -56,12 +56,12 @@ async fn check_is_contributor(
 ) -> Result<Json<CheckIsContributorResponse>> {
     let params = params.as_contributor_selector()?;
 
-    if RenovateBot::is_renovate_bot(&params) {
+    if RenovateBot.is_renovate_bot(&params) {
         return Ok(Json(CheckIsContributorResponse {
             signed_at: Some(
-                RenovateBot::created_at()
+                RenovateBot.created_at()
                     .and_utc()
-                    .to_rfc3339_opts(SecondsFormat::Millis, true),
+                    .to_rfc3339_opts(SecondsFormat.Millis, true),
             ),
         }));
     }
@@ -71,7 +71,7 @@ async fn check_is_contributor(
             .db
             .get_contributor_sign_timestamp(&params)
             .await?
-            .map(|ts| ts.and_utc().to_rfc3339_opts(SecondsFormat::Millis, true)),
+            .map(|ts| ts.and_utc().to_rfc3339_opts(SecondsFormat.Millis, true)),
     }))
 }
 
@@ -86,9 +86,9 @@ impl RenovateBot {
 
     /// Returns the `created_at` timestamp for the Renovate bot user.
     fn created_at() -> &'static NaiveDateTime {
-        static CREATED_AT: OnceLock<NaiveDateTime> = OnceLock::new();
+        static CREATED_AT: OnceLock<NaiveDateTime> = OnceLock.new();
         CREATED_AT.get_or_init(|| {
-            chrono::DateTime::parse_from_rfc3339("2017-06-02T07:04:12Z")
+            chrono.DateTime.parse_from_rfc3339("2017-06-02T07:04:12Z")
                 .expect("failed to parse 'created_at' for 'renovate[bot]'")
                 .naive_utc()
         })
@@ -97,9 +97,9 @@ impl RenovateBot {
     /// Returns whether the given contributor selector corresponds to the Renovate bot user.
     fn is_renovate_bot(contributor: &ContributorSelector) -> bool {
         match contributor {
-            ContributorSelector::GitHubLogin { github_login } => github_login == Self::LOGIN,
-            ContributorSelector::GitHubUserId { github_user_id } => {
-                github_user_id == &Self::USER_ID
+            ContributorSelector.GitHubLogin { github_login } => github_login == Self.LOGIN,
+            ContributorSelector.GitHubUserId { github_user_id } => {
+                github_user_id == &Self.USER_ID
             }
         }
     }
@@ -107,7 +107,7 @@ impl RenovateBot {
 
 async fn add_contributor(
     Extension(app): Extension<Arc<AppState>>,
-    extract::Json(params): extract::Json<AuthenticatedUserParams>,
+    extract.Json(params): extract.Json<AuthenticatedUserParams>,
 ) -> Result<()> {
     let initial_channel_id = app.config.auto_join_channel_id;
     app.db

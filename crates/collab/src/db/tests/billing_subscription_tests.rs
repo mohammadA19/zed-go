@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use crate::db::billing_subscription::StripeSubscriptionStatus;
-use crate::db::tests::new_test_user;
-use crate::db::{CreateBillingCustomerParams, CreateBillingSubscriptionParams};
-use crate::test_both_dbs;
+use crate.db.billing_subscription.StripeSubscriptionStatus;
+use crate.db.tests.new_test_user;
+use crate.db.{CreateBillingCustomerParams, CreateBillingSubscriptionParams};
+use crate.test_both_dbs;
 
-use super::Database;
+use super.Database;
 
 test_both_dbs!(
     test_get_active_billing_subscriptions,
@@ -40,7 +40,7 @@ async fn test_get_active_billing_subscriptions(db: &Arc<Database>) {
         db.create_billing_subscription(&CreateBillingSubscriptionParams {
             billing_customer_id: customer.id,
             stripe_subscription_id: "sub_active_user".into(),
-            stripe_subscription_status: StripeSubscriptionStatus::Active,
+            stripe_subscription_status: StripeSubscriptionStatus.Active,
         })
         .await
         .unwrap();
@@ -55,7 +55,7 @@ async fn test_get_active_billing_subscriptions(db: &Arc<Database>) {
         );
         assert_eq!(
             subscription.stripe_subscription_status,
-            StripeSubscriptionStatus::Active
+            StripeSubscriptionStatus.Active
         );
     }
 
@@ -74,7 +74,7 @@ async fn test_get_active_billing_subscriptions(db: &Arc<Database>) {
         db.create_billing_subscription(&CreateBillingSubscriptionParams {
             billing_customer_id: customer.id,
             stripe_subscription_id: "sub_past_due_user".into(),
-            stripe_subscription_status: StripeSubscriptionStatus::PastDue,
+            stripe_subscription_status: StripeSubscriptionStatus.PastDue,
         })
         .await
         .unwrap();

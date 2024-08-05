@@ -1,13 +1,13 @@
-use std::time::Duration;
+use std.time.Duration;
 
-use futures::{channel::oneshot, FutureExt};
-use gpui::{Task, ViewContext};
+use futures.{channel.oneshot, FutureExt};
+use gpui.{Task, ViewContext};
 
-use crate::Editor;
+use crate.Editor;
 
 pub struct DebouncedDelay {
     task: Option<Task<()>>,
-    cancel_channel: Option<oneshot::Sender<()>>,
+    cancel_channel: Option<oneshot.Sender<()>>,
 }
 
 impl DebouncedDelay {
@@ -26,13 +26,13 @@ impl DebouncedDelay {
             _ = channel.send(());
         }
 
-        let (sender, mut receiver) = oneshot::channel::<()>();
+        let (sender, mut receiver) = oneshot.channel.<()>();
         self.cancel_channel = Some(sender);
 
         drop(self.task.take());
         self.task = Some(cx.spawn(move |model, mut cx| async move {
             let mut timer = cx.background_executor().timer(delay).fuse();
-            futures::select_biased! {
+            futures.select_biased! {
                 _ = receiver => return,
                 _ = timer => {}
             }

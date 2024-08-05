@@ -1,18 +1,18 @@
 mod slash_command_registry;
 
-use anyhow::Result;
-use gpui::{AnyElement, AppContext, ElementId, SharedString, Task, WeakView, WindowContext};
-use language::{CodeLabel, LspAdapterDelegate};
-use serde::{Deserialize, Serialize};
-pub use slash_command_registry::*;
-use std::{
-    ops::Range,
-    sync::{atomic::AtomicBool, Arc},
+use anyhow.Result;
+use gpui.{AnyElement, AppContext, ElementId, SharedString, Task, WeakView, WindowContext};
+use language.{CodeLabel, LspAdapterDelegate};
+use serde.{Deserialize, Serialize};
+pub use slash_command_registry.*;
+use std.{
+    ops.Range,
+    sync.{atomic.AtomicBool, Arc},
 };
-use workspace::{ui::IconName, Workspace};
+use workspace.{ui.IconName, Workspace};
 
 pub fn init(cx: &mut AppContext) {
-    SlashCommandRegistry::default_global(cx);
+    SlashCommandRegistry.default_global(cx);
 }
 
 #[derive(Debug)]
@@ -28,7 +28,7 @@ pub struct ArgumentCompletion {
 pub trait SlashCommand: 'static + Send + Sync {
     fn name(&self) -> String;
     fn label(&self, _cx: &AppContext) -> CodeLabel {
-        CodeLabel::plain(self.name(), None)
+        CodeLabel.plain(self.name(), None)
     }
     fn description(&self) -> String;
     fn menu_text(&self) -> String;

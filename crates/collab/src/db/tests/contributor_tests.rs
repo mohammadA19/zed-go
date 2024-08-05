@@ -1,6 +1,6 @@
-use super::Database;
-use crate::{db::NewUserParams, test_both_dbs};
-use std::sync::Arc;
+use super.Database;
+use crate.{db.NewUserParams, test_both_dbs};
+use std.sync.Arc;
 
 test_both_dbs!(
     test_contributors,
@@ -20,7 +20,7 @@ async fn test_contributors(db: &Arc<Database>) {
     .await
     .unwrap();
 
-    assert_eq!(db.get_contributors().await.unwrap(), Vec::<String>::new());
+    assert_eq!(db.get_contributors().await.unwrap(), Vec.<String>.new());
 
     db.add_contributor("user1", Some(1), None, None)
         .await

@@ -1,13 +1,13 @@
-use gpui::ViewContext;
+use gpui.ViewContext;
 
-use crate::{Editor, RangeToAnchorExt};
+use crate.{Editor, RangeToAnchorExt};
 
 enum MatchingBracketHighlight {}
 
 pub fn refresh_matching_bracket_highlights(editor: &mut Editor, cx: &mut ViewContext<Editor>) {
-    editor.clear_background_highlights::<MatchingBracketHighlight>(cx);
+    editor.clear_background_highlights.<MatchingBracketHighlight>(cx);
 
-    let newest_selection = editor.selections.newest::<usize>(cx);
+    let newest_selection = editor.selections.newest.<usize>(cx);
     // Don't highlight brackets if the selection isn't empty
     if !newest_selection.is_empty() {
         return;
@@ -19,7 +19,7 @@ pub fn refresh_matching_bracket_highlights(editor: &mut Editor, cx: &mut ViewCon
         .buffer_snapshot
         .innermost_enclosing_bracket_ranges(head..head, None)
     {
-        editor.highlight_background::<MatchingBracketHighlight>(
+        editor.highlight_background.<MatchingBracketHighlight>(
             &[
                 opening_range.to_anchors(&snapshot.buffer_snapshot),
                 closing_range.to_anchors(&snapshot.buffer_snapshot),
@@ -32,22 +32,22 @@ pub fn refresh_matching_bracket_highlights(editor: &mut Editor, cx: &mut ViewCon
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{editor_tests::init_test, test::editor_lsp_test_context::EditorLspTestContext};
-    use indoc::indoc;
-    use language::{BracketPair, BracketPairConfig, Language, LanguageConfig, LanguageMatcher};
+    use super.*;
+    use crate.{editor_tests.init_test, test.editor_lsp_test_context.EditorLspTestContext};
+    use indoc.indoc;
+    use language.{BracketPair, BracketPairConfig, Language, LanguageConfig, LanguageMatcher};
 
-    #[gpui::test]
-    async fn test_matching_bracket_highlights(cx: &mut gpui::TestAppContext) {
+    #[gpui.test]
+    async fn test_matching_bracket_highlights(cx: &mut gpui.TestAppContext) {
         init_test(cx, |_| {});
 
-        let mut cx = EditorLspTestContext::new(
-            Language::new(
+        let mut cx = EditorLspTestContext.new(
+            Language.new(
                 LanguageConfig {
                     name: "Rust".into(),
                     matcher: LanguageMatcher {
                         path_suffixes: vec!["rs".to_string()],
-                        ..Default::default()
+                        ..Default.default()
                     },
                     brackets: BracketPairConfig {
                         pairs: vec![
@@ -66,18 +66,18 @@ mod tests {
                                 newline: true,
                             },
                         ],
-                        ..Default::default()
+                        ..Default.default()
                     },
-                    ..Default::default()
+                    ..Default.default()
                 },
-                Some(tree_sitter_rust::language()),
+                Some(tree_sitter_rust.language()),
             )
             .with_brackets_query(indoc! {r#"
                 ("{" @open "}" @close)
                 ("(" @open ")" @close)
                 "#})
             .unwrap(),
-            Default::default(),
+            Default.default(),
             cx,
         )
         .await;
@@ -88,7 +88,7 @@ mod tests {
                 another_test(1, 2, 3);
             }
         "#});
-        cx.assert_editor_background_highlights::<MatchingBracketHighlight>(indoc! {r#"
+        cx.assert_editor_background_highlights.<MatchingBracketHighlight>(indoc! {r#"
             pub fn test«(»"Test argument"«)» {
                 another_test(1, 2, 3);
             }
@@ -99,7 +99,7 @@ mod tests {
                 another_test(1, ˇ2, 3);
             }
         "#});
-        cx.assert_editor_background_highlights::<MatchingBracketHighlight>(indoc! {r#"
+        cx.assert_editor_background_highlights.<MatchingBracketHighlight>(indoc! {r#"
             pub fn test("Test argument") {
                 another_test«(»1, 2, 3«)»;
             }
@@ -110,7 +110,7 @@ mod tests {
                 anotherˇ_test(1, 2, 3);
             }
         "#});
-        cx.assert_editor_background_highlights::<MatchingBracketHighlight>(indoc! {r#"
+        cx.assert_editor_background_highlights.<MatchingBracketHighlight>(indoc! {r#"
             pub fn test("Test argument") «{»
                 another_test(1, 2, 3);
             «}»
@@ -122,7 +122,7 @@ mod tests {
                 another_test(1, 2, 3);
             }
         "#});
-        cx.assert_editor_background_highlights::<MatchingBracketHighlight>(indoc! {r#"
+        cx.assert_editor_background_highlights.<MatchingBracketHighlight>(indoc! {r#"
             pub fn test("Test argument") {
                 another_test(1, 2, 3);
             }
@@ -134,7 +134,7 @@ mod tests {
                 another_test(1, 2, 3);
             }
         "#});
-        cx.assert_editor_background_highlights::<MatchingBracketHighlight>(indoc! {r#"
+        cx.assert_editor_background_highlights.<MatchingBracketHighlight>(indoc! {r#"
             pub fn test("Test argument") {
                 another_test(1, 2, 3);
             }

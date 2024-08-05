@@ -2,16 +2,16 @@
 
 #![deny(missing_docs)]
 
-use std::any::TypeId;
+use std.any.TypeId;
 
-use collections::HashSet;
-use derive_more::{Deref, DerefMut};
-use gpui::{Action, AppContext, BorrowAppContext, Global};
+use collections.HashSet;
+use derive_more.{Deref, DerefMut};
+use gpui.{Action, AppContext, BorrowAppContext, Global};
 
 /// Initializes the command palette hooks.
 pub fn init(cx: &mut AppContext) {
-    cx.set_global(GlobalCommandPaletteFilter::default());
-    cx.set_global(GlobalCommandPaletteInterceptor::default());
+    cx.set_global(GlobalCommandPaletteFilter.default());
+    cx.set_global(GlobalCommandPaletteInterceptor.default());
 }
 
 /// A filter for the command palette.
@@ -29,13 +29,13 @@ impl Global for GlobalCommandPaletteFilter {}
 impl CommandPaletteFilter {
     /// Returns the global [`CommandPaletteFilter`], if one is set.
     pub fn try_global(cx: &AppContext) -> Option<&CommandPaletteFilter> {
-        cx.try_global::<GlobalCommandPaletteFilter>()
+        cx.try_global.<GlobalCommandPaletteFilter>()
             .map(|filter| &filter.0)
     }
 
     /// Returns a mutable reference to the global [`CommandPaletteFilter`].
     pub fn global_mut(cx: &mut AppContext) -> &mut Self {
-        cx.global_mut::<GlobalCommandPaletteFilter>()
+        cx.global_mut.<GlobalCommandPaletteFilter>()
     }
 
     /// Updates the global [`CommandPaletteFilter`] using the given closure.
@@ -49,7 +49,7 @@ impl CommandPaletteFilter {
     /// Returns whether the given [`Action`] is hidden by the filter.
     pub fn is_hidden(&self, action: &dyn Action) -> bool {
         let name = action.name();
-        let namespace = name.split("::").next().unwrap_or("malformed action name");
+        let namespace = name.split(".").next().unwrap_or("malformed action name");
 
         self.hidden_namespaces.contains(namespace)
             || self.hidden_action_types.contains(&action.type_id())
@@ -104,7 +104,7 @@ impl Global for GlobalCommandPaletteInterceptor {}
 impl CommandPaletteInterceptor {
     /// Returns the global [`CommandPaletteInterceptor`], if one is set.
     pub fn try_global(cx: &AppContext) -> Option<&CommandPaletteInterceptor> {
-        cx.try_global::<GlobalCommandPaletteInterceptor>()
+        cx.try_global.<GlobalCommandPaletteInterceptor>()
             .map(|interceptor| &interceptor.0)
     }
 

@@ -1,5 +1,5 @@
-use crate::db::NotificationKindId;
-use sea_orm::entity::prelude::*;
+use crate.db.NotificationKindId;
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "notification_kinds")]

@@ -1,37 +1,37 @@
-use anyhow::{Context, Result};
-use channel::{ChannelChat, ChannelStore, MessageParams};
-use client::{UserId, UserStore};
-use collections::HashSet;
-use editor::{AnchorRangeExt, CompletionProvider, Editor, EditorElement, EditorStyle};
-use fuzzy::{StringMatch, StringMatchCandidate};
-use gpui::{
+use anyhow.{Context, Result};
+use channel.{ChannelChat, ChannelStore, MessageParams};
+use client.{UserId, UserStore};
+use collections.HashSet;
+use editor.{AnchorRangeExt, CompletionProvider, Editor, EditorElement, EditorStyle};
+use fuzzy.{StringMatch, StringMatchCandidate};
+use gpui.{
     AsyncWindowContext, FocusableView, FontStyle, FontWeight, HighlightStyle, IntoElement, Model,
     Render, Task, TextStyle, View, ViewContext, WeakView,
 };
-use language::{
-    language_settings::SoftWrap, Anchor, Buffer, BufferSnapshot, CodeLabel, LanguageRegistry,
+use language.{
+    language_settings.SoftWrap, Anchor, Buffer, BufferSnapshot, CodeLabel, LanguageRegistry,
     LanguageServerId, ToOffset,
 };
-use lazy_static::lazy_static;
-use parking_lot::RwLock;
-use project::{search::SearchQuery, Completion};
-use settings::Settings;
-use std::{ops::Range, sync::Arc, time::Duration};
-use theme::ThemeSettings;
-use ui::{prelude::*, TextSize};
+use lazy_static.lazy_static;
+use parking_lot.RwLock;
+use project.{search.SearchQuery, Completion};
+use settings.Settings;
+use std.{ops.Range, sync.Arc, time.Duration};
+use theme.ThemeSettings;
+use ui.{prelude.*, TextSize};
 
-use crate::panel_settings::MessageEditorSettings;
+use crate.panel_settings.MessageEditorSettings;
 
-const MENTIONS_DEBOUNCE_INTERVAL: Duration = Duration::from_millis(50);
+const MENTIONS_DEBOUNCE_INTERVAL: Duration = Duration.from_millis(50);
 
 lazy_static! {
-    static ref MENTIONS_SEARCH: SearchQuery = SearchQuery::regex(
+    static ref MENTIONS_SEARCH: SearchQuery = SearchQuery.regex(
         "@[-_\\w]+",
         false,
         false,
         false,
-        Default::default(),
-        Default::default()
+        Default.default(),
+        Default.default()
     )
     .unwrap();
 }
@@ -52,12 +52,12 @@ impl CompletionProvider for MessageEditorCompletionProvider {
     fn completions(
         &self,
         buffer: &Model<Buffer>,
-        buffer_position: language::Anchor,
-        _: editor::CompletionContext,
+        buffer_position: language.Anchor,
+        _: editor.CompletionContext,
         cx: &mut ViewContext<Editor>,
-    ) -> Task<anyhow::Result<Vec<Completion>>> {
+    ) -> Task<anyhow.Result<Vec<Completion>>> {
         let Some(handle) = self.0.upgrade() else {
-            return Task::ready(Ok(Vec::new()));
+            return Task.ready(Ok(Vec.new()));
         };
         handle.update(cx, |message_editor, cx| {
             message_editor.completions(buffer, buffer_position, cx)
@@ -70,8 +70,8 @@ impl CompletionProvider for MessageEditorCompletionProvider {
         _completion_indices: Vec<usize>,
         _completions: Arc<RwLock<Box<[Completion]>>>,
         _cx: &mut ViewContext<Editor>,
-    ) -> Task<anyhow::Result<bool>> {
-        Task::ready(Ok(false))
+    ) -> Task<anyhow.Result<bool>> {
+        Task.ready(Ok(false))
     }
 
     fn apply_additional_edits_for_completion(
@@ -80,14 +80,14 @@ impl CompletionProvider for MessageEditorCompletionProvider {
         _completion: Completion,
         _push_to_history: bool,
         _cx: &mut ViewContext<Editor>,
-    ) -> Task<Result<Option<language::Transaction>>> {
-        Task::ready(Ok(None))
+    ) -> Task<Result<Option<language.Transaction>>> {
+        Task.ready(Ok(None))
     }
 
     fn is_completion_trigger(
         &self,
         _buffer: &Model<Buffer>,
-        _position: language::Anchor,
+        _position: language.Anchor,
         text: &str,
         _trigger_in_words: bool,
         _cx: &mut ViewContext<Editor>,
@@ -106,14 +106,14 @@ impl MessageEditor {
     ) -> Self {
         let this = cx.view().downgrade();
         editor.update(cx, |editor, cx| {
-            editor.set_soft_wrap_mode(SoftWrap::EditorWidth, cx);
+            editor.set_soft_wrap_mode(SoftWrap.EditorWidth, cx);
             editor.set_use_autoclose(false);
             editor.set_show_gutter(false, cx);
             editor.set_show_wrap_guides(false, cx);
             editor.set_show_indent_guides(false, cx);
-            editor.set_completion_provider(Box::new(MessageEditorCompletionProvider(this)));
+            editor.set_completion_provider(Box.new(MessageEditorCompletionProvider(this)));
             editor.set_auto_replace_emoji_shortcode(
-                MessageEditorSettings::get_global(cx)
+                MessageEditorSettings.get_global(cx)
                     .auto_replace_emoji_shortcode
                     .unwrap_or_default(),
             );
@@ -126,11 +126,11 @@ impl MessageEditor {
             .as_singleton()
             .expect("message editor must be singleton");
 
-        cx.subscribe(&buffer, Self::on_buffer_event).detach();
-        cx.observe_global::<settings::SettingsStore>(|view, cx| {
+        cx.subscribe(&buffer, Self.on_buffer_event).detach();
+        cx.observe_global.<settings.SettingsStore>(|view, cx| {
             view.editor.update(cx, |editor, cx| {
                 editor.set_auto_replace_emoji_shortcode(
-                    MessageEditorSettings::get_global(cx)
+                    MessageEditorSettings.get_global(cx)
                         .auto_replace_emoji_shortcode
                         .unwrap_or_default(),
                 )
@@ -151,7 +151,7 @@ impl MessageEditor {
             editor,
             user_store,
             channel_chat,
-            mentions: Vec::new(),
+            mentions: Vec.new(),
             mentions_task: None,
             reply_to_message_id: None,
             edit_message_id: None,
@@ -185,7 +185,7 @@ impl MessageEditor {
     pub fn set_channel_chat(&mut self, chat: Model<ChannelChat>, cx: &mut ViewContext<Self>) {
         let channel_id = chat.read(cx).channel_id;
         self.channel_chat = Some(chat);
-        let channel_name = ChannelStore::global(cx)
+        let channel_name = ChannelStore.global(cx)
             .read(cx)
             .channel_for_id(channel_id)
             .map(|channel| channel.name.clone());
@@ -200,7 +200,7 @@ impl MessageEditor {
 
     pub fn take_message(&mut self, cx: &mut ViewContext<Self>) -> MessageParams {
         self.editor.update(cx, |editor, cx| {
-            let highlights = editor.text_highlights::<Self>(cx);
+            let highlights = editor.text_highlights.<Self>(cx);
             let text = editor.text(cx);
             let snapshot = editor.buffer().read(cx).snapshot(cx);
             let mentions = if let Some((_, ranges)) = highlights {
@@ -210,12 +210,12 @@ impl MessageEditor {
                     .zip(self.mentions.iter().copied())
                     .collect()
             } else {
-                Vec::new()
+                Vec.new()
             };
 
             editor.clear(cx);
             self.mentions.clear();
-            let reply_to_message_id = std::mem::take(&mut self.reply_to_message_id);
+            let reply_to_message_id = std.mem.take(&mut self.reply_to_message_id);
 
             MessageParams {
                 text,
@@ -228,16 +228,16 @@ impl MessageEditor {
     fn on_buffer_event(
         &mut self,
         buffer: Model<Buffer>,
-        event: &language::Event,
+        event: &language.Event,
         cx: &mut ViewContext<Self>,
     ) {
-        if let language::Event::Reparsed | language::Event::Edited = event {
+        if let language.Event.Reparsed | language.Event.Edited = event {
             let buffer = buffer.read(cx).snapshot();
             self.mentions_task = Some(cx.spawn(|this, cx| async move {
                 cx.background_executor()
                     .timer(MENTIONS_DEBOUNCE_INTERVAL)
                     .await;
-                Self::find_mentions(this, buffer, cx).await;
+                Self.find_mentions(this, buffer, cx).await;
             }));
         }
     }
@@ -253,12 +253,12 @@ impl MessageEditor {
         {
             if !candidates.is_empty() {
                 return cx.spawn(|_, cx| async move {
-                    Ok(Self::resolve_completions_for_candidates(
+                    Ok(Self.resolve_completions_for_candidates(
                         &cx,
                         query.as_str(),
                         &candidates,
                         start_anchor..end_anchor,
-                        Self::completion_for_mention,
+                        Self.completion_for_mention,
                     )
                     .await)
                 });
@@ -270,19 +270,19 @@ impl MessageEditor {
         {
             if !candidates.is_empty() {
                 return cx.spawn(|_, cx| async move {
-                    Ok(Self::resolve_completions_for_candidates(
+                    Ok(Self.resolve_completions_for_candidates(
                         &cx,
                         query.as_str(),
                         candidates,
                         start_anchor..end_anchor,
-                        Self::completion_for_emoji,
+                        Self.completion_for_emoji,
                     )
                     .await)
                 });
             }
         }
 
-        Task::ready(Ok(vec![]))
+        Task.ready(Ok(vec![]))
     }
 
     async fn resolve_completions_for_candidates(
@@ -292,12 +292,12 @@ impl MessageEditor {
         range: Range<Anchor>,
         completion_fn: impl Fn(&StringMatch) -> (String, CodeLabel),
     ) -> Vec<Completion> {
-        let matches = fuzzy::match_strings(
+        let matches = fuzzy.match_strings(
             &candidates,
             &query,
             true,
             10,
-            &Default::default(),
+            &Default.default(),
             cx.background_executor().clone(),
         )
         .await;
@@ -312,7 +312,7 @@ impl MessageEditor {
                     label,
                     documentation: None,
                     server_id: LanguageServerId(0), // TODO: Make this optional or something?
-                    lsp_completion: Default::default(), // TODO: Make this optional or something?
+                    lsp_completion: Default.default(), // TODO: Make this optional or something?
                     confirm: None,
                     show_new_completions_on_confirm: false,
                 }
@@ -324,17 +324,17 @@ impl MessageEditor {
         let label = CodeLabel {
             filter_range: 1..mat.string.len() + 1,
             text: format!("@{}", mat.string),
-            runs: Vec::new(),
+            runs: Vec.new(),
         };
         (mat.string.clone(), label)
     }
 
     fn completion_for_emoji(mat: &StringMatch) -> (String, CodeLabel) {
-        let emoji = emojis::get_by_shortcode(&mat.string).unwrap();
+        let emoji = emojis.get_by_shortcode(&mat.string).unwrap();
         let label = CodeLabel {
             filter_range: 1..mat.string.len() + 1,
             text: format!(":{}: {}", mat.string, emoji),
-            runs: Vec::new(),
+            runs: Vec.new(),
         };
         (emoji.to_string(), label)
     }
@@ -348,10 +348,10 @@ impl MessageEditor {
         let end_offset = end_anchor.to_offset(buffer.read(cx));
 
         let Some(query) = buffer.update(cx, |buffer, _| {
-            let mut query = String::new();
+            let mut query = String.new();
             for ch in buffer.reversed_chars_at(end_offset).take(100) {
                 if ch == '@' {
-                    return Some(query.chars().rev().collect::<String>());
+                    return Some(query.chars().rev().collect.<String>());
                 }
                 if ch.is_whitespace() || !ch.is_ascii() {
                     break;
@@ -366,10 +366,10 @@ impl MessageEditor {
         let start_offset = end_offset - query.len();
         let start_anchor = buffer.read(cx).anchor_before(start_offset);
 
-        let mut names = HashSet::default();
+        let mut names = HashSet.default();
         if let Some(chat) = self.channel_chat.as_ref() {
             let chat = chat.read(cx);
-            for participant in ChannelStore::global(cx)
+            for participant in ChannelStore.global(cx)
                 .read(cx)
                 .channel_participants(chat.channel_id)
             {
@@ -389,7 +389,7 @@ impl MessageEditor {
                 string: user.clone(),
                 char_bag: user.chars().collect(),
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
 
         Some((start_anchor, query, candidates))
     }
@@ -402,14 +402,14 @@ impl MessageEditor {
     ) -> Option<(Anchor, String, &'static [StringMatchCandidate])> {
         lazy_static! {
             static ref EMOJI_FUZZY_MATCH_CANDIDATES: Vec<StringMatchCandidate> = {
-                let emojis = emojis::iter()
+                let emojis = emojis.iter()
                     .flat_map(|s| s.shortcodes())
                     .map(|emoji| StringMatchCandidate {
                         id: 0,
                         string: emoji.to_string(),
                         char_bag: emoji.chars().collect(),
                     })
-                    .collect::<Vec<_>>();
+                    .collect.<Vec<_>>();
                 emojis
             };
         }
@@ -417,7 +417,7 @@ impl MessageEditor {
         let end_offset = end_anchor.to_offset(buffer.read(cx));
 
         let Some(query) = buffer.update(cx, |buffer, _| {
-            let mut query = String::new();
+            let mut query = String.new();
             for ch in buffer.reversed_chars_at(end_offset).take(100) {
                 if ch == ':' {
                     let next_char = buffer
@@ -425,12 +425,12 @@ impl MessageEditor {
                         .next();
                     // Ensure we are at the start of the message or that the previous character is a whitespace
                     if next_char.is_none() || next_char.unwrap().is_whitespace() {
-                        return Some(query.chars().rev().collect::<String>());
+                        return Some(query.chars().rev().collect.<String>());
                     }
 
                     // If the previous character is not a whitespace, we are in the middle of a word
                     // and we only want to complete the shortcode if the word is made up of other emojis
-                    let mut containing_word = String::new();
+                    let mut containing_word = String.new();
                     for ch in buffer
                         .reversed_chars_at(end_offset - query.len() - 1)
                         .take(100)
@@ -440,9 +440,9 @@ impl MessageEditor {
                         }
                         containing_word.push(ch);
                     }
-                    let containing_word = containing_word.chars().rev().collect::<String>();
-                    if util::word_consists_of_emojis(containing_word.as_str()) {
-                        return Some(query.chars().rev().collect::<String>());
+                    let containing_word = containing_word.chars().rev().collect.<String>();
+                    if util.word_consists_of_emojis(containing_word.as_str()) {
+                        return Some(query.chars().rev().collect.<String>());
                     }
                     break;
                 }
@@ -476,9 +476,9 @@ impl MessageEditor {
             .await;
 
         this.update(&mut cx, |this, cx| {
-            let mut anchor_ranges = Vec::new();
-            let mut mentioned_user_ids = Vec::new();
-            let mut text = String::new();
+            let mut anchor_ranges = Vec.new();
+            let mut mentioned_user_ids = Vec.new();
+            let mut text = String.new();
 
             this.editor.update(cx, |editor, cx| {
                 let multi_buffer = editor.buffer().read(cx).snapshot(cx);
@@ -500,12 +500,12 @@ impl MessageEditor {
                     }
                 }
 
-                editor.clear_highlights::<Self>(cx);
-                editor.highlight_text::<Self>(
+                editor.clear_highlights.<Self>(cx);
+                editor.highlight_text.<Self>(
                     anchor_ranges,
                     HighlightStyle {
-                        font_weight: Some(FontWeight::BOLD),
-                        ..Default::default()
+                        font_weight: Some(FontWeight.BOLD),
+                        ..Default.default()
                     },
                     cx,
                 )
@@ -517,14 +517,14 @@ impl MessageEditor {
         .ok();
     }
 
-    pub(crate) fn focus_handle(&self, cx: &gpui::AppContext) -> gpui::FocusHandle {
+    pub(crate) fn focus_handle(&self, cx: &gpui.AppContext) -> gpui.FocusHandle {
         self.editor.read(cx).focus_handle(cx)
     }
 }
 
 impl Render for MessageEditor {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let settings = ThemeSettings::get_global(cx);
+        let settings = ThemeSettings.get_global(cx);
         let text_style = TextStyle {
             color: if self.editor.read(cx).read_only(cx) {
                 cx.theme().colors().text_disabled
@@ -534,11 +534,11 @@ impl Render for MessageEditor {
             font_family: settings.ui_font.family.clone(),
             font_features: settings.ui_font.features.clone(),
             font_fallbacks: settings.ui_font.fallbacks.clone(),
-            font_size: TextSize::Small.rems(cx).into(),
+            font_size: TextSize.Small.rems(cx).into(),
             font_weight: settings.ui_font.weight,
-            font_style: FontStyle::Normal,
+            font_style: FontStyle.Normal,
             line_height: relative(1.3),
-            ..Default::default()
+            ..Default.default()
         };
 
         div()
@@ -547,12 +547,12 @@ impl Render for MessageEditor {
             .py_1()
             .bg(cx.theme().colors().editor_background)
             .rounded_md()
-            .child(EditorElement::new(
+            .child(EditorElement.new(
                 &self.editor,
                 EditorStyle {
                     local_player: cx.theme().players().local(),
                     text: text_style,
-                    ..Default::default()
+                    ..Default.default()
                 },
             ))
     }

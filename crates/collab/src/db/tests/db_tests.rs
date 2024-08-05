@@ -1,7 +1,7 @@
-use super::*;
-use crate::test_both_dbs;
-use pretty_assertions::{assert_eq, assert_ne};
-use std::sync::Arc;
+use super.*;
+use crate.test_both_dbs;
+use pretty_assertions.{assert_eq, assert_ne};
+use std.sync.Arc;
 
 test_both_dbs!(
     test_get_users,
@@ -10,8 +10,8 @@ test_both_dbs!(
 );
 
 async fn test_get_users(db: &Arc<Database>) {
-    let mut user_ids = Vec::new();
-    let mut user_metric_ids = Vec::new();
+    let mut user_ids = Vec.new();
+    let mut user_metric_ids = Vec.new();
     for i in 1..=4 {
         let user = db
             .create_user(
@@ -39,7 +39,7 @@ async fn test_get_users(db: &Arc<Database>) {
                 user.github_user_id,
                 user.email_address
             ))
-            .collect::<Vec<_>>(),
+            .collect.<Vec<_>>(),
         vec![
             (
                 user_ids[0],
@@ -152,7 +152,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     let token_2 = db.create_access_token(user_1, None, "h2", 2).await.unwrap();
     assert_eq!(
         db.get_access_token(token_1).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_1,
             user_id: user_1,
             impersonated_user_id: None,
@@ -161,7 +161,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     );
     assert_eq!(
         db.get_access_token(token_2).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_2,
             user_id: user_1,
             impersonated_user_id: None,
@@ -172,7 +172,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     let token_3 = db.create_access_token(user_1, None, "h3", 2).await.unwrap();
     assert_eq!(
         db.get_access_token(token_3).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_3,
             user_id: user_1,
             impersonated_user_id: None,
@@ -181,7 +181,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     );
     assert_eq!(
         db.get_access_token(token_2).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_2,
             user_id: user_1,
             impersonated_user_id: None,
@@ -193,7 +193,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     let token_4 = db.create_access_token(user_1, None, "h4", 2).await.unwrap();
     assert_eq!(
         db.get_access_token(token_4).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_4,
             user_id: user_1,
             impersonated_user_id: None,
@@ -202,7 +202,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     );
     assert_eq!(
         db.get_access_token(token_3).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_3,
             user_id: user_1,
             impersonated_user_id: None,
@@ -220,7 +220,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
         .unwrap();
     assert_eq!(
         db.get_access_token(token_5).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_5,
             user_id: user_2,
             impersonated_user_id: Some(user_1),
@@ -229,7 +229,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     );
     assert_eq!(
         db.get_access_token(token_3).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_3,
             user_id: user_1,
             impersonated_user_id: None,
@@ -249,7 +249,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
         .unwrap();
     assert_eq!(
         db.get_access_token(token_6).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_6,
             user_id: user_2,
             impersonated_user_id: Some(user_1),
@@ -258,7 +258,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     );
     assert_eq!(
         db.get_access_token(token_7).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_7,
             user_id: user_2,
             impersonated_user_id: Some(user_1),
@@ -268,7 +268,7 @@ async fn test_create_access_tokens(db: &Arc<Database>) {
     assert!(db.get_access_token(token_5).await.is_err());
     assert_eq!(
         db.get_access_token(token_3).await.unwrap(),
-        access_token::Model {
+        access_token.Model {
             id: token_3,
             user_id: user_1,
             impersonated_user_id: None,
@@ -284,7 +284,7 @@ test_both_dbs!(
 );
 
 async fn test_add_contacts(db: &Arc<Database>) {
-    let mut user_ids = Vec::new();
+    let mut user_ids = Vec.new();
     for i in 0..3 {
         user_ids.push(
             db.create_user(
@@ -314,11 +314,11 @@ async fn test_add_contacts(db: &Arc<Database>) {
     assert!(!db.has_contact(user_2, user_1).await.unwrap());
     assert_eq!(
         db.get_contacts(user_1).await.unwrap(),
-        &[Contact::Outgoing { user_id: user_2 }],
+        &[Contact.Outgoing { user_id: user_2 }],
     );
     assert_eq!(
         db.get_contacts(user_2).await.unwrap(),
-        &[Contact::Incoming { user_id: user_1 }]
+        &[Contact.Incoming { user_id: user_1 }]
     );
 
     // User 2 dismisses the contact request notification without accepting or rejecting.
@@ -331,7 +331,7 @@ async fn test_add_contacts(db: &Arc<Database>) {
         .unwrap();
     assert_eq!(
         db.get_contacts(user_2).await.unwrap(),
-        &[Contact::Incoming { user_id: user_1 }]
+        &[Contact.Incoming { user_id: user_1 }]
     );
 
     // User can't accept their own contact request
@@ -345,7 +345,7 @@ async fn test_add_contacts(db: &Arc<Database>) {
         .unwrap();
     assert_eq!(
         db.get_contacts(user_1).await.unwrap(),
-        &[Contact::Accepted {
+        &[Contact.Accepted {
             user_id: user_2,
             busy: false,
         }],
@@ -354,7 +354,7 @@ async fn test_add_contacts(db: &Arc<Database>) {
     assert!(db.has_contact(user_2, user_1).await.unwrap());
     assert_eq!(
         db.get_contacts(user_2).await.unwrap(),
-        &[Contact::Accepted {
+        &[Contact.Accepted {
             user_id: user_1,
             busy: false,
         }]
@@ -370,7 +370,7 @@ async fn test_add_contacts(db: &Arc<Database>) {
         .unwrap_err();
     assert_eq!(
         db.get_contacts(user_1).await.unwrap(),
-        &[Contact::Accepted {
+        &[Contact.Accepted {
             user_id: user_2,
             busy: false,
         }]
@@ -382,7 +382,7 @@ async fn test_add_contacts(db: &Arc<Database>) {
         .unwrap();
     assert_eq!(
         db.get_contacts(user_1).await.unwrap(),
-        &[Contact::Accepted {
+        &[Contact.Accepted {
             user_id: user_2,
             busy: false,
         }]
@@ -395,11 +395,11 @@ async fn test_add_contacts(db: &Arc<Database>) {
     assert_eq!(
         db.get_contacts(user_1).await.unwrap(),
         &[
-            Contact::Accepted {
+            Contact.Accepted {
                 user_id: user_2,
                 busy: false,
             },
-            Contact::Accepted {
+            Contact.Accepted {
                 user_id: user_3,
                 busy: false,
             }
@@ -407,7 +407,7 @@ async fn test_add_contacts(db: &Arc<Database>) {
     );
     assert_eq!(
         db.get_contacts(user_3).await.unwrap(),
-        &[Contact::Accepted {
+        &[Contact.Accepted {
             user_id: user_1,
             busy: false,
         }],
@@ -422,14 +422,14 @@ async fn test_add_contacts(db: &Arc<Database>) {
     assert!(!db.has_contact(user_3, user_2).await.unwrap());
     assert_eq!(
         db.get_contacts(user_2).await.unwrap(),
-        &[Contact::Accepted {
+        &[Contact.Accepted {
             user_id: user_1,
             busy: false,
         }]
     );
     assert_eq!(
         db.get_contacts(user_3).await.unwrap(),
-        &[Contact::Accepted {
+        &[Contact.Accepted {
             user_id: user_1,
             busy: false,
         }],
@@ -513,7 +513,7 @@ async fn test_project_count(db: &Arc<Database>) {
         .await
         .unwrap();
 
-    let room_id = RoomId::from_proto(
+    let room_id = RoomId.from_proto(
         db.create_room(user1.user_id, ConnectionId { owner_id, id: 0 }, "")
             .await
             .unwrap()
@@ -557,15 +557,15 @@ async fn test_project_count(db: &Arc<Database>) {
 
 #[test]
 fn test_fuzzy_like_string() {
-    assert_eq!(Database::fuzzy_like_string("abcd"), "%a%b%c%d%");
-    assert_eq!(Database::fuzzy_like_string("x y"), "%x%y%");
-    assert_eq!(Database::fuzzy_like_string(" z  "), "%z%");
+    assert_eq!(Database.fuzzy_like_string("abcd"), "%a%b%c%d%");
+    assert_eq!(Database.fuzzy_like_string("x y"), "%x%y%");
+    assert_eq!(Database.fuzzy_like_string(" z  "), "%z%");
 }
 
 #[cfg(target_os = "macos")]
-#[gpui::test]
-async fn test_fuzzy_search_users(cx: &mut gpui::TestAppContext) {
-    let test_db = tests::TestDb::postgres(cx.executor());
+#[gpui.test]
+async fn test_fuzzy_search_users(cx: &mut gpui.TestAppContext) {
+    let test_db = tests.TestDb.postgres(cx.executor());
     let db = test_db.db();
     for (i, github_login) in [
         "California",
@@ -606,6 +606,6 @@ async fn test_fuzzy_search_users(cx: &mut gpui::TestAppContext) {
             .unwrap()
             .into_iter()
             .map(|user| user.github_login)
-            .collect::<Vec<_>>()
+            .collect.<Vec<_>>()
     }
 }

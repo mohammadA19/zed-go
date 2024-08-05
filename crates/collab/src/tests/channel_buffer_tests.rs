@@ -1,26 +1,26 @@
-use crate::{
-    rpc::{CLEANUP_TIMEOUT, RECONNECT_TIMEOUT},
-    tests::{test_server::open_channel_notes, TestServer},
+use crate.{
+    rpc.{CLEANUP_TIMEOUT, RECONNECT_TIMEOUT},
+    tests.{test_server.open_channel_notes, TestServer},
 };
-use call::ActiveCall;
-use channel::ACKNOWLEDGE_DEBOUNCE_INTERVAL;
-use client::{Collaborator, ParticipantIndex, UserId};
-use collab_ui::channel_view::ChannelView;
-use collections::HashMap;
-use editor::{Anchor, Editor, ToOffset};
-use futures::future;
-use gpui::{BackgroundExecutor, Model, TestAppContext, ViewContext};
-use rpc::{proto::PeerId, RECEIVE_TIMEOUT};
-use serde_json::json;
-use std::ops::Range;
+use call.ActiveCall;
+use channel.ACKNOWLEDGE_DEBOUNCE_INTERVAL;
+use client.{Collaborator, ParticipantIndex, UserId};
+use collab_ui.channel_view.ChannelView;
+use collections.HashMap;
+use editor.{Anchor, Editor, ToOffset};
+use futures.future;
+use gpui.{BackgroundExecutor, Model, TestAppContext, ViewContext};
+use rpc.{proto.PeerId, RECEIVE_TIMEOUT};
+use serde_json.json;
+use std.ops.Range;
 
-#[gpui::test]
+#[gpui.test]
 async fn test_core_channel_buffers(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -119,24 +119,24 @@ async fn test_core_channel_buffers(
     // - Test interaction with channel deletion while buffer is open
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_notes_participant_indices(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
 
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
-    cx_a.update(editor::init);
-    cx_b.update(editor::init);
-    cx_c.update(editor::init);
+    cx_a.update(editor.init);
+    cx_b.update(editor.init);
+    cx_c.update(editor.init);
 
     let channel_id = server
         .make_channel(
@@ -161,15 +161,15 @@ async fn test_channel_notes_participant_indices(
 
     // Clients A, B, and C open the channel notes
     let channel_view_a = cx_a
-        .update(|cx| ChannelView::open(channel_id, None, workspace_a.clone(), cx))
+        .update(|cx| ChannelView.open(channel_id, None, workspace_a.clone(), cx))
         .await
         .unwrap();
     let channel_view_b = cx_b
-        .update(|cx| ChannelView::open(channel_id, None, workspace_b.clone(), cx))
+        .update(|cx| ChannelView.open(channel_id, None, workspace_b.clone(), cx))
         .await
         .unwrap();
     let channel_view_c = cx_c
-        .update(|cx| ChannelView::open(channel_id, None, workspace_c.clone(), cx))
+        .update(|cx| ChannelView.open(channel_id, None, workspace_c.clone(), cx))
         .await
         .unwrap();
 
@@ -185,7 +185,7 @@ async fn test_channel_notes_participant_indices(
     executor.run_until_parked();
     channel_view_b.update(cx_b, |notes, cx| {
         notes.editor.update(cx, |editor, cx| {
-            editor.move_down(&Default::default(), cx);
+            editor.move_down(&Default.default(), cx);
             editor.insert("b", cx);
             editor.change_selections(None, cx, |selections| {
                 selections.select_ranges(vec![1..2]);
@@ -195,7 +195,7 @@ async fn test_channel_notes_participant_indices(
     executor.run_until_parked();
     channel_view_c.update(cx_c, |notes, cx| {
         notes.editor.update(cx, |editor, cx| {
-            editor.move_down(&Default::default(), cx);
+            editor.move_down(&Default.default(), cx);
             editor.insert("c", cx);
             editor.change_selections(None, cx, |selections| {
                 selections.select_ranges(vec![2..3]);
@@ -256,7 +256,7 @@ async fn test_channel_notes_participant_indices(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
     let editor_b = workspace_b
         .update(cx_b, |workspace, cx| {
@@ -264,7 +264,7 @@ async fn test_channel_notes_participant_indices(
         })
         .await
         .unwrap()
-        .downcast::<Editor>()
+        .downcast.<Editor>()
         .unwrap();
 
     editor_a.update(cx_a, |editor, cx| {
@@ -295,7 +295,7 @@ fn assert_remote_selections(
     cx: &mut ViewContext<Editor>,
 ) {
     let snapshot = editor.snapshot(cx);
-    let range = Anchor::min()..Anchor::max();
+    let range = Anchor.min()..Anchor.max();
     let remote_selections = snapshot
         .remote_selections_in_range(&range, editor.collaboration_hub().unwrap(), cx)
         .map(|s| {
@@ -303,19 +303,19 @@ fn assert_remote_selections(
             let end = s.selection.end.to_offset(&snapshot.buffer_snapshot);
             (s.participant_index, start..end)
         })
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     assert_eq!(
         remote_selections, expected_selections,
         "incorrect remote selections"
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_multiple_handles_to_channel_buffer(
     deterministic: BackgroundExecutor,
     cx_a: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(deterministic.clone()).await;
+    let mut server = TestServer.start(deterministic.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
 
     let channel_id = server
@@ -334,7 +334,7 @@ async fn test_multiple_handles_to_channel_buffer(
 
     // All concurrent tasks for opening a channel buffer return the same model handle.
     let (channel_buffer, channel_buffer_2, channel_buffer_3) =
-        future::try_join3(channel_buffer_1, channel_buffer_2, channel_buffer_3)
+        future.try_join3(channel_buffer_1, channel_buffer_2, channel_buffer_3)
             .await
             .unwrap();
     let channel_buffer_model_id = channel_buffer.entity_id();
@@ -369,13 +369,13 @@ async fn test_multiple_handles_to_channel_buffer(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_buffer_disconnect(
     deterministic: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(deterministic.clone()).await;
+    let mut server = TestServer.start(deterministic.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -432,13 +432,13 @@ async fn test_channel_buffer_disconnect(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_rejoin_channel_buffer(
     deterministic: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(deterministic.clone()).await;
+    let mut server = TestServer.start(deterministic.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -512,14 +512,14 @@ async fn test_rejoin_channel_buffer(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_buffers_and_server_restarts(
     deterministic: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(deterministic.clone()).await;
+    let mut server = TestServer.start(deterministic.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -557,7 +557,7 @@ async fn test_channel_buffers_and_server_restarts(
     deterministic.run_until_parked();
 
     // Client C can't reconnect.
-    client_c.override_establish_connection(|_, cx| cx.spawn(|_| future::pending()));
+    client_c.override_establish_connection(|_, cx| cx.spawn(|_| future.pending()));
 
     // Server stops.
     server.reset().await;
@@ -599,13 +599,13 @@ async fn test_channel_buffers_and_server_restarts(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_buffer_changes(
     deterministic: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let (server, client_a, client_b, channel_id) = TestServer::start2(cx_a, cx_b).await;
+    let (server, client_a, client_b, channel_id) = TestServer.start2(cx_a, cx_b).await;
     let (_, cx_a) = client_a.build_test_workspace(cx_a).await;
     let (workspace_b, cx_b) = client_b.build_test_workspace(cx_b).await;
     let channel_store_b = client_b.channel_store().clone();
@@ -641,7 +641,7 @@ async fn test_channel_buffer_changes(
     // Closing the buffer should re-enable change tracking
     cx_b.update(|cx| {
         workspace_b.update(cx, |workspace, cx| {
-            workspace.close_all_items_and_panes(&Default::default(), cx)
+            workspace.close_all_items_and_panes(&Default.default(), cx)
         });
     });
     deterministic.run_until_parked();
@@ -652,13 +652,13 @@ async fn test_channel_buffer_changes(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_buffer_changes_persist(
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_b2: &mut TestAppContext,
 ) {
-    let (mut server, client_a, client_b, channel_id) = TestServer::start2(cx_a, cx_b).await;
+    let (mut server, client_a, client_b, channel_id) = TestServer.start2(cx_a, cx_b).await;
     let (_, cx_a) = client_a.build_test_workspace(cx_a).await;
     let (_, cx_b) = client_b.build_test_workspace(cx_b).await;
 
@@ -681,14 +681,14 @@ fn assert_collaborators(collaborators: &HashMap<PeerId, Collaborator>, ids: &[Op
     let mut user_ids = collaborators
         .values()
         .map(|collaborator| collaborator.user_id)
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     user_ids.sort();
     assert_eq!(
         user_ids,
-        ids.into_iter().map(|id| id.unwrap()).collect::<Vec<_>>()
+        ids.into_iter().map(|id| id.unwrap()).collect.<Vec<_>>()
     );
 }
 
-fn buffer_text(channel_buffer: &Model<language::Buffer>, cx: &mut TestAppContext) -> String {
+fn buffer_text(channel_buffer: &Model<language.Buffer>, cx: &mut TestAppContext) -> String {
     channel_buffer.read_with(cx, |buffer, _| buffer.text())
 }

@@ -2,38 +2,38 @@ pub mod call_settings;
 pub mod participant;
 pub mod room;
 
-use anyhow::{anyhow, Result};
-use audio::Audio;
-use call_settings::CallSettings;
-use client::{proto, ChannelId, Client, TypedEnvelope, User, UserStore, ZED_ALWAYS_ACTIVE};
-use collections::HashSet;
-use futures::{channel::oneshot, future::Shared, Future, FutureExt};
-use gpui::{
+use anyhow.{anyhow, Result};
+use audio.Audio;
+use call_settings.CallSettings;
+use client.{proto, ChannelId, Client, TypedEnvelope, User, UserStore, ZED_ALWAYS_ACTIVE};
+use collections.HashSet;
+use futures.{channel.oneshot, future.Shared, Future, FutureExt};
+use gpui.{
     AppContext, AsyncAppContext, Context, EventEmitter, Global, Model, ModelContext, Subscription,
     Task, WeakModel,
 };
-use postage::watch;
-use project::Project;
-use room::Event;
-use settings::Settings;
-use std::sync::Arc;
+use postage.watch;
+use project.Project;
+use room.Event;
+use settings.Settings;
+use std.sync.Arc;
 
-pub use participant::ParticipantLocation;
-pub use room::Room;
+pub use participant.ParticipantLocation;
+pub use room.Room;
 
 struct GlobalActiveCall(Model<ActiveCall>);
 
 impl Global for GlobalActiveCall {}
 
 pub fn init(client: Arc<Client>, user_store: Model<UserStore>, cx: &mut AppContext) {
-    CallSettings::register(cx);
+    CallSettings.register(cx);
 
-    let active_call = cx.new_model(|cx| ActiveCall::new(client, user_store, cx));
+    let active_call = cx.new_model(|cx| ActiveCall.new(client, user_store, cx));
     cx.set_global(GlobalActiveCall(active_call));
 }
 
 pub struct OneAtATime {
-    cancel: Option<oneshot::Sender<()>>,
+    cancel: Option<oneshot.Sender<()>>,
 }
 
 impl OneAtATime {
@@ -46,10 +46,10 @@ impl OneAtATime {
         Fut: Future<Output = Result<R>>,
         R: 'static,
     {
-        let (tx, rx) = oneshot::channel();
+        let (tx, rx) = oneshot.channel();
         self.cancel.replace(tx);
         cx.spawn(|cx| async move {
-            futures::select_biased! {
+            futures.select_biased! {
                 _ = rx.fuse() => Ok(None),
                 result = f(cx).fuse() => result.map(Some),
             }
@@ -68,23 +68,23 @@ pub struct IncomingCall {
     pub room_id: u64,
     pub calling_user: Arc<User>,
     pub participants: Vec<Arc<User>>,
-    pub initial_project: Option<proto::ParticipantProject>,
+    pub initial_project: Option<proto.ParticipantProject>,
 }
 
 /// Singleton global maintaining the user's participation in a room across workspaces.
 pub struct ActiveCall {
     room: Option<(Model<Room>, Vec<Subscription>)>,
-    pending_room_creation: Option<Shared<Task<Result<Model<Room>, Arc<anyhow::Error>>>>>,
+    pending_room_creation: Option<Shared<Task<Result<Model<Room>, Arc<anyhow.Error>>>>>,
     location: Option<WeakModel<Project>>,
     _join_debouncer: OneAtATime,
     pending_invites: HashSet<u64>,
     incoming_call: (
-        watch::Sender<Option<IncomingCall>>,
-        watch::Receiver<Option<IncomingCall>>,
+        watch.Sender<Option<IncomingCall>>,
+        watch.Receiver<Option<IncomingCall>>,
     ),
     client: Arc<Client>,
     user_store: Model<UserStore>,
-    _subscriptions: Vec<client::Subscription>,
+    _subscriptions: Vec<client.Subscription>,
 }
 
 impl EventEmitter<Event> for ActiveCall {}
@@ -95,12 +95,12 @@ impl ActiveCall {
             room: None,
             pending_room_creation: None,
             location: None,
-            pending_invites: Default::default(),
-            incoming_call: watch::channel(),
+            pending_invites: Default.default(),
+            incoming_call: watch.channel(),
             _join_debouncer: OneAtATime { cancel: None },
             _subscriptions: vec![
-                client.add_request_handler(cx.weak_model(), Self::handle_incoming_call),
-                client.add_message_handler(cx.weak_model(), Self::handle_call_canceled),
+                client.add_request_handler(cx.weak_model(), Self.handle_incoming_call),
+                client.add_message_handler(cx.weak_model(), Self.handle_call_canceled),
             ],
             client,
             user_store,
@@ -113,9 +113,9 @@ impl ActiveCall {
 
     async fn handle_incoming_call(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::IncomingCall>,
+        envelope: TypedEnvelope<proto.IncomingCall>,
         mut cx: AsyncAppContext,
-    ) -> Result<proto::Ack> {
+    ) -> Result<proto.Ack> {
         let user_store = this.update(&mut cx, |this, _| this.user_store.clone())?;
         let call = IncomingCall {
             room_id: envelope.payload.room_id,
@@ -135,12 +135,12 @@ impl ActiveCall {
             *this.incoming_call.0.borrow_mut() = Some(call);
         })?;
 
-        Ok(proto::Ack {})
+        Ok(proto.Ack {})
     }
 
     async fn handle_call_canceled(
         this: Model<Self>,
-        envelope: TypedEnvelope<proto::CallCanceled>,
+        envelope: TypedEnvelope<proto.CallCanceled>,
         mut cx: AsyncAppContext,
     ) -> Result<()> {
         this.update(&mut cx, |this, _| {
@@ -156,11 +156,11 @@ impl ActiveCall {
     }
 
     pub fn global(cx: &AppContext) -> Model<Self> {
-        cx.global::<GlobalActiveCall>().0.clone()
+        cx.global.<GlobalActiveCall>().0.clone()
     }
 
     pub fn try_global(cx: &AppContext) -> Option<Model<Self>> {
-        cx.try_global::<GlobalActiveCall>()
+        cx.try_global.<GlobalActiveCall>()
             .map(|call| call.0.clone())
     }
 
@@ -171,16 +171,16 @@ impl ActiveCall {
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<()>> {
         if !self.pending_invites.insert(called_user_id) {
-            return Task::ready(Err(anyhow!("user was already invited")));
+            return Task.ready(Err(anyhow!("user was already invited")));
         }
         cx.notify();
 
         if self._join_debouncer.running() {
-            return Task::ready(Ok(()));
+            return Task.ready(Ok(()));
         }
 
         let room = if let Some(room) = self.room().cloned() {
-            Some(Task::ready(Ok(room)).shared())
+            Some(Task.ready(Ok(room)).shared())
         } else {
             self.pending_room_creation.clone()
         };
@@ -203,7 +203,7 @@ impl ActiveCall {
                 })?
                 .await?;
 
-                anyhow::Ok(())
+                anyhow.Ok(())
             })
         } else {
             let client = self.client.clone();
@@ -213,7 +213,7 @@ impl ActiveCall {
                     let create_room = async {
                         let room = cx
                             .update(|cx| {
-                                Room::create(
+                                Room.create(
                                     called_user_id,
                                     initial_project,
                                     client,
@@ -226,18 +226,18 @@ impl ActiveCall {
                         this.update(&mut cx, |this, cx| this.set_room(Some(room.clone()), cx))?
                             .await?;
 
-                        anyhow::Ok(room)
+                        anyhow.Ok(room)
                     };
 
                     let room = create_room.await;
                     this.update(&mut cx, |this, _| this.pending_room_creation = None)?;
-                    room.map_err(Arc::new)
+                    room.map_err(Arc.new)
                 })
                 .shared();
             self.pending_room_creation = Some(room.clone());
             cx.background_executor().spawn(async move {
                 room.await.map_err(|err| anyhow!("{:?}", err))?;
-                anyhow::Ok(())
+                anyhow.Ok(())
             })
         };
 
@@ -247,7 +247,7 @@ impl ActiveCall {
                 this.update(&mut cx, |this, cx| this.report_call_event("invite", cx))?;
             } else {
                 //TODO: report collaboration error
-                log::error!("invite failed: {:?}", result);
+                log.error!("invite failed: {:?}", result);
             }
 
             this.update(&mut cx, |this, cx| {
@@ -266,38 +266,38 @@ impl ActiveCall {
         let room_id = if let Some(room) = self.room() {
             room.read(cx).id()
         } else {
-            return Task::ready(Err(anyhow!("no active call")));
+            return Task.ready(Err(anyhow!("no active call")));
         };
 
         let client = self.client.clone();
         cx.background_executor().spawn(async move {
             client
-                .request(proto::CancelCall {
+                .request(proto.CancelCall {
                     room_id,
                     called_user_id,
                 })
                 .await?;
-            anyhow::Ok(())
+            anyhow.Ok(())
         })
     }
 
-    pub fn incoming(&self) -> watch::Receiver<Option<IncomingCall>> {
+    pub fn incoming(&self) -> watch.Receiver<Option<IncomingCall>> {
         self.incoming_call.1.clone()
     }
 
     pub fn accept_incoming(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<()>> {
         if self.room.is_some() {
-            return Task::ready(Err(anyhow!("cannot join while on another call")));
+            return Task.ready(Err(anyhow!("cannot join while on another call")));
         }
 
         let call = if let Some(call) = self.incoming_call.0.borrow_mut().take() {
             call
         } else {
-            return Task::ready(Err(anyhow!("no incoming call")));
+            return Task.ready(Err(anyhow!("no incoming call")));
         };
 
         if self.pending_room_creation.is_some() {
-            return Task::ready(Ok(()));
+            return Task.ready(Ok(()));
         }
 
         let room_id = call.room_id;
@@ -305,7 +305,7 @@ impl ActiveCall {
         let user_store = self.user_store.clone();
         let join = self
             ._join_debouncer
-            .spawn(cx, move |cx| Room::join(room_id, client, user_store, cx));
+            .spawn(cx, move |cx| Room.join(room_id, client, user_store, cx));
 
         cx.spawn(|this, mut cx| async move {
             let room = join.await?;
@@ -326,7 +326,7 @@ impl ActiveCall {
             .take()
             .ok_or_else(|| anyhow!("no incoming call"))?;
         report_call_event_for_room("decline incoming", call.room_id, None, &self.client);
-        self.client.send(proto::DeclineCall {
+        self.client.send(proto.DeclineCall {
             room_id: call.room_id,
         })?;
         Ok(())
@@ -339,20 +339,20 @@ impl ActiveCall {
     ) -> Task<Result<Option<Model<Room>>>> {
         if let Some(room) = self.room().cloned() {
             if room.read(cx).channel_id() == Some(channel_id) {
-                return Task::ready(Ok(Some(room)));
+                return Task.ready(Ok(Some(room)));
             } else {
                 room.update(cx, |room, cx| room.clear_state(cx));
             }
         }
 
         if self.pending_room_creation.is_some() {
-            return Task::ready(Ok(None));
+            return Task.ready(Ok(None));
         }
 
         let client = self.client.clone();
         let user_store = self.user_store.clone();
         let join = self._join_debouncer.spawn(cx, move |cx| async move {
-            Room::join_channel(channel_id, client, user_store, cx).await
+            Room.join_channel(channel_id, client, user_store, cx).await
         });
 
         cx.spawn(|this, mut cx| async move {
@@ -370,14 +370,14 @@ impl ActiveCall {
         cx.notify();
         self.report_call_event("hang up", cx);
 
-        Audio::end_call(cx);
+        Audio.end_call(cx);
 
         let channel_id = self.channel_id(cx);
         if let Some((room, _)) = self.room.take() {
-            cx.emit(Event::RoomLeft { channel_id });
+            cx.emit(Event.RoomLeft { channel_id });
             room.update(cx, |room, cx| room.leave(cx))
         } else {
-            Task::ready(Ok(()))
+            Task.ready(Ok(()))
         }
     }
 
@@ -390,7 +390,7 @@ impl ActiveCall {
             self.report_call_event("share project", cx);
             room.update(cx, |room, cx| room.share_project(project, cx))
         } else {
-            Task::ready(Err(anyhow!("no active call")))
+            Task.ready(Err(anyhow!("no active call")))
         }
     }
 
@@ -422,7 +422,7 @@ impl ActiveCall {
                 return room.update(cx, |room, cx| room.set_location(project, cx));
             }
         }
-        Task::ready(Ok(()))
+        Task.ready(Ok(()))
     }
 
     fn set_room(
@@ -431,13 +431,13 @@ impl ActiveCall {
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<()>> {
         if room.as_ref() == self.room.as_ref().map(|room| &room.0) {
-            Task::ready(Ok(()))
+            Task.ready(Ok(()))
         } else {
             cx.notify();
             if let Some(room) = room {
                 if room.read(cx).status().is_offline() {
                     self.room = None;
-                    Task::ready(Ok(()))
+                    Task.ready(Ok(()))
                 } else {
                     let subscriptions = vec![
                         cx.observe(&room, |this, room, cx| {
@@ -455,12 +455,12 @@ impl ActiveCall {
                         .as_ref()
                         .and_then(|location| location.upgrade());
                     let channel_id = room.read(cx).channel_id();
-                    cx.emit(Event::RoomJoined { channel_id });
+                    cx.emit(Event.RoomJoined { channel_id });
                     room.update(cx, |room, cx| room.set_location(location.as_ref(), cx))
                 }
             } else {
                 self.room = None;
-                Task::ready(Ok(()))
+                Task.ready(Ok(()))
             }
         }
     }
@@ -502,7 +502,7 @@ pub fn report_call_event_for_channel(
     client: &Arc<Client>,
     cx: &AppContext,
 ) {
-    let room = ActiveCall::global(cx).read(cx).room();
+    let room = ActiveCall.global(cx).read(cx).room();
 
     let telemetry = client.telemetry();
 
@@ -511,11 +511,11 @@ pub fn report_call_event_for_channel(
 
 #[cfg(test)]
 mod test {
-    use gpui::TestAppContext;
+    use gpui.TestAppContext;
 
-    use crate::OneAtATime;
+    use crate.OneAtATime;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_one_at_a_time(cx: &mut TestAppContext) {
         let mut one_at_a_time = OneAtATime { cancel: None };
 

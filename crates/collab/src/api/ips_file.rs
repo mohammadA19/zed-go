@@ -1,8 +1,8 @@
-use collections::HashMap;
+use collections.HashMap;
 
-use semantic_version::SemanticVersion;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use semantic_version.SemanticVersion;
+use serde.{Deserialize, Serialize};
+use serde_json.Value;
 
 #[derive(Debug)]
 pub struct IpsFile {
@@ -11,20 +11,20 @@ pub struct IpsFile {
 }
 
 impl IpsFile {
-    pub fn parse(bytes: &[u8]) -> anyhow::Result<IpsFile> {
+    pub fn parse(bytes: &[u8]) -> anyhow.Result<IpsFile> {
         let mut split = bytes.splitn(2, |&b| b == b'\n');
         let header_bytes = split
             .next()
-            .ok_or_else(|| anyhow::anyhow!("No header found"))?;
-        let header: Header = serde_json::from_slice(header_bytes)
-            .map_err(|e| anyhow::anyhow!("Failed to parse header: {}", e))?;
+            .ok_or_else(|| anyhow.anyhow!("No header found"))?;
+        let header: Header = serde_json.from_slice(header_bytes)
+            .map_err(|e| anyhow.anyhow!("Failed to parse header: {}", e))?;
 
         let body_bytes = split
             .next()
-            .ok_or_else(|| anyhow::anyhow!("No body found"))?;
+            .ok_or_else(|| anyhow.anyhow!("No body found"))?;
 
-        let body: Body = serde_json::from_slice(body_bytes)
-            .map_err(|e| anyhow::anyhow!("Failed to parse body: {}", e))?;
+        let body: Body = serde_json.from_slice(body_bytes)
+            .map_err(|e| anyhow.anyhow!("Failed to parse body: {}", e))?;
         Ok(IpsFile { header, body })
     }
 
@@ -36,9 +36,9 @@ impl IpsFile {
         self.header.app_version.parse().ok()
     }
 
-    pub fn timestamp(&self) -> anyhow::Result<chrono::DateTime<chrono::FixedOffset>> {
-        chrono::DateTime::parse_from_str(&self.header.timestamp, "%Y-%m-%d %H:%M:%S%.f %#z")
-            .map_err(|e| anyhow::anyhow!(e))
+    pub fn timestamp(&self) -> anyhow.Result<chrono.DateTime<chrono.FixedOffset>> {
+        chrono.DateTime.parse_from_str(&self.header.timestamp, "%Y-%m-%d %H:%M:%S%.f %#z")
+            .map_err(|e| anyhow.anyhow!(e))
     }
 
     pub fn description(&self, panic: Option<&str>) -> String {
@@ -80,14 +80,14 @@ impl IpsFile {
                         if self.is_ignorable_frame(name) {
                             return None;
                         }
-                        Some(format!("{:#}", rustc_demangle::demangle(name)))
+                        Some(format!("{:#}", rustc_demangle.demangle(name)))
                     } else if let Some(image) = self.body.used_images.get(frame.image_index) {
                         Some(image.name.clone().unwrap_or("<unknown-image>".into()))
                     } else {
                         Some("<unknown>".into())
                     }
                 })
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
             let total = frames.len();
             if total > 21 {

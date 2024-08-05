@@ -1,6 +1,6 @@
-use crate::db::{FollowerId, ProjectId, RoomId, ServerId};
-use rpc::ConnectionId;
-use sea_orm::entity::prelude::*;
+use crate.db.{FollowerId, ProjectId, RoomId, ServerId};
+use rpc.ConnectionId;
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "followers")]
@@ -34,16 +34,16 @@ impl Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::room::Entity",
-        from = "Column::RoomId",
-        to = "super::room::Column::Id"
+        belongs_to = "super.room.Entity",
+        from = "Column.RoomId",
+        to = "super.room.Column.Id"
     )]
     Room,
 }
 
-impl Related<super::room::Entity> for Entity {
+impl Related<super.room.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Room.def()
+        Relation.Room.def()
     }
 }
 

@@ -5,52 +5,52 @@ mod toolbar_controls;
 #[cfg(test)]
 mod diagnostics_tests;
 
-use anyhow::Result;
-use collections::{BTreeSet, HashSet};
-use editor::{
+use anyhow.Result;
+use collections.{BTreeSet, HashSet};
+use editor.{
     diagnostic_block_renderer,
-    display_map::{BlockDisposition, BlockProperties, BlockStyle, CustomBlockId, RenderBlock},
+    display_map.{BlockDisposition, BlockProperties, BlockStyle, CustomBlockId, RenderBlock},
     highlight_diagnostic_message,
-    scroll::Autoscroll,
+    scroll.Autoscroll,
     Editor, EditorEvent, ExcerptId, ExcerptRange, MultiBuffer, ToOffset,
 };
-use futures::{
-    channel::mpsc::{self, UnboundedSender},
+use futures.{
+    channel.mpsc.{self, UnboundedSender},
     StreamExt as _,
 };
-use gpui::{
+use gpui.{
     actions, div, svg, AnyElement, AnyView, AppContext, Context, EventEmitter, FocusHandle,
     FocusableView, HighlightStyle, InteractiveElement, IntoElement, Model, ParentElement, Render,
     SharedString, Styled, StyledText, Subscription, Task, View, ViewContext, VisualContext,
     WeakView, WindowContext,
 };
-use language::{
+use language.{
     Bias, Buffer, Diagnostic, DiagnosticEntry, DiagnosticSeverity, Point, Selection, SelectionGoal,
 };
-use lsp::LanguageServerId;
-use project::{DiagnosticSummary, Project, ProjectPath};
-use project_diagnostics_settings::ProjectDiagnosticsSettings;
-use settings::Settings;
-use std::{
-    any::{Any, TypeId},
-    cmp::Ordering,
+use lsp.LanguageServerId;
+use project.{DiagnosticSummary, Project, ProjectPath};
+use project_diagnostics_settings.ProjectDiagnosticsSettings;
+use settings.Settings;
+use std.{
+    any.{Any, TypeId},
+    cmp.Ordering,
     mem,
-    ops::Range,
+    ops.Range,
 };
-use theme::ActiveTheme;
-pub use toolbar_controls::ToolbarControls;
-use ui::{h_flex, prelude::*, Icon, IconName, Label};
-use util::ResultExt;
-use workspace::{
-    item::{BreadcrumbText, Item, ItemEvent, ItemHandle, TabContentParams},
+use theme.ActiveTheme;
+pub use toolbar_controls.ToolbarControls;
+use ui.{h_flex, prelude.*, Icon, IconName, Label};
+use util.ResultExt;
+use workspace.{
+    item.{BreadcrumbText, Item, ItemEvent, ItemHandle, TabContentParams},
     ItemNavHistory, ToolbarItemLocation, Workspace,
 };
 
 actions!(diagnostics, [Deploy, ToggleWarnings]);
 
 pub fn init(cx: &mut AppContext) {
-    ProjectDiagnosticsSettings::register(cx);
-    cx.observe_new_views(ProjectDiagnosticsEditor::register)
+    ProjectDiagnosticsSettings.register(cx);
+    cx.observe_new_views(ProjectDiagnosticsEditor.register)
         .detach();
 }
 
@@ -77,7 +77,7 @@ struct PathState {
 
 struct DiagnosticGroupState {
     language_server_id: LanguageServerId,
-    primary_diagnostic: DiagnosticEntry<language::Anchor>,
+    primary_diagnostic: DiagnosticEntry<language.Anchor>,
     primary_excerpt_ix: usize,
     excerpts: Vec<ExcerptId>,
     blocks: HashSet<CustomBlockId>,
@@ -95,7 +95,7 @@ impl Render for ProjectDiagnosticsEditor {
                 .items_center()
                 .justify_center()
                 .size_full()
-                .child(Label::new("No problems in workspace"))
+                .child(Label.new("No problems in workspace"))
         } else {
             div().size_full().child(self.editor.clone())
         };
@@ -106,14 +106,14 @@ impl Render for ProjectDiagnosticsEditor {
                 el.key_context("EmptyPane")
             })
             .size_full()
-            .on_action(cx.listener(Self::toggle_warnings))
+            .on_action(cx.listener(Self.toggle_warnings))
             .child(child)
     }
 }
 
 impl ProjectDiagnosticsEditor {
     fn register(workspace: &mut Workspace, _: &mut ViewContext<Workspace>) {
-        workspace.register_action(Self::deploy);
+        workspace.register_action(Self.deploy);
     }
 
     fn new_with_context(
@@ -124,26 +124,26 @@ impl ProjectDiagnosticsEditor {
     ) -> Self {
         let project_event_subscription =
             cx.subscribe(&project_handle, |this, project, event, cx| match event {
-                project::Event::DiskBasedDiagnosticsStarted { .. } => {
+                project.Event.DiskBasedDiagnosticsStarted { .. } => {
                     cx.notify();
                 }
-                project::Event::DiskBasedDiagnosticsFinished { language_server_id } => {
-                    log::debug!("disk based diagnostics finished for server {language_server_id}");
+                project.Event.DiskBasedDiagnosticsFinished { language_server_id } => {
+                    log.debug!("disk based diagnostics finished for server {language_server_id}");
                     this.enqueue_update_stale_excerpts(Some(*language_server_id));
                 }
-                project::Event::DiagnosticsUpdated {
+                project.Event.DiagnosticsUpdated {
                     language_server_id,
                     path,
                 } => {
                     this.paths_to_update
                         .insert((path.clone(), *language_server_id));
                     this.summary = project.read(cx).diagnostic_summary(false, cx);
-                    cx.emit(EditorEvent::TitleChanged);
+                    cx.emit(EditorEvent.TitleChanged);
 
                     if this.editor.focus_handle(cx).contains_focused(cx) || this.focus_handle.contains_focused(cx) {
-                        log::debug!("diagnostics updated for server {language_server_id}, path {path:?}. recording change");
+                        log.debug!("diagnostics updated for server {language_server_id}, path {path:?}. recording change");
                     } else {
-                        log::debug!("diagnostics updated for server {language_server_id}, path {path:?}. updating excerpts");
+                        log.debug!("diagnostics updated for server {language_server_id}, path {path:?}. updating excerpts");
                         this.enqueue_update_stale_excerpts(Some(*language_server_id));
                     }
                 }
@@ -157,32 +157,32 @@ impl ProjectDiagnosticsEditor {
             .detach();
 
         let excerpts = cx.new_model(|cx| {
-            MultiBuffer::new(
+            MultiBuffer.new(
                 project_handle.read(cx).replica_id(),
                 project_handle.read(cx).capability(),
             )
         });
         let editor = cx.new_view(|cx| {
             let mut editor =
-                Editor::for_multibuffer(excerpts.clone(), Some(project_handle.clone()), false, cx);
+                Editor.for_multibuffer(excerpts.clone(), Some(project_handle.clone()), false, cx);
             editor.set_vertical_scroll_margin(5, cx);
             editor
         });
         cx.subscribe(&editor, |this, _editor, event: &EditorEvent, cx| {
             cx.emit(event.clone());
             match event {
-                EditorEvent::Focused => {
+                EditorEvent.Focused => {
                     if this.path_states.is_empty() {
                         cx.focus(&this.focus_handle);
                     }
                 }
-                EditorEvent::Blurred => this.enqueue_update_stale_excerpts(None),
+                EditorEvent.Blurred => this.enqueue_update_stale_excerpts(None),
                 _ => {}
             }
         })
         .detach();
 
-        let (update_excerpts_tx, mut update_excerpts_rx) = mpsc::unbounded();
+        let (update_excerpts_tx, mut update_excerpts_rx) = mpsc.unbounded();
 
         let project = project_handle.read(cx);
         let mut this = Self {
@@ -193,9 +193,9 @@ impl ProjectDiagnosticsEditor {
             excerpts,
             focus_handle,
             editor,
-            path_states: Default::default(),
-            paths_to_update: Default::default(),
-            include_warnings: ProjectDiagnosticsSettings::get_global(cx).include_warnings,
+            path_states: Default.default(),
+            paths_to_update: Default.default(),
+            include_warnings: ProjectDiagnosticsSettings.get_global(cx).include_warnings,
             update_paths_tx: update_excerpts_tx,
             _update_excerpts_task: cx.spawn(move |this, mut cx| async move {
                 while let Some((path, language_server_id)) = update_excerpts_rx.next().await {
@@ -209,7 +209,7 @@ impl ProjectDiagnosticsEditor {
                         })?;
                     }
                 }
-                anyhow::Ok(())
+                anyhow.Ok(())
             }),
             _subscription: project_event_subscription,
         };
@@ -222,8 +222,8 @@ impl ProjectDiagnosticsEditor {
         workspace: WeakView<Workspace>,
         cx: &mut ViewContext<Self>,
     ) -> Self {
-        Self::new_with_context(
-            editor::DEFAULT_MULTIBUFFER_CONTEXT,
+        Self.new_with_context(
+            editor.DEFAULT_MULTIBUFFER_CONTEXT,
             project_handle,
             workspace,
             cx,
@@ -231,14 +231,14 @@ impl ProjectDiagnosticsEditor {
     }
 
     fn deploy(workspace: &mut Workspace, _: &Deploy, cx: &mut ViewContext<Workspace>) {
-        if let Some(existing) = workspace.item_of_type::<ProjectDiagnosticsEditor>(cx) {
+        if let Some(existing) = workspace.item_of_type.<ProjectDiagnosticsEditor>(cx) {
             workspace.activate_item(&existing, true, true, cx);
         } else {
             let workspace_handle = cx.view().downgrade();
             let diagnostics = cx.new_view(|cx| {
-                ProjectDiagnosticsEditor::new(workspace.project().clone(), workspace_handle, cx)
+                ProjectDiagnosticsEditor.new(workspace.project().clone(), workspace_handle, cx)
             });
-            workspace.add_item_to_active_pane(Box::new(diagnostics), None, true, cx);
+            workspace.add_item_to_active_pane(Box.new(diagnostics), None, true, cx);
         }
     }
 
@@ -267,7 +267,7 @@ impl ProjectDiagnosticsEditor {
             let mut paths = project
                 .diagnostic_summaries(false, cx)
                 .map(|(path, _, _)| path)
-                .collect::<BTreeSet<_>>();
+                .collect.<BTreeSet<_>>();
             paths.extend(self.path_states.iter().map(|state| state.path.clone()));
             for path in paths {
                 self.update_paths_tx.unbounded_send((path, None)).unwrap();
@@ -313,7 +313,7 @@ impl ProjectDiagnosticsEditor {
                     ix,
                     PathState {
                         path: path_to_update.clone(),
-                        diagnostic_groups: Default::default(),
+                        diagnostic_groups: Default.default(),
                     },
                 );
                 ix
@@ -327,21 +327,21 @@ impl ProjectDiagnosticsEditor {
                 .unwrap();
             *prev_path_last_group.excerpts.last().unwrap()
         } else {
-            ExcerptId::min()
+            ExcerptId.min()
         };
 
         let path_state = &mut self.path_states[path_ix];
-        let mut new_group_ixs = Vec::new();
-        let mut blocks_to_add = Vec::new();
-        let mut blocks_to_remove = HashSet::default();
+        let mut new_group_ixs = Vec.new();
+        let mut blocks_to_add = Vec.new();
+        let mut blocks_to_remove = HashSet.default();
         let mut first_excerpt_id = None;
         let max_severity = if self.include_warnings {
-            DiagnosticSeverity::WARNING
+            DiagnosticSeverity.WARNING
         } else {
-            DiagnosticSeverity::ERROR
+            DiagnosticSeverity.ERROR
         };
         let excerpts_snapshot = self.excerpts.update(cx, |excerpts, cx| {
-            let mut old_groups = mem::take(&mut path_state.diagnostic_groups)
+            let mut old_groups = mem.take(&mut path_state.diagnostic_groups)
                 .into_iter()
                 .enumerate()
                 .peekable();
@@ -372,7 +372,7 @@ impl ProjectDiagnosticsEditor {
                         match compare_diagnostics(old_primary, new_primary, &snapshot)
                             .then_with(|| old_group.language_server_id.cmp(new_language_server_id))
                         {
-                            Ordering::Less => {
+                            Ordering.Less => {
                                 if server_to_update
                                     .map_or(true, |id| id == old_group.language_server_id)
                                 {
@@ -381,11 +381,11 @@ impl ProjectDiagnosticsEditor {
                                     to_keep = old_groups.next();
                                 }
                             }
-                            Ordering::Equal => {
+                            Ordering.Equal => {
                                 to_keep = old_groups.next();
                                 new_groups.next();
                             }
-                            Ordering::Greater => to_insert = new_groups.next(),
+                            Ordering.Greater => to_insert = new_groups.next(),
                         }
                     }
                 }
@@ -395,14 +395,14 @@ impl ProjectDiagnosticsEditor {
                         language_server_id,
                         primary_diagnostic: group.entries[group.primary_ix].clone(),
                         primary_excerpt_ix: 0,
-                        excerpts: Default::default(),
-                        blocks: Default::default(),
+                        excerpts: Default.default(),
+                        blocks: Default.default(),
                         block_count: 0,
                     };
                     let mut pending_range: Option<(Range<Point>, usize)> = None;
                     let mut is_first_excerpt_for_group = true;
                     for (ix, entry) in group.entries.iter().map(Some).chain([None]).enumerate() {
-                        let resolved_entry = entry.map(|e| e.resolve::<Point>(&snapshot));
+                        let resolved_entry = entry.map(|e| e.resolve.<Point>(&snapshot));
                         if let Some((range, start_ix)) = &mut pending_range {
                             if let Some(entry) = resolved_entry.as_ref() {
                                 if entry.range.start.row <= range.end.row + 1 + self.context * 2 {
@@ -412,10 +412,10 @@ impl ProjectDiagnosticsEditor {
                             }
 
                             let excerpt_start =
-                                Point::new(range.start.row.saturating_sub(self.context), 0);
+                                Point.new(range.start.row.saturating_sub(self.context), 0);
                             let excerpt_end = snapshot.clip_point(
-                                Point::new(range.end.row + self.context, u32::MAX),
-                                Bias::Left,
+                                Point.new(range.end.row + self.context, u32.MAX),
+                                Bias.Left,
                             );
 
                             let excerpt_id = excerpts
@@ -434,7 +434,7 @@ impl ProjectDiagnosticsEditor {
                             prev_excerpt_id = excerpt_id;
                             first_excerpt_id.get_or_insert_with(|| prev_excerpt_id);
                             group_state.excerpts.push(excerpt_id);
-                            let header_position = (excerpt_id, language::Anchor::MIN);
+                            let header_position = (excerpt_id, language.Anchor.MIN);
 
                             if is_first_excerpt_for_group {
                                 is_first_excerpt_for_group = false;
@@ -446,9 +446,9 @@ impl ProjectDiagnosticsEditor {
                                 blocks_to_add.push(BlockProperties {
                                     position: header_position,
                                     height: 2,
-                                    style: BlockStyle::Sticky,
+                                    style: BlockStyle.Sticky,
                                     render: diagnostic_header_renderer(primary),
-                                    disposition: BlockDisposition::Above,
+                                    disposition: BlockDisposition.Above,
                                 });
                             }
 
@@ -465,11 +465,11 @@ impl ProjectDiagnosticsEditor {
                                     blocks_to_add.push(BlockProperties {
                                         position: (excerpt_id, entry.range.start),
                                         height: diagnostic.message.matches('\n').count() as u32 + 1,
-                                        style: BlockStyle::Fixed,
+                                        style: BlockStyle.Fixed,
                                         render: diagnostic_block_renderer(
                                             diagnostic, None, true, true,
                                         ),
-                                        disposition: BlockDisposition::Below,
+                                        disposition: BlockDisposition.Below,
                                     });
                                 }
                             }
@@ -510,7 +510,7 @@ impl ProjectDiagnosticsEditor {
                         disposition: block.disposition,
                     })
                 }),
-                Some(Autoscroll::fit()),
+                Some(Autoscroll.fit()),
                 cx,
             );
 
@@ -531,19 +531,19 @@ impl ProjectDiagnosticsEditor {
             let new_excerpt_ids_by_selection_id;
             if was_empty {
                 groups = self.path_states.first()?.diagnostic_groups.as_slice();
-                new_excerpt_ids_by_selection_id = [(0, ExcerptId::min())].into_iter().collect();
+                new_excerpt_ids_by_selection_id = [(0, ExcerptId.min())].into_iter().collect();
                 selections = vec![Selection {
                     id: 0,
                     start: 0,
                     end: 0,
                     reversed: false,
-                    goal: SelectionGoal::None,
+                    goal: SelectionGoal.None,
                 }];
             } else {
                 groups = self.path_states.get(path_ix)?.diagnostic_groups.as_slice();
                 new_excerpt_ids_by_selection_id =
-                    editor.change_selections(Some(Autoscroll::fit()), cx, |s| s.refresh());
-                selections = editor.selections.all::<usize>(cx);
+                    editor.change_selections(Some(Autoscroll.fit()), cx, |s| s.refresh());
+                selections = editor.selections.all.<usize>(cx);
             }
 
             // If any selection has lost its position, move it to start of the next primary diagnostic.
@@ -596,7 +596,7 @@ impl ProjectDiagnosticsEditor {
 
     #[cfg(test)]
     fn check_invariants(&self, cx: &mut ViewContext<Self>) {
-        let mut excerpts = Vec::new();
+        let mut excerpts = Vec.new();
         for (id, buffer, _) in self.excerpts.read(cx).snapshot(cx).excerpts() {
             if let Some(file) = buffer.file() {
                 excerpts.push((id, file.path().clone()));
@@ -625,7 +625,7 @@ impl Item for ProjectDiagnosticsEditor {
     type Event = EditorEvent;
 
     fn to_item_events(event: &EditorEvent, f: impl FnMut(ItemEvent)) {
-        Editor::to_item_events(event, f)
+        Editor.to_item_events(event, f)
     }
 
     fn deactivated(&mut self, cx: &mut ViewContext<Self>) {
@@ -643,7 +643,7 @@ impl Item for ProjectDiagnosticsEditor {
 
     fn tab_content(&self, params: TabContentParams, _: &WindowContext) -> AnyElement {
         if self.summary.error_count == 0 && self.summary.warning_count == 0 {
-            Label::new("No problems")
+            Label.new("No problems")
                 .color(params.text_color())
                 .into_any_element()
         } else {
@@ -653,9 +653,9 @@ impl Item for ProjectDiagnosticsEditor {
                     then.child(
                         h_flex()
                             .gap_1()
-                            .child(Icon::new(IconName::XCircle).color(Color::Error))
+                            .child(Icon.new(IconName.XCircle).color(Color.Error))
                             .child(
-                                Label::new(self.summary.error_count.to_string())
+                                Label.new(self.summary.error_count.to_string())
                                     .color(params.text_color()),
                             ),
                     )
@@ -664,9 +664,9 @@ impl Item for ProjectDiagnosticsEditor {
                     then.child(
                         h_flex()
                             .gap_1()
-                            .child(Icon::new(IconName::ExclamationTriangle).color(Color::Warning))
+                            .child(Icon.new(IconName.ExclamationTriangle).color(Color.Warning))
                             .child(
-                                Label::new(self.summary.warning_count.to_string())
+                                Label.new(self.summary.warning_count.to_string())
                                     .color(params.text_color()),
                             ),
                     )
@@ -682,7 +682,7 @@ impl Item for ProjectDiagnosticsEditor {
     fn for_each_project_item(
         &self,
         cx: &AppContext,
-        f: &mut dyn FnMut(gpui::EntityId, &dyn project::Item),
+        f: &mut dyn FnMut(gpui.EntityId, &dyn project.Item),
     ) {
         self.editor.for_each_project_item(cx, f)
     }
@@ -699,14 +699,14 @@ impl Item for ProjectDiagnosticsEditor {
 
     fn clone_on_split(
         &self,
-        _workspace_id: Option<workspace::WorkspaceId>,
+        _workspace_id: Option<workspace.WorkspaceId>,
         cx: &mut ViewContext<Self>,
     ) -> Option<View<Self>>
     where
         Self: Sized,
     {
         Some(cx.new_view(|cx| {
-            ProjectDiagnosticsEditor::new(self.project.clone(), self.workspace.clone(), cx)
+            ProjectDiagnosticsEditor.new(self.project.clone(), self.workspace.clone(), cx)
         }))
     }
 
@@ -750,9 +750,9 @@ impl Item for ProjectDiagnosticsEditor {
         self_handle: &'a View<Self>,
         _: &'a AppContext,
     ) -> Option<AnyView> {
-        if type_id == TypeId::of::<Self>() {
+        if type_id == TypeId.of.<Self>() {
             Some(self_handle.to_any())
-        } else if type_id == TypeId::of::<Editor>() {
+        } else if type_id == TypeId.of.<Editor>() {
             Some(self.editor.to_any())
         } else {
             None
@@ -760,10 +760,10 @@ impl Item for ProjectDiagnosticsEditor {
     }
 
     fn breadcrumb_location(&self) -> ToolbarItemLocation {
-        ToolbarItemLocation::PrimaryLeft
+        ToolbarItemLocation.PrimaryLeft
     }
 
-    fn breadcrumbs(&self, theme: &theme::Theme, cx: &AppContext) -> Option<Vec<BreadcrumbText>> {
+    fn breadcrumbs(&self, theme: &theme.Theme, cx: &AppContext) -> Option<Vec<BreadcrumbText>> {
         self.editor.breadcrumbs(theme, cx)
     }
 
@@ -778,7 +778,7 @@ const DIAGNOSTIC_HEADER: &'static str = "diagnostic header";
 fn diagnostic_header_renderer(diagnostic: Diagnostic) -> RenderBlock {
     let (message, code_ranges) = highlight_diagnostic_message(&diagnostic, None);
     let message: SharedString = message;
-    Box::new(move |cx| {
+    Box.new(move |cx| {
         let highlight_style: HighlightStyle = cx.theme().colors().text_accent.into();
         h_flex()
             .id(DIAGNOSTIC_HEADER)
@@ -797,12 +797,12 @@ fn diagnostic_header_renderer(diagnostic: Diagnostic) -> RenderBlock {
                                 .size(cx.text_style().font_size)
                                 .flex_none()
                                 .map(|icon| {
-                                    if diagnostic.severity == DiagnosticSeverity::ERROR {
-                                        icon.path(IconName::XCircle.path())
-                                            .text_color(Color::Error.color(cx))
+                                    if diagnostic.severity == DiagnosticSeverity.ERROR {
+                                        icon.path(IconName.XCircle.path())
+                                            .text_color(Color.Error.color(cx))
                                     } else {
-                                        icon.path(IconName::ExclamationTriangle.path())
-                                            .text_color(Color::Warning.color(cx))
+                                        icon.path(IconName.ExclamationTriangle.path())
+                                            .text_color(Color.Warning.color(cx))
                                     }
                                 }),
                         )
@@ -811,7 +811,7 @@ fn diagnostic_header_renderer(diagnostic: Diagnostic) -> RenderBlock {
                         h_flex()
                             .gap_1()
                             .child(
-                                StyledText::new(message.clone()).with_highlights(
+                                StyledText.new(message.clone()).with_highlights(
                                     &cx.text_style(),
                                     code_ranges
                                         .iter()
@@ -821,7 +821,7 @@ fn diagnostic_header_renderer(diagnostic: Diagnostic) -> RenderBlock {
                             .when_some(diagnostic.code.as_ref(), |stack, code| {
                                 stack.child(
                                     div()
-                                        .child(SharedString::from(format!("({code})")))
+                                        .child(SharedString.from(format!("({code})")))
                                         .text_color(cx.theme().colors().text_muted),
                                 )
                             }),
@@ -833,7 +833,7 @@ fn diagnostic_header_renderer(diagnostic: Diagnostic) -> RenderBlock {
                     .when_some(diagnostic.source.as_ref(), |stack, source| {
                         stack.child(
                             div()
-                                .child(SharedString::from(source.clone()))
+                                .child(SharedString.from(source.clone()))
                                 .text_color(cx.theme().colors().text_muted),
                         )
                     }),
@@ -843,15 +843,15 @@ fn diagnostic_header_renderer(diagnostic: Diagnostic) -> RenderBlock {
 }
 
 fn compare_diagnostics(
-    old: &DiagnosticEntry<language::Anchor>,
-    new: &DiagnosticEntry<language::Anchor>,
-    snapshot: &language::BufferSnapshot,
+    old: &DiagnosticEntry<language.Anchor>,
+    new: &DiagnosticEntry<language.Anchor>,
+    snapshot: &language.BufferSnapshot,
 ) -> Ordering {
-    use language::ToOffset;
+    use language.ToOffset;
 
     // The diagnostics may point to a previously open Buffer for this file.
     if !old.range.start.is_valid(snapshot) || !new.range.start.is_valid(snapshot) {
-        return Ordering::Greater;
+        return Ordering.Greater;
     }
 
     old.range

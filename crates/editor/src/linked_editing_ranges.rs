@@ -43,7 +43,7 @@ pub(super) fn refresh_linked_ranges(this: &mut Editor, cx: &mut ViewContext<Edit
     let project = this.project.clone()?;
     let buffer = this.buffer.read(cx);
     let mut applicable_selections = vec![];
-    let selections = this.selections.all::<usize>(cx);
+    let selections = this.selections.all.<usize>(cx);
     let snapshot = buffer.snapshot(cx);
     for selection in selections {
         let cursor_position = selection.head();
@@ -91,9 +91,9 @@ pub(super) fn refresh_linked_ranges(this: &mut Editor, cx: &mut ViewContext<Edit
                             return None;
                         }
                         // Now link every range as each-others sibling.
-                        let mut siblings: HashMap<Range<text::Anchor>, Vec<_>> = Default::default();
+                        let mut siblings: HashMap<Range<text.Anchor>, Vec<_>> = Default.default();
                         let mut insert_sorted_anchor =
-                            |key: &Range<text::Anchor>, value: &Range<text::Anchor>| {
+                            |key: &Range<text.Anchor>, value: &Range<text.Anchor>| {
                                 siblings.entry(key.clone()).or_default().push(value.clone());
                             };
                         for items in edits.into_iter().combinations(2) {
@@ -114,7 +114,7 @@ pub(super) fn refresh_linked_ranges(this: &mut Editor, cx: &mut ViewContext<Edit
             })
             .log_err()?;
 
-        let highlights = futures::future::join_all(highlights).await;
+        let highlights = futures.future.join_all(highlights).await;
 
         this.update(&mut cx, |this, cx| {
             this.linked_edit_ranges.0.clear();

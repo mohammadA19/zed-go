@@ -1,2 +1,2 @@
-use anyhow::{anyhow, Result};
-use rpc::proto;
+use anyhow.{anyhow, Result};
+use rpc.proto;

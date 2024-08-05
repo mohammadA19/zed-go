@@ -1,21 +1,21 @@
-use super::{
+use super.{
     create_label_for_command,
-    file_command::{build_entry_output_section, codeblock_fence_for_path},
+    file_command.{build_entry_output_section, codeblock_fence_for_path},
     SlashCommand, SlashCommandOutput,
 };
-use anyhow::Result;
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
-use gpui::{AppContext, Task, WeakView};
-use language::{CodeLabel, LineEnding, LspAdapterDelegate};
-use semantic_index::SemanticIndex;
-use std::{
-    fmt::Write,
-    path::PathBuf,
-    sync::{atomic::AtomicBool, Arc},
+use anyhow.Result;
+use assistant_slash_command.{ArgumentCompletion, SlashCommandOutputSection};
+use gpui.{AppContext, Task, WeakView};
+use language.{CodeLabel, LineEnding, LspAdapterDelegate};
+use semantic_index.SemanticIndex;
+use std.{
+    fmt.Write,
+    path.PathBuf,
+    sync.{atomic.AtomicBool, Arc},
 };
-use ui::{prelude::*, IconName};
-use util::ResultExt;
-use workspace::Workspace;
+use ui.{prelude.*, IconName};
+use util.ResultExt;
+use workspace.Workspace;
 
 pub(crate) struct SearchSlashCommand;
 
@@ -47,7 +47,7 @@ impl SlashCommand for SearchSlashCommand {
         _workspace: Option<WeakView<Workspace>>,
         _cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
-        Task::ready(Ok(Vec::new()))
+        Task.ready(Ok(Vec.new()))
     }
 
     fn run(
@@ -58,17 +58,17 @@ impl SlashCommand for SearchSlashCommand {
         cx: &mut WindowContext,
     ) -> Task<Result<SlashCommandOutput>> {
         let Some(workspace) = workspace.upgrade() else {
-            return Task::ready(Err(anyhow::anyhow!("workspace was dropped")));
+            return Task.ready(Err(anyhow.anyhow!("workspace was dropped")));
         };
         let Some(argument) = argument else {
-            return Task::ready(Err(anyhow::anyhow!("missing search query")));
+            return Task.ready(Err(anyhow.anyhow!("missing search query")));
         };
 
         let mut limit = None;
-        let mut query = String::new();
+        let mut query = String.new();
         for part in argument.split(' ') {
             if let Some(parameter) = part.strip_prefix("--") {
-                if let Ok(count) = parameter.parse::<usize>() {
+                if let Ok(count) = parameter.parse.<usize>() {
                     limit = Some(count);
                     continue;
                 }
@@ -80,7 +80,7 @@ impl SlashCommand for SearchSlashCommand {
         query.pop();
 
         if query.is_empty() {
-            return Task::ready(Err(anyhow::anyhow!("missing search query")));
+            return Task.ready(Err(anyhow.anyhow!("missing search query")));
         }
 
         let project = workspace.read(cx).project().clone();
@@ -95,12 +95,12 @@ impl SlashCommand for SearchSlashCommand {
                 })?
                 .await?;
 
-            let mut loaded_results = Vec::new();
+            let mut loaded_results = Vec.new();
             for result in results {
                 let (full_path, file_content) =
                     result.worktree.read_with(&cx, |worktree, _cx| {
                         let entry_abs_path = worktree.abs_path().join(&result.path);
-                        let mut entry_full_path = PathBuf::from(worktree.root_name());
+                        let mut entry_full_path = PathBuf.from(worktree.root_name());
                         entry_full_path.push(&result.path);
                         let file_content = async {
                             let entry_abs_path = entry_abs_path;
@@ -117,7 +117,7 @@ impl SlashCommand for SearchSlashCommand {
                 .background_executor()
                 .spawn(async move {
                     let mut text = format!("Search results for {query}:\n");
-                    let mut sections = Vec::new();
+                    let mut sections = Vec.new();
                     for (result, full_path, file_content) in loaded_results {
                         let range_start = result.range.start.min(file_content.len());
                         let range_end = result.range.end.min(file_content.len());
@@ -141,7 +141,7 @@ impl SlashCommand for SearchSlashCommand {
 
                         let mut excerpt =
                             file_content[start_line_byte_offset..end_line_byte_offset].to_string();
-                        LineEnding::normalize(&mut excerpt);
+                        LineEnding.normalize(&mut excerpt);
                         text.push_str(&excerpt);
                         writeln!(text, "\n```\n").unwrap();
                         let section_end_ix = text.len() - 1;
@@ -153,10 +153,10 @@ impl SlashCommand for SearchSlashCommand {
                         ));
                     }
 
-                    let query = SharedString::from(query);
+                    let query = SharedString.from(query);
                     sections.push(SlashCommandOutputSection {
                         range: 0..text.len(),
-                        icon: IconName::MagnifyingGlass,
+                        icon: IconName.MagnifyingGlass,
                         label: query,
                     });
 

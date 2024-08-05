@@ -1,24 +1,24 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use gpui::{BackgroundExecutor, TestAppContext};
-use notifications::NotificationEvent;
-use parking_lot::Mutex;
-use rpc::{proto, Notification};
+use gpui.{BackgroundExecutor, TestAppContext};
+use notifications.NotificationEvent;
+use parking_lot.Mutex;
+use rpc.{proto, Notification};
 
-use crate::tests::TestServer;
+use crate.tests.TestServer;
 
-#[gpui::test]
+#[gpui.test]
 async fn test_notifications(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
-    let notification_events_a = Arc::new(Mutex::new(Vec::new()));
-    let notification_events_b = Arc::new(Mutex::new(Vec::new()));
+    let notification_events_a = Arc.new(Mutex.new(Vec.new()));
+    let notification_events_b = Arc.new(Mutex.new(Vec.new()));
     client_a.notification_store().update(cx_a, |_, cx| {
         let events = notification_events_a.clone();
         cx.subscribe(&cx.handle(), move |_, _, event, _| {
@@ -51,7 +51,7 @@ async fn test_notifications(
         let entry = store.notification_at(0).unwrap();
         assert_eq!(
             entry.notification,
-            Notification::ContactRequest {
+            Notification.ContactRequest {
                 sender_id: client_a.id()
             }
         );
@@ -59,10 +59,10 @@ async fn test_notifications(
         assert_eq!(
             &notification_events_b.lock()[0..],
             &[
-                NotificationEvent::NewNotification {
+                NotificationEvent.NewNotification {
                     entry: entry.clone(),
                 },
-                NotificationEvent::NotificationsUpdated {
+                NotificationEvent.NotificationsUpdated {
                     old_range: 0..0,
                     new_count: 1
                 }
@@ -84,10 +84,10 @@ async fn test_notifications(
         assert_eq!(
             &notification_events_b.lock()[2..],
             &[
-                NotificationEvent::NotificationRead {
+                NotificationEvent.NotificationRead {
                     entry: entry.clone(),
                 },
-                NotificationEvent::NotificationsUpdated {
+                NotificationEvent.NotificationsUpdated {
                     old_range: 0..1,
                     new_count: 1
                 }
@@ -103,7 +103,7 @@ async fn test_notifications(
         let entry = store.notification_at(0).unwrap();
         assert_eq!(
             entry.notification,
-            Notification::ContactRequestAccepted {
+            Notification.ContactRequestAccepted {
                 responder_id: client_b.id()
             }
         );
@@ -121,7 +121,7 @@ async fn test_notifications(
     client_a
         .channel_store()
         .update(cx_a, |store, cx| {
-            store.invite_member(channel_id, client_b.id(), proto::ChannelRole::Member, cx)
+            store.invite_member(channel_id, client_b.id(), proto.ChannelRole.Member, cx)
         })
         .await
         .unwrap();
@@ -136,7 +136,7 @@ async fn test_notifications(
         let entry = store.notification_at(0).unwrap();
         assert_eq!(
             entry.notification,
-            Notification::ChannelInvitation {
+            Notification.ChannelInvitation {
                 channel_id: channel_id.0,
                 channel_name: "the-channel".to_string(),
                 inviter_id: client_a.id()

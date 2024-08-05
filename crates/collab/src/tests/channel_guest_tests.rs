@@ -1,19 +1,19 @@
-use crate::{db::ChannelId, tests::TestServer};
-use call::ActiveCall;
-use editor::Editor;
-use gpui::{BackgroundExecutor, TestAppContext};
-use rpc::proto;
+use crate.{db.ChannelId, tests.TestServer};
+use call.ActiveCall;
+use editor.Editor;
+use gpui.{BackgroundExecutor, TestAppContext};
+use rpc.proto;
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_guests(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     let channel_id = server
         .make_public_channel("the-channel", &client_a, cx_a)
@@ -32,7 +32,7 @@ async fn test_channel_guests(
     cx_a.executor().run_until_parked();
 
     // Client B joins channel A as a guest
-    cx_b.update(|cx| workspace::join_channel(channel_id, client_b.app_state.clone(), None, cx))
+    cx_b.update(|cx| workspace.join_channel(channel_id, client_b.app_state.clone(), None, cx))
         .await
         .unwrap();
 
@@ -40,7 +40,7 @@ async fn test_channel_guests(
     // B is a guest,
     executor.run_until_parked();
 
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_b = cx_b.read(ActiveCall.global);
     let project_b =
         active_call_b.read_with(cx_b, |call, _| call.location().unwrap().upgrade().unwrap());
     let room_b = active_call_b.update(cx_b, |call, _| call.room().unwrap().clone());
@@ -60,19 +60,19 @@ async fn test_channel_guests(
     assert!(room_b.read_with(cx_b, |room, _| room.is_muted()));
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_guest_promotion(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
-    let mut server = TestServer::start(cx_a.executor()).await;
+    let mut server = TestServer.start(cx_a.executor()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
 
     let channel_id = server
         .make_public_channel("the-channel", &client_a, cx_a)
         .await;
 
     let project_a = client_a.build_test_project(cx_a).await;
-    cx_a.update(|cx| workspace::join_channel(channel_id, client_a.app_state.clone(), None, cx))
+    cx_a.update(|cx| workspace.join_channel(channel_id, client_a.app_state.clone(), None, cx))
         .await
         .unwrap();
 
@@ -84,7 +84,7 @@ async fn test_channel_guest_promotion(cx_a: &mut TestAppContext, cx_b: &mut Test
     cx_a.run_until_parked();
 
     // Client B joins channel A as a guest
-    cx_b.update(|cx| workspace::join_channel(channel_id, client_b.app_state.clone(), None, cx))
+    cx_b.update(|cx| workspace.join_channel(channel_id, client_b.app_state.clone(), None, cx))
         .await
         .unwrap();
     cx_a.run_until_parked();
@@ -92,14 +92,14 @@ async fn test_channel_guest_promotion(cx_a: &mut TestAppContext, cx_b: &mut Test
     // client B opens 1.txt as a guest
     let (workspace_b, cx_b) = client_b.active_workspace(cx_b);
     let room_b = cx_b
-        .read(ActiveCall::global)
+        .read(ActiveCall.global)
         .update(cx_b, |call, _| call.room().unwrap().clone());
     cx_b.simulate_keystrokes("cmd-p 1 enter");
 
     let (project_b, editor_b) = workspace_b.update(cx_b, |workspace, cx| {
         (
             workspace.project().clone(),
-            workspace.active_item_as::<Editor>(cx).unwrap(),
+            workspace.active_item_as.<Editor>(cx).unwrap(),
         )
     });
     assert!(project_b.read_with(cx_b, |project, _| project.is_read_only()));
@@ -116,7 +116,7 @@ async fn test_channel_guest_promotion(cx_a: &mut TestAppContext, cx_b: &mut Test
             call.room().unwrap().update(cx, |room, cx| {
                 room.set_participant_role(
                     client_b.user_id().unwrap(),
-                    proto::ChannelRole::Member,
+                    proto.ChannelRole.Member,
                     cx,
                 )
             })
@@ -142,7 +142,7 @@ async fn test_channel_guest_promotion(cx_a: &mut TestAppContext, cx_b: &mut Test
             call.room().unwrap().update(cx, |room, cx| {
                 room.set_participant_role(
                     client_b.user_id().unwrap(),
-                    proto::ChannelRole::Guest,
+                    proto.ChannelRole.Guest,
                     cx,
                 )
             })
@@ -160,9 +160,9 @@ async fn test_channel_guest_promotion(cx_a: &mut TestAppContext, cx_b: &mut Test
         .is_err());
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
-    let mut server = TestServer::start(cx_a.executor()).await;
+    let mut server = TestServer.start(cx_a.executor()).await;
 
     server
         .app_state
@@ -173,8 +173,8 @@ async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut Tes
 
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
-    let active_call_a = cx_a.read(ActiveCall::global);
-    let active_call_b = cx_b.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
+    let active_call_b = cx_b.read(ActiveCall.global);
 
     // Create a parent channel that requires the Zed CLA
     let parent_channel_id = server
@@ -183,7 +183,7 @@ async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut Tes
     server
         .app_state
         .db
-        .set_channel_requires_zed_cla(ChannelId::from_proto(parent_channel_id.0), true)
+        .set_channel_requires_zed_cla(ChannelId.from_proto(parent_channel_id.0), true)
         .await
         .unwrap();
 
@@ -198,14 +198,14 @@ async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut Tes
     client_a
         .channel_store()
         .update(cx_a, |store, cx| {
-            store.set_channel_visibility(parent_channel_id, proto::ChannelVisibility::Public, cx)
+            store.set_channel_visibility(parent_channel_id, proto.ChannelVisibility.Public, cx)
         })
         .await
         .unwrap();
     client_a
         .channel_store()
         .update(cx_a, |store, cx| {
-            store.set_channel_visibility(channel_id, proto::ChannelVisibility::Public, cx)
+            store.set_channel_visibility(channel_id, proto.ChannelVisibility.Public, cx)
         })
         .await
         .unwrap();
@@ -221,7 +221,7 @@ async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut Tes
         .unwrap();
     cx_a.run_until_parked();
     let room_b = cx_b
-        .read(ActiveCall::global)
+        .read(ActiveCall.global)
         .update(cx_b, |call, _| call.room().unwrap().clone());
     assert!(room_b.read_with(cx_b, |room, _| !room.can_use_microphone()));
 
@@ -232,7 +232,7 @@ async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut Tes
             call.room().unwrap().update(cx, |room, cx| {
                 room.set_participant_role(
                     client_b.user_id().unwrap(),
-                    proto::ChannelRole::Member,
+                    proto.ChannelRole.Member,
                     cx,
                 )
             })
@@ -250,7 +250,7 @@ async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut Tes
             call.room().unwrap().update(cx, |room, cx| {
                 room.set_participant_role(
                     client_b.user_id().unwrap(),
-                    proto::ChannelRole::Talker,
+                    proto.ChannelRole.Talker,
                     cx,
                 )
             })
@@ -275,7 +275,7 @@ async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut Tes
             call.room().unwrap().update(cx, |room, cx| {
                 room.set_participant_role(
                     client_b.user_id().unwrap(),
-                    proto::ChannelRole::Member,
+                    proto.ChannelRole.Member,
                     cx,
                 )
             })

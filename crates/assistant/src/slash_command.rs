@@ -1,21 +1,21 @@
-use crate::assistant_panel::ContextEditor;
-use anyhow::Result;
-pub use assistant_slash_command::{SlashCommand, SlashCommandOutput, SlashCommandRegistry};
-use editor::{CompletionProvider, Editor};
-use fuzzy::{match_strings, StringMatchCandidate};
-use gpui::{AppContext, Model, Task, ViewContext, WeakView, WindowContext};
-use language::{Anchor, Buffer, CodeLabel, Documentation, HighlightId, LanguageServerId, ToPoint};
-use parking_lot::{Mutex, RwLock};
-use rope::Point;
-use std::{
-    ops::Range,
-    sync::{
-        atomic::{AtomicBool, Ordering::SeqCst},
+use crate.assistant_panel.ContextEditor;
+use anyhow.Result;
+pub use assistant_slash_command.{SlashCommand, SlashCommandOutput, SlashCommandRegistry};
+use editor.{CompletionProvider, Editor};
+use fuzzy.{match_strings, StringMatchCandidate};
+use gpui.{AppContext, Model, Task, ViewContext, WeakView, WindowContext};
+use language.{Anchor, Buffer, CodeLabel, Documentation, HighlightId, LanguageServerId, ToPoint};
+use parking_lot.{Mutex, RwLock};
+use rope.Point;
+use std.{
+    ops.Range,
+    sync.{
+        atomic.{AtomicBool, Ordering.SeqCst},
         Arc,
     },
 };
-use ui::ActiveTheme;
-use workspace::Workspace;
+use ui.ActiveTheme;
+use workspace.Workspace;
 
 pub mod active_command;
 pub mod default_command;
@@ -50,7 +50,7 @@ impl SlashCommandCompletionProvider {
         workspace: Option<WeakView<Workspace>>,
     ) -> Self {
         Self {
-            cancel_flag: Mutex::new(Arc::new(AtomicBool::new(false))),
+            cancel_flag: Mutex.new(Arc.new(AtomicBool.new(false))),
             editor,
             workspace,
         }
@@ -62,8 +62,8 @@ impl SlashCommandCompletionProvider {
         command_range: Range<Anchor>,
         name_range: Range<Anchor>,
         cx: &mut WindowContext,
-    ) -> Task<Result<Vec<project::Completion>>> {
-        let commands = SlashCommandRegistry::global(cx);
+    ) -> Task<Result<Vec<project.Completion>>> {
+        let commands = SlashCommandRegistry.global(cx);
         let candidates = commands
             .command_names()
             .into_iter()
@@ -73,7 +73,7 @@ impl SlashCommandCompletionProvider {
                 string: def.to_string(),
                 char_bag: def.as_ref().into(),
             })
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         let command_name = command_name.to_string();
         let editor = self.editor.clone();
         let workspace = self.workspace.clone();
@@ -82,8 +82,8 @@ impl SlashCommandCompletionProvider {
                 &candidates,
                 &command_name,
                 true,
-                usize::MAX,
-                &Default::default(),
+                usize.MAX,
+                &Default.default(),
                 cx.background_executor().clone(),
             )
             .await;
@@ -106,7 +106,7 @@ impl SlashCommandCompletionProvider {
                                     let command_range = command_range.clone();
                                     let editor = editor.clone();
                                     let workspace = workspace.clone();
-                                    Arc::new(move |cx: &mut WindowContext| {
+                                    Arc.new(move |cx: &mut WindowContext| {
                                         editor
                                             .update(cx, |editor, cx| {
                                                 editor.run_command(
@@ -123,13 +123,13 @@ impl SlashCommandCompletionProvider {
                                 })
                             },
                         );
-                        Some(project::Completion {
+                        Some(project.Completion {
                             old_range: name_range.clone(),
-                            documentation: Some(Documentation::SingleLine(command.description())),
+                            documentation: Some(Documentation.SingleLine(command.description())),
                             new_text,
                             label: command.label(cx),
                             server_id: LanguageServerId(0),
-                            lsp_completion: Default::default(),
+                            lsp_completion: Default.default(),
                             show_new_completions_on_confirm: requires_argument,
                             confirm,
                         })
@@ -146,13 +146,13 @@ impl SlashCommandCompletionProvider {
         command_range: Range<Anchor>,
         argument_range: Range<Anchor>,
         cx: &mut WindowContext,
-    ) -> Task<Result<Vec<project::Completion>>> {
-        let new_cancel_flag = Arc::new(AtomicBool::new(false));
+    ) -> Task<Result<Vec<project.Completion>>> {
+        let new_cancel_flag = Arc.new(AtomicBool.new(false));
         let mut flag = self.cancel_flag.lock();
         flag.store(true, SeqCst);
         *flag = new_cancel_flag.clone();
 
-        let commands = SlashCommandRegistry::global(cx);
+        let commands = SlashCommandRegistry.global(cx);
         if let Some(command) = commands.command(command_name) {
             let completions = command.complete_argument(
                 argument,
@@ -173,7 +173,7 @@ impl SlashCommandCompletionProvider {
                                 .clone()
                                 .zip(workspace.clone())
                                 .map(|(editor, workspace)| {
-                                    Arc::new({
+                                    Arc.new({
                                         let command_range = command_range.clone();
                                         let command_name = command_name.clone();
                                         let command_argument = command_argument.new_text.clone();
@@ -202,13 +202,13 @@ impl SlashCommandCompletionProvider {
                             new_text.push(' ');
                         }
 
-                        project::Completion {
+                        project.Completion {
                             old_range: argument_range.clone(),
-                            label: CodeLabel::plain(command_argument.label, None),
+                            label: CodeLabel.plain(command_argument.label, None),
                             new_text,
                             documentation: None,
                             server_id: LanguageServerId(0),
-                            lsp_completion: Default::default(),
+                            lsp_completion: Default.default(),
                             show_new_completions_on_confirm: !command_argument.run_command,
                             confirm,
                         }
@@ -217,7 +217,7 @@ impl SlashCommandCompletionProvider {
             })
         } else {
             cx.background_executor()
-                .spawn(async move { Ok(Vec::new()) })
+                .spawn(async move { Ok(Vec.new()) })
         }
     }
 }
@@ -227,19 +227,19 @@ impl CompletionProvider for SlashCommandCompletionProvider {
         &self,
         buffer: &Model<Buffer>,
         buffer_position: Anchor,
-        _: editor::CompletionContext,
+        _: editor.CompletionContext,
         cx: &mut ViewContext<Editor>,
-    ) -> Task<Result<Vec<project::Completion>>> {
+    ) -> Task<Result<Vec<project.Completion>>> {
         let Some((name, argument, command_range, argument_range)) =
             buffer.update(cx, |buffer, _cx| {
                 let position = buffer_position.to_point(buffer);
-                let line_start = Point::new(position.row, 0);
+                let line_start = Point.new(position.row, 0);
                 let mut lines = buffer.text_for_range(line_start..position).lines();
                 let line = lines.next()?;
-                let call = SlashCommandLine::parse(line)?;
+                let call = SlashCommandLine.parse(line)?;
 
-                let command_range_start = Point::new(position.row, call.name.start as u32 - 1);
-                let command_range_end = Point::new(
+                let command_range_start = Point.new(position.row, call.name.start as u32 - 1);
+                let command_range_end = Point.new(
                     position.row,
                     call.argument.as_ref().map_or(call.name.end, |arg| arg.end) as u32,
                 );
@@ -250,17 +250,17 @@ impl CompletionProvider for SlashCommandCompletionProvider {
 
                 Some(if let Some(argument) = call.argument {
                     let start =
-                        buffer.anchor_after(Point::new(position.row, argument.start as u32));
+                        buffer.anchor_after(Point.new(position.row, argument.start as u32));
                     let argument = line[argument.clone()].to_string();
                     (name, Some(argument), command_range, start..buffer_position)
                 } else {
                     let start =
-                        buffer.anchor_after(Point::new(position.row, call.name.start as u32));
+                        buffer.anchor_after(Point.new(position.row, call.name.start as u32));
                     (name, None, command_range, start..buffer_position)
                 })
             })
         else {
-            return Task::ready(Ok(Vec::new()));
+            return Task.ready(Ok(Vec.new()));
         };
 
         if let Some(argument) = argument {
@@ -274,36 +274,36 @@ impl CompletionProvider for SlashCommandCompletionProvider {
         &self,
         _: Model<Buffer>,
         _: Vec<usize>,
-        _: Arc<RwLock<Box<[project::Completion]>>>,
+        _: Arc<RwLock<Box<[project.Completion]>>>,
         _: &mut ViewContext<Editor>,
     ) -> Task<Result<bool>> {
-        Task::ready(Ok(true))
+        Task.ready(Ok(true))
     }
 
     fn apply_additional_edits_for_completion(
         &self,
         _: Model<Buffer>,
-        _: project::Completion,
+        _: project.Completion,
         _: bool,
         _: &mut ViewContext<Editor>,
-    ) -> Task<Result<Option<language::Transaction>>> {
-        Task::ready(Ok(None))
+    ) -> Task<Result<Option<language.Transaction>>> {
+        Task.ready(Ok(None))
     }
 
     fn is_completion_trigger(
         &self,
         buffer: &Model<Buffer>,
-        position: language::Anchor,
+        position: language.Anchor,
         _text: &str,
         _trigger_in_words: bool,
         cx: &mut ViewContext<Editor>,
     ) -> bool {
         let buffer = buffer.read(cx);
         let position = position.to_point(buffer);
-        let line_start = Point::new(position.row, 0);
+        let line_start = Point.new(position.row, 0);
         let mut lines = buffer.text_for_range(line_start..position).lines();
         if let Some(line) = lines.next() {
-            SlashCommandLine::parse(line).is_some()
+            SlashCommandLine.parse(line).is_some()
         } else {
             false
         }
@@ -362,7 +362,7 @@ pub fn create_label_for_command(
     arguments: &[&str],
     cx: &AppContext,
 ) -> CodeLabel {
-    let mut label = CodeLabel::default();
+    let mut label = CodeLabel.default();
     label.push_str(command_name, None);
     label.push_str(" ", None);
     label.push_str(

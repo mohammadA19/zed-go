@@ -1,20 +1,20 @@
-use super::TestDb;
-use crate::db::embedding;
-use collections::HashMap;
-use sea_orm::{sea_query::Expr, ColumnTrait, EntityTrait, QueryFilter};
-use std::ops::Sub;
-use time::{Duration, OffsetDateTime, PrimitiveDateTime};
+use super.TestDb;
+use crate.db.embedding;
+use collections.HashMap;
+use sea_orm.{sea_query.Expr, ColumnTrait, EntityTrait, QueryFilter};
+use std.ops.Sub;
+use time.{Duration, OffsetDateTime, PrimitiveDateTime};
 
 // SQLite does not support array arguments, so we only test this against a real postgres instance
-#[gpui::test]
-async fn test_get_embeddings_postgres(cx: &mut gpui::TestAppContext) {
-    let test_db = TestDb::postgres(cx.executor().clone());
+#[gpui.test]
+async fn test_get_embeddings_postgres(cx: &mut gpui.TestAppContext) {
+    let test_db = TestDb.postgres(cx.executor().clone());
     let db = test_db.db();
 
     let provider = "test_model";
     let digest1 = vec![1, 2, 3];
     let digest2 = vec![4, 5, 6];
-    let embeddings = HashMap::from_iter([
+    let embeddings = HashMap.from_iter([
         (digest1.clone(), vec![0.1, 0.2, 0.3]),
         (digest2.clone(), vec![0.4, 0.5, 0.6]),
     ]);
@@ -36,14 +36,14 @@ async fn test_get_embeddings_postgres(cx: &mut gpui::TestAppContext) {
     assert_eq!(retrieved_embeddings[&digest2], vec![0.4, 0.5, 0.6]);
 }
 
-#[gpui::test]
-async fn test_purge_old_embeddings(cx: &mut gpui::TestAppContext) {
-    let test_db = TestDb::postgres(cx.executor().clone());
+#[gpui.test]
+async fn test_purge_old_embeddings(cx: &mut gpui.TestAppContext) {
+    let test_db = TestDb.postgres(cx.executor().clone());
     let db = test_db.db();
 
     let model = "test_model";
     let digest = vec![7, 8, 9];
-    let embeddings = HashMap::from_iter([(digest.clone(), vec![0.7, 0.8, 0.9])]);
+    let embeddings = HashMap.from_iter([(digest.clone(), vec![0.7, 0.8, 0.9])]);
 
     // Save old embeddings
     db.save_embeddings(model, &embeddings).await.unwrap();
@@ -52,16 +52,16 @@ async fn test_purge_old_embeddings(cx: &mut gpui::TestAppContext) {
     db.weak_transaction(|tx| {
         let digest = digest.clone();
         async move {
-            let sixty_days_ago = OffsetDateTime::now_utc().sub(Duration::days(61));
-            let retrieved_at = PrimitiveDateTime::new(sixty_days_ago.date(), sixty_days_ago.time());
+            let sixty_days_ago = OffsetDateTime.now_utc().sub(Duration.days(61));
+            let retrieved_at = PrimitiveDateTime.new(sixty_days_ago.date(), sixty_days_ago.time());
 
-            embedding::Entity::update_many()
+            embedding.Entity.update_many()
                 .filter(
-                    embedding::Column::Model
+                    embedding.Column.Model
                         .eq(model)
-                        .and(embedding::Column::Digest.eq(digest)),
+                        .and(embedding.Column.Digest.eq(digest)),
                 )
-                .col_expr(embedding::Column::RetrievedAt, Expr::value(retrieved_at))
+                .col_expr(embedding.Column.RetrievedAt, Expr.value(retrieved_at))
                 .exec(&*tx)
                 .await
                 .unwrap();

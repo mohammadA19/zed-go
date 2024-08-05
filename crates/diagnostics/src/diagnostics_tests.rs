@@ -1,37 +1,37 @@
-use super::*;
-use collections::HashMap;
-use editor::{
-    display_map::{Block, BlockContext, DisplayRow},
+use super.*;
+use collections.HashMap;
+use editor.{
+    display_map.{Block, BlockContext, DisplayRow},
     DisplayPoint, GutterDimensions,
 };
-use gpui::{px, AvailableSpace, Stateful, TestAppContext, VisualTestContext};
-use language::{
+use gpui.{px, AvailableSpace, Stateful, TestAppContext, VisualTestContext};
+use language.{
     Diagnostic, DiagnosticEntry, DiagnosticSeverity, OffsetRangeExt, PointUtf16, Rope, Unclipped,
 };
-use pretty_assertions::assert_eq;
-use project::FakeFs;
-use rand::{rngs::StdRng, seq::IteratorRandom as _, Rng};
-use serde_json::json;
-use settings::SettingsStore;
-use std::{
+use pretty_assertions.assert_eq;
+use project.FakeFs;
+use rand.{rngs.StdRng, seq.IteratorRandom as _, Rng};
+use serde_json.json;
+use settings.SettingsStore;
+use std.{
     env,
-    path::{Path, PathBuf},
+    path.{Path, PathBuf},
 };
-use unindent::Unindent as _;
-use util::{post_inc, RandomCharIter};
+use unindent.Unindent as _;
+use util.{post_inc, RandomCharIter};
 
-#[ctor::ctor]
+#[ctor.ctor]
 fn init_logger() {
-    if env::var("RUST_LOG").is_ok() {
-        env_logger::init();
+    if env.var("RUST_LOG").is_ok() {
+        env_logger.init();
     }
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_diagnostics(cx: &mut TestAppContext) {
     init_test(cx);
 
-    let fs = FakeFs::new(cx.executor());
+    let fs = FakeFs.new(cx.executor());
     fs.insert_tree(
         "/test",
         json!({
@@ -59,9 +59,9 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
     .await;
 
     let language_server_id = LanguageServerId(0);
-    let project = Project::test(fs.clone(), ["/test".as_ref()], cx).await;
-    let window = cx.add_window(|cx| Workspace::test_new(project.clone(), cx));
-    let cx = &mut VisualTestContext::from_window(*window, cx);
+    let project = Project.test(fs.clone(), ["/test".as_ref()], cx).await;
+    let window = cx.add_window(|cx| Workspace.test_new(project.clone(), cx));
+    let cx = &mut VisualTestContext.from_window(*window, cx);
     let workspace = window.root(cx).unwrap();
 
     // Create some diagnostics
@@ -69,77 +69,77 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 language_server_id,
-                PathBuf::from("/test/main.rs"),
+                PathBuf.from("/test/main.rs"),
                 None,
                 vec![
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(1, 8))..Unclipped(PointUtf16::new(1, 9)),
+                        range: Unclipped(PointUtf16.new(1, 8))..Unclipped(PointUtf16.new(1, 9)),
                         diagnostic: Diagnostic {
                             message:
                                 "move occurs because `x` has type `Vec<char>`, which does not implement the `Copy` trait"
                                     .to_string(),
-                            severity: DiagnosticSeverity::INFORMATION,
+                            severity: DiagnosticSeverity.INFORMATION,
                             is_primary: false,
                             is_disk_based: true,
                             group_id: 1,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(2, 8))..Unclipped(PointUtf16::new(2, 9)),
+                        range: Unclipped(PointUtf16.new(2, 8))..Unclipped(PointUtf16.new(2, 9)),
                         diagnostic: Diagnostic {
                             message:
                                 "move occurs because `y` has type `Vec<char>`, which does not implement the `Copy` trait"
                                     .to_string(),
-                            severity: DiagnosticSeverity::INFORMATION,
+                            severity: DiagnosticSeverity.INFORMATION,
                             is_primary: false,
                             is_disk_based: true,
                             group_id: 0,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(3, 6))..Unclipped(PointUtf16::new(3, 7)),
+                        range: Unclipped(PointUtf16.new(3, 6))..Unclipped(PointUtf16.new(3, 7)),
                         diagnostic: Diagnostic {
                             message: "value moved here".to_string(),
-                            severity: DiagnosticSeverity::INFORMATION,
+                            severity: DiagnosticSeverity.INFORMATION,
                             is_primary: false,
                             is_disk_based: true,
                             group_id: 1,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(4, 6))..Unclipped(PointUtf16::new(4, 7)),
+                        range: Unclipped(PointUtf16.new(4, 6))..Unclipped(PointUtf16.new(4, 7)),
                         diagnostic: Diagnostic {
                             message: "value moved here".to_string(),
-                            severity: DiagnosticSeverity::INFORMATION,
+                            severity: DiagnosticSeverity.INFORMATION,
                             is_primary: false,
                             is_disk_based: true,
                             group_id: 0,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(7, 6))..Unclipped(PointUtf16::new(7, 7)),
+                        range: Unclipped(PointUtf16.new(7, 6))..Unclipped(PointUtf16.new(7, 7)),
                         diagnostic: Diagnostic {
                             message: "use of moved value\nvalue used here after move".to_string(),
-                            severity: DiagnosticSeverity::ERROR,
+                            severity: DiagnosticSeverity.ERROR,
                             is_primary: true,
                             is_disk_based: true,
                             group_id: 0,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(8, 6))..Unclipped(PointUtf16::new(8, 7)),
+                        range: Unclipped(PointUtf16.new(8, 6))..Unclipped(PointUtf16.new(8, 7)),
                         diagnostic: Diagnostic {
                             message: "use of moved value\nvalue used here after move".to_string(),
-                            severity: DiagnosticSeverity::ERROR,
+                            severity: DiagnosticSeverity.ERROR,
                             is_primary: true,
                             is_disk_based: true,
                             group_id: 1,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                 ],
@@ -150,7 +150,7 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
 
     // Open the project diagnostics view while there are already diagnostics.
     let view = window.build_view(cx, |cx| {
-        ProjectDiagnosticsEditor::new_with_context(1, project.clone(), workspace.downgrade(), cx)
+        ProjectDiagnosticsEditor.new_with_context(1, project.clone(), workspace.downgrade(), cx)
     });
     let editor = view.update(cx, |view, _| view.editor.clone());
 
@@ -210,7 +210,7 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
     editor.update(cx, |editor, cx| {
         assert_eq!(
             editor.selections.display_ranges(cx),
-            [DisplayPoint::new(DisplayRow(12), 6)..DisplayPoint::new(DisplayRow(12), 6)]
+            [DisplayPoint.new(DisplayRow(12), 6)..DisplayPoint.new(DisplayRow(12), 6)]
         );
     });
 
@@ -220,17 +220,17 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 language_server_id,
-                PathBuf::from("/test/consts.rs"),
+                PathBuf.from("/test/consts.rs"),
                 None,
                 vec![DiagnosticEntry {
-                    range: Unclipped(PointUtf16::new(0, 15))..Unclipped(PointUtf16::new(0, 15)),
+                    range: Unclipped(PointUtf16.new(0, 15))..Unclipped(PointUtf16.new(0, 15)),
                     diagnostic: Diagnostic {
                         message: "mismatched types\nexpected `usize`, found `char`".to_string(),
-                        severity: DiagnosticSeverity::ERROR,
+                        severity: DiagnosticSeverity.ERROR,
                         is_primary: true,
                         is_disk_based: true,
                         group_id: 0,
-                        ..Default::default()
+                        ..Default.default()
                     },
                 }],
                 cx,
@@ -309,7 +309,7 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
     editor.update(cx, |editor, cx| {
         assert_eq!(
             editor.selections.display_ranges(cx),
-            [DisplayPoint::new(DisplayRow(19), 6)..DisplayPoint::new(DisplayRow(19), 6)]
+            [DisplayPoint.new(DisplayRow(19), 6)..DisplayPoint.new(DisplayRow(19), 6)]
         );
     });
 
@@ -319,29 +319,29 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 language_server_id,
-                PathBuf::from("/test/consts.rs"),
+                PathBuf.from("/test/consts.rs"),
                 None,
                 vec![
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(0, 15))..Unclipped(PointUtf16::new(0, 15)),
+                        range: Unclipped(PointUtf16.new(0, 15))..Unclipped(PointUtf16.new(0, 15)),
                         diagnostic: Diagnostic {
                             message: "mismatched types\nexpected `usize`, found `char`".to_string(),
-                            severity: DiagnosticSeverity::ERROR,
+                            severity: DiagnosticSeverity.ERROR,
                             is_primary: true,
                             is_disk_based: true,
                             group_id: 0,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                     DiagnosticEntry {
-                        range: Unclipped(PointUtf16::new(1, 15))..Unclipped(PointUtf16::new(1, 15)),
+                        range: Unclipped(PointUtf16.new(1, 15))..Unclipped(PointUtf16.new(1, 15)),
                         diagnostic: Diagnostic {
                             message: "unresolved name `c`".to_string(),
-                            severity: DiagnosticSeverity::ERROR,
+                            severity: DiagnosticSeverity.ERROR,
                             is_primary: true,
                             is_disk_based: true,
                             group_id: 1,
-                            ..Default::default()
+                            ..Default.default()
                         },
                     },
                 ],
@@ -427,11 +427,11 @@ async fn test_diagnostics(cx: &mut TestAppContext) {
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
     init_test(cx);
 
-    let fs = FakeFs::new(cx.executor());
+    let fs = FakeFs.new(cx.executor());
     fs.insert_tree(
         "/test",
         json!({
@@ -448,13 +448,13 @@ async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
 
     let server_id_1 = LanguageServerId(100);
     let server_id_2 = LanguageServerId(101);
-    let project = Project::test(fs.clone(), ["/test".as_ref()], cx).await;
-    let window = cx.add_window(|cx| Workspace::test_new(project.clone(), cx));
-    let cx = &mut VisualTestContext::from_window(*window, cx);
+    let project = Project.test(fs.clone(), ["/test".as_ref()], cx).await;
+    let window = cx.add_window(|cx| Workspace.test_new(project.clone(), cx));
+    let cx = &mut VisualTestContext.from_window(*window, cx);
     let workspace = window.root(cx).unwrap();
 
     let view = window.build_view(cx, |cx| {
-        ProjectDiagnosticsEditor::new_with_context(1, project.clone(), workspace.downgrade(), cx)
+        ProjectDiagnosticsEditor.new_with_context(1, project.clone(), workspace.downgrade(), cx)
     });
     let editor = view.update(cx, |view, _| view.editor.clone());
 
@@ -465,17 +465,17 @@ async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 server_id_1,
-                PathBuf::from("/test/main.js"),
+                PathBuf.from("/test/main.js"),
                 None,
                 vec![DiagnosticEntry {
-                    range: Unclipped(PointUtf16::new(0, 0))..Unclipped(PointUtf16::new(0, 1)),
+                    range: Unclipped(PointUtf16.new(0, 0))..Unclipped(PointUtf16.new(0, 1)),
                     diagnostic: Diagnostic {
                         message: "error 1".to_string(),
-                        severity: DiagnosticSeverity::WARNING,
+                        severity: DiagnosticSeverity.WARNING,
                         is_primary: true,
                         is_disk_based: true,
                         group_id: 1,
-                        ..Default::default()
+                        ..Default.default()
                     },
                 }],
                 cx,
@@ -515,17 +515,17 @@ async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 server_id_2,
-                PathBuf::from("/test/main.js"),
+                PathBuf.from("/test/main.js"),
                 None,
                 vec![DiagnosticEntry {
-                    range: Unclipped(PointUtf16::new(1, 0))..Unclipped(PointUtf16::new(1, 1)),
+                    range: Unclipped(PointUtf16.new(1, 0))..Unclipped(PointUtf16.new(1, 1)),
                     diagnostic: Diagnostic {
                         message: "warning 1".to_string(),
-                        severity: DiagnosticSeverity::ERROR,
+                        severity: DiagnosticSeverity.ERROR,
                         is_primary: true,
                         is_disk_based: true,
                         group_id: 2,
-                        ..Default::default()
+                        ..Default.default()
                     },
                 }],
                 cx,
@@ -572,17 +572,17 @@ async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 server_id_1,
-                PathBuf::from("/test/main.js"),
+                PathBuf.from("/test/main.js"),
                 None,
                 vec![DiagnosticEntry {
-                    range: Unclipped(PointUtf16::new(2, 0))..Unclipped(PointUtf16::new(2, 1)),
+                    range: Unclipped(PointUtf16.new(2, 0))..Unclipped(PointUtf16.new(2, 1)),
                     diagnostic: Diagnostic {
                         message: "warning 2".to_string(),
-                        severity: DiagnosticSeverity::WARNING,
+                        severity: DiagnosticSeverity.WARNING,
                         is_primary: true,
                         is_disk_based: true,
                         group_id: 1,
-                        ..Default::default()
+                        ..Default.default()
                     },
                 }],
                 cx,
@@ -591,7 +591,7 @@ async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 server_id_2,
-                PathBuf::from("/test/main.rs"),
+                PathBuf.from("/test/main.rs"),
                 None,
                 vec![],
                 cx,
@@ -637,17 +637,17 @@ async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
         project
             .update_diagnostic_entries(
                 server_id_2,
-                PathBuf::from("/test/main.js"),
+                PathBuf.from("/test/main.js"),
                 None,
                 vec![DiagnosticEntry {
-                    range: Unclipped(PointUtf16::new(3, 0))..Unclipped(PointUtf16::new(3, 1)),
+                    range: Unclipped(PointUtf16.new(3, 0))..Unclipped(PointUtf16.new(3, 1)),
                     diagnostic: Diagnostic {
                         message: "warning 2".to_string(),
-                        severity: DiagnosticSeverity::WARNING,
+                        severity: DiagnosticSeverity.WARNING,
                         is_primary: true,
                         is_disk_based: true,
                         group_id: 1,
-                        ..Default::default()
+                        ..Default.default()
                     },
                 }],
                 cx,
@@ -689,28 +689,28 @@ async fn test_diagnostics_multiple_servers(cx: &mut TestAppContext) {
     );
 }
 
-#[gpui::test(iterations = 20)]
+#[gpui.test(iterations = 20)]
 async fn test_random_diagnostics(cx: &mut TestAppContext, mut rng: StdRng) {
     init_test(cx);
 
-    let operations = env::var("OPERATIONS")
+    let operations = env.var("OPERATIONS")
         .map(|i| i.parse().expect("invalid `OPERATIONS` variable"))
         .unwrap_or(10);
 
-    let fs = FakeFs::new(cx.executor());
+    let fs = FakeFs.new(cx.executor());
     fs.insert_tree("/test", json!({})).await;
 
-    let project = Project::test(fs.clone(), ["/test".as_ref()], cx).await;
-    let window = cx.add_window(|cx| Workspace::test_new(project.clone(), cx));
-    let cx = &mut VisualTestContext::from_window(*window, cx);
+    let project = Project.test(fs.clone(), ["/test".as_ref()], cx).await;
+    let window = cx.add_window(|cx| Workspace.test_new(project.clone(), cx));
+    let cx = &mut VisualTestContext.from_window(*window, cx);
     let workspace = window.root(cx).unwrap();
 
     let mutated_view = window.build_view(cx, |cx| {
-        ProjectDiagnosticsEditor::new_with_context(1, project.clone(), workspace.downgrade(), cx)
+        ProjectDiagnosticsEditor.new_with_context(1, project.clone(), workspace.downgrade(), cx)
     });
 
     workspace.update(cx, |workspace, cx| {
-        workspace.add_item_to_center(Box::new(mutated_view.clone()), cx);
+        workspace.add_item_to_center(Box.new(mutated_view.clone()), cx);
     });
     mutated_view.update(cx, |view, cx| {
         assert!(view.focus_handle.is_focused(cx));
@@ -719,18 +719,18 @@ async fn test_random_diagnostics(cx: &mut TestAppContext, mut rng: StdRng) {
     let mut next_group_id = 0;
     let mut next_filename = 0;
     let mut language_server_ids = vec![LanguageServerId(0)];
-    let mut updated_language_servers = HashSet::default();
+    let mut updated_language_servers = HashSet.default();
     let mut current_diagnostics: HashMap<
         (PathBuf, LanguageServerId),
         Vec<DiagnosticEntry<Unclipped<PointUtf16>>>,
-    > = Default::default();
+    > = Default.default();
 
     for _ in 0..operations {
         match rng.gen_range(0..100) {
             // language server completes its diagnostic check
             0..=20 if !updated_language_servers.is_empty() => {
                 let server_id = *updated_language_servers.iter().choose(&mut rng).unwrap();
-                log::info!("finishing diagnostic check for language server {server_id}");
+                log.info!("finishing diagnostic check for language server {server_id}");
                 project.update(cx, |project, cx| {
                     project.disk_based_diagnostics_finished(server_id, cx)
                 });
@@ -755,7 +755,7 @@ async fn test_random_diagnostics(cx: &mut TestAppContext, mut rng: StdRng) {
                                 format!("/test/{}.rs", post_inc(&mut next_filename)).into();
                             let len = rng.gen_range(128..256);
                             let content =
-                                RandomCharIter::new(&mut rng).take(len).collect::<String>();
+                                RandomCharIter.new(&mut rng).take(len).collect.<String>();
                             fs.insert_file(&path, content.into_bytes()).await;
 
                             let server_id = match language_server_ids.iter().choose(&mut rng) {
@@ -780,7 +780,7 @@ async fn test_random_diagnostics(cx: &mut TestAppContext, mut rng: StdRng) {
                 updated_language_servers.insert(server_id);
 
                 project.update(cx, |project, cx| {
-                    log::info!("updating diagnostics. language server {server_id} path {path:?}");
+                    log.info!("updating diagnostics. language server {server_id} path {path:?}");
                     randomly_update_diagnostics_for_path(
                         &fs,
                         &path,
@@ -798,13 +798,13 @@ async fn test_random_diagnostics(cx: &mut TestAppContext, mut rng: StdRng) {
         }
     }
 
-    log::info!("updating mutated diagnostics view");
+    log.info!("updating mutated diagnostics view");
     mutated_view.update(cx, |view, _| view.enqueue_update_stale_excerpts(None));
     cx.run_until_parked();
 
-    log::info!("constructing reference diagnostics view");
+    log.info!("constructing reference diagnostics view");
     let reference_view = window.build_view(cx, |cx| {
-        ProjectDiagnosticsEditor::new_with_context(1, project.clone(), workspace.downgrade(), cx)
+        ProjectDiagnosticsEditor.new_with_context(1, project.clone(), workspace.downgrade(), cx)
     });
     cx.run_until_parked();
 
@@ -815,15 +815,15 @@ async fn test_random_diagnostics(cx: &mut TestAppContext, mut rng: StdRng) {
 
 fn init_test(cx: &mut TestAppContext) {
     cx.update(|cx| {
-        let settings = SettingsStore::test(cx);
+        let settings = SettingsStore.test(cx);
         cx.set_global(settings);
-        theme::init(theme::LoadThemes::JustBase, cx);
-        language::init(cx);
-        client::init_settings(cx);
-        workspace::init_settings(cx);
-        Project::init_settings(cx);
-        crate::init(cx);
-        editor::init(cx);
+        theme.init(theme.LoadThemes.JustBase, cx);
+        language.init(cx);
+        client.init_settings(cx);
+        workspace.init_settings(cx);
+        Project.init_settings(cx);
+        crate.init(cx);
+        editor.init(cx);
     });
 }
 
@@ -842,7 +842,7 @@ fn get_diagnostics_excerpts(
 ) -> Vec<ExcerptInfo> {
     view.update(cx, |view, cx| {
         let mut result = vec![];
-        let mut excerpt_indices_by_id = HashMap::default();
+        let mut excerpt_indices_by_id = HashMap.default();
         view.excerpts.update(cx, |multibuffer, cx| {
             let snapshot = multibuffer.snapshot(cx);
             for (id, buffer, range) in snapshot.excerpts() {
@@ -853,7 +853,7 @@ fn get_diagnostics_excerpts(
                         context: range.context.to_point(&buffer),
                         primary: range.primary.map(|range| range.to_point(&buffer)),
                     },
-                    group_id: usize::MAX,
+                    group_id: usize.MAX,
                     primary: false,
                     language_server: LanguageServerId(0),
                 });
@@ -884,18 +884,18 @@ fn randomly_update_diagnostics_for_path(
     rng: &mut impl Rng,
 ) {
     let file_content = fs.read_file_sync(path).unwrap();
-    let file_text = Rope::from(String::from_utf8_lossy(&file_content).as_ref());
+    let file_text = Rope.from(String.from_utf8_lossy(&file_content).as_ref());
 
     let mut group_ids = diagnostics
         .iter()
         .map(|d| d.diagnostic.group_id)
-        .collect::<HashSet<_>>();
+        .collect.<HashSet<_>>();
 
     let mutation_count = rng.gen_range(1..=3);
     for _ in 0..mutation_count {
         if rng.gen_bool(0.5) && !group_ids.is_empty() {
             let group_id = *group_ids.iter().choose(rng).unwrap();
-            log::info!("  removing diagnostic group {group_id}");
+            log.info!("  removing diagnostic group {group_id}");
             diagnostics.retain(|d| d.diagnostic.group_id != group_id);
             group_ids.remove(&group_id);
         } else {
@@ -908,12 +908,12 @@ fn randomly_update_diagnostics_for_path(
             }
 
             let ix = rng.gen_range(0..=diagnostics.len());
-            log::info!(
+            log.info!(
                 "  inserting diagnostic group {group_id} at index {ix}. ranges: {:?}",
                 new_diagnostics
                     .iter()
                     .map(|d| (d.range.start.0, d.range.end.0))
-                    .collect::<Vec<_>>()
+                    .collect.<Vec<_>>()
             );
             diagnostics.splice(ix..ix, new_diagnostics);
         }
@@ -937,9 +937,9 @@ fn random_diagnostic(
         end: Unclipped(file_text.offset_to_point_utf16(end)),
     };
     let severity = if rng.gen_bool(0.5) {
-        DiagnosticSeverity::WARNING
+        DiagnosticSeverity.WARNING
     } else {
-        DiagnosticSeverity::ERROR
+        DiagnosticSeverity.ERROR
     };
     let message = format!("diagnostic group {group_id}");
 
@@ -967,8 +967,8 @@ fn editor_blocks(
     editor: &View<Editor>,
     cx: &mut VisualTestContext,
 ) -> Vec<(DisplayRow, SharedString)> {
-    let mut blocks = Vec::new();
-    cx.draw(gpui::Point::default(), AvailableSpace::min_size(), |cx| {
+    let mut blocks = Vec.new();
+    cx.draw(gpui.Point.default(), AvailableSpace.min_size(), |cx| {
         editor.update(cx, |editor, cx| {
             let snapshot = editor.snapshot(cx);
             blocks.extend(
@@ -977,18 +977,18 @@ fn editor_blocks(
                     .filter_map(|(row, block)| {
                         let block_id = block.id();
                         let name: SharedString = match block {
-                            Block::Custom(block) => {
+                            Block.Custom(block) => {
                                 let mut element = block.render(&mut BlockContext {
                                     context: cx,
                                     anchor_x: px(0.),
-                                    gutter_dimensions: &GutterDimensions::default(),
+                                    gutter_dimensions: &GutterDimensions.default(),
                                     line_height: px(0.),
                                     em_width: px(0.),
                                     max_width: px(0.),
                                     block_id,
-                                    editor_style: &editor::EditorStyle::default(),
+                                    editor_style: &editor.EditorStyle.default(),
                                 });
-                                let element = element.downcast_mut::<Stateful<Div>>().unwrap();
+                                let element = element.downcast_mut.<Stateful<Div>>().unwrap();
                                 element
                                     .interactivity()
                                     .element_id
@@ -997,7 +997,7 @@ fn editor_blocks(
                                     .ok()?
                             }
 
-                            Block::ExcerptHeader {
+                            Block.ExcerptHeader {
                                 starts_new_buffer, ..
                             } => {
                                 if *starts_new_buffer {
@@ -1006,7 +1006,7 @@ fn editor_blocks(
                                     EXCERPT_HEADER.into()
                                 }
                             }
-                            Block::ExcerptFooter { .. } => EXCERPT_FOOTER.into(),
+                            Block.ExcerptFooter { .. } => EXCERPT_FOOTER.into(),
                         };
 
                         Some((row, name))

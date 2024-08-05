@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use call::Room;
-use client::ChannelId;
-use gpui::{Model, TestAppContext};
+use call.Room;
+use client.ChannelId;
+use gpui.{Model, TestAppContext};
 
 mod channel_buffer_tests;
 mod channel_guest_tests;
@@ -19,11 +19,11 @@ mod randomized_test_helpers;
 mod remote_editing_collaboration_tests;
 mod test_server;
 
-use language::{tree_sitter_rust, Language, LanguageConfig, LanguageMatcher};
-pub use randomized_test_helpers::{
+use language.{tree_sitter_rust, Language, LanguageConfig, LanguageMatcher};
+pub use randomized_test_helpers.{
     run_randomized_test, save_randomized_test_plan, RandomizedTest, TestError, UserTestPlan,
 };
-pub use test_server::{TestClient, TestServer};
+pub use test_server.{TestClient, TestServer};
 
 #[derive(Debug, Eq, PartialEq)]
 struct RoomParticipants {
@@ -37,12 +37,12 @@ fn room_participants(room: &Model<Room>, cx: &mut TestAppContext) -> RoomPartici
             .remote_participants()
             .iter()
             .map(|(_, participant)| participant.user.github_login.clone())
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         let mut pending = room
             .pending_participants()
             .iter()
             .map(|user| user.github_login.clone())
-            .collect::<Vec<_>>();
+            .collect.<Vec<_>>();
         remote.sort();
         pending.sort();
         RoomParticipants { remote, pending }
@@ -54,15 +54,15 @@ fn channel_id(room: &Model<Room>, cx: &mut TestAppContext) -> Option<ChannelId> 
 }
 
 fn rust_lang() -> Arc<Language> {
-    Arc::new(Language::new(
+    Arc.new(Language.new(
         LanguageConfig {
             name: "Rust".into(),
             matcher: LanguageMatcher {
                 path_suffixes: vec!["rs".to_string()],
-                ..Default::default()
+                ..Default.default()
             },
-            ..Default::default()
+            ..Default.default()
         },
-        Some(tree_sitter_rust::language()),
+        Some(tree_sitter_rust.language()),
     ))
 }

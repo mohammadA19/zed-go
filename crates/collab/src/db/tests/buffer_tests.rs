@@ -1,7 +1,7 @@
-use super::*;
-use crate::test_both_dbs;
-use language::proto::{self, serialize_version};
-use text::Buffer;
+use super.*;
+use crate.test_both_dbs;
+use language.proto.{self, serialize_version};
+use text.Buffer;
 
 test_both_dbs!(
     test_channel_buffers,
@@ -53,7 +53,7 @@ async fn test_channel_buffers(db: &Arc<Database>) {
 
     let zed_id = db.create_root_channel("zed", a_id).await.unwrap();
 
-    db.invite_channel_member(zed_id, b_id, a_id, ChannelRole::Member)
+    db.invite_channel_member(zed_id, b_id, a_id, ChannelRole.Member)
         .await
         .unwrap();
 
@@ -67,7 +67,7 @@ async fn test_channel_buffers(db: &Arc<Database>) {
         .await
         .unwrap();
 
-    let mut buffer_a = Buffer::new(0, text::BufferId::new(1).unwrap(), "".to_string());
+    let mut buffer_a = Buffer.new(0, text.BufferId.new(1).unwrap(), "".to_string());
     let operations = vec![
         buffer_a.edit([(0..0, "hello world")]),
         buffer_a.edit([(5..5, ", cruel")]),
@@ -78,8 +78,8 @@ async fn test_channel_buffers(db: &Arc<Database>) {
 
     let operations = operations
         .into_iter()
-        .map(|op| proto::serialize_operation(&language::Operation::Buffer(op)))
-        .collect::<Vec<_>>();
+        .map(|op| proto.serialize_operation(&language.Operation.Buffer(op)))
+        .collect.<Vec<_>>();
 
     db.update_channel_buffer(zed_id, a_id, &operations)
         .await
@@ -91,15 +91,15 @@ async fn test_channel_buffers(db: &Arc<Database>) {
         .await
         .unwrap();
 
-    let mut buffer_b = Buffer::new(
+    let mut buffer_b = Buffer.new(
         0,
-        text::BufferId::new(1).unwrap(),
+        text.BufferId.new(1).unwrap(),
         buffer_response_b.base_text,
     );
     buffer_b
         .apply_ops(buffer_response_b.operations.into_iter().map(|operation| {
-            let operation = proto::deserialize_operation(operation).unwrap();
-            if let language::Operation::Buffer(operation) = operation {
+            let operation = proto.deserialize_operation(operation).unwrap();
+            if let language.Operation.Buffer(operation) = operation {
                 operation
             } else {
                 unreachable!()
@@ -119,14 +119,14 @@ async fn test_channel_buffers(db: &Arc<Database>) {
     assert_eq!(
         buffer_response_b.collaborators,
         &[
-            rpc::proto::Collaborator {
+            rpc.proto.Collaborator {
                 user_id: a_id.to_proto(),
-                peer_id: Some(rpc::proto::PeerId { id: 1, owner_id }),
+                peer_id: Some(rpc.proto.PeerId { id: 1, owner_id }),
                 replica_id: 0,
             },
-            rpc::proto::Collaborator {
+            rpc.proto.Collaborator {
                 user_id: b_id.to_proto(),
-                peer_id: Some(rpc::proto::PeerId { id: 2, owner_id }),
+                peer_id: Some(rpc.proto.PeerId { id: 2, owner_id }),
                 replica_id: 1,
             }
         ]
@@ -203,15 +203,15 @@ async fn test_channel_buffers_last_operations(db: &Database) {
         id: user_id.0 as u32,
     };
 
-    let mut buffers = Vec::new();
-    let mut text_buffers = Vec::new();
+    let mut buffers = Vec.new();
+    let mut text_buffers = Vec.new();
     for i in 0..3 {
         let channel = db
             .create_root_channel(&format!("channel-{i}"), user_id)
             .await
             .unwrap();
 
-        db.invite_channel_member(channel, observer_id, user_id, ChannelRole::Member)
+        db.invite_channel_member(channel, observer_id, user_id, ChannelRole.Member)
             .await
             .unwrap();
         db.respond_to_channel_invite(channel, observer_id, true)
@@ -228,9 +228,9 @@ async fn test_channel_buffers_last_operations(db: &Database) {
                 .unwrap(),
         );
 
-        text_buffers.push(Buffer::new(
+        text_buffers.push(Buffer.new(
             0,
-            text::BufferId::new(1).unwrap(),
+            text.BufferId.new(1).unwrap(),
             "".to_string(),
         ));
     }
@@ -266,7 +266,7 @@ async fn test_channel_buffers_last_operations(db: &Database) {
     db.join_channel_buffer(buffers[1].channel_id, user_id, connection_id)
         .await
         .unwrap();
-    text_buffers[1] = Buffer::new(1, text::BufferId::new(1).unwrap(), "def".to_string());
+    text_buffers[1] = Buffer.new(1, text.BufferId.new(1).unwrap(), "def".to_string());
     update_buffer(
         buffers[1].channel_id,
         user_id,
@@ -288,23 +288,23 @@ async fn test_channel_buffers_last_operations(db: &Database) {
 
     let channels_for_user = db.get_channels_for_user(user_id).await.unwrap();
 
-    pretty_assertions::assert_eq!(
+    pretty_assertions.assert_eq!(
         channels_for_user.latest_buffer_versions,
         [
-            rpc::proto::ChannelBufferVersion {
+            rpc.proto.ChannelBufferVersion {
                 channel_id: buffers[0].channel_id.to_proto(),
                 epoch: 0,
                 version: serialize_version(&text_buffers[0].version()),
             },
-            rpc::proto::ChannelBufferVersion {
+            rpc.proto.ChannelBufferVersion {
                 channel_id: buffers[1].channel_id.to_proto(),
                 epoch: 1,
                 version: serialize_version(&text_buffers[1].version())
                     .into_iter()
                     .filter(|vector| vector.replica_id == text_buffers[1].replica_id() as u32)
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
             },
-            rpc::proto::ChannelBufferVersion {
+            rpc.proto.ChannelBufferVersion {
                 channel_id: buffers[2].channel_id.to_proto(),
                 epoch: 0,
                 version: serialize_version(&text_buffers[2].version()),
@@ -317,12 +317,12 @@ async fn update_buffer(
     channel_id: ChannelId,
     user_id: UserId,
     db: &Database,
-    operations: Vec<text::Operation>,
+    operations: Vec<text.Operation>,
 ) {
     let operations = operations
         .into_iter()
-        .map(|op| proto::serialize_operation(&language::Operation::Buffer(op)))
-        .collect::<Vec<_>>();
+        .map(|op| proto.serialize_operation(&language.Operation.Buffer(op)))
+        .collect.<Vec<_>>();
     db.update_channel_buffer(channel_id, user_id, &operations)
         .await
         .unwrap();

@@ -1,4 +1,4 @@
-use super::*;
+use super.*;
 
 #[derive(Debug)]
 pub enum ContributorSelector {
@@ -15,12 +15,12 @@ impl Database {
                 GithubLogin,
             }
 
-            Ok(contributor::Entity::find()
-                .inner_join(user::Entity)
-                .order_by_asc(contributor::Column::SignedAt)
+            Ok(contributor.Entity.find()
+                .inner_join(user.Entity)
+                .order_by_asc(contributor.Column.SignedAt)
                 .select_only()
-                .column(user::Column::GithubLogin)
-                .into_values::<_, QueryGithubLogin>()
+                .column(user.Column.GithubLogin)
+                .into_values.<_, QueryGithubLogin>()
                 .all(&*tx)
                 .await?)
         })
@@ -34,21 +34,21 @@ impl Database {
     ) -> Result<Option<DateTime>> {
         self.transaction(|tx| async move {
             let condition = match selector {
-                ContributorSelector::GitHubUserId { github_user_id } => {
-                    user::Column::GithubUserId.eq(*github_user_id)
+                ContributorSelector.GitHubUserId { github_user_id } => {
+                    user.Column.GithubUserId.eq(*github_user_id)
                 }
-                ContributorSelector::GitHubLogin { github_login } => {
-                    user::Column::GithubLogin.eq(github_login)
+                ContributorSelector.GitHubLogin { github_login } => {
+                    user.Column.GithubLogin.eq(github_login)
                 }
             };
 
-            if let Some(user) = user::Entity::find().filter(condition).one(&*tx).await? {
+            if let Some(user) = user.Entity.find().filter(condition).one(&*tx).await? {
                 if user.admin {
                     return Ok(Some(user.created_at));
                 }
 
                 if let Some(contributor) =
-                    contributor::Entity::find_by_id(user.id).one(&*tx).await?
+                    contributor.Entity.find_by_id(user.id).one(&*tx).await?
                 {
                     return Ok(Some(contributor.signed_at));
                 }
@@ -78,12 +78,12 @@ impl Database {
                 )
                 .await?;
 
-            contributor::Entity::insert(contributor::ActiveModel {
-                user_id: ActiveValue::Set(user.id),
-                signed_at: ActiveValue::NotSet,
+            contributor.Entity.insert(contributor.ActiveModel {
+                user_id: ActiveValue.Set(user.id),
+                signed_at: ActiveValue.NotSet,
             })
             .on_conflict(
-                OnConflict::column(contributor::Column::UserId)
+                OnConflict.column(contributor.Column.UserId)
                     .do_nothing()
                     .to_owned(),
             )

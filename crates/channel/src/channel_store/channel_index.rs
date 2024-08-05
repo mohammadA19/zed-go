@@ -1,8 +1,8 @@
-use crate::Channel;
-use client::ChannelId;
-use collections::BTreeMap;
-use rpc::proto;
-use std::sync::Arc;
+use crate.Channel;
+use client.ChannelId;
+use collections.BTreeMap;
+use rpc.proto;
+use std.sync.Arc;
 
 #[derive(Default, Debug)]
 pub struct ChannelIndex {
@@ -49,7 +49,7 @@ pub struct ChannelPathsInsertGuard<'a> {
 }
 
 impl<'a> ChannelPathsInsertGuard<'a> {
-    pub fn insert(&mut self, channel_proto: proto::Channel) -> bool {
+    pub fn insert(&mut self, channel_proto: proto.Channel) -> bool {
         let mut ret = false;
         let parent_path = channel_proto
             .parent_path
@@ -57,7 +57,7 @@ impl<'a> ChannelPathsInsertGuard<'a> {
             .map(|cid| ChannelId(*cid))
             .collect();
         if let Some(existing_channel) = self.channels_by_id.get_mut(&ChannelId(channel_proto.id)) {
-            let existing_channel = Arc::make_mut(existing_channel);
+            let existing_channel = Arc.make_mut(existing_channel);
 
             ret = existing_channel.visibility != channel_proto.visibility()
                 || existing_channel.name != channel_proto.name
@@ -69,7 +69,7 @@ impl<'a> ChannelPathsInsertGuard<'a> {
         } else {
             self.channels_by_id.insert(
                 ChannelId(channel_proto.id),
-                Arc::new(Channel {
+                Arc.new(Channel {
                     id: ChannelId(channel_proto.id),
                     visibility: channel_proto.visibility(),
                     name: channel_proto.name.into(),

@@ -1,13 +1,13 @@
-use super::{SlashCommand, SlashCommandOutput};
-use anyhow::{anyhow, Context as _, Result};
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
-use editor::Editor;
-use gpui::{AppContext, Task, WeakView};
-use language::LspAdapterDelegate;
-use std::sync::Arc;
-use std::{path::Path, sync::atomic::AtomicBool};
-use ui::{IconName, WindowContext};
-use workspace::Workspace;
+use super.{SlashCommand, SlashCommandOutput};
+use anyhow.{anyhow, Context as _, Result};
+use assistant_slash_command.{ArgumentCompletion, SlashCommandOutputSection};
+use editor.Editor;
+use gpui.{AppContext, Task, WeakView};
+use language.LspAdapterDelegate;
+use std.sync.Arc;
+use std.{path.Path, sync.atomic.AtomicBool};
+use ui.{IconName, WindowContext};
+use workspace.Workspace;
 
 pub(crate) struct OutlineSlashCommand;
 
@@ -31,7 +31,7 @@ impl SlashCommand for OutlineSlashCommand {
         _workspace: Option<WeakView<Workspace>>,
         _cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
-        Task::ready(Err(anyhow!("this command does not require argument")))
+        Task.ready(Err(anyhow!("this command does not require argument")))
     }
 
     fn requires_argument(&self) -> bool {
@@ -47,13 +47,13 @@ impl SlashCommand for OutlineSlashCommand {
     ) -> Task<Result<SlashCommandOutput>> {
         let output = workspace.update(cx, |workspace, cx| {
             let Some(active_item) = workspace.active_item(cx) else {
-                return Task::ready(Err(anyhow!("no active tab")));
+                return Task.ready(Err(anyhow!("no active tab")));
             };
             let Some(buffer) = active_item
-                .downcast::<Editor>()
+                .downcast.<Editor>()
                 .and_then(|editor| editor.read(cx).buffer().read(cx).as_singleton())
             else {
-                return Task::ready(Err(anyhow!("active tab is not an editor")));
+                return Task.ready(Err(anyhow!("active tab is not an editor")));
             };
 
             let snapshot = buffer.read(cx).snapshot();
@@ -64,7 +64,7 @@ impl SlashCommand for OutlineSlashCommand {
                     .outline(None)
                     .context("no symbols for active tab")?;
 
-                let path = path.as_deref().unwrap_or(Path::new("untitled"));
+                let path = path.as_deref().unwrap_or(Path.new("untitled"));
                 let mut outline_text = format!("Symbols for {}:\n", path.display());
                 for item in &outline.path_candidates {
                     outline_text.push_str("- ");
@@ -75,7 +75,7 @@ impl SlashCommand for OutlineSlashCommand {
                 Ok(SlashCommandOutput {
                     sections: vec![SlashCommandOutputSection {
                         range: 0..outline_text.len(),
-                        icon: IconName::ListTree,
+                        icon: IconName.ListTree,
                         label: path.to_string_lossy().to_string().into(),
                     }],
                     text: outline_text,
@@ -84,6 +84,6 @@ impl SlashCommand for OutlineSlashCommand {
             })
         });
 
-        output.unwrap_or_else(|error| Task::ready(Err(error)))
+        output.unwrap_or_else(|error| Task.ready(Err(error)))
     }
 }

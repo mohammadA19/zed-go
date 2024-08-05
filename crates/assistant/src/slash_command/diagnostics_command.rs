@@ -1,24 +1,24 @@
-use super::{create_label_for_command, SlashCommand, SlashCommandOutput};
-use anyhow::{anyhow, Result};
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
-use fuzzy::{PathMatch, StringMatchCandidate};
-use gpui::{AppContext, Model, Task, View, WeakView};
-use language::{
+use super.{create_label_for_command, SlashCommand, SlashCommandOutput};
+use anyhow.{anyhow, Result};
+use assistant_slash_command.{ArgumentCompletion, SlashCommandOutputSection};
+use fuzzy.{PathMatch, StringMatchCandidate};
+use gpui.{AppContext, Model, Task, View, WeakView};
+use language.{
     Anchor, BufferSnapshot, DiagnosticEntry, DiagnosticSeverity, LspAdapterDelegate,
     OffsetRangeExt, ToOffset,
 };
-use project::{DiagnosticSummary, PathMatchCandidateSet, Project};
-use rope::Point;
-use std::fmt::Write;
-use std::path::{Path, PathBuf};
-use std::{
-    ops::Range,
-    sync::{atomic::AtomicBool, Arc},
+use project.{DiagnosticSummary, PathMatchCandidateSet, Project};
+use rope.Point;
+use std.fmt.Write;
+use std.path.{Path, PathBuf};
+use std.{
+    ops.Range,
+    sync.{atomic.AtomicBool, Arc},
 };
-use ui::prelude::*;
-use util::paths::PathMatcher;
-use util::ResultExt;
-use workspace::Workspace;
+use ui.prelude.*;
+use util.paths.PathMatcher;
+use util.ResultExt;
+use workspace.Workspace;
 
 pub(crate) struct DiagnosticsSlashCommand;
 
@@ -33,13 +33,13 @@ impl DiagnosticsSlashCommand {
         if query.is_empty() {
             let workspace = workspace.read(cx);
             let entries = workspace.recent_navigation_history(Some(10), cx);
-            let path_prefix: Arc<str> = Arc::default();
-            Task::ready(
+            let path_prefix: Arc<str> = Arc.default();
+            Task.ready(
                 entries
                     .into_iter()
                     .map(|(entry, _)| PathMatch {
                         score: 0.,
-                        positions: Vec::new(),
+                        positions: Vec.new(),
                         worktree_id: entry.worktree_id.to_usize(),
                         path: entry.path.clone(),
                         path_prefix: path_prefix.clone(),
@@ -48,7 +48,7 @@ impl DiagnosticsSlashCommand {
                     .collect(),
             )
         } else {
-            let worktrees = workspace.read(cx).visible_worktrees(cx).collect::<Vec<_>>();
+            let worktrees = workspace.read(cx).visible_worktrees(cx).collect.<Vec<_>>();
             let candidate_sets = worktrees
                 .into_iter()
                 .map(|worktree| {
@@ -59,14 +59,14 @@ impl DiagnosticsSlashCommand {
                             .root_entry()
                             .map_or(false, |entry| entry.is_ignored),
                         include_root_name: true,
-                        candidates: project::Candidates::Entries,
+                        candidates: project.Candidates.Entries,
                     }
                 })
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
             let executor = cx.background_executor().clone();
             cx.foreground_executor().spawn(async move {
-                fuzzy::match_path_sets(
+                fuzzy.match_path_sets(
                     candidate_sets.as_slice(),
                     query.as_str(),
                     None,
@@ -86,7 +86,7 @@ impl SlashCommand for DiagnosticsSlashCommand {
         "diagnostics".into()
     }
 
-    fn label(&self, cx: &AppContext) -> language::CodeLabel {
+    fn label(&self, cx: &AppContext) -> language.CodeLabel {
         create_label_for_command("diagnostics", &[INCLUDE_WARNINGS_ARGUMENT], cx)
     }
 
@@ -110,7 +110,7 @@ impl SlashCommand for DiagnosticsSlashCommand {
         cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
         let Some(workspace) = workspace.and_then(|workspace| workspace.upgrade()) else {
-            return Task::ready(Err(anyhow!("workspace was dropped")));
+            return Task.ready(Err(anyhow!("workspace was dropped")));
         };
         let query = query.split_whitespace().last().unwrap_or("").to_string();
 
@@ -130,8 +130,8 @@ impl SlashCommand for DiagnosticsSlashCommand {
                 .collect();
 
             matches.extend(
-                fuzzy::match_strings(
-                    &Options::match_candidates_for_args(),
+                fuzzy.match_strings(
+                    &Options.match_candidates_for_args(),
                     &query,
                     false,
                     10,
@@ -162,15 +162,15 @@ impl SlashCommand for DiagnosticsSlashCommand {
         cx: &mut WindowContext,
     ) -> Task<Result<SlashCommandOutput>> {
         let Some(workspace) = workspace.upgrade() else {
-            return Task::ready(Err(anyhow!("workspace was dropped")));
+            return Task.ready(Err(anyhow!("workspace was dropped")));
         };
 
-        let options = Options::parse(argument);
+        let options = Options.parse(argument);
 
         let task = collect_diagnostics(workspace.read(cx).project().clone(), options, cx);
         cx.spawn(move |_| async move {
             let Some((text, sections)) = task.await? else {
-                return Ok(SlashCommandOutput::default());
+                return Ok(SlashCommandOutput.default());
             };
 
             Ok(SlashCommandOutput {
@@ -180,18 +180,18 @@ impl SlashCommand for DiagnosticsSlashCommand {
                     .map(|(range, placeholder_type)| SlashCommandOutputSection {
                         range,
                         icon: match placeholder_type {
-                            PlaceholderType::Root(_, _) => IconName::ExclamationTriangle,
-                            PlaceholderType::File(_) => IconName::File,
-                            PlaceholderType::Diagnostic(DiagnosticType::Error, _) => {
-                                IconName::XCircle
+                            PlaceholderType.Root(_, _) => IconName.ExclamationTriangle,
+                            PlaceholderType.File(_) => IconName.File,
+                            PlaceholderType.Diagnostic(DiagnosticType.Error, _) => {
+                                IconName.XCircle
                             }
-                            PlaceholderType::Diagnostic(DiagnosticType::Warning, _) => {
-                                IconName::ExclamationTriangle
+                            PlaceholderType.Diagnostic(DiagnosticType.Warning, _) => {
+                                IconName.ExclamationTriangle
                             }
                         },
                         label: match placeholder_type {
-                            PlaceholderType::Root(summary, source) => {
-                                let mut label = String::new();
+                            PlaceholderType.Root(summary, source) => {
+                                let mut label = String.new();
                                 label.push_str("Diagnostics");
                                 if let Some(source) = source {
                                     write!(label, " ({})", source).unwrap();
@@ -215,8 +215,8 @@ impl SlashCommand for DiagnosticsSlashCommand {
 
                                 label.into()
                             }
-                            PlaceholderType::File(file_path) => file_path.into(),
-                            PlaceholderType::Diagnostic(_, message) => message.into(),
+                            PlaceholderType.File(file_path) => file_path.into(),
+                            PlaceholderType.Diagnostic(_, message) => message.into(),
                         },
                     })
                     .collect(),
@@ -238,14 +238,14 @@ impl Options {
     fn parse(arguments_line: Option<&str>) -> Self {
         arguments_line
             .map(|arguments_line| {
-                let args = arguments_line.split_whitespace().collect::<Vec<_>>();
+                let args = arguments_line.split_whitespace().collect.<Vec<_>>();
                 let mut include_warnings = false;
                 let mut path_matcher = None;
                 for arg in args {
                     if arg == INCLUDE_WARNINGS_ARGUMENT {
                         include_warnings = true;
                     } else {
-                        path_matcher = PathMatcher::new(&[arg.to_owned()]).log_err();
+                        path_matcher = PathMatcher.new(&[arg.to_owned()]).log_err();
                     }
                 }
                 Self {
@@ -257,7 +257,7 @@ impl Options {
     }
 
     fn match_candidates_for_args() -> [StringMatchCandidate; 1] {
-        [StringMatchCandidate::new(
+        [StringMatchCandidate.new(
             0,
             INCLUDE_WARNINGS_ARGUMENT.to_string(),
         )]
@@ -281,12 +281,12 @@ fn collect_diagnostics(
         .as_ref()
         .and_then(|pm| pm.sources().first())
     {
-        PathBuf::try_from(path)
+        PathBuf.try_from(path)
             .ok()
             .and_then(|path| {
                 project.read(cx).worktrees(cx).find_map(|worktree| {
                     let worktree = worktree.read(cx);
-                    let worktree_root_path = Path::new(worktree.root_name());
+                    let worktree_root_path = Path.new(worktree.root_name());
                     let relative_path = path.strip_prefix(worktree_root_path).ok()?;
                     worktree.absolutize(&relative_path).ok()
                 })
@@ -302,22 +302,22 @@ fn collect_diagnostics(
         .diagnostic_summaries(false, cx)
         .flat_map(|(path, _, summary)| {
             let worktree = project.read(cx).worktree_for_id(path.worktree_id, cx)?;
-            let mut path_buf = PathBuf::from(worktree.read(cx).root_name());
+            let mut path_buf = PathBuf.from(worktree.read(cx).root_name());
             path_buf.push(&path.path);
             Some((path, path_buf, summary))
         })
         .collect();
 
     cx.spawn(|mut cx| async move {
-        let mut text = String::new();
+        let mut text = String.new();
         if let Some(error_source) = error_source.as_ref() {
             writeln!(text, "diagnostics: {}", error_source).unwrap();
         } else {
             writeln!(text, "diagnostics").unwrap();
         }
-        let mut sections: Vec<(Range<usize>, PlaceholderType)> = Vec::new();
+        let mut sections: Vec<(Range<usize>, PlaceholderType)> = Vec.new();
 
-        let mut project_summary = DiagnosticSummary::default();
+        let mut project_summary = DiagnosticSummary.default();
         for (project_path, path, summary) in diagnostic_summaries {
             if let Some(path_matcher) = &options.path_matcher {
                 if !path_matcher.is_match(&path) {
@@ -354,7 +354,7 @@ fn collect_diagnostics(
             if !glob_is_exact_file_match {
                 sections.push((
                     last_end..text.len().saturating_sub(1),
-                    PlaceholderType::File(file_path),
+                    PlaceholderType.File(file_path),
                 ))
             }
         }
@@ -366,7 +366,7 @@ fn collect_diagnostics(
 
         sections.push((
             0..text.len(),
-            PlaceholderType::Root(project_summary, error_source),
+            PlaceholderType.Root(project_summary, error_source),
         ));
         Ok(Some((text, sections)))
     })
@@ -375,7 +375,7 @@ fn collect_diagnostics(
 pub fn buffer_has_error_diagnostics(snapshot: &BufferSnapshot) -> bool {
     for (_, group) in snapshot.diagnostic_groups(None) {
         let entry = &group.entries[group.primary_ix];
-        if entry.diagnostic.severity == DiagnosticSeverity::ERROR {
+        if entry.diagnostic.severity == DiagnosticSeverity.ERROR {
             return true;
         }
     }
@@ -420,13 +420,13 @@ fn collect_diagnostic(
     const MAX_MESSAGE_LENGTH: usize = 2000;
 
     let ty = match entry.diagnostic.severity {
-        DiagnosticSeverity::WARNING => {
+        DiagnosticSeverity.WARNING => {
             if !include_warnings {
                 return;
             }
-            DiagnosticType::Warning
+            DiagnosticType.Warning
         }
-        DiagnosticSeverity::ERROR => DiagnosticType::Error,
+        DiagnosticSeverity.ERROR => DiagnosticType.Error,
         _ => return,
     };
     let prev_len = text.len();
@@ -437,7 +437,7 @@ fn collect_diagnostic(
     let start_row = range.start.row.saturating_sub(EXCERPT_EXPANSION_SIZE);
     let end_row = (range.end.row + EXCERPT_EXPANSION_SIZE).min(snapshot.max_point().row) + 1;
     let excerpt_range =
-        Point::new(start_row, 0).to_offset(&snapshot)..Point::new(end_row, 0).to_offset(&snapshot);
+        Point.new(start_row, 0).to_offset(&snapshot)..Point.new(end_row, 0).to_offset(&snapshot);
 
     text.push_str("```");
     if let Some(language_name) = snapshot.language().map(|l| l.code_fence_block_name()) {
@@ -445,7 +445,7 @@ fn collect_diagnostic(
     }
     text.push('\n');
 
-    let mut buffer_text = String::new();
+    let mut buffer_text = String.new();
     for chunk in snapshot.text_for_range(excerpt_range) {
         buffer_text.push_str(chunk);
     }
@@ -460,7 +460,7 @@ fn collect_diagnostic(
             write!(text, " {}: ", ty.as_str()).unwrap();
             let padding = text.len() - prev_len;
 
-            let message = util::truncate(&entry.diagnostic.message, MAX_MESSAGE_LENGTH)
+            let message = util.truncate(&entry.diagnostic.message, MAX_MESSAGE_LENGTH)
                 .replace('\n', format!("\n//{:padding$}", "").as_str());
 
             writeln!(text, "{message}").unwrap();
@@ -470,7 +470,7 @@ fn collect_diagnostic(
     writeln!(text, "```").unwrap();
     sections.push((
         prev_len..text.len().saturating_sub(1),
-        PlaceholderType::Diagnostic(ty, entry.diagnostic.message.clone()),
+        PlaceholderType.Diagnostic(ty, entry.diagnostic.message.clone()),
     ))
 }
 
@@ -490,8 +490,8 @@ pub enum DiagnosticType {
 impl DiagnosticType {
     pub fn as_str(&self) -> &'static str {
         match self {
-            DiagnosticType::Warning => "warning",
-            DiagnosticType::Error => "error",
+            DiagnosticType.Warning => "warning",
+            DiagnosticType.Error => "error",
         }
     }
 }

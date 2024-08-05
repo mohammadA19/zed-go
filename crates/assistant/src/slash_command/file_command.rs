@@ -1,19 +1,19 @@
-use super::{diagnostics_command::write_single_file_diagnostics, SlashCommand, SlashCommandOutput};
-use anyhow::{anyhow, Result};
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
-use fuzzy::PathMatch;
-use gpui::{AppContext, Model, Task, View, WeakView};
-use language::{BufferSnapshot, LineEnding, LspAdapterDelegate};
-use project::{PathMatchCandidateSet, Project};
-use std::{
-    fmt::Write,
-    ops::Range,
-    path::{Path, PathBuf},
-    sync::{atomic::AtomicBool, Arc},
+use super.{diagnostics_command.write_single_file_diagnostics, SlashCommand, SlashCommandOutput};
+use anyhow.{anyhow, Result};
+use assistant_slash_command.{ArgumentCompletion, SlashCommandOutputSection};
+use fuzzy.PathMatch;
+use gpui.{AppContext, Model, Task, View, WeakView};
+use language.{BufferSnapshot, LineEnding, LspAdapterDelegate};
+use project.{PathMatchCandidateSet, Project};
+use std.{
+    fmt.Write,
+    ops.Range,
+    path.{Path, PathBuf},
+    sync.{atomic.AtomicBool, Arc},
 };
-use ui::prelude::*;
-use util::{paths::PathMatcher, ResultExt};
-use workspace::Workspace;
+use ui.prelude.*;
+use util.{paths.PathMatcher, ResultExt};
+use workspace.Workspace;
 
 pub(crate) struct FileSlashCommand;
 
@@ -29,17 +29,17 @@ impl FileSlashCommand {
             let workspace = workspace.read(cx);
             let project = workspace.project().read(cx);
             let entries = workspace.recent_navigation_history(Some(10), cx);
-            let path_prefix: Arc<str> = Arc::default();
-            Task::ready(
+            let path_prefix: Arc<str> = Arc.default();
+            Task.ready(
                 entries
                     .into_iter()
                     .filter_map(|(entry, _)| {
                         let worktree = project.worktree_for_id(entry.worktree_id, cx)?;
-                        let mut full_path = PathBuf::from(worktree.read(cx).root_name());
+                        let mut full_path = PathBuf.from(worktree.read(cx).root_name());
                         full_path.push(&entry.path);
                         Some(PathMatch {
                             score: 0.,
-                            positions: Vec::new(),
+                            positions: Vec.new(),
                             worktree_id: entry.worktree_id.to_usize(),
                             path: full_path.into(),
                             path_prefix: path_prefix.clone(),
@@ -49,7 +49,7 @@ impl FileSlashCommand {
                     .collect(),
             )
         } else {
-            let worktrees = workspace.read(cx).visible_worktrees(cx).collect::<Vec<_>>();
+            let worktrees = workspace.read(cx).visible_worktrees(cx).collect.<Vec<_>>();
             let candidate_sets = worktrees
                 .into_iter()
                 .map(|worktree| {
@@ -60,14 +60,14 @@ impl FileSlashCommand {
                             .root_entry()
                             .map_or(false, |entry| entry.is_ignored),
                         include_root_name: true,
-                        candidates: project::Candidates::Entries,
+                        candidates: project.Candidates.Entries,
                     }
                 })
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
 
             let executor = cx.background_executor().clone();
             cx.foreground_executor().spawn(async move {
-                fuzzy::match_path_sets(
+                fuzzy.match_path_sets(
                     candidate_sets.as_slice(),
                     query.as_str(),
                     None,
@@ -107,7 +107,7 @@ impl SlashCommand for FileSlashCommand {
         cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
         let Some(workspace) = workspace.and_then(|workspace| workspace.upgrade()) else {
-            return Task::ready(Err(anyhow!("workspace was dropped")));
+            return Task.ready(Err(anyhow!("workspace was dropped")));
         };
 
         let paths = self.search_paths(query, cancellation_flag, &workspace, cx);
@@ -140,11 +140,11 @@ impl SlashCommand for FileSlashCommand {
         cx: &mut WindowContext,
     ) -> Task<Result<SlashCommandOutput>> {
         let Some(workspace) = workspace.upgrade() else {
-            return Task::ready(Err(anyhow!("workspace was dropped")));
+            return Task.ready(Err(anyhow!("workspace was dropped")));
         };
 
         let Some(argument) = argument else {
-            return Task::ready(Err(anyhow!("missing path")));
+            return Task.ready(Err(anyhow!("missing path")));
         };
 
         let task = collect_files(workspace.read(cx).project().clone(), argument, cx);
@@ -159,7 +159,7 @@ impl SlashCommand for FileSlashCommand {
                         build_entry_output_section(
                             range,
                             Some(&path),
-                            entry_type == EntryType::Directory,
+                            entry_type == EntryType.Directory,
                             None,
                         )
                     })
@@ -181,8 +181,8 @@ fn collect_files(
     glob_input: &str,
     cx: &mut AppContext,
 ) -> Task<Result<(String, Vec<(Range<usize>, PathBuf, EntryType)>)>> {
-    let Ok(matcher) = PathMatcher::new(&[glob_input.to_owned()]) else {
-        return Task::ready(Err(anyhow!("invalid path")));
+    let Ok(matcher) = PathMatcher.new(&[glob_input.to_owned()]) else {
+        return Task.ready(Err(anyhow!("invalid path")));
     };
 
     let project_handle = project.downgrade();
@@ -190,17 +190,17 @@ fn collect_files(
         .read(cx)
         .worktrees(cx)
         .map(|worktree| worktree.read(cx).snapshot())
-        .collect::<Vec<_>>();
+        .collect.<Vec<_>>();
     cx.spawn(|mut cx| async move {
-        let mut text = String::new();
-        let mut ranges = Vec::new();
+        let mut text = String.new();
+        let mut ranges = Vec.new();
         for snapshot in snapshots {
             let worktree_id = snapshot.id();
-            let mut directory_stack: Vec<(Arc<Path>, String, usize)> = Vec::new();
-            let mut folded_directory_names_stack = Vec::new();
+            let mut directory_stack: Vec<(Arc<Path>, String, usize)> = Vec.new();
+            let mut folded_directory_names_stack = Vec.new();
             let mut is_top_level_directory = true;
             for entry in snapshot.entries(false, 0) {
-                let mut path_including_worktree_name = PathBuf::new();
+                let mut path_including_worktree_name = PathBuf.new();
                 path_including_worktree_name.push(snapshot.root_name());
                 path_including_worktree_name.push(&entry.path);
                 if !matcher.is_match(&path_including_worktree_name) {
@@ -214,8 +214,8 @@ fn collect_files(
                     let (_, entry_name, start) = directory_stack.pop().unwrap();
                     ranges.push((
                         start..text.len().saturating_sub(1),
-                        PathBuf::from(entry_name),
-                        EntryType::Directory,
+                        PathBuf.from(entry_name),
+                        EntryType.Directory,
                     ));
                 }
 
@@ -292,7 +292,7 @@ fn collect_files(
                         ranges.push((
                             prev_len..text.len(),
                             path_including_worktree_name,
-                            EntryType::File,
+                            EntryType.File,
                         ));
                         text.push('\n');
                     }
@@ -300,10 +300,10 @@ fn collect_files(
             }
 
             while let Some((dir, _, start)) = directory_stack.pop() {
-                let mut root_path = PathBuf::new();
+                let mut root_path = PathBuf.new();
                 root_path.push(snapshot.root_name());
                 root_path.push(&dir);
-                ranges.push((start..text.len(), root_path, EntryType::Directory));
+                ranges.push((start..text.len(), root_path, EntryType.Directory));
             }
         }
         Ok((text, ranges))
@@ -312,10 +312,10 @@ fn collect_files(
 
 fn collect_file_content(buffer: &mut String, snapshot: &BufferSnapshot, filename: String) {
     let mut content = snapshot.text();
-    LineEnding::normalize(&mut content);
+    LineEnding.normalize(&mut content);
     buffer.reserve(filename.len() + content.len() + 9);
     buffer.push_str(&codeblock_fence_for_path(
-        Some(&PathBuf::from(filename)),
+        Some(&PathBuf.from(filename)),
         None,
     ));
     buffer.push_str(&content);
@@ -326,7 +326,7 @@ fn collect_file_content(buffer: &mut String, snapshot: &BufferSnapshot, filename
 }
 
 pub fn codeblock_fence_for_path(path: Option<&Path>, row_range: Option<Range<u32>>) -> String {
-    let mut text = String::new();
+    let mut text = String.new();
     write!(text, "```").unwrap();
 
     if let Some(path) = path {
@@ -363,9 +363,9 @@ pub fn build_entry_output_section(
     }
 
     let icon = if is_directory {
-        IconName::Folder
+        IconName.Folder
     } else {
-        IconName::File
+        IconName.File
     };
 
     SlashCommandOutputSection {

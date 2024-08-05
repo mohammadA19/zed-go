@@ -1,7 +1,7 @@
 //! This module contains all actions supported by [`Editor`].
-use super::*;
-use gpui::action_as;
-use util::serde::default_true;
+use super.*;
+use gpui.action_as;
+use util.serde.default_true;
 
 #[derive(PartialEq, Clone, Deserialize, Default)]
 pub struct SelectNext {
@@ -160,7 +160,7 @@ impl_actions!(
     ]
 );
 
-gpui::actions!(
+gpui.actions!(
     editor,
     [
         AcceptPartialCopilotSuggestion,

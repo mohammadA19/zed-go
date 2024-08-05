@@ -1,9 +1,9 @@
-use crate::EditorSettings;
-use gpui::ModelContext;
-use settings::Settings;
-use settings::SettingsStore;
-use smol::Timer;
-use std::time::Duration;
+use crate.EditorSettings;
+use gpui.ModelContext;
+use settings.Settings;
+use settings.SettingsStore;
+use smol.Timer;
+use std.time.Duration;
 
 pub struct BlinkManager {
     blink_interval: Duration,
@@ -17,7 +17,7 @@ pub struct BlinkManager {
 impl BlinkManager {
     pub fn new(blink_interval: Duration, cx: &mut ModelContext<Self>) -> Self {
         // Make sure we blink the cursors if the setting is re-enabled
-        cx.observe_global::<SettingsStore>(move |this, cx| {
+        cx.observe_global.<SettingsStore>(move |this, cx| {
             this.blink_cursors(this.blink_epoch, cx)
         })
         .detach();
@@ -43,7 +43,7 @@ impl BlinkManager {
         let epoch = self.next_blink_epoch();
         let interval = self.blink_interval;
         cx.spawn(|this, mut cx| async move {
-            Timer::after(interval).await;
+            Timer.after(interval).await;
             this.update(&mut cx, |this, cx| this.resume_cursor_blinking(epoch, cx))
         })
         .detach();
@@ -57,7 +57,7 @@ impl BlinkManager {
     }
 
     fn blink_cursors(&mut self, epoch: usize, cx: &mut ModelContext<Self>) {
-        if EditorSettings::get_global(cx).cursor_blink {
+        if EditorSettings.get_global(cx).cursor_blink {
             if epoch == self.blink_epoch && self.enabled && !self.blinking_paused {
                 self.visible = !self.visible;
                 cx.notify();
@@ -65,7 +65,7 @@ impl BlinkManager {
                 let epoch = self.next_blink_epoch();
                 let interval = self.blink_interval;
                 cx.spawn(|this, mut cx| async move {
-                    Timer::after(interval).await;
+                    Timer.after(interval).await;
                     if let Some(this) = this.upgrade() {
                         this.update(&mut cx, |this, cx| this.blink_cursors(epoch, cx))
                             .ok();

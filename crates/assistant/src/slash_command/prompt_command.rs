@@ -1,12 +1,12 @@
-use super::{SlashCommand, SlashCommandOutput};
-use crate::prompt_library::PromptStore;
-use anyhow::{anyhow, Context, Result};
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
-use gpui::{AppContext, Task, WeakView};
-use language::LspAdapterDelegate;
-use std::sync::{atomic::AtomicBool, Arc};
-use ui::prelude::*;
-use workspace::Workspace;
+use super.{SlashCommand, SlashCommandOutput};
+use crate.prompt_library.PromptStore;
+use anyhow.{anyhow, Context, Result};
+use assistant_slash_command.{ArgumentCompletion, SlashCommandOutputSection};
+use gpui.{AppContext, Task, WeakView};
+use language.LspAdapterDelegate;
+use std.sync.{atomic.AtomicBool, Arc};
+use ui.prelude.*;
+use workspace.Workspace;
 
 pub(crate) struct PromptSlashCommand;
 
@@ -34,7 +34,7 @@ impl SlashCommand for PromptSlashCommand {
         _workspace: Option<WeakView<Workspace>>,
         cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
-        let store = PromptStore::global(cx);
+        let store = PromptStore.global(cx);
         cx.background_executor().spawn(async move {
             let prompts = store.await?.search(query).await;
             Ok(prompts
@@ -59,11 +59,11 @@ impl SlashCommand for PromptSlashCommand {
         cx: &mut WindowContext,
     ) -> Task<Result<SlashCommandOutput>> {
         let Some(title) = title else {
-            return Task::ready(Err(anyhow!("missing prompt name")));
+            return Task.ready(Err(anyhow!("missing prompt name")));
         };
 
-        let store = PromptStore::global(cx);
-        let title = SharedString::from(title.to_string());
+        let store = PromptStore.global(cx);
+        let title = SharedString.from(title.to_string());
         let prompt = cx.background_executor().spawn({
             let title = title.clone();
             async move {
@@ -72,7 +72,7 @@ impl SlashCommand for PromptSlashCommand {
                     .id_for_title(&title)
                     .with_context(|| format!("no prompt found with title {:?}", title))?;
                 let body = store.load(prompt_id).await?;
-                anyhow::Ok(body)
+                anyhow.Ok(body)
             }
         });
         cx.foreground_executor().spawn(async move {
@@ -85,7 +85,7 @@ impl SlashCommand for PromptSlashCommand {
                 text: prompt,
                 sections: vec![SlashCommandOutputSection {
                     range,
-                    icon: IconName::Library,
+                    icon: IconName.Library,
                     label: title,
                 }],
                 run_commands_in_text: true,

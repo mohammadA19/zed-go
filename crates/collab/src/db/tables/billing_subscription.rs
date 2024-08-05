@@ -1,6 +1,6 @@
-use crate::db::{BillingCustomerId, BillingSubscriptionId};
-use sea_orm::entity::prelude::*;
-use serde::Serialize;
+use crate.db.{BillingCustomerId, BillingSubscriptionId};
+use sea_orm.entity.prelude.*;
+use serde.Serialize;
 
 /// A billing subscription.
 #[derive(Clone, Debug, Default, PartialEq, Eq, DeriveEntityModel)]
@@ -18,16 +18,16 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::billing_customer::Entity",
-        from = "Column::BillingCustomerId",
-        to = "super::billing_customer::Column::Id"
+        belongs_to = "super.billing_customer.Entity",
+        from = "Column.BillingCustomerId",
+        to = "super.billing_customer.Column.Id"
     )]
     BillingCustomer,
 }
 
-impl Related<super::billing_customer::Entity> for Entity {
+impl Related<super.billing_customer.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::BillingCustomer.def()
+        Relation.BillingCustomer.def()
     }
 }
 
@@ -64,12 +64,12 @@ pub enum StripeSubscriptionStatus {
 impl StripeSubscriptionStatus {
     pub fn is_cancelable(&self) -> bool {
         match self {
-            Self::Trialing | Self::Active | Self::PastDue => true,
-            Self::Incomplete
-            | Self::IncompleteExpired
-            | Self::Canceled
-            | Self::Unpaid
-            | Self::Paused => false,
+            Self.Trialing | Self.Active | Self.PastDue => true,
+            Self.Incomplete
+            | Self.IncompleteExpired
+            | Self.Canceled
+            | Self.Unpaid
+            | Self.Paused => false,
         }
     }
 }

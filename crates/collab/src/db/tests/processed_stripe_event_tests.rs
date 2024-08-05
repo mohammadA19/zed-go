@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use crate::test_both_dbs;
+use crate.test_both_dbs;
 
-use super::{CreateProcessedStripeEventParams, Database};
+use super.{CreateProcessedStripeEventParams, Database};
 
 test_both_dbs!(
     test_already_processed_stripe_event,

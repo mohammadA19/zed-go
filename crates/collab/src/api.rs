@@ -5,72 +5,72 @@ pub mod extensions;
 pub mod ips_file;
 pub mod slack;
 
-use crate::{
+use crate.{
     auth,
-    db::{User, UserId},
+    db.{User, UserId},
     rpc, AppState, Error, Result,
 };
-use anyhow::anyhow;
-use axum::{
-    body::Body,
-    extract::{Path, Query},
-    http::{self, Request, StatusCode},
-    middleware::{self, Next},
-    response::IntoResponse,
-    routing::{get, post},
+use anyhow.anyhow;
+use axum.{
+    body.Body,
+    extract.{Path, Query},
+    http.{self, Request, StatusCode},
+    middleware.{self, Next},
+    response.IntoResponse,
+    routing.{get, post},
     Extension, Json, Router,
 };
-use axum_extra::response::ErasedJson;
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use tower::ServiceBuilder;
+use axum_extra.response.ErasedJson;
+use serde.{Deserialize, Serialize};
+use std.sync.Arc;
+use tower.ServiceBuilder;
 
-pub use extensions::fetch_extensions_from_blob_store_periodically;
+pub use extensions.fetch_extensions_from_blob_store_periodically;
 
-pub fn routes(rpc_server: Option<Arc<rpc::Server>>, state: Arc<AppState>) -> Router<(), Body> {
-    Router::new()
+pub fn routes(rpc_server: Option<Arc<rpc.Server>>, state: Arc<AppState>) -> Router<(), Body> {
+    Router.new()
         .route("/user", get(get_authenticated_user))
         .route("/users/:id/access_tokens", post(create_access_token))
         .route("/rpc_server_snapshot", get(get_rpc_server_snapshot))
-        .merge(billing::router())
-        .merge(contributors::router())
+        .merge(billing.router())
+        .merge(contributors.router())
         .layer(
-            ServiceBuilder::new()
+            ServiceBuilder.new()
                 .layer(Extension(state))
                 .layer(Extension(rpc_server))
-                .layer(middleware::from_fn(validate_api_token)),
+                .layer(middleware.from_fn(validate_api_token)),
         )
 }
 
 pub async fn validate_api_token<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
     let token = req
         .headers()
-        .get(http::header::AUTHORIZATION)
+        .get(http.header.AUTHORIZATION)
         .and_then(|header| header.to_str().ok())
         .ok_or_else(|| {
-            Error::Http(
-                StatusCode::BAD_REQUEST,
+            Error.Http(
+                StatusCode.BAD_REQUEST,
                 "missing authorization header".to_string(),
             )
         })?
         .strip_prefix("token ")
         .ok_or_else(|| {
-            Error::Http(
-                StatusCode::BAD_REQUEST,
+            Error.Http(
+                StatusCode.BAD_REQUEST,
                 "invalid authorization header".to_string(),
             )
         })?;
 
-    let state = req.extensions().get::<Arc<AppState>>().unwrap();
+    let state = req.extensions().get.<Arc<AppState>>().unwrap();
 
     if token != state.config.api_token {
-        Err(Error::Http(
-            StatusCode::UNAUTHORIZED,
+        Err(Error.Http(
+            StatusCode.UNAUTHORIZED,
             "invalid authorization token".to_string(),
         ))?
     }
 
-    Ok::<_, Error>(next.run(req).await)
+    Ok.<_, Error>(next.run(req).await)
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,13 +118,13 @@ struct CreateUserParams {
 }
 
 async fn get_rpc_server_snapshot(
-    Extension(rpc_server): Extension<Option<Arc<rpc::Server>>>,
+    Extension(rpc_server): Extension<Option<Arc<rpc.Server>>>,
 ) -> Result<ErasedJson> {
     let Some(rpc_server) = rpc_server else {
-        return Err(Error::Internal(anyhow!("rpc server is not available")));
+        return Err(Error.Internal(anyhow!("rpc server is not available")));
     };
 
-    Ok(ErasedJson::pretty(rpc_server.snapshot().await))
+    Ok(ErasedJson.pretty(rpc_server.snapshot().await))
 }
 
 #[derive(Deserialize)]
@@ -156,23 +156,23 @@ async fn create_access_token(
             if let Some(impersonated_user) = app.db.get_user_by_github_login(&impersonate).await? {
                 impersonated_user_id = Some(impersonated_user.id);
             } else {
-                return Err(Error::Http(
-                    StatusCode::UNPROCESSABLE_ENTITY,
+                return Err(Error.Http(
+                    StatusCode.UNPROCESSABLE_ENTITY,
                     format!("user {impersonate} does not exist"),
                 ));
             }
         } else {
-            return Err(Error::Http(
-                StatusCode::UNAUTHORIZED,
+            return Err(Error.Http(
+                StatusCode.UNAUTHORIZED,
                 "you do not have permission to impersonate other users".to_string(),
             ));
         }
     }
 
     let access_token =
-        auth::create_access_token(app.db.as_ref(), user_id, impersonated_user_id).await?;
+        auth.create_access_token(app.db.as_ref(), user_id, impersonated_user_id).await?;
     let encrypted_access_token =
-        auth::encrypt_access_token(&access_token, params.public_key.clone())?;
+        auth.encrypt_access_token(&access_token, params.public_key.clone())?;
 
     Ok(Json(CreateAccessTokenResponse {
         user_id: impersonated_user_id.unwrap_or(user_id),

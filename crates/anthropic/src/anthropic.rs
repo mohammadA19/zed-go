@@ -1,14 +1,14 @@
-use anyhow::{anyhow, Result};
-use futures::{io::BufReader, stream::BoxStream, AsyncBufReadExt, AsyncReadExt, Stream, StreamExt};
-use http_client::{AsyncBody, HttpClient, Method, Request as HttpRequest};
-use isahc::config::Configurable;
-use serde::{Deserialize, Serialize};
-use std::time::Duration;
-use strum::EnumIter;
+use anyhow.{anyhow, Result};
+use futures.{io.BufReader, stream.BoxStream, AsyncBufReadExt, AsyncReadExt, Stream, StreamExt};
+use http_client.{AsyncBody, HttpClient, Method, Request as HttpRequest};
+use isahc.config.Configurable;
+use serde.{Deserialize, Serialize};
+use std.time.Duration;
+use strum.EnumIter;
 
 pub const ANTHROPIC_API_URL: &'static str = "https://api.anthropic.com";
 
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars.JsonSchema))]
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, EnumIter)]
 pub enum Model {
     #[default]
@@ -32,13 +32,13 @@ pub enum Model {
 impl Model {
     pub fn from_id(id: &str) -> Result<Self> {
         if id.starts_with("claude-3-5-sonnet") {
-            Ok(Self::Claude3_5Sonnet)
+            Ok(Self.Claude3_5Sonnet)
         } else if id.starts_with("claude-3-opus") {
-            Ok(Self::Claude3Opus)
+            Ok(Self.Claude3Opus)
         } else if id.starts_with("claude-3-sonnet") {
-            Ok(Self::Claude3Sonnet)
+            Ok(Self.Claude3Sonnet)
         } else if id.starts_with("claude-3-haiku") {
-            Ok(Self::Claude3Haiku)
+            Ok(Self.Claude3Haiku)
         } else {
             Err(anyhow!("invalid model id"))
         }
@@ -46,36 +46,36 @@ impl Model {
 
     pub fn id(&self) -> &str {
         match self {
-            Model::Claude3_5Sonnet => "claude-3-5-sonnet-20240620",
-            Model::Claude3Opus => "claude-3-opus-20240229",
-            Model::Claude3Sonnet => "claude-3-sonnet-20240229",
-            Model::Claude3Haiku => "claude-3-opus-20240307",
-            Self::Custom { name, .. } => name,
+            Model.Claude3_5Sonnet => "claude-3-5-sonnet-20240620",
+            Model.Claude3Opus => "claude-3-opus-20240229",
+            Model.Claude3Sonnet => "claude-3-sonnet-20240229",
+            Model.Claude3Haiku => "claude-3-opus-20240307",
+            Self.Custom { name, .. } => name,
         }
     }
 
     pub fn display_name(&self) -> &str {
         match self {
-            Self::Claude3_5Sonnet => "Claude 3.5 Sonnet",
-            Self::Claude3Opus => "Claude 3 Opus",
-            Self::Claude3Sonnet => "Claude 3 Sonnet",
-            Self::Claude3Haiku => "Claude 3 Haiku",
-            Self::Custom { name, .. } => name,
+            Self.Claude3_5Sonnet => "Claude 3.5 Sonnet",
+            Self.Claude3Opus => "Claude 3 Opus",
+            Self.Claude3Sonnet => "Claude 3 Sonnet",
+            Self.Claude3Haiku => "Claude 3 Haiku",
+            Self.Custom { name, .. } => name,
         }
     }
 
     pub fn max_token_count(&self) -> usize {
         match self {
-            Self::Claude3_5Sonnet
-            | Self::Claude3Opus
-            | Self::Claude3Sonnet
-            | Self::Claude3Haiku => 200_000,
-            Self::Custom { max_tokens, .. } => *max_tokens,
+            Self.Claude3_5Sonnet
+            | Self.Claude3Opus
+            | Self.Claude3Sonnet
+            | Self.Claude3Haiku => 200_000,
+            Self.Custom { max_tokens, .. } => *max_tokens,
         }
     }
 
     pub fn tool_model_id(&self) -> &str {
-        if let Self::Custom {
+        if let Self.Custom {
             tool_override: Some(tool_override),
             ..
         } = self
@@ -94,27 +94,27 @@ pub async fn complete(
     request: Request,
 ) -> Result<Response> {
     let uri = format!("{api_url}/v1/messages");
-    let request_builder = HttpRequest::builder()
-        .method(Method::POST)
+    let request_builder = HttpRequest.builder()
+        .method(Method.POST)
         .uri(uri)
         .header("Anthropic-Version", "2023-06-01")
         .header("Anthropic-Beta", "tools-2024-04-04")
         .header("X-Api-Key", api_key)
         .header("Content-Type", "application/json");
 
-    let serialized_request = serde_json::to_string(&request)?;
-    let request = request_builder.body(AsyncBody::from(serialized_request))?;
+    let serialized_request = serde_json.to_string(&request)?;
+    let request = request_builder.body(AsyncBody.from(serialized_request))?;
 
     let mut response = client.send(request).await?;
     if response.status().is_success() {
-        let mut body = Vec::new();
+        let mut body = Vec.new();
         response.body_mut().read_to_end(&mut body).await?;
-        let response_message: Response = serde_json::from_slice(&body)?;
+        let response_message: Response = serde_json.from_slice(&body)?;
         Ok(response_message)
     } else {
-        let mut body = Vec::new();
+        let mut body = Vec.new();
         response.body_mut().read_to_end(&mut body).await?;
-        let body_str = std::str::from_utf8(&body)?;
+        let body_str = std.str.from_utf8(&body)?;
         Err(anyhow!(
             "Failed to connect to API: {} {}",
             response.status(),
@@ -135,8 +135,8 @@ pub async fn stream_completion(
         stream: true,
     };
     let uri = format!("{api_url}/v1/messages");
-    let mut request_builder = HttpRequest::builder()
-        .method(Method::POST)
+    let mut request_builder = HttpRequest.builder()
+        .method(Method.POST)
         .uri(uri)
         .header("Anthropic-Version", "2023-06-01")
         .header("Anthropic-Beta", "tools-2024-04-04")
@@ -145,19 +145,19 @@ pub async fn stream_completion(
     if let Some(low_speed_timeout) = low_speed_timeout {
         request_builder = request_builder.low_speed_timeout(100, low_speed_timeout);
     }
-    let serialized_request = serde_json::to_string(&request)?;
-    let request = request_builder.body(AsyncBody::from(serialized_request))?;
+    let serialized_request = serde_json.to_string(&request)?;
+    let request = request_builder.body(AsyncBody.from(serialized_request))?;
 
     let mut response = client.send(request).await?;
     if response.status().is_success() {
-        let reader = BufReader::new(response.into_body());
+        let reader = BufReader.new(response.into_body());
         Ok(reader
             .lines()
             .filter_map(|line| async move {
                 match line {
                     Ok(line) => {
                         let line = line.strip_prefix("data: ")?;
-                        match serde_json::from_str(line) {
+                        match serde_json.from_str(line) {
                             Ok(response) => Some(Ok(response)),
                             Err(error) => Some(Err(anyhow!(error))),
                         }
@@ -167,13 +167,13 @@ pub async fn stream_completion(
             })
             .boxed())
     } else {
-        let mut body = Vec::new();
+        let mut body = Vec.new();
         response.body_mut().read_to_end(&mut body).await?;
 
-        let body_str = std::str::from_utf8(&body)?;
+        let body_str = std.str.from_utf8(&body)?;
 
-        match serde_json::from_str::<Event>(body_str) {
-            Ok(Event::Error { error }) => Err(api_error_to_err(error)),
+        match serde_json.from_str.<Event>(body_str) {
+            Ok(Event.Error { error }) => Err(api_error_to_err(error)),
             Ok(_) => Err(anyhow!(
                 "Unexpected success response while expecting an error: '{body_str}'",
             )),
@@ -192,15 +192,15 @@ pub fn extract_text_from_events(
     response.filter_map(|response| async move {
         match response {
             Ok(response) => match response {
-                Event::ContentBlockStart { content_block, .. } => match content_block {
-                    Content::Text { text } => Some(Ok(text)),
+                Event.ContentBlockStart { content_block, .. } => match content_block {
+                    Content.Text { text } => Some(Ok(text)),
                     _ => None,
                 },
-                Event::ContentBlockDelta { delta, .. } => match delta {
-                    ContentDelta::TextDelta { text } => Some(Ok(text)),
+                Event.ContentBlockDelta { delta, .. } => match delta {
+                    ContentDelta.TextDelta { text } => Some(Ok(text)),
                     _ => None,
                 },
-                Event::Error { error } => Some(Err(api_error_to_err(error))),
+                Event.Error { error } => Some(Err(api_error_to_err(error))),
                 _ => None,
             },
             Err(error) => Some(Err(error)),
@@ -213,7 +213,7 @@ fn api_error_to_err(
         error_type,
         message,
     }: ApiError,
-) -> anyhow::Error {
+) -> anyhow.Error {
     anyhow!("API error. Type: '{error_type}', message: '{message}'",)
 }
 
@@ -241,7 +241,7 @@ pub enum Content {
     ToolUse {
         id: String,
         name: String,
-        input: serde_json::Value,
+        input: serde_json.Value,
     },
     #[serde(rename = "tool_result")]
     ToolResult {
@@ -262,7 +262,7 @@ pub struct ImageSource {
 pub struct Tool {
     pub name: String,
     pub description: String,
-    pub input_schema: serde_json::Value,
+    pub input_schema: serde_json.Value,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -278,21 +278,21 @@ pub struct Request {
     pub model: String,
     pub max_tokens: u32,
     pub messages: Vec<Message>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec.is_empty")]
     pub tools: Vec<Tool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub tool_choice: Option<ToolChoice>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub system: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub metadata: Option<Metadata>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec.is_empty")]
     pub stop_sequences: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub temperature: Option<f32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub top_k: Option<u32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub top_p: Option<f32>,
 }
 
@@ -310,9 +310,9 @@ pub struct Metadata {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Usage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub input_tokens: Option<u32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub output_tokens: Option<u32>,
 }
 
@@ -324,9 +324,9 @@ pub struct Response {
     pub role: Role,
     pub content: Vec<Content>,
     pub model: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub stop_reason: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option.is_none")]
     pub stop_sequence: Option<String>,
     pub usage: Usage,
 }

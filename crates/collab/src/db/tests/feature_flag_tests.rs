@@ -1,8 +1,8 @@
-use crate::{
-    db::{Database, NewUserParams},
+use crate.{
+    db.{Database, NewUserParams},
     test_both_dbs,
 };
-use std::sync::Arc;
+use std.sync.Arc;
 
 test_both_dbs!(
     test_get_user_flags,

@@ -1,11 +1,11 @@
-use crate::db::{ChannelId, ChannelRole, DevServerId, PrincipalId, UserId};
-use anyhow::{anyhow, Result};
-use collections::{BTreeMap, HashMap, HashSet};
-use rpc::{proto, ConnectionId};
-use semantic_version::SemanticVersion;
-use serde::Serialize;
-use std::fmt;
-use tracing::instrument;
+use crate.db.{ChannelId, ChannelRole, DevServerId, PrincipalId, UserId};
+use anyhow.{anyhow, Result};
+use collections.{BTreeMap, HashMap, HashSet};
+use rpc.{proto, ConnectionId};
+use semantic_version.SemanticVersion;
+use serde.Serialize;
+use std.fmt;
+use tracing.instrument;
 
 #[derive(Default, Serialize)]
 pub struct ConnectionPool {
@@ -24,23 +24,23 @@ struct ConnectedPrincipal {
 #[derive(Copy, Clone, Debug, Serialize, PartialOrd, PartialEq, Eq, Ord)]
 pub struct ZedVersion(pub SemanticVersion);
 
-impl fmt::Display for ZedVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Display for ZedVersion {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "{}", self.0)
     }
 }
 
 impl ZedVersion {
     pub fn can_collaborate(&self) -> bool {
-        self.0 >= SemanticVersion::new(0, 129, 2)
+        self.0 >= SemanticVersion.new(0, 129, 2)
     }
 
     pub fn with_save_as() -> ZedVersion {
-        ZedVersion(SemanticVersion::new(0, 134, 0))
+        ZedVersion(SemanticVersion.new(0, 134, 0))
     }
 
     pub fn with_list_directory() -> ZedVersion {
-        ZedVersion(SemanticVersion::new(0, 145, 0))
+        ZedVersion(SemanticVersion.new(0, 145, 0))
     }
 }
 
@@ -50,19 +50,19 @@ pub trait VersionedMessage {
     }
 }
 
-impl VersionedMessage for proto::SaveBuffer {
+impl VersionedMessage for proto.SaveBuffer {
     fn required_host_version(&self) -> Option<ZedVersion> {
         if self.new_path.is_some() {
-            Some(ZedVersion::with_save_as())
+            Some(ZedVersion.with_save_as())
         } else {
             None
         }
     }
 }
 
-impl VersionedMessage for proto::OpenNewBuffer {
+impl VersionedMessage for proto.OpenNewBuffer {
     fn required_host_version(&self) -> Option<ZedVersion> {
-        Some(ZedVersion::with_save_as())
+        Some(ZedVersion.with_save_as())
     }
 }
 
@@ -96,7 +96,7 @@ impl ConnectionPool {
         self.connections.insert(
             connection_id,
             Connection {
-                principal_id: PrincipalId::UserId(user_id),
+                principal_id: PrincipalId.UserId(user_id),
                 admin,
                 zed_version,
             },
@@ -114,7 +114,7 @@ impl ConnectionPool {
         self.connections.insert(
             connection_id,
             Connection {
-                principal_id: PrincipalId::DevServerId(dev_server_id),
+                principal_id: PrincipalId.DevServerId(dev_server_id),
                 admin: false,
                 zed_version,
             },
@@ -132,7 +132,7 @@ impl ConnectionPool {
             .ok_or_else(|| anyhow!("no such connection"))?;
 
         match connection.principal_id {
-            PrincipalId::UserId(user_id) => {
+            PrincipalId.UserId(user_id) => {
                 let connected_user = self.connected_users.get_mut(&user_id).unwrap();
                 connected_user.connection_ids.remove(&connection_id);
                 if connected_user.connection_ids.is_empty() {
@@ -140,7 +140,7 @@ impl ConnectionPool {
                     self.channels.remove_user(&user_id);
                 }
             }
-            PrincipalId::DevServerId(dev_server_id) => {
+            PrincipalId.DevServerId(dev_server_id) => {
                 self.connected_dev_servers.remove(&dev_server_id);
                 self.offline_dev_servers.remove(&dev_server_id);
             }
@@ -177,13 +177,13 @@ impl ConnectionPool {
             .copied()
     }
 
-    pub fn dev_server_status(&self, dev_server_id: DevServerId) -> proto::DevServerStatus {
+    pub fn dev_server_status(&self, dev_server_id: DevServerId) -> proto.DevServerStatus {
         if self.dev_server_connection_id(dev_server_id).is_some()
             && !self.offline_dev_servers.contains(&dev_server_id)
         {
-            proto::DevServerStatus::Online
+            proto.DevServerStatus.Online
         } else {
-            proto::DevServerStatus::Offline
+            proto.DevServerStatus.Offline
         }
     }
 
@@ -198,8 +198,8 @@ impl ConnectionPool {
     ) -> Result<ConnectionId> {
         match self.connected_dev_servers.get(&dev_server_id) {
             Some(cid) if self.connections[cid].zed_version >= required => Ok(*cid),
-            Some(_) => Err(anyhow!(proto::ErrorCode::RemoteUpgradeRequired)),
-            None => Err(anyhow!(proto::ErrorCode::DevServerOffline)),
+            Some(_) => Err(anyhow!(proto.ErrorCode.RemoteUpgradeRequired)),
+            None => Err(anyhow!(proto.ErrorCode.DevServerOffline)),
         }
     }
 
@@ -239,7 +239,7 @@ impl ConnectionPool {
         !self
             .connected_users
             .get(&user_id)
-            .unwrap_or(&Default::default())
+            .unwrap_or(&Default.default())
             .connection_ids
             .is_empty()
     }
@@ -248,7 +248,7 @@ impl ConnectionPool {
     pub fn check_invariants(&self) {
         for (connection_id, connection) in &self.connections {
             match &connection.principal_id {
-                PrincipalId::UserId(user_id) => {
+                PrincipalId.UserId(user_id) => {
                     assert!(self
                         .connected_users
                         .get(user_id)
@@ -256,7 +256,7 @@ impl ConnectionPool {
                         .connection_ids
                         .contains(connection_id));
                 }
-                PrincipalId::DevServerId(dev_server_id) => {
+                PrincipalId.DevServerId(dev_server_id) => {
                     assert_eq!(
                         self.connected_dev_servers.get(&dev_server_id).unwrap(),
                         connection_id
@@ -269,7 +269,7 @@ impl ConnectionPool {
             for connection_id in &state.connection_ids {
                 assert_eq!(
                     self.connections.get(connection_id).unwrap().principal_id,
-                    PrincipalId::UserId(*user_id)
+                    PrincipalId.UserId(*user_id)
                 );
             }
         }
@@ -277,7 +277,7 @@ impl ConnectionPool {
         for (dev_server_id, connection_id) in &self.connected_dev_servers {
             assert_eq!(
                 self.connections.get(connection_id).unwrap().principal_id,
-                PrincipalId::DevServerId(*dev_server_id)
+                PrincipalId.DevServerId(*dev_server_id)
             );
         }
     }

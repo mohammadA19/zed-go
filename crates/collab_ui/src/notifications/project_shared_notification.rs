@@ -1,21 +1,21 @@
-use crate::notification_window_options;
-use crate::notifications::collab_notification::CollabNotification;
-use call::{room, ActiveCall};
-use client::User;
-use collections::HashMap;
-use gpui::{AppContext, Size};
-use std::sync::{Arc, Weak};
+use crate.notification_window_options;
+use crate.notifications.collab_notification.CollabNotification;
+use call.{room, ActiveCall};
+use client.User;
+use collections.HashMap;
+use gpui.{AppContext, Size};
+use std.sync.{Arc, Weak};
 
-use ui::{prelude::*, Button, Label};
-use util::ResultExt;
-use workspace::AppState;
+use ui.{prelude.*, Button, Label};
+use util.ResultExt;
+use workspace.AppState;
 
 pub fn init(app_state: &Arc<AppState>, cx: &mut AppContext) {
-    let app_state = Arc::downgrade(app_state);
-    let active_call = ActiveCall::global(cx);
-    let mut notification_windows = HashMap::default();
+    let app_state = Arc.downgrade(app_state);
+    let active_call = ActiveCall.global(cx);
+    let mut notification_windows = HashMap.default();
     cx.subscribe(&active_call, move |_, event, cx| match event {
-        room::Event::RemoteProjectShared {
+        room.Event.RemoteProjectShared {
             owner,
             project_id,
             worktree_root_names,
@@ -30,7 +30,7 @@ pub fn init(app_state: &Arc<AppState>, cx: &mut AppContext) {
                 let Some(window) = cx
                     .open_window(options, |cx| {
                         cx.new_view(|_| {
-                            ProjectSharedNotification::new(
+                            ProjectSharedNotification.new(
                                 owner.clone(),
                                 *project_id,
                                 worktree_root_names.clone(),
@@ -44,14 +44,14 @@ pub fn init(app_state: &Arc<AppState>, cx: &mut AppContext) {
                 };
                 notification_windows
                     .entry(*project_id)
-                    .or_insert(Vec::new())
+                    .or_insert(Vec.new())
                     .push(window);
             }
         }
 
-        room::Event::RemoteProjectUnshared { project_id }
-        | room::Event::RemoteProjectJoined { project_id }
-        | room::Event::RemoteProjectInvitationDiscarded { project_id } => {
+        room.Event.RemoteProjectUnshared { project_id }
+        | room.Event.RemoteProjectJoined { project_id }
+        | room.Event.RemoteProjectInvitationDiscarded { project_id } => {
             if let Some(windows) = notification_windows.remove(&project_id) {
                 for window in windows {
                     window
@@ -63,7 +63,7 @@ pub fn init(app_state: &Arc<AppState>, cx: &mut AppContext) {
             }
         }
 
-        room::Event::RoomLeft { .. } => {
+        room.Event.RoomLeft { .. } => {
             for (_, windows) in notification_windows.drain() {
                 for window in windows {
                     window
@@ -103,17 +103,17 @@ impl ProjectSharedNotification {
 
     fn join(&mut self, cx: &mut ViewContext<Self>) {
         if let Some(app_state) = self.app_state.upgrade() {
-            workspace::join_in_room_project(self.project_id, self.owner.id, app_state, cx)
+            workspace.join_in_room_project(self.project_id, self.owner.id, app_state, cx)
                 .detach_and_log_err(cx);
         }
     }
 
     fn dismiss(&mut self, cx: &mut ViewContext<Self>) {
         if let Some(active_room) =
-            ActiveCall::global(cx).read_with(cx, |call, _| call.room().cloned())
+            ActiveCall.global(cx).read_with(cx, |call, _| call.room().cloned())
         {
             active_room.update(cx, |_, cx| {
-                cx.emit(room::Event::RemoteProjectInvitationDiscarded {
+                cx.emit(room.Event.RemoteProjectInvitationDiscarded {
                     project_id: self.project_id,
                 });
             });
@@ -123,20 +123,20 @@ impl ProjectSharedNotification {
 
 impl Render for ProjectSharedNotification {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let ui_font = theme::setup_ui_font(cx);
+        let ui_font = theme.setup_ui_font(cx);
 
         div().size_full().font(ui_font).child(
-            CollabNotification::new(
+            CollabNotification.new(
                 self.owner.avatar_uri.clone(),
-                Button::new("open", "Open").on_click(cx.listener(move |this, _event, cx| {
+                Button.new("open", "Open").on_click(cx.listener(move |this, _event, cx| {
                     this.join(cx);
                 })),
-                Button::new("dismiss", "Dismiss").on_click(cx.listener(move |this, _event, cx| {
+                Button.new("dismiss", "Dismiss").on_click(cx.listener(move |this, _event, cx| {
                     this.dismiss(cx);
                 })),
             )
-            .child(Label::new(self.owner.github_login.clone()))
-            .child(Label::new(format!(
+            .child(Label.new(self.owner.github_login.clone()))
+            .child(Label.new(format!(
                 "is sharing a project in Zed{}",
                 if self.worktree_root_names.is_empty() {
                     ""
@@ -147,7 +147,7 @@ impl Render for ProjectSharedNotification {
             .children(if self.worktree_root_names.is_empty() {
                 None
             } else {
-                Some(Label::new(self.worktree_root_names.join(", ")))
+                Some(Label.new(self.worktree_root_names.join(", ")))
             }),
         )
     }

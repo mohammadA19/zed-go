@@ -1,6 +1,6 @@
-use sqlez_macros::sql;
+use sqlez_macros.sql;
 
-use crate::{define_connection, query};
+use crate.{define_connection, query};
 
 define_connection!(pub static ref KEY_VALUE_STORE: KeyValueStore<()> =
     &[sql!(
@@ -33,11 +33,11 @@ impl KeyValueStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::kvp::KeyValueStore;
+    use crate.kvp.KeyValueStore;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_kvp() {
-        let db = KeyValueStore(crate::open_test_db("test_kvp").await);
+        let db = KeyValueStore(crate.open_test_db("test_kvp").await);
 
         assert_eq!(db.read_kvp("key-1").unwrap(), None);
 

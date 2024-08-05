@@ -1,7 +1,7 @@
-use crate::Result;
-use rpc::proto;
-use sea_orm::{entity::prelude::*, DbErr};
-use serde::{Deserialize, Serialize};
+use crate.Result;
+use rpc.proto;
+use sea_orm.{entity.prelude.*, DbErr};
+use serde.{Deserialize, Serialize};
 
 macro_rules! id_type {
     ($name:ident) => {
@@ -26,7 +26,7 @@ macro_rules! id_type {
         impl $name {
             #[allow(unused)]
             #[allow(missing_docs)]
-            pub const MAX: Self = Self(i32::MAX);
+            pub const MAX: Self = Self(i32.MAX);
 
             #[allow(unused)]
             #[allow(missing_docs)]
@@ -41,16 +41,16 @@ macro_rules! id_type {
             }
         }
 
-        impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        impl std.fmt.Display for $name {
+            fn fmt(&self, f: &mut std.fmt.Formatter) -> std.fmt.Result {
                 self.0.fmt(f)
             }
         }
 
-        impl sea_orm::TryFromU64 for $name {
+        impl sea_orm.TryFromU64 for $name {
             fn try_from_u64(n: u64) -> Result<Self, DbErr> {
                 Ok(Self(n.try_into().map_err(|_| {
-                    DbErr::ConvertFromU64(concat!(
+                    DbErr.ConvertFromU64(concat!(
                         "error converting ",
                         stringify!($name),
                         " to u64"
@@ -59,9 +59,9 @@ macro_rules! id_type {
             }
         }
 
-        impl sea_orm::sea_query::Nullable for $name {
+        impl sea_orm.sea_query.Nullable for $name {
             fn null() -> Value {
-                Value::Int(None)
+                Value.Int(None)
             }
         }
     };
@@ -123,7 +123,7 @@ pub enum ChannelRole {
 impl ChannelRole {
     /// Returns true if this role is more powerful than the other role.
     pub fn should_override(&self, other: Self) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Admin => matches!(other, Member | Banned | Talker | Guest),
             Member => matches!(other, Banned | Talker | Guest),
@@ -143,17 +143,17 @@ impl ChannelRole {
     }
 
     pub fn can_see_channel(&self, visibility: ChannelVisibility) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Admin | Member => true,
-            Guest | Talker => visibility == ChannelVisibility::Public,
+            Guest | Talker => visibility == ChannelVisibility.Public,
             Banned => false,
         }
     }
 
     /// True if the role allows access to all descendant channels
     pub fn can_see_all_descendants(&self) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Admin | Member => true,
             Guest | Talker | Banned => false,
@@ -162,7 +162,7 @@ impl ChannelRole {
 
     /// True if the role only allows access to public descendant channels
     pub fn can_only_see_public_descendants(&self) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Guest | Talker => true,
             Admin | Member | Banned => false,
@@ -171,7 +171,7 @@ impl ChannelRole {
 
     /// True if the role can share screen/microphone/projects into rooms.
     pub fn can_use_microphone(&self) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Admin | Member | Talker => true,
             Guest | Banned => false,
@@ -180,7 +180,7 @@ impl ChannelRole {
 
     /// True if the role can edit shared projects.
     pub fn can_edit_projects(&self) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Admin | Member => true,
             Talker | Guest | Banned => false,
@@ -189,7 +189,7 @@ impl ChannelRole {
 
     /// True if the role can read shared projects.
     pub fn can_read_projects(&self) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Admin | Member | Guest | Talker => true,
             Banned => false,
@@ -197,7 +197,7 @@ impl ChannelRole {
     }
 
     pub fn requires_cla(&self) -> bool {
-        use ChannelRole::*;
+        use ChannelRole.*;
         match self {
             Admin | Member => true,
             Banned | Guest | Talker => false,
@@ -205,33 +205,33 @@ impl ChannelRole {
     }
 }
 
-impl From<proto::ChannelRole> for ChannelRole {
-    fn from(value: proto::ChannelRole) -> Self {
+impl From<proto.ChannelRole> for ChannelRole {
+    fn from(value: proto.ChannelRole) -> Self {
         match value {
-            proto::ChannelRole::Admin => ChannelRole::Admin,
-            proto::ChannelRole::Member => ChannelRole::Member,
-            proto::ChannelRole::Talker => ChannelRole::Talker,
-            proto::ChannelRole::Guest => ChannelRole::Guest,
-            proto::ChannelRole::Banned => ChannelRole::Banned,
+            proto.ChannelRole.Admin => ChannelRole.Admin,
+            proto.ChannelRole.Member => ChannelRole.Member,
+            proto.ChannelRole.Talker => ChannelRole.Talker,
+            proto.ChannelRole.Guest => ChannelRole.Guest,
+            proto.ChannelRole.Banned => ChannelRole.Banned,
         }
     }
 }
 
-impl Into<proto::ChannelRole> for ChannelRole {
-    fn into(self) -> proto::ChannelRole {
+impl Into<proto.ChannelRole> for ChannelRole {
+    fn into(self) -> proto.ChannelRole {
         match self {
-            ChannelRole::Admin => proto::ChannelRole::Admin,
-            ChannelRole::Member => proto::ChannelRole::Member,
-            ChannelRole::Talker => proto::ChannelRole::Talker,
-            ChannelRole::Guest => proto::ChannelRole::Guest,
-            ChannelRole::Banned => proto::ChannelRole::Banned,
+            ChannelRole.Admin => proto.ChannelRole.Admin,
+            ChannelRole.Member => proto.ChannelRole.Member,
+            ChannelRole.Talker => proto.ChannelRole.Talker,
+            ChannelRole.Guest => proto.ChannelRole.Guest,
+            ChannelRole.Banned => proto.ChannelRole.Banned,
         }
     }
 }
 
 impl Into<i32> for ChannelRole {
     fn into(self) -> i32 {
-        let proto: proto::ChannelRole = self.into();
+        let proto: proto.ChannelRole = self.into();
         proto.into()
     }
 }
@@ -249,27 +249,27 @@ pub enum ChannelVisibility {
     Members,
 }
 
-impl From<proto::ChannelVisibility> for ChannelVisibility {
-    fn from(value: proto::ChannelVisibility) -> Self {
+impl From<proto.ChannelVisibility> for ChannelVisibility {
+    fn from(value: proto.ChannelVisibility) -> Self {
         match value {
-            proto::ChannelVisibility::Public => ChannelVisibility::Public,
-            proto::ChannelVisibility::Members => ChannelVisibility::Members,
+            proto.ChannelVisibility.Public => ChannelVisibility.Public,
+            proto.ChannelVisibility.Members => ChannelVisibility.Members,
         }
     }
 }
 
-impl Into<proto::ChannelVisibility> for ChannelVisibility {
-    fn into(self) -> proto::ChannelVisibility {
+impl Into<proto.ChannelVisibility> for ChannelVisibility {
+    fn into(self) -> proto.ChannelVisibility {
         match self {
-            ChannelVisibility::Public => proto::ChannelVisibility::Public,
-            ChannelVisibility::Members => proto::ChannelVisibility::Members,
+            ChannelVisibility.Public => proto.ChannelVisibility.Public,
+            ChannelVisibility.Members => proto.ChannelVisibility.Members,
         }
     }
 }
 
 impl Into<i32> for ChannelVisibility {
     fn into(self) -> i32 {
-        let proto: proto::ChannelVisibility = self.into();
+        let proto: proto.ChannelVisibility = self.into();
         proto.into()
     }
 }

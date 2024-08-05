@@ -1,28 +1,28 @@
-use crate::db::ChannelRole;
+use crate.db.ChannelRole;
 
-use super::{run_randomized_test, RandomizedTest, TestClient, TestError, TestServer, UserTestPlan};
-use anyhow::Result;
-use async_trait::async_trait;
-use gpui::{BackgroundExecutor, SharedString, TestAppContext};
-use rand::prelude::*;
-use serde_derive::{Deserialize, Serialize};
-use std::{
-    ops::{Deref, DerefMut, Range},
-    rc::Rc,
-    sync::Arc,
+use super.{run_randomized_test, RandomizedTest, TestClient, TestError, TestServer, UserTestPlan};
+use anyhow.Result;
+use async_trait.async_trait;
+use gpui.{BackgroundExecutor, SharedString, TestAppContext};
+use rand.prelude.*;
+use serde_derive.{Deserialize, Serialize};
+use std.{
+    ops.{Deref, DerefMut, Range},
+    rc.Rc,
+    sync.Arc,
 };
-use text::Bias;
+use text.Bias;
 
-#[gpui::test(
+#[gpui.test(
     iterations = 100,
-    on_failure = "crate::tests::save_randomized_test_plan"
+    on_failure = "crate.tests.save_randomized_test_plan"
 )]
 async fn test_random_channel_buffers(
     cx: &mut TestAppContext,
     executor: BackgroundExecutor,
     rng: StdRng,
 ) {
-    run_randomized_test::<RandomChannelBufferTest>(cx, executor, rng).await;
+    run_randomized_test.<RandomChannelBufferTest>(cx, executor, rng).await;
 }
 
 struct RandomChannelBufferTest;
@@ -56,7 +56,7 @@ impl RandomizedTest for RandomChannelBufferTest {
                 .await
                 .unwrap();
             for user in &users[1..] {
-                db.invite_channel_member(id, user.user_id, users[0].user_id, ChannelRole::Member)
+                db.invite_channel_member(id, user.user_id, users[0].user_id, ChannelRole.Member)
                     .await
                     .unwrap();
                 db.respond_to_channel_invite(id, user.user_id, true)
@@ -80,7 +80,7 @@ impl RandomizedTest for RandomChannelBufferTest {
         if channel_buffers.deref_mut().is_empty()
             && channel_store.read_with(cx, |store, _| store.channel_count() == 0)
         {
-            return ChannelBufferOperation::Noop;
+            return ChannelBufferOperation.Noop;
         }
 
         loop {
@@ -96,7 +96,7 @@ impl RandomizedTest for RandomChannelBufferTest {
                         })
                     });
                     if let Some(channel_name) = channel_name {
-                        break ChannelBufferOperation::JoinChannelNotes { channel_name };
+                        break ChannelBufferOperation.JoinChannelNotes { channel_name };
                     }
                 }
 
@@ -104,7 +104,7 @@ impl RandomizedTest for RandomChannelBufferTest {
                     if let Some(buffer) = channel_buffers.deref().iter().choose(rng) {
                         let channel_name =
                             buffer.read_with(cx, |b, cx| b.channel(cx).unwrap().name.clone());
-                        break ChannelBufferOperation::LeaveChannelNotes { channel_name };
+                        break ChannelBufferOperation.LeaveChannelNotes { channel_name };
                     }
                 }
 
@@ -115,7 +115,7 @@ impl RandomizedTest for RandomChannelBufferTest {
                             let edits = b
                                 .buffer()
                                 .read_with(cx, |buffer, _| buffer.get_random_edits(rng, 3));
-                            ChannelBufferOperation::EditChannelNotes {
+                            ChannelBufferOperation.EditChannelNotes {
                                 channel_name,
                                 edits,
                             }
@@ -132,7 +132,7 @@ impl RandomizedTest for RandomChannelBufferTest {
         cx: &mut TestAppContext,
     ) -> Result<(), TestError> {
         match operation {
-            ChannelBufferOperation::JoinChannelNotes { channel_name } => {
+            ChannelBufferOperation.JoinChannelNotes { channel_name } => {
                 let buffer = client.channel_store().update(cx, |store, cx| {
                     let channel_id = store
                         .ordered_channels()
@@ -141,22 +141,22 @@ impl RandomizedTest for RandomChannelBufferTest {
                         .1
                         .id;
                     if store.has_open_channel_buffer(channel_id, cx) {
-                        Err(TestError::Inapplicable)
+                        Err(TestError.Inapplicable)
                     } else {
                         Ok(store.open_channel_buffer(channel_id, cx))
                     }
                 })?;
 
-                log::info!(
+                log.info!(
                     "{}: opening notes for channel {channel_name}",
                     client.username
                 );
                 client.channel_buffers().deref_mut().insert(buffer.await?);
             }
 
-            ChannelBufferOperation::LeaveChannelNotes { channel_name } => {
+            ChannelBufferOperation.LeaveChannelNotes { channel_name } => {
                 let buffer = cx.update(|cx| {
-                    let mut left_buffer = Err(TestError::Inapplicable);
+                    let mut left_buffer = Err(TestError.Inapplicable);
                     client.channel_buffers().deref_mut().retain(|buffer| {
                         if buffer.read(cx).channel(cx).unwrap().name == channel_name {
                             left_buffer = Ok(buffer.clone());
@@ -168,14 +168,14 @@ impl RandomizedTest for RandomChannelBufferTest {
                     left_buffer
                 })?;
 
-                log::info!(
+                log.info!(
                     "{}: closing notes for channel {channel_name}",
                     client.username
                 );
                 cx.update(|_| drop(buffer));
             }
 
-            ChannelBufferOperation::EditChannelNotes {
+            ChannelBufferOperation.EditChannelNotes {
                 channel_name,
                 edits,
             } => {
@@ -190,9 +190,9 @@ impl RandomizedTest for RandomChannelBufferTest {
                             })
                             .cloned()
                     })
-                    .ok_or_else(|| TestError::Inapplicable)?;
+                    .ok_or_else(|| TestError.Inapplicable)?;
 
-                log::info!(
+                log.info!(
                     "{}: editing notes for channel {channel_name} with {:?}",
                     client.username,
                     edits
@@ -204,8 +204,8 @@ impl RandomizedTest for RandomChannelBufferTest {
                         let snapshot = buffer.snapshot();
                         buffer.edit(
                             edits.into_iter().map(|(range, text)| {
-                                let start = snapshot.clip_offset(range.start, Bias::Left);
-                                let end = snapshot.clip_offset(range.end, Bias::Right);
+                                let start = snapshot.clip_offset(range.start, Bias.Left);
+                                let end = snapshot.clip_offset(range.end, Bias.Right);
                                 (start..end, text)
                             }),
                             None,
@@ -215,7 +215,7 @@ impl RandomizedTest for RandomChannelBufferTest {
                 });
             }
 
-            ChannelBufferOperation::Noop => Err(TestError::Inapplicable)?,
+            ChannelBufferOperation.Noop => Err(TestError.Inapplicable)?,
         }
         Ok(())
     }
@@ -243,7 +243,7 @@ impl RandomizedTest for RandomChannelBufferTest {
                 .unwrap()
                 .into_iter()
                 .map(|id| id.to_proto())
-                .collect::<Vec<_>>();
+                .collect.<Vec<_>>();
             collaborator_user_ids.sort();
 
             for (client, client_cx) in clients.iter() {
@@ -273,7 +273,7 @@ impl RandomizedTest for RandomChannelBufferTest {
                         // channel buffer.
                         let collaborators = channel_buffer.collaborators();
                         let mut user_ids =
-                            collaborators.values().map(|c| c.user_id).collect::<Vec<_>>();
+                            collaborators.values().map(|c| c.user_id).collect.<Vec<_>>();
                         user_ids.sort();
                         assert_eq!(
                             user_ids,

@@ -1,20 +1,20 @@
-use crate::tests::TestServer;
-use call::ActiveCall;
-use fs::{FakeFs, Fs as _};
-use gpui::{Context as _, TestAppContext};
-use remote::SshSession;
-use remote_server::HeadlessProject;
-use serde_json::json;
-use std::{path::Path, sync::Arc};
+use crate.tests.TestServer;
+use call.ActiveCall;
+use fs.{FakeFs, Fs as _};
+use gpui.{Context as _, TestAppContext};
+use remote.SshSession;
+use remote_server.HeadlessProject;
+use serde_json.json;
+use std.{path.Path, sync.Arc};
 
-#[gpui::test]
+#[gpui.test]
 async fn test_sharing_an_ssh_remote_project(
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     server_cx: &mut TestAppContext,
 ) {
     let executor = cx_a.executor();
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     server
@@ -22,8 +22,8 @@ async fn test_sharing_an_ssh_remote_project(
         .await;
 
     // Set up project on remote FS
-    let (client_ssh, server_ssh) = SshSession::fake(cx_a, server_cx);
-    let remote_fs = FakeFs::new(server_cx.executor());
+    let (client_ssh, server_ssh) = SshSession.fake(cx_a, server_cx);
+    let remote_fs = FakeFs.new(server_cx.executor());
     remote_fs
         .insert_tree(
             "/code",
@@ -42,16 +42,16 @@ async fn test_sharing_an_ssh_remote_project(
         .await;
 
     // User A connects to the remote project via SSH.
-    server_cx.update(HeadlessProject::init);
+    server_cx.update(HeadlessProject.init);
     let _headless_project =
-        server_cx.new_model(|cx| HeadlessProject::new(server_ssh, remote_fs.clone(), cx));
+        server_cx.new_model(|cx| HeadlessProject.new(server_ssh, remote_fs.clone(), cx));
 
     let (project_a, worktree_id) = client_a
         .build_ssh_project("/code/project1", client_ssh, cx_a)
         .await;
 
     // User A shares the remote project.
-    let active_call_a = cx_a.read(ActiveCall::global);
+    let active_call_a = cx_a.read(ActiveCall.global);
     let project_id = active_call_a
         .update(cx_a, |call, cx| call.share_project(project_a.clone(), cx))
         .await
@@ -66,11 +66,11 @@ async fn test_sharing_an_ssh_remote_project(
     executor.run_until_parked();
     worktree_b.update(cx_b, |worktree, _cx| {
         assert_eq!(
-            worktree.paths().map(Arc::as_ref).collect::<Vec<_>>(),
+            worktree.paths().map(Arc.as_ref).collect.<Vec<_>>(),
             vec![
-                Path::new("README.md"),
-                Path::new("src"),
-                Path::new("src/lib.rs"),
+                Path.new("README.md"),
+                Path.new("src"),
+                Path.new("src/lib.rs"),
             ]
         );
     });

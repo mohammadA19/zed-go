@@ -1,9 +1,9 @@
 use anyhow;
-use gpui::Pixels;
-use schemars::JsonSchema;
-use serde_derive::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
-use workspace::dock::DockPosition;
+use gpui.Pixels;
+use schemars.JsonSchema;
+use serde_derive.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
+use workspace.dock.DockPosition;
 
 #[derive(Deserialize, Debug)]
 pub struct CollaborationPanelSettings {
@@ -57,9 +57,9 @@ impl Settings for CollaborationPanelSettings {
     type FileContent = PanelSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _: &mut gpui::AppContext,
-    ) -> anyhow::Result<Self> {
+        sources: SettingsSources<Self.FileContent>,
+        _: &mut gpui.AppContext,
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 }
@@ -70,9 +70,9 @@ impl Settings for ChatPanelSettings {
     type FileContent = PanelSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _: &mut gpui::AppContext,
-    ) -> anyhow::Result<Self> {
+        sources: SettingsSources<Self.FileContent>,
+        _: &mut gpui.AppContext,
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 }
@@ -83,9 +83,9 @@ impl Settings for NotificationPanelSettings {
     type FileContent = PanelSettingsContent;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _: &mut gpui::AppContext,
-    ) -> anyhow::Result<Self> {
+        sources: SettingsSources<Self.FileContent>,
+        _: &mut gpui.AppContext,
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 }
@@ -96,9 +96,9 @@ impl Settings for MessageEditorSettings {
     type FileContent = MessageEditorSettings;
 
     fn load(
-        sources: SettingsSources<Self::FileContent>,
-        _: &mut gpui::AppContext,
-    ) -> anyhow::Result<Self> {
+        sources: SettingsSources<Self.FileContent>,
+        _: &mut gpui.AppContext,
+    ) -> anyhow.Result<Self> {
         sources.json_merge()
     }
 }

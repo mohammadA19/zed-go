@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono.{DateTime, Utc};
 
 pub trait SystemClock: Send + Sync {
     /// Returns the current date and time in UTC.
@@ -9,7 +9,7 @@ pub struct RealSystemClock;
 
 impl SystemClock for RealSystemClock {
     fn utc_now(&self) -> DateTime<Utc> {
-        Utc::now()
+        Utc.now()
     }
 }
 
@@ -21,13 +21,13 @@ pub struct FakeSystemClockState {
 #[cfg(any(test, feature = "test-support"))]
 pub struct FakeSystemClock {
     // Use an unfair lock to ensure tests are deterministic.
-    state: parking_lot::Mutex<FakeSystemClockState>,
+    state: parking_lot.Mutex<FakeSystemClockState>,
 }
 
 #[cfg(any(test, feature = "test-support"))]
 impl Default for FakeSystemClock {
     fn default() -> Self {
-        Self::new(Utc::now())
+        Self.new(Utc.now())
     }
 }
 
@@ -37,7 +37,7 @@ impl FakeSystemClock {
         let state = FakeSystemClockState { now };
 
         Self {
-            state: parking_lot::Mutex::new(state),
+            state: parking_lot.Mutex.new(state),
         }
     }
 
@@ -45,8 +45,8 @@ impl FakeSystemClock {
         self.state.lock().now = now;
     }
 
-    /// Advances the [`FakeSystemClock`] by the specified [`Duration`](chrono::Duration).
-    pub fn advance(&self, duration: chrono::Duration) {
+    /// Advances the [`FakeSystemClock`] by the specified [`Duration`](chrono.Duration).
+    pub fn advance(&self, duration: chrono.Duration) {
         self.state.lock().now += duration;
     }
 }

@@ -1,4 +1,4 @@
-use super::*;
+use super.*;
 
 #[derive(Debug)]
 pub struct CreateProcessedStripeEventParams {
@@ -14,13 +14,13 @@ impl Database {
         params: &CreateProcessedStripeEventParams,
     ) -> Result<()> {
         self.transaction(|tx| async move {
-            processed_stripe_event::Entity::insert(processed_stripe_event::ActiveModel {
-                stripe_event_id: ActiveValue::set(params.stripe_event_id.clone()),
-                stripe_event_type: ActiveValue::set(params.stripe_event_type.clone()),
-                stripe_event_created_timestamp: ActiveValue::set(
+            processed_stripe_event.Entity.insert(processed_stripe_event.ActiveModel {
+                stripe_event_id: ActiveValue.set(params.stripe_event_id.clone()),
+                stripe_event_type: ActiveValue.set(params.stripe_event_type.clone()),
+                stripe_event_created_timestamp: ActiveValue.set(
                     params.stripe_event_created_timestamp,
                 ),
-                ..Default::default()
+                ..Default.default()
             })
             .exec_without_returning(&*tx)
             .await?;
@@ -34,9 +34,9 @@ impl Database {
     pub async fn get_processed_stripe_event_by_event_id(
         &self,
         event_id: &str,
-    ) -> Result<Option<processed_stripe_event::Model>> {
+    ) -> Result<Option<processed_stripe_event.Model>> {
         self.transaction(|tx| async move {
-            Ok(processed_stripe_event::Entity::find_by_id(event_id)
+            Ok(processed_stripe_event.Entity.find_by_id(event_id)
                 .one(&*tx)
                 .await?)
         })
@@ -47,11 +47,11 @@ impl Database {
     pub async fn get_processed_stripe_events_by_event_ids(
         &self,
         event_ids: &[&str],
-    ) -> Result<Vec<processed_stripe_event::Model>> {
+    ) -> Result<Vec<processed_stripe_event.Model>> {
         self.transaction(|tx| async move {
-            Ok(processed_stripe_event::Entity::find()
+            Ok(processed_stripe_event.Entity.find()
                 .filter(
-                    processed_stripe_event::Column::StripeEventId.is_in(event_ids.iter().copied()),
+                    processed_stripe_event.Column.StripeEventId.is_in(event_ids.iter().copied()),
                 )
                 .all(&*tx)
                 .await?)

@@ -1,13 +1,13 @@
 mod system_clock;
 
-use serde::{Deserialize, Serialize};
-use smallvec::SmallVec;
-use std::{
-    cmp::{self, Ordering},
+use serde.{Deserialize, Serialize};
+use smallvec.SmallVec;
+use std.{
+    cmp.{self, Ordering},
     fmt, iter,
 };
 
-pub use system_clock::*;
+pub use system_clock.*;
 
 /// A unique identifier for each distributed node.
 pub type ReplicaId = u16;
@@ -29,7 +29,7 @@ pub struct Global(SmallVec<[u32; 8]>);
 
 impl Global {
     pub fn new() -> Self {
-        Self::default()
+        Self.default()
     }
 
     pub fn get(&self, replica_id: ReplicaId) -> Seq {
@@ -44,7 +44,7 @@ impl Global {
             }
 
             let entry = &mut self.0[timestamp.replica_id as usize];
-            *entry = cmp::max(*entry, timestamp.value);
+            *entry = cmp.max(*entry, timestamp.value);
         }
     }
 
@@ -54,7 +54,7 @@ impl Global {
         }
 
         for (left, right) in self.0.iter_mut().zip(&other.0) {
-            *left = cmp::max(*left, *right);
+            *left = cmp.max(*left, *right);
         }
     }
 
@@ -67,13 +67,13 @@ impl Global {
         for (ix, (left, right)) in self
             .0
             .iter_mut()
-            .zip(other.0.iter().chain(iter::repeat(&0)))
+            .zip(other.0.iter().chain(iter.repeat(&0)))
             .enumerate()
         {
             if *left == 0 {
                 *left = *right;
             } else if *right > 0 {
-                *left = cmp::min(*left, *right);
+                *left = cmp.min(*left, *right);
             }
 
             if *left != 0 {
@@ -121,7 +121,7 @@ impl Global {
 
 impl FromIterator<Lamport> for Global {
     fn from_iter<T: IntoIterator<Item = Lamport>>(locals: T) -> Self {
-        let mut result = Self::new();
+        let mut result = Self.new();
         for local in locals {
             result.observe(local);
         }
@@ -146,13 +146,13 @@ impl PartialOrd for Lamport {
 
 impl Lamport {
     pub const MIN: Self = Self {
-        replica_id: ReplicaId::MIN,
-        value: Seq::MIN,
+        replica_id: ReplicaId.MIN,
+        value: Seq.MIN,
     };
 
     pub const MAX: Self = Self {
-        replica_id: ReplicaId::MAX,
-        value: Seq::MAX,
+        replica_id: ReplicaId.MAX,
+        value: Seq.MAX,
     };
 
     pub fn new(replica_id: ReplicaId) -> Self {
@@ -173,18 +173,18 @@ impl Lamport {
     }
 
     pub fn observe(&mut self, timestamp: Self) {
-        self.value = cmp::max(self.value, timestamp.value) + 1;
+        self.value = cmp.max(self.value, timestamp.value) + 1;
     }
 }
 
-impl fmt::Debug for Lamport {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Debug for Lamport {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "Lamport {{{}: {}}}", self.replica_id, self.value)
     }
 }
 
-impl fmt::Debug for Global {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl fmt.Debug for Global {
+    fn fmt(&self, f: &mut fmt.Formatter<'_>) -> fmt.Result {
         write!(f, "Global {{")?;
         for timestamp in self.iter() {
             if timestamp.replica_id > 0 {

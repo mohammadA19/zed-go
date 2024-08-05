@@ -1,13 +1,13 @@
-use crate::{Client, Connection, Credentials, EstablishConnectionError, UserStore};
-use anyhow::{anyhow, Result};
-use futures::{stream::BoxStream, StreamExt};
-use gpui::{BackgroundExecutor, Context, Model, TestAppContext};
-use parking_lot::Mutex;
-use rpc::{
-    proto::{self, GetPrivateUserInfo, GetPrivateUserInfoResponse},
+use crate.{Client, Connection, Credentials, EstablishConnectionError, UserStore};
+use anyhow.{anyhow, Result};
+use futures.{stream.BoxStream, StreamExt};
+use gpui.{BackgroundExecutor, Context, Model, TestAppContext};
+use parking_lot.Mutex;
+use rpc.{
+    proto.{self, GetPrivateUserInfo, GetPrivateUserInfoResponse},
     ConnectionId, Peer, Receipt, TypedEnvelope,
 };
-use std::sync::Arc;
+use std.sync.Arc;
 
 pub struct FakeServer {
     peer: Arc<Peer>,
@@ -18,7 +18,7 @@ pub struct FakeServer {
 
 #[derive(Default)]
 struct FakeServerState {
-    incoming: Option<BoxStream<'static, Box<dyn proto::AnyTypedEnvelope>>>,
+    incoming: Option<BoxStream<'static, Box<dyn proto.AnyTypedEnvelope>>>,
     connection_id: Option<ConnectionId>,
     forbid_connections: bool,
     auth_count: usize,
@@ -32,15 +32,15 @@ impl FakeServer {
         cx: &TestAppContext,
     ) -> Self {
         let server = Self {
-            peer: Peer::new(0),
-            state: Default::default(),
+            peer: Peer.new(0),
+            state: Default.default(),
             user_id: client_user_id,
             executor: cx.executor(),
         };
 
         client
             .override_authenticate({
-                let state = Arc::downgrade(&server.state);
+                let state = Arc.downgrade(&server.state);
                 move |cx| {
                     let state = state.clone();
                     cx.spawn(move |_| async move {
@@ -48,7 +48,7 @@ impl FakeServer {
                         let mut state = state.lock();
                         state.auth_count += 1;
                         let access_token = state.access_token.to_string();
-                        Ok(Credentials::User {
+                        Ok(Credentials.User {
                             user_id: client_user_id,
                             access_token,
                         })
@@ -56,8 +56,8 @@ impl FakeServer {
                 }
             })
             .override_establish_connection({
-                let peer = Arc::downgrade(&server.peer);
-                let state = Arc::downgrade(&server.state);
+                let peer = Arc.downgrade(&server.peer);
+                let state = Arc.downgrade(&server.state);
                 move |credentials, cx| {
                     let peer = peer.clone();
                     let state = state.clone();
@@ -66,22 +66,22 @@ impl FakeServer {
                         let state = state.upgrade().ok_or_else(|| anyhow!("server dropped"))?;
                         let peer = peer.upgrade().ok_or_else(|| anyhow!("server dropped"))?;
                         if state.lock().forbid_connections {
-                            Err(EstablishConnectionError::Other(anyhow!(
+                            Err(EstablishConnectionError.Other(anyhow!(
                                 "server is forbidding connections"
                             )))?
                         }
 
                         if credentials
-                            != (Credentials::User {
+                            != (Credentials.User {
                                 user_id: client_user_id,
                                 access_token: state.lock().access_token.to_string(),
                             })
                         {
-                            Err(EstablishConnectionError::Unauthorized)?
+                            Err(EstablishConnectionError.Unauthorized)?
                         }
 
                         let (client_conn, server_conn, _) =
-                            Connection::in_memory(cx.background_executor().clone());
+                            Connection.in_memory(cx.background_executor().clone());
                         let (connection_id, io, incoming) =
                             peer.add_test_connection(server_conn, cx.background_executor().clone());
                         cx.background_executor().spawn(io).detach();
@@ -92,7 +92,7 @@ impl FakeServer {
                         }
                         peer.send(
                             connection_id,
-                            proto::Hello {
+                            proto.Hello {
                                 peer_id: Some(connection_id.into()),
                             },
                         )
@@ -136,12 +136,12 @@ impl FakeServer {
         self.state.lock().forbid_connections = false;
     }
 
-    pub fn send<T: proto::EnvelopedMessage>(&self, message: T) {
+    pub fn send<T: proto.EnvelopedMessage>(&self, message: T) {
         self.peer.send(self.connection_id(), message).unwrap();
     }
 
-    #[allow(clippy::await_holding_lock)]
-    pub async fn receive<M: proto::EnvelopedMessage>(&self) -> Result<TypedEnvelope<M>> {
+    #[allow(clippy.await_holding_lock)]
+    pub async fn receive<M: proto.EnvelopedMessage>(&self) -> Result<TypedEnvelope<M>> {
         self.executor.start_waiting();
 
         loop {
@@ -158,20 +158,20 @@ impl FakeServer {
             let type_name = message.payload_type_name();
             let message = message.into_any();
 
-            if message.is::<TypedEnvelope<M>>() {
+            if message.is.<TypedEnvelope<M>>() {
                 return Ok(*message.downcast().unwrap());
             }
 
-            if message.is::<TypedEnvelope<GetPrivateUserInfo>>() {
+            if message.is.<TypedEnvelope<GetPrivateUserInfo>>() {
                 self.respond(
                     message
-                        .downcast::<TypedEnvelope<GetPrivateUserInfo>>()
+                        .downcast.<TypedEnvelope<GetPrivateUserInfo>>()
                         .unwrap()
                         .receipt(),
                     GetPrivateUserInfoResponse {
                         metrics_id: "the-metrics-id".into(),
                         staff: false,
-                        flags: Default::default(),
+                        flags: Default.default(),
                     },
                 );
                 continue;
@@ -184,7 +184,7 @@ impl FakeServer {
         }
     }
 
-    pub fn respond<T: proto::RequestMessage>(&self, receipt: Receipt<T>, response: T::Response) {
+    pub fn respond<T: proto.RequestMessage>(&self, receipt: Receipt<T>, response: T.Response) {
         self.peer.respond(receipt, response).unwrap()
     }
 
@@ -197,9 +197,9 @@ impl FakeServer {
         client: Arc<Client>,
         cx: &mut TestAppContext,
     ) -> Model<UserStore> {
-        let user_store = cx.new_model(|cx| UserStore::new(client, cx));
+        let user_store = cx.new_model(|cx| UserStore.new(client, cx));
         assert_eq!(
-            self.receive::<proto::GetUsers>()
+            self.receive.<proto.GetUsers>()
                 .await
                 .unwrap()
                 .payload

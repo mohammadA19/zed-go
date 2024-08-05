@@ -1,5 +1,5 @@
-use crate::db::{SignupId, UserId};
-use sea_orm::entity::prelude::*;
+use crate.db.{SignupId, UserId};
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "signups")]

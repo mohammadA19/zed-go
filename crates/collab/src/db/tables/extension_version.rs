@@ -1,6 +1,6 @@
-use crate::db::ExtensionId;
-use sea_orm::entity::prelude::*;
-use time::PrimitiveDateTime;
+use crate.db.ExtensionId;
+use sea_orm.entity.prelude.*;
+use time.PrimitiveDateTime;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "extension_versions")]
@@ -21,17 +21,17 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::extension::Entity",
-        from = "Column::ExtensionId",
-        to = "super::extension::Column::Id"
-        on_condition = r#"super::extension::Column::LatestVersion.into_expr().eq(Column::Version.into_expr())"#
+        belongs_to = "super.extension.Entity",
+        from = "Column.ExtensionId",
+        to = "super.extension.Column.Id"
+        on_condition = r#"super.extension.Column.LatestVersion.into_expr().eq(Column.Version.into_expr())"#
     )]
     Extension,
 }
 
-impl Related<super::extension::Entity> for Entity {
+impl Related<super.extension.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Extension.def()
+        Relation.Extension.def()
     }
 }
 

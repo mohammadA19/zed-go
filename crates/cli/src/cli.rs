@@ -1,10 +1,10 @@
-pub use ipc_channel::ipc;
-use serde::{Deserialize, Serialize};
+pub use ipc_channel.ipc;
+use serde.{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct IpcHandshake {
-    pub requests: ipc::IpcSender<CliRequest>,
-    pub responses: ipc::IpcReceiver<CliResponse>,
+    pub requests: ipc.IpcSender<CliRequest>,
+    pub responses: ipc.IpcReceiver<CliResponse>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

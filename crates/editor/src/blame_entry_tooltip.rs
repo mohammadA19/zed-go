@@ -1,19 +1,19 @@
-use futures::Future;
-use git::blame::BlameEntry;
-use git::Oid;
-use gpui::{
+use futures.Future;
+use git.blame.BlameEntry;
+use git.Oid;
+use gpui.{
     Asset, ClipboardItem, Element, ParentElement, Render, ScrollHandle, StatefulInteractiveElement,
     WeakView, WindowContext,
 };
-use settings::Settings;
-use std::hash::Hash;
-use theme::ThemeSettings;
-use time::UtcOffset;
-use ui::{prelude::*, tooltip_container, Avatar};
-use workspace::Workspace;
+use settings.Settings;
+use std.hash.Hash;
+use theme.ThemeSettings;
+use time.UtcOffset;
+use ui.{prelude.*, tooltip_container, Avatar};
+use workspace.Workspace;
 
-use crate::git::blame::{CommitDetails, GitRemote};
-use crate::EditorStyle;
+use crate.git.blame.{CommitDetails, GitRemote};
+use crate.EditorStyle;
 
 struct CommitAvatar<'a> {
     details: Option<&'a CommitDetails>,
@@ -33,16 +33,16 @@ impl<'a> CommitAvatar<'a> {
             .and_then(|details| details.remote.as_ref())
             .filter(|remote| remote.host_supports_avatars())?;
 
-        let avatar_url = CommitAvatarAsset::new(remote.clone(), self.sha);
+        let avatar_url = CommitAvatarAsset.new(remote.clone(), self.sha);
 
-        let element = match cx.use_cached_asset::<CommitAvatarAsset>(&avatar_url) {
+        let element = match cx.use_cached_asset.<CommitAvatarAsset>(&avatar_url) {
             // Loading or no avatar found
-            None | Some(None) => Icon::new(IconName::Person)
-                .color(Color::Muted)
+            None | Some(None) => Icon.new(IconName.Person)
+                .color(Color.Muted)
                 .into_element()
                 .into_any(),
             // Found
-            Some(Some(url)) => Avatar::new(url.to_string()).into_element().into_any(),
+            Some(Some(url)) => Avatar.new(url.to_string()).into_element().into_any(),
         };
         Some(element)
     }
@@ -55,7 +55,7 @@ struct CommitAvatarAsset {
 }
 
 impl Hash for CommitAvatarAsset {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: std.hash.Hasher>(&self, state: &mut H) {
         self.sha.hash(state);
         self.remote.host.name().hash(state);
     }
@@ -72,9 +72,9 @@ impl Asset for CommitAvatarAsset {
     type Output = Option<SharedString>;
 
     fn load(
-        source: Self::Source,
+        source: Self.Source,
         cx: &mut WindowContext,
-    ) -> impl Future<Output = Self::Output> + Send + 'static {
+    ) -> impl Future<Output = Self.Output> + Send + 'static {
         let client = cx.http_client();
 
         async move {
@@ -82,7 +82,7 @@ impl Asset for CommitAvatarAsset {
                 .remote
                 .avatar_url(source.sha, client)
                 .await
-                .map(|url| SharedString::from(url.to_string()))
+                .map(|url| SharedString.from(url.to_string()))
         }
     }
 }
@@ -107,14 +107,14 @@ impl BlameEntryTooltip {
             blame_entry,
             details,
             workspace,
-            scroll_handle: ScrollHandle::new(),
+            scroll_handle: ScrollHandle.new(),
         }
     }
 }
 
 impl Render for BlameEntryTooltip {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let avatar = CommitAvatar::new(self.details.as_ref(), self.blame_entry.sha).render(cx);
+        let avatar = CommitAvatar.new(self.details.as_ref(), self.blame_entry.sha).render(cx);
 
         let author = self
             .blame_entry
@@ -132,7 +132,7 @@ impl Render for BlameEntryTooltip {
             .details
             .as_ref()
             .map(|details| {
-                crate::render_parsed_markdown(
+                crate.render_parsed_markdown(
                     "blame-message",
                     &details.parsed_message,
                     &self.editor_style,
@@ -148,7 +148,7 @@ impl Render for BlameEntryTooltip {
             .as_ref()
             .and_then(|details| details.pull_request.clone());
 
-        let ui_font_size = ThemeSettings::get_global(cx).ui_font_size;
+        let ui_font_size = ThemeSettings.get_global(cx).ui_font_size;
         let message_max_height = cx.line_height() * 12 + (ui_font_size / 0.4);
 
         tooltip_container(cx, move |this, cx| {
@@ -156,7 +156,7 @@ impl Render for BlameEntryTooltip {
                 .on_mouse_move(|_, cx| cx.stop_propagation())
                 .child(
                     v_flex()
-                        .w(gpui::rems(30.))
+                        .w(gpui.rems(30.))
                         .gap_4()
                         .child(
                             h_flex()
@@ -195,15 +195,15 @@ impl Render for BlameEntryTooltip {
                                         .gap_2()
                                         .when_some(pull_request, |this, pr| {
                                             this.child(
-                                                Button::new(
+                                                Button.new(
                                                     "pull-request-button",
                                                     format!("#{}", pr.number),
                                                 )
-                                                .color(Color::Muted)
-                                                .icon(IconName::PullRequest)
-                                                .icon_color(Color::Muted)
-                                                .icon_position(IconPosition::Start)
-                                                .style(ButtonStyle::Transparent)
+                                                .color(Color.Muted)
+                                                .icon(IconName.PullRequest)
+                                                .icon_color(Color.Muted)
+                                                .icon_position(IconPosition.Start)
+                                                .style(ButtonStyle.Transparent)
                                                 .on_click(move |_, cx| {
                                                     cx.stop_propagation();
                                                     cx.open_url(pr.url.as_str())
@@ -211,15 +211,15 @@ impl Render for BlameEntryTooltip {
                                             )
                                         })
                                         .child(
-                                            Button::new(
+                                            Button.new(
                                                 "commit-sha-button",
                                                 short_commit_id.clone(),
                                             )
-                                            .style(ButtonStyle::Transparent)
-                                            .color(Color::Muted)
-                                            .icon(IconName::FileGit)
-                                            .icon_color(Color::Muted)
-                                            .icon_position(IconPosition::Start)
+                                            .style(ButtonStyle.Transparent)
+                                            .color(Color.Muted)
+                                            .icon(IconName.FileGit)
+                                            .icon_color(Color.Muted)
+                                            .icon_position(IconPosition.Start)
                                             .disabled(
                                                 self.details.as_ref().map_or(true, |details| {
                                                     details.permalink.is_none()
@@ -238,11 +238,11 @@ impl Render for BlameEntryTooltip {
                                             ),
                                         )
                                         .child(
-                                            IconButton::new("copy-sha-button", IconName::Copy)
-                                                .icon_color(Color::Muted)
+                                            IconButton.new("copy-sha-button", IconName.Copy)
+                                                .icon_color(Color.Muted)
                                                 .on_click(move |_, cx| {
                                                     cx.stop_propagation();
-                                                    cx.write_to_clipboard(ClipboardItem::new(
+                                                    cx.write_to_clipboard(ClipboardItem.new(
                                                         full_sha.clone(),
                                                     ))
                                                 }),
@@ -254,14 +254,14 @@ impl Render for BlameEntryTooltip {
     }
 }
 
-fn blame_entry_timestamp(blame_entry: &BlameEntry, format: time_format::TimestampFormat) -> String {
+fn blame_entry_timestamp(blame_entry: &BlameEntry, format: time_format.TimestampFormat) -> String {
     match blame_entry.author_offset_date_time() {
         Ok(timestamp) => {
-            let local = chrono::Local::now().offset().local_minus_utc();
-            time_format::format_localized_timestamp(
+            let local = chrono.Local.now().offset().local_minus_utc();
+            time_format.format_localized_timestamp(
                 timestamp,
-                time::OffsetDateTime::now_utc(),
-                UtcOffset::from_whole_seconds(local).unwrap(),
+                time.OffsetDateTime.now_utc(),
+                UtcOffset.from_whole_seconds(local).unwrap(),
                 format,
             )
         }
@@ -270,9 +270,9 @@ fn blame_entry_timestamp(blame_entry: &BlameEntry, format: time_format::Timestam
 }
 
 pub fn blame_entry_relative_timestamp(blame_entry: &BlameEntry) -> String {
-    blame_entry_timestamp(blame_entry, time_format::TimestampFormat::Relative)
+    blame_entry_timestamp(blame_entry, time_format.TimestampFormat.Relative)
 }
 
 fn blame_entry_absolute_timestamp(blame_entry: &BlameEntry) -> String {
-    blame_entry_timestamp(blame_entry, time_format::TimestampFormat::MediumAbsolute)
+    blame_entry_timestamp(blame_entry, time_format.TimestampFormat.MediumAbsolute)
 }

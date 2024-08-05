@@ -1,8 +1,8 @@
-use anyhow::Result;
-use gpui::AppContext;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use settings::{Settings, SettingsSources};
+use anyhow.Result;
+use gpui.AppContext;
+use schemars.JsonSchema;
+use serde.{Deserialize, Serialize};
+use settings.{Settings, SettingsSources};
 
 #[derive(Deserialize, Debug)]
 pub struct ProjectDiagnosticsSettings {
@@ -22,7 +22,7 @@ impl Settings for ProjectDiagnosticsSettings {
     const KEY: Option<&'static str> = Some("diagnostics");
     type FileContent = ProjectDiagnosticsSettingsContent;
 
-    fn load(sources: SettingsSources<Self::FileContent>, _: &mut AppContext) -> Result<Self> {
+    fn load(sources: SettingsSources<Self.FileContent>, _: &mut AppContext) -> Result<Self> {
         sources.json_merge()
     }
 }

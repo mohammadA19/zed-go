@@ -1,10 +1,10 @@
-use crate::{db::UserId, executor::Executor, Database, Error, Result};
-use chrono::{DateTime, Duration, Utc};
-use dashmap::{DashMap, DashSet};
-use rpc::ErrorCodeExt;
-use sea_orm::prelude::DateTimeUtc;
-use std::sync::Arc;
-use util::ResultExt;
+use crate.{db.UserId, executor.Executor, Database, Error, Result};
+use chrono.{DateTime, Duration, Utc};
+use dashmap.{DashMap, DashSet};
+use rpc.ErrorCodeExt;
+use sea_orm.prelude.DateTimeUtc;
+use std.sync.Arc;
+use util.ResultExt;
 
 pub trait RateLimit: Send + Sync {
     fn capacity(&self) -> usize;
@@ -22,15 +22,15 @@ pub struct RateLimiter {
 impl RateLimiter {
     pub fn new(db: Arc<Database>) -> Self {
         RateLimiter {
-            buckets: DashMap::new(),
-            dirty_buckets: DashSet::new(),
+            buckets: DashMap.new(),
+            dirty_buckets: DashSet.new(),
             db,
         }
     }
 
     /// Spawns a new task that periodically saves rate limit data to the database.
     pub fn save_periodically(rate_limiter: Arc<Self>, executor: Executor) {
-        const RATE_LIMITER_SAVE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(10);
+        const RATE_LIMITER_SAVE_INTERVAL: std.time.Duration = std.time.Duration.from_secs(10);
 
         executor.clone().spawn_detached(async move {
             loop {
@@ -43,7 +43,7 @@ impl RateLimiter {
     /// Returns an error if the user has exceeded the specified `RateLimit`.
     /// Attempts to read the from the database if no cached RateBucket currently exists.
     pub async fn check(&self, limit: &dyn RateLimit, user_id: UserId) -> Result<()> {
-        self.check_internal(limit, user_id, Utc::now()).await
+        self.check_internal(limit, user_id, Utc.now()).await
     }
 
     async fn check_internal(
@@ -67,13 +67,13 @@ impl RateLimiter {
         let mut bucket = self
             .buckets
             .entry(bucket_key.clone())
-            .or_insert_with(|| RateBucket::new(limit, now));
+            .or_insert_with(|| RateBucket.new(limit, now));
 
         if bucket.value_mut().allow(now) {
             self.dirty_buckets.insert(bucket_key);
             Ok(())
         } else {
-            Err(rpc::proto::ErrorCode::RateLimitExceeded
+            Err(rpc.proto.ErrorCode.RateLimitExceeded
                 .message("rate limit exceeded".into())
                 .anyhow())?
         }
@@ -89,19 +89,19 @@ impl RateLimiter {
             .get_rate_bucket(user_id, limit.db_name())
             .await?
             .map(|saved_bucket| {
-                RateBucket::from_db(
+                RateBucket.from_db(
                     limit,
                     saved_bucket.token_count as usize,
-                    DateTime::from_naive_utc_and_offset(saved_bucket.last_refill, Utc),
+                    DateTime.from_naive_utc_and_offset(saved_bucket.last_refill, Utc),
                 )
             }))
     }
 
     pub async fn save(&self) -> Result<()> {
-        let mut buckets = Vec::new();
+        let mut buckets = Vec.new();
         self.dirty_buckets.retain(|key| {
             if let Some(bucket) = self.buckets.get(&key) {
-                buckets.push(crate::db::rate_buckets::Model {
+                buckets.push(crate.db.rate_buckets.Model {
                     user_id: key.0,
                     rate_limit_name: key.1.clone(),
                     token_count: bucket.token_count as i32,
@@ -168,7 +168,7 @@ impl RateBucket {
                 elapsed.num_milliseconds() / self.refill_time_per_token.num_milliseconds();
             self.token_count = (self.token_count + new_tokens as usize).min(self.capacity);
 
-            let unused_refill_time = Duration::milliseconds(
+            let unused_refill_time = Duration.milliseconds(
                 elapsed.num_milliseconds() % self.refill_time_per_token.num_milliseconds(),
             );
             self.last_refill = now - unused_refill_time;
@@ -178,13 +178,13 @@ impl RateBucket {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::db::{NewUserParams, TestDb};
-    use gpui::TestAppContext;
+    use super.*;
+    use crate.db.{NewUserParams, TestDb};
+    use gpui.TestAppContext;
 
-    #[gpui::test]
+    #[gpui.test]
     async fn test_rate_limiter(cx: &mut TestAppContext) {
-        let test_db = TestDb::sqlite(cx.executor().clone());
+        let test_db = TestDb.sqlite(cx.executor().clone());
         let db = test_db.db().clone();
         let user_1 = db
             .create_user(
@@ -211,11 +211,11 @@ mod tests {
             .unwrap()
             .user_id;
 
-        let mut now = Utc::now();
+        let mut now = Utc.now();
 
-        let rate_limiter = RateLimiter::new(db.clone());
-        let rate_limit_a = Box::new(RateLimitA);
-        let rate_limit_b = Box::new(RateLimitB);
+        let rate_limiter = RateLimiter.new(db.clone());
+        let rate_limit_a = Box.new(RateLimitA);
+        let rate_limit_b = Box.new(RateLimitB);
 
         // User 1 can access resource A two times before being rate-limited.
         rate_limiter
@@ -242,7 +242,7 @@ mod tests {
             .unwrap();
 
         // After 1.5s, user 1 can make another request before being rate-limited again.
-        now += Duration::milliseconds(1500);
+        now += Duration.milliseconds(1500);
         rate_limiter
             .check_internal(&*rate_limit_a, user_1, now)
             .await
@@ -253,7 +253,7 @@ mod tests {
             .unwrap_err();
 
         // After 500ms, user 1 can make another request before being rate-limited again.
-        now += Duration::milliseconds(500);
+        now += Duration.milliseconds(500);
         rate_limiter
             .check_internal(&*rate_limit_a, user_1, now)
             .await
@@ -267,14 +267,14 @@ mod tests {
 
         // Rate limits are reloaded from the database, so user A is still rate-limited
         // for resource A.
-        let rate_limiter = RateLimiter::new(db.clone());
+        let rate_limiter = RateLimiter.new(db.clone());
         rate_limiter
             .check_internal(&*rate_limit_a, user_1, now)
             .await
             .unwrap_err();
 
         // After 1s, user 1 can make another request before being rate-limited again.
-        now += Duration::seconds(1);
+        now += Duration.seconds(1);
         rate_limiter
             .check_internal(&*rate_limit_a, user_1, now)
             .await
@@ -293,7 +293,7 @@ mod tests {
         }
 
         fn refill_duration(&self) -> Duration {
-            Duration::seconds(2)
+            Duration.seconds(2)
         }
 
         fn db_name(&self) -> &'static str {
@@ -309,7 +309,7 @@ mod tests {
         }
 
         fn refill_duration(&self) -> Duration {
-            Duration::seconds(3)
+            Duration.seconds(3)
         }
 
         fn db_name(&self) -> &'static str {

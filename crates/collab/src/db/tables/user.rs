@@ -1,6 +1,6 @@
-use crate::db::UserId;
-use sea_orm::entity::prelude::*;
-use serde::Serialize;
+use crate.db.UserId;
+use sea_orm.entity.prelude.*;
+use serde.Serialize;
 
 /// A user model.
 #[derive(Clone, Debug, Default, PartialEq, Eq, DeriveEntityModel, Serialize)]
@@ -22,55 +22,55 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::access_token::Entity")]
+    #[sea_orm(has_many = "super.access_token.Entity")]
     AccessToken,
-    #[sea_orm(has_one = "super::billing_customer::Entity")]
+    #[sea_orm(has_one = "super.billing_customer.Entity")]
     BillingCustomer,
-    #[sea_orm(has_one = "super::room_participant::Entity")]
+    #[sea_orm(has_one = "super.room_participant.Entity")]
     RoomParticipant,
-    #[sea_orm(has_many = "super::project::Entity")]
+    #[sea_orm(has_many = "super.project.Entity")]
     HostedProjects,
-    #[sea_orm(has_many = "super::channel_member::Entity")]
+    #[sea_orm(has_many = "super.channel_member.Entity")]
     ChannelMemberships,
-    #[sea_orm(has_many = "super::user_feature::Entity")]
+    #[sea_orm(has_many = "super.user_feature.Entity")]
     UserFeatures,
-    #[sea_orm(has_one = "super::contributor::Entity")]
+    #[sea_orm(has_one = "super.contributor.Entity")]
     Contributor,
 }
 
-impl Related<super::access_token::Entity> for Entity {
+impl Related<super.access_token.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::AccessToken.def()
+        Relation.AccessToken.def()
     }
 }
 
-impl Related<super::billing_customer::Entity> for Entity {
+impl Related<super.billing_customer.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::BillingCustomer.def()
+        Relation.BillingCustomer.def()
     }
 }
 
-impl Related<super::room_participant::Entity> for Entity {
+impl Related<super.room_participant.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::RoomParticipant.def()
+        Relation.RoomParticipant.def()
     }
 }
 
-impl Related<super::project::Entity> for Entity {
+impl Related<super.project.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::HostedProjects.def()
+        Relation.HostedProjects.def()
     }
 }
 
-impl Related<super::channel_member::Entity> for Entity {
+impl Related<super.channel_member.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::ChannelMemberships.def()
+        Relation.ChannelMemberships.def()
     }
 }
 
-impl Related<super::user_feature::Entity> for Entity {
+impl Related<super.user_feature.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::UserFeatures.def()
+        Relation.UserFeatures.def()
     }
 }
 
@@ -81,12 +81,12 @@ pub struct UserFlags;
 impl Linked for UserFlags {
     type FromEntity = Entity;
 
-    type ToEntity = super::feature_flag::Entity;
+    type ToEntity = super.feature_flag.Entity;
 
     fn link(&self) -> Vec<RelationDef> {
         vec![
-            super::user_feature::Relation::User.def().rev(),
-            super::user_feature::Relation::Flag.def(),
+            super.user_feature.Relation.User.def().rev(),
+            super.user_feature.Relation.Flag.def(),
         ]
     }
 }

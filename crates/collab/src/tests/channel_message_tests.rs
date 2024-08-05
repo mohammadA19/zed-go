@@ -1,18 +1,18 @@
-use crate::{rpc::RECONNECT_TIMEOUT, tests::TestServer};
-use channel::{ChannelChat, ChannelMessageId, MessageParams};
-use collab_ui::chat_panel::ChatPanel;
-use gpui::{BackgroundExecutor, Model, TestAppContext};
-use rpc::Notification;
-use workspace::dock::Panel;
+use crate.{rpc.RECONNECT_TIMEOUT, tests.TestServer};
+use channel.{ChannelChat, ChannelMessageId, MessageParams};
+use collab_ui.chat_panel.ChatPanel;
+use gpui.{BackgroundExecutor, Model, TestAppContext};
+use rpc.Notification;
+use workspace.dock.Panel;
 
-#[gpui::test]
+#[gpui.test]
 async fn test_basic_channel_messages(
     executor: BackgroundExecutor,
     mut cx_a: &mut TestAppContext,
     mut cx_b: &mut TestAppContext,
     mut cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -80,7 +80,7 @@ async fn test_basic_channel_messages(
                 c.messages()
                     .iter()
                     .map(|m| (m.body.as_str(), m.mentions.as_slice()))
-                    .collect::<Vec<_>>(),
+                    .collect.<Vec<_>>(),
                 vec![
                     ("hi @user_c!", [(3..10, client_c.id())].as_slice()),
                     ("two", &[]),
@@ -97,7 +97,7 @@ async fn test_basic_channel_messages(
         assert_eq!(store.unread_notification_count(), 1);
         assert_eq!(
             store.notification_at(0).unwrap().notification,
-            Notification::ChannelMessageMention {
+            Notification.ChannelMessageMention {
                 message_id,
                 sender_id: client_a.id(),
                 channel_id: channel_id.0,
@@ -105,7 +105,7 @@ async fn test_basic_channel_messages(
         );
         assert_eq!(
             store.notification_at(1).unwrap().notification,
-            Notification::ChannelInvitation {
+            Notification.ChannelInvitation {
                 channel_id: channel_id.0,
                 channel_name: "the-channel".to_string(),
                 inviter_id: client_a.id()
@@ -114,13 +114,13 @@ async fn test_basic_channel_messages(
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_rejoin_channel_chat(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -185,14 +185,14 @@ async fn test_rejoin_channel_chat(
     assert_messages(&channel_chat_b, expected_messages, cx_b);
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_remove_channel_message(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
     cx_c: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let client_c = server.create_client(cx_c, "user_c").await;
@@ -253,7 +253,7 @@ async fn test_remove_channel_message(
         let entry = store.notification_at(0).unwrap();
         assert_eq!(
             entry.notification,
-            Notification::ChannelMessageMention {
+            Notification.ChannelMessageMention {
                 message_id: msg_id_2,
                 sender_id: client_a.id(),
                 channel_id: channel_id.0,
@@ -264,7 +264,7 @@ async fn test_remove_channel_message(
     // Client A deletes one of their messages.
     channel_chat_a
         .update(cx_a, |c, cx| {
-            let ChannelMessageId::Saved(id) = c.message(1).id else {
+            let ChannelMessageId.Saved(id) = c.message(1).id else {
                 panic!("message not saved")
             };
             c.remove_message(id, cx)
@@ -301,19 +301,19 @@ fn assert_messages(chat: &Model<ChannelChat>, messages: &[&str], cx: &mut TestAp
             chat.messages()
                 .iter()
                 .map(|m| m.body.clone())
-                .collect::<Vec<_>>()
+                .collect.<Vec<_>>()
         }),
         messages
     );
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_channel_message_changes(
     executor: BackgroundExecutor,
     cx_a: &mut TestAppContext,
     cx_b: &mut TestAppContext,
 ) {
-    let mut server = TestServer::start(executor.clone()).await;
+    let mut server = TestServer.start(executor.clone()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -351,12 +351,12 @@ async fn test_channel_message_changes(
 
     // Opening the chat should clear the changed flag.
     cx_b.update(|cx| {
-        collab_ui::init(&client_b.app_state, cx);
+        collab_ui.init(&client_b.app_state, cx);
     });
     let project_b = client_b.build_empty_local_project(cx_b);
     let (workspace_b, cx_b) = client_b.build_workspace(&project_b, cx_b);
 
-    let chat_panel_b = workspace_b.update(cx_b, |workspace, cx| ChatPanel::new(workspace, cx));
+    let chat_panel_b = workspace_b.update(cx_b, |workspace, cx| ChatPanel.new(workspace, cx));
     chat_panel_b
         .update(cx_b, |chat_panel, cx| {
             chat_panel.set_active(true, cx);
@@ -435,9 +435,9 @@ async fn test_channel_message_changes(
     assert!(b_has_messages);
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_chat_replies(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
-    let mut server = TestServer::start(cx_a.executor()).await;
+    let mut server = TestServer.start(cx_a.executor()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -476,7 +476,7 @@ async fn test_chat_replies(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
                 MessageParams {
                     text: "reply".into(),
                     reply_to_message_id: Some(msg_id),
-                    mentions: Vec::new(),
+                    mentions: Vec.new(),
                 },
                 cx,
             )
@@ -498,9 +498,9 @@ async fn test_chat_replies(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
     });
 }
 
-#[gpui::test]
+#[gpui.test]
 async fn test_chat_editing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
-    let mut server = TestServer::start(cx_a.executor()).await;
+    let mut server = TestServer.start(cx_a.executor()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
 
@@ -532,7 +532,7 @@ async fn test_chat_editing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
                 MessageParams {
                     text: "Initial message".into(),
                     reply_to_message_id: None,
-                    mentions: Vec::new(),
+                    mentions: Vec.new(),
                 },
                 cx,
             )
@@ -550,7 +550,7 @@ async fn test_chat_editing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
                 MessageParams {
                     text: "Updated body".into(),
                     reply_to_message_id: None,
-                    mentions: Vec::new(),
+                    mentions: Vec.new(),
                 },
                 cx,
             )
@@ -566,13 +566,13 @@ async fn test_chat_editing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
         let update_message = channel_chat.find_loaded_message(msg_id).unwrap();
 
         assert_eq!(update_message.body, "Updated body");
-        assert_eq!(update_message.mentions, Vec::new());
+        assert_eq!(update_message.mentions, Vec.new());
     });
     channel_chat_b.update(cx_b, |channel_chat, _| {
         let update_message = channel_chat.find_loaded_message(msg_id).unwrap();
 
         assert_eq!(update_message.body, "Updated body");
-        assert_eq!(update_message.mentions, Vec::new());
+        assert_eq!(update_message.mentions, Vec.new());
     });
 
     // test mentions are updated correctly
@@ -582,7 +582,7 @@ async fn test_chat_editing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
         let entry = store.notification_at(0).unwrap();
         assert!(matches!(
             entry.notification,
-            Notification::ChannelInvitation { .. }
+            Notification.ChannelInvitation { .. }
         ),);
     });
 
@@ -622,7 +622,7 @@ async fn test_chat_editing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
         let entry = store.notification_at(0).unwrap();
         assert_eq!(
             entry.notification,
-            Notification::ChannelMessageMention {
+            Notification.ChannelMessageMention {
                 message_id: msg_id,
                 sender_id: client_a.id(),
                 channel_id: channel_id.0,
@@ -675,7 +675,7 @@ async fn test_chat_editing(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext)
         let entry = store.notification_at(0).unwrap();
         assert_eq!(
             entry.notification,
-            Notification::ChannelMessageMention {
+            Notification.ChannelMessageMention {
                 message_id: msg_id,
                 sender_id: client_a.id(),
                 channel_id: channel_id.0,

@@ -1,6 +1,6 @@
-use crate::db::{ChannelId, MessageId, UserId};
-use sea_orm::entity::prelude::*;
-use time::PrimitiveDateTime;
+use crate.db.{ChannelId, MessageId, UserId};
+use sea_orm.entity.prelude.*;
+use time.PrimitiveDateTime;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "channel_messages")]
@@ -21,27 +21,27 @@ impl ActiveModelBehavior for ActiveModel {}
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::channel::Entity",
-        from = "Column::ChannelId",
-        to = "super::channel::Column::Id"
+        belongs_to = "super.channel.Entity",
+        from = "Column.ChannelId",
+        to = "super.channel.Column.Id"
     )]
     Channel,
     #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::SenderId",
-        to = "super::user::Column::Id"
+        belongs_to = "super.user.Entity",
+        from = "Column.SenderId",
+        to = "super.user.Column.Id"
     )]
     Sender,
 }
 
-impl Related<super::channel::Entity> for Entity {
+impl Related<super.channel.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Channel.def()
+        Relation.Channel.def()
     }
 }
 
-impl Related<super::user::Entity> for Entity {
+impl Related<super.user.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Sender.def()
+        Relation.Sender.def()
     }
 }

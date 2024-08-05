@@ -1,5 +1,5 @@
-use crate::db::{ContactId, UserId};
-use sea_orm::entity::prelude::*;
+use crate.db.{ContactId, UserId};
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "contacts")]
@@ -16,15 +16,15 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::room_participant::Entity",
-        from = "Column::UserIdA",
-        to = "super::room_participant::Column::UserId"
+        belongs_to = "super.room_participant.Entity",
+        from = "Column.UserIdA",
+        to = "super.room_participant.Column.UserId"
     )]
     UserARoomParticipant,
     #[sea_orm(
-        belongs_to = "super::room_participant::Entity",
-        from = "Column::UserIdB",
-        to = "super::room_participant::Column::UserId"
+        belongs_to = "super.room_participant.Entity",
+        from = "Column.UserIdB",
+        to = "super.room_participant.Column.UserId"
     )]
     UserBRoomParticipant,
 }

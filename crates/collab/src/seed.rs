@@ -1,11 +1,11 @@
-use crate::db::{self, ChannelRole, NewUserParams};
+use crate.db.{self, ChannelRole, NewUserParams};
 
-use anyhow::Context;
-use db::Database;
-use serde::{de::DeserializeOwned, Deserialize};
-use std::{fmt::Write, fs, path::Path};
+use anyhow.Context;
+use db.Database;
+use serde.{de.DeserializeOwned, Deserialize};
+use std.{fmt.Write, fs, path.Path};
 
-use crate::Config;
+use crate.Config;
 
 #[derive(Debug, Deserialize)]
 struct GitHubUser {
@@ -24,8 +24,8 @@ struct SeedConfig {
     number_of_users: Option<usize>,
 }
 
-pub async fn seed(config: &Config, db: &Database, force: bool) -> anyhow::Result<()> {
-    let client = reqwest::Client::new();
+pub async fn seed(config: &Config, db: &Database, force: bool) -> anyhow.Result<()> {
+    let client = reqwest.Client.new();
 
     if !db.get_all_users(0, 1).await?.is_empty() && !force {
         return Ok(());
@@ -43,7 +43,7 @@ pub async fn seed(config: &Config, db: &Database, force: bool) -> anyhow::Result
     let mut others = vec![];
 
     for admin_login in seed_config.admins {
-        let user = fetch_github::<GitHubUser>(
+        let user = fetch_github.<GitHubUser>(
             &client,
             &format!("https://api.github.com/users/{admin_login}"),
         )
@@ -77,7 +77,7 @@ pub async fn seed(config: &Config, db: &Database, force: bool) -> anyhow::Result
                 channel.id,
                 *user_id,
                 first_user.unwrap(),
-                ChannelRole::Admin,
+                ChannelRole.Admin,
             )
             .await
             .context("failed to add user to channel")?;
@@ -98,7 +98,7 @@ pub async fn seed(config: &Config, db: &Database, force: bool) -> anyhow::Result
             if let Some(last_user_id) = last_user_id {
                 write!(&mut uri, "&since={}", last_user_id).unwrap();
             }
-            let users = fetch_github::<Vec<GitHubUser>>(&client, &uri).await;
+            let users = fetch_github.<Vec<GitHubUser>>(&client, &uri).await;
 
             for github_user in users {
                 last_user_id = Some(github_user.id);
@@ -118,12 +118,12 @@ pub async fn seed(config: &Config, db: &Database, force: bool) -> anyhow::Result
     Ok(())
 }
 
-fn load_admins(path: impl AsRef<Path>) -> anyhow::Result<SeedConfig> {
-    let file_content = fs::read_to_string(path)?;
-    Ok(serde_json::from_str(&file_content)?)
+fn load_admins(path: impl AsRef<Path>) -> anyhow.Result<SeedConfig> {
+    let file_content = fs.read_to_string(path)?;
+    Ok(serde_json.from_str(&file_content)?)
 }
 
-async fn fetch_github<T: DeserializeOwned>(client: &reqwest::Client, url: &str) -> T {
+async fn fetch_github<T: DeserializeOwned>(client: &reqwest.Client, url: &str) -> T {
     let response = client
         .get(url)
         .header("user-agent", "zed")

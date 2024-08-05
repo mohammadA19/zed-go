@@ -1,15 +1,15 @@
-use super::{SlashCommand, SlashCommandOutput};
-use crate::prompt_library::PromptStore;
-use anyhow::{anyhow, Result};
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
-use gpui::{AppContext, Task, WeakView};
-use language::LspAdapterDelegate;
-use std::{
-    fmt::Write,
-    sync::{atomic::AtomicBool, Arc},
+use super.{SlashCommand, SlashCommandOutput};
+use crate.prompt_library.PromptStore;
+use anyhow.{anyhow, Result};
+use assistant_slash_command.{ArgumentCompletion, SlashCommandOutputSection};
+use gpui.{AppContext, Task, WeakView};
+use language.LspAdapterDelegate;
+use std.{
+    fmt.Write,
+    sync.{atomic.AtomicBool, Arc},
 };
-use ui::prelude::*;
-use workspace::Workspace;
+use ui.prelude.*;
+use workspace.Workspace;
 
 pub(crate) struct DefaultSlashCommand;
 
@@ -37,7 +37,7 @@ impl SlashCommand for DefaultSlashCommand {
         _workspace: Option<WeakView<Workspace>>,
         _cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
-        Task::ready(Err(anyhow!("this command does not require argument")))
+        Task.ready(Err(anyhow!("this command does not require argument")))
     }
 
     fn run(
@@ -47,12 +47,12 @@ impl SlashCommand for DefaultSlashCommand {
         _delegate: Option<Arc<dyn LspAdapterDelegate>>,
         cx: &mut WindowContext,
     ) -> Task<Result<SlashCommandOutput>> {
-        let store = PromptStore::global(cx);
+        let store = PromptStore.global(cx);
         cx.background_executor().spawn(async move {
             let store = store.await?;
             let prompts = store.default_prompt_metadata();
 
-            let mut text = String::new();
+            let mut text = String.new();
             text.push('\n');
             for prompt in prompts {
                 if let Some(title) = prompt.title {
@@ -68,7 +68,7 @@ impl SlashCommand for DefaultSlashCommand {
             Ok(SlashCommandOutput {
                 sections: vec![SlashCommandOutputSection {
                     range: 0..text.len(),
-                    icon: IconName::Library,
+                    icon: IconName.Library,
                     label: "Default".into(),
                 }],
                 text,

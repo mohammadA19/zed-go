@@ -1,6 +1,6 @@
-use crate::db::{ChannelRole, ProjectId, RoomId, RoomParticipantId, ServerId, UserId};
-use rpc::ConnectionId;
-use sea_orm::entity::prelude::*;
+use crate.db.{ChannelRole, ProjectId, RoomId, RoomParticipantId, ServerId, UserId};
+use rpc.ConnectionId;
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "room_participants")]
@@ -34,28 +34,28 @@ impl Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id"
+        belongs_to = "super.user.Entity",
+        from = "Column.UserId",
+        to = "super.user.Column.Id"
     )]
     User,
     #[sea_orm(
-        belongs_to = "super::room::Entity",
-        from = "Column::RoomId",
-        to = "super::room::Column::Id"
+        belongs_to = "super.room.Entity",
+        from = "Column.RoomId",
+        to = "super.room.Column.Id"
     )]
     Room,
 }
 
-impl Related<super::user::Entity> for Entity {
+impl Related<super.user.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::User.def()
+        Relation.User.def()
     }
 }
 
-impl Related<super::room::Entity> for Entity {
+impl Related<super.room.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Room.def()
+        Relation.Room.def()
     }
 }
 

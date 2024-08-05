@@ -1,12 +1,12 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use crate::assistant_settings::AssistantSettings;
-use fs::Fs;
-use gpui::SharedString;
-use language_model::{LanguageModelAvailability, LanguageModelRegistry};
-use proto::Plan;
-use settings::update_settings_file;
-use ui::{prelude::*, ContextMenu, PopoverMenu, PopoverMenuHandle, PopoverTrigger};
+use crate.assistant_settings.AssistantSettings;
+use fs.Fs;
+use gpui.SharedString;
+use language_model.{LanguageModelAvailability, LanguageModelRegistry};
+use proto.Plan;
+use settings.update_settings_file;
+use ui.{prelude.*, ContextMenu, PopoverMenu, PopoverMenuHandle, PopoverTrigger};
 
 #[derive(IntoElement)]
 pub struct ModelSelector<T: PopoverTrigger> {
@@ -39,7 +39,7 @@ impl<T: PopoverTrigger> ModelSelector<T> {
 
 impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        let mut menu = PopoverMenu::new("model-switcher");
+        let mut menu = PopoverMenu.new("model-switcher");
         if let Some(handle) = self.handle {
             menu = menu.with_handle(handle);
         }
@@ -47,18 +47,18 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
         let info_text = self.info_text.clone();
 
         menu.menu(move |cx| {
-            ContextMenu::build(cx, |mut menu, cx| {
+            ContextMenu.build(cx, |mut menu, cx| {
                 if let Some(info_text) = info_text.clone() {
                     menu = menu
                         .custom_row(move |_cx| {
-                            Label::new(info_text.clone())
-                                .color(Color::Muted)
+                            Label.new(info_text.clone())
+                                .color(Color.Muted)
                                 .into_any_element()
                         })
                         .separator();
                 }
 
-                for (index, provider) in LanguageModelRegistry::global(cx)
+                for (index, provider) in LanguageModelRegistry.global(cx)
                     .read(cx)
                     .providers()
                     .into_iter()
@@ -76,11 +76,11 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
                             .gap_1p5()
                             .w_full()
                             .child(
-                                Icon::new(provider_icon)
-                                    .color(Color::Muted)
-                                    .size(IconSize::Small),
+                                Icon.new(provider_icon)
+                                    .color(Color.Muted)
+                                    .size(IconSize.Small),
                             )
-                            .child(Label::new(provider_name.clone()))
+                            .child(Label.new(provider_name.clone()))
                             .into_any_element()
                     });
 
@@ -92,15 +92,15 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
                                     h_flex()
                                         .w_full()
                                         .gap_1()
-                                        .child(Icon::new(IconName::Settings))
-                                        .child(Label::new("Configure"))
+                                        .child(Icon.new(IconName.Settings))
+                                        .child(Label.new("Configure"))
                                         .into_any()
                                 }
                             },
                             {
                                 let provider = provider.clone();
                                 move |cx| {
-                                    LanguageModelRegistry::global(cx).update(
+                                    LanguageModelRegistry.global(cx).update(
                                         cx,
                                         |completion_provider, cx| {
                                             completion_provider
@@ -112,10 +112,10 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
                         );
                     }
 
-                    let selected_provider = LanguageModelRegistry::read_global(cx)
+                    let selected_provider = LanguageModelRegistry.read_global(cx)
                         .active_provider()
                         .map(|m| m.id());
-                    let selected_model = LanguageModelRegistry::read_global(cx)
+                    let selected_model = LanguageModelRegistry.read_global(cx)
                         .active_model()
                         .map(|m| m.id());
 
@@ -137,18 +137,18 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
                                         .child(
                                             h_flex()
                                                 .gap_2()
-                                                .child(Label::new(model_name.clone()))
+                                                .child(Label.new(model_name.clone()))
                                                 .children(match availability {
-                                                    LanguageModelAvailability::Public => None,
-                                                    LanguageModelAvailability::RequiresPlan(
-                                                        Plan::Free,
+                                                    LanguageModelAvailability.Public => None,
+                                                    LanguageModelAvailability.RequiresPlan(
+                                                        Plan.Free,
                                                     ) => None,
-                                                    LanguageModelAvailability::RequiresPlan(
-                                                        Plan::ZedPro,
+                                                    LanguageModelAvailability.RequiresPlan(
+                                                        Plan.ZedPro,
                                                     ) => Some(
-                                                        Label::new("Pro")
-                                                            .size(LabelSize::XSmall)
-                                                            .color(Color::Muted),
+                                                        Label.new("Pro")
+                                                            .size(LabelSize.XSmall)
+                                                            .color(Color.Muted),
                                                     ),
                                                 }),
                                         )
@@ -157,9 +157,9 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
                                                 && selected_provider.as_ref() == Some(&provider_id),
                                             |this| {
                                                 this.child(
-                                                    Icon::new(IconName::Check)
-                                                        .color(Color::Accent)
-                                                        .size(IconSize::Small),
+                                                    Icon.new(IconName.Check)
+                                                        .color(Color.Accent)
+                                                        .size(IconSize.Small),
                                                 )
                                             },
                                         ))
@@ -171,7 +171,7 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
                                 let model = available_model.clone();
                                 move |cx| {
                                     let model = model.clone();
-                                    update_settings_file::<AssistantSettings>(
+                                    update_settings_file.<AssistantSettings>(
                                         fs.clone(),
                                         cx,
                                         move |settings, _| settings.set_model(model),
@@ -186,6 +186,6 @@ impl<T: PopoverTrigger> RenderOnce for ModelSelector<T> {
             .into()
         })
         .trigger(self.trigger)
-        .attach(gpui::AnchorCorner::BottomLeft)
+        .attach(gpui.AnchorCorner.BottomLeft)
     }
 }

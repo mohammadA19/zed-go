@@ -1,4 +1,4 @@
-use super::*;
+use super.*;
 
 pub mod access_tokens;
 pub mod billing_customers;

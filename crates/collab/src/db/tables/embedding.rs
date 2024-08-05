@@ -1,5 +1,5 @@
-use sea_orm::entity::prelude::*;
-use time::PrimitiveDateTime;
+use sea_orm.entity.prelude.*;
+use time.PrimitiveDateTime;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "embeddings")]

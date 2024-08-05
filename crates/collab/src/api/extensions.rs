@@ -1,24 +1,24 @@
-use crate::db::ExtensionVersionConstraints;
-use crate::{db::NewExtensionVersion, AppState, Error, Result};
-use anyhow::{anyhow, Context as _};
-use aws_sdk_s3::presigning::PresigningConfig;
-use axum::{
-    extract::{Path, Query},
-    http::StatusCode,
-    response::Redirect,
-    routing::get,
+use crate.db.ExtensionVersionConstraints;
+use crate.{db.NewExtensionVersion, AppState, Error, Result};
+use anyhow.{anyhow, Context as _};
+use aws_sdk_s3.presigning.PresigningConfig;
+use axum.{
+    extract.{Path, Query},
+    http.StatusCode,
+    response.Redirect,
+    routing.get,
     Extension, Json, Router,
 };
-use collections::HashMap;
-use rpc::{ExtensionApiManifest, GetExtensionsResponse};
-use semantic_version::SemanticVersion;
-use serde::Deserialize;
-use std::{sync::Arc, time::Duration};
-use time::PrimitiveDateTime;
-use util::{maybe, ResultExt};
+use collections.HashMap;
+use rpc.{ExtensionApiManifest, GetExtensionsResponse};
+use semantic_version.SemanticVersion;
+use serde.Deserialize;
+use std.{sync.Arc, time.Duration};
+use time.PrimitiveDateTime;
+use util.{maybe, ResultExt};
 
 pub fn router() -> Router {
-    Router::new()
+    Router.new()
         .route("/extensions", get(get_extensions))
         .route("/extensions/updates", get(get_extension_updates))
         .route("/extensions/:extension_id", get(get_extension_versions))
@@ -75,7 +75,7 @@ async fn get_extensions(
 
     if let Some(query) = params.filter.as_deref() {
         let count = extensions.len();
-        tracing::info!(query, count, "extension_search")
+        tracing.info!(query, count, "extension_search")
     }
 
     Ok(Json(GetExtensionsResponse { data: extensions }))
@@ -99,7 +99,7 @@ async fn get_extension_updates(
         wasm_api_versions: params.min_wasm_api_version..=params.max_wasm_api_version,
     };
 
-    let extension_ids = params.ids.split(',').map(|s| s.trim()).collect::<Vec<_>>();
+    let extension_ids = params.ids.split(',').map(|s| s.trim()).collect.<Vec<_>>();
 
     let extensions = app
         .db
@@ -185,8 +185,8 @@ async fn download_extension(
         .clone()
         .zip(app.config.blob_store_bucket.clone())
     else {
-        Err(Error::Http(
-            StatusCode::NOT_IMPLEMENTED,
+        Err(Error.Http(
+            StatusCode.NOT_IMPLEMENTED,
             "not supported".into(),
         ))?
     };
@@ -202,8 +202,8 @@ async fn download_extension(
         .await?;
 
     if !version_exists {
-        Err(Error::Http(
-            StatusCode::NOT_FOUND,
+        Err(Error.Http(
+            StatusCode.NOT_FOUND,
             "unknown extension version".into(),
         ))?;
     }
@@ -214,23 +214,23 @@ async fn download_extension(
         .key(format!(
             "extensions/{extension_id}/{version}/archive.tar.gz"
         ))
-        .presigned(PresigningConfig::expires_in(EXTENSION_DOWNLOAD_URL_LIFETIME).unwrap())
+        .presigned(PresigningConfig.expires_in(EXTENSION_DOWNLOAD_URL_LIFETIME).unwrap())
         .await
         .map_err(|e| anyhow!("failed to create presigned extension download url {e}"))?;
 
-    Ok(Redirect::temporary(url.uri()))
+    Ok(Redirect.temporary(url.uri()))
 }
 
-const EXTENSION_FETCH_INTERVAL: Duration = Duration::from_secs(5 * 60);
-const EXTENSION_DOWNLOAD_URL_LIFETIME: Duration = Duration::from_secs(3 * 60);
+const EXTENSION_FETCH_INTERVAL: Duration = Duration.from_secs(5 * 60);
+const EXTENSION_DOWNLOAD_URL_LIFETIME: Duration = Duration.from_secs(3 * 60);
 
 pub fn fetch_extensions_from_blob_store_periodically(app_state: Arc<AppState>) {
     let Some(blob_store_client) = app_state.blob_store_client.clone() else {
-        log::info!("no blob store client");
+        log.info!("no blob store client");
         return;
     };
     let Some(blob_store_bucket) = app_state.config.blob_store_bucket.clone() else {
-        log::info!("no blob store bucket");
+        log.info!("no blob store bucket");
         return;
     };
 
@@ -253,14 +253,14 @@ pub fn fetch_extensions_from_blob_store_periodically(app_state: Arc<AppState>) {
 }
 
 async fn fetch_extensions_from_blob_store(
-    blob_store_client: &aws_sdk_s3::Client,
+    blob_store_client: &aws_sdk_s3.Client,
     blob_store_bucket: &String,
     app_state: &Arc<AppState>,
-) -> anyhow::Result<()> {
-    log::info!("fetching extensions from blob store");
+) -> anyhow.Result<()> {
+    log.info!("fetching extensions from blob store");
 
     let mut next_marker = None;
-    let mut published_versions = HashMap::<String, Vec<String>>::default();
+    let mut published_versions = HashMap.<String, Vec<String>>.default();
 
     loop {
         let list = blob_store_client
@@ -271,7 +271,7 @@ async fn fetch_extensions_from_blob_store(
             .send()
             .await?;
         let objects = list.contents.unwrap_or_default();
-        log::info!("fetched {} object(s) from blob store", objects.len());
+        log.info!("fetched {} object(s) from blob store", objects.len());
 
         for object in &objects {
             let Some(key) = object.key.as_ref() else {
@@ -302,12 +302,12 @@ async fn fetch_extensions_from_blob_store(
         }
     }
 
-    log::info!("found {} published extensions", published_versions.len());
+    log.info!("found {} published extensions", published_versions.len());
 
     let known_versions = app_state.db.get_known_extension_versions().await?;
 
-    let mut new_versions = HashMap::<&str, Vec<NewExtensionVersion>>::default();
-    let empty = Vec::new();
+    let mut new_versions = HashMap.<&str, Vec<NewExtensionVersion>>.default();
+    let empty = Vec.new();
     for (extension_id, published_versions) in &published_versions {
         let known_versions = known_versions.get(extension_id).unwrap_or(&empty);
 
@@ -339,20 +339,20 @@ async fn fetch_extensions_from_blob_store(
         .insert_extension_versions(&new_versions)
         .await?;
 
-    log::info!(
+    log.info!(
         "fetched {} new extensions from blob store",
-        new_versions.values().map(|v| v.len()).sum::<usize>()
+        new_versions.values().map(|v| v.len()).sum.<usize>()
     );
 
     Ok(())
 }
 
 async fn fetch_extension_manifest(
-    blob_store_client: &aws_sdk_s3::Client,
+    blob_store_client: &aws_sdk_s3.Client,
     blob_store_bucket: &String,
     extension_id: &str,
     version: &str,
-) -> Result<NewExtensionVersion, anyhow::Error> {
+) -> Result<NewExtensionVersion, anyhow.Error> {
     let object = blob_store_client
         .get_object()
         .bucket(blob_store_bucket)
@@ -369,18 +369,18 @@ async fn fetch_extension_manifest(
         })?
         .to_vec();
     let manifest =
-        serde_json::from_slice::<ExtensionApiManifest>(&manifest_bytes).with_context(|| {
+        serde_json.from_slice.<ExtensionApiManifest>(&manifest_bytes).with_context(|| {
             format!(
                 "invalid manifest for extension {extension_id} version {version}: {}",
-                String::from_utf8_lossy(&manifest_bytes)
+                String.from_utf8_lossy(&manifest_bytes)
             )
         })?;
     let published_at = object.last_modified.ok_or_else(|| {
         anyhow!("missing last modified timestamp for extension {extension_id} version {version}")
     })?;
-    let published_at = time::OffsetDateTime::from_unix_timestamp_nanos(published_at.as_nanos())?;
-    let published_at = PrimitiveDateTime::new(published_at.date(), published_at.time());
-    let version = semver::Version::parse(&manifest.version).with_context(|| {
+    let published_at = time.OffsetDateTime.from_unix_timestamp_nanos(published_at.as_nanos())?;
+    let published_at = PrimitiveDateTime.new(published_at.date(), published_at.time());
+    let version = semver.Version.parse(&manifest.version).with_context(|| {
         format!("invalid version for extension {extension_id} version {version}")
     })?;
     Ok(NewExtensionVersion {

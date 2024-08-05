@@ -1,5 +1,5 @@
-use crate::db::{ChannelId, ChannelVisibility};
-use sea_orm::entity::prelude::*;
+use crate.db.{ChannelId, ChannelVisibility};
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "channels")]
@@ -29,7 +29,7 @@ impl Model {
         self.parent_path
             .trim_end_matches('/')
             .split('/')
-            .filter_map(|id| Some(ChannelId::from_proto(id.parse().ok()?)))
+            .filter_map(|id| Some(ChannelId.from_proto(id.parse().ok()?)))
     }
 
     pub fn ancestors_including_self(&self) -> impl Iterator<Item = ChannelId> + '_ {
@@ -49,44 +49,44 @@ impl ActiveModelBehavior for ActiveModel {}
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_one = "super::room::Entity")]
+    #[sea_orm(has_one = "super.room.Entity")]
     Room,
-    #[sea_orm(has_one = "super::buffer::Entity")]
+    #[sea_orm(has_one = "super.buffer.Entity")]
     Buffer,
-    #[sea_orm(has_many = "super::channel_member::Entity")]
+    #[sea_orm(has_many = "super.channel_member.Entity")]
     Member,
-    #[sea_orm(has_many = "super::channel_buffer_collaborator::Entity")]
+    #[sea_orm(has_many = "super.channel_buffer_collaborator.Entity")]
     BufferCollaborators,
-    #[sea_orm(has_many = "super::channel_chat_participant::Entity")]
+    #[sea_orm(has_many = "super.channel_chat_participant.Entity")]
     ChatParticipants,
 }
 
-impl Related<super::channel_member::Entity> for Entity {
+impl Related<super.channel_member.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Member.def()
+        Relation.Member.def()
     }
 }
 
-impl Related<super::room::Entity> for Entity {
+impl Related<super.room.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Room.def()
+        Relation.Room.def()
     }
 }
 
-impl Related<super::buffer::Entity> for Entity {
+impl Related<super.buffer.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Buffer.def()
+        Relation.Buffer.def()
     }
 }
 
-impl Related<super::channel_buffer_collaborator::Entity> for Entity {
+impl Related<super.channel_buffer_collaborator.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::BufferCollaborators.def()
+        Relation.BufferCollaborators.def()
     }
 }
 
-impl Related<super::channel_chat_participant::Entity> for Entity {
+impl Related<super.channel_chat_participant.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::ChatParticipants.def()
+        Relation.ChatParticipants.def()
     }
 }

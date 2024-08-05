@@ -1,6 +1,6 @@
-use rpc::{proto, ErrorCode};
+use rpc.{proto, ErrorCode};
 
-use super::*;
+use super.*;
 
 impl Database {
     pub async fn get_hosted_projects(
@@ -8,10 +8,10 @@ impl Database {
         channel_ids: &Vec<ChannelId>,
         roles: &HashMap<ChannelId, ChannelRole>,
         tx: &DatabaseTransaction,
-    ) -> Result<Vec<proto::HostedProject>> {
-        let projects = hosted_project::Entity::find()
-            .find_also_related(project::Entity)
-            .filter(hosted_project::Column::ChannelId.is_in(channel_ids.iter().map(|id| id.0)))
+    ) -> Result<Vec<proto.HostedProject>> {
+        let projects = hosted_project.Entity.find()
+            .find_also_related(project.Entity)
+            .filter(hosted_project.Column.ChannelId.is_in(channel_ids.iter().map(|id| id.0)))
             .all(tx)
             .await?
             .into_iter()
@@ -20,8 +20,8 @@ impl Database {
                     return None;
                 }
                 match hosted_project.visibility {
-                    ChannelVisibility::Public => {}
-                    ChannelVisibility::Members => {
+                    ChannelVisibility.Public => {}
+                    ChannelVisibility.Members => {
                         let is_visible = roles
                             .get(&hosted_project.channel_id)
                             .map(|role| role.can_see_all_descendants())
@@ -31,7 +31,7 @@ impl Database {
                         }
                     }
                 };
-                Some(proto::HostedProject {
+                Some(proto.HostedProject {
                     project_id: project?.id.to_proto(),
                     channel_id: hosted_project.channel_id.to_proto(),
                     name: hosted_project.name.clone(),
@@ -48,22 +48,22 @@ impl Database {
         hosted_project_id: HostedProjectId,
         user_id: UserId,
         tx: &DatabaseTransaction,
-    ) -> Result<(hosted_project::Model, ChannelRole)> {
-        let project = hosted_project::Entity::find_by_id(hosted_project_id)
+    ) -> Result<(hosted_project.Model, ChannelRole)> {
+        let project = hosted_project.Entity.find_by_id(hosted_project_id)
             .one(tx)
             .await?
-            .ok_or_else(|| anyhow!(ErrorCode::NoSuchProject))?;
-        let channel = channel::Entity::find_by_id(project.channel_id)
+            .ok_or_else(|| anyhow!(ErrorCode.NoSuchProject))?;
+        let channel = channel.Entity.find_by_id(project.channel_id)
             .one(tx)
             .await?
-            .ok_or_else(|| anyhow!(ErrorCode::NoSuchChannel))?;
+            .ok_or_else(|| anyhow!(ErrorCode.NoSuchChannel))?;
 
         let role = match project.visibility {
-            ChannelVisibility::Public => {
+            ChannelVisibility.Public => {
                 self.check_user_is_channel_participant(&channel, user_id, tx)
                     .await?
             }
-            ChannelVisibility::Members => {
+            ChannelVisibility.Members => {
                 self.check_user_is_channel_member(&channel, user_id, tx)
                     .await?
             }
@@ -74,11 +74,11 @@ impl Database {
 
     pub async fn is_hosted_project(&self, project_id: ProjectId) -> Result<bool> {
         self.transaction(|tx| async move {
-            Ok(project::Entity::find_by_id(project_id)
+            Ok(project.Entity.find_by_id(project_id)
                 .one(&*tx)
                 .await?
                 .map(|project| project.hosted_project_id.is_some())
-                .ok_or_else(|| anyhow!(ErrorCode::NoSuchProject))?)
+                .ok_or_else(|| anyhow!(ErrorCode.NoSuchProject))?)
         })
         .await
     }

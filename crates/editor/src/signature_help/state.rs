@@ -1,6 +1,6 @@
-use crate::signature_help::popover::SignatureHelpPopover;
-use crate::signature_help::SignatureHelpHiddenBy;
-use gpui::Task;
+use crate.signature_help.popover.SignatureHelpPopover;
+use crate.signature_help.SignatureHelpHiddenBy;
+use gpui.Task;
 
 #[derive(Default, Debug)]
 pub struct SignatureHelpState {
@@ -49,7 +49,7 @@ impl SignatureHelpState {
     }
 
     pub fn hidden_by_selection(&self) -> bool {
-        self.hidden_by == Some(SignatureHelpHiddenBy::Selection)
+        self.hidden_by == Some(SignatureHelpHiddenBy.Selection)
     }
 
     pub fn is_shown(&self) -> bool {

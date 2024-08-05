@@ -1,12 +1,12 @@
-use collections::HashMap;
-use gpui::{AnyElement, IntoElement};
-use multi_buffer::{Anchor, AnchorRangeExt, MultiBufferRow, MultiBufferSnapshot, ToPoint};
-use std::{cmp::Ordering, ops::Range, sync::Arc};
-use sum_tree::{Bias, SeekTarget, SumTree};
-use text::Point;
-use ui::WindowContext;
+use collections.HashMap;
+use gpui.{AnyElement, IntoElement};
+use multi_buffer.{Anchor, AnchorRangeExt, MultiBufferRow, MultiBufferSnapshot, ToPoint};
+use std.{cmp.Ordering, ops.Range, sync.Arc};
+use sum_tree.{Bias, SeekTarget, SumTree};
+use text.Point;
+use ui.WindowContext;
 
-use crate::FoldPlaceholder;
+use crate.FoldPlaceholder;
 
 #[derive(Copy, Clone, Default, Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct CreaseId(usize);
@@ -30,20 +30,20 @@ impl CreaseSnapshot {
         row: MultiBufferRow,
         snapshot: &'a MultiBufferSnapshot,
     ) -> Option<&'a Crease> {
-        let start = snapshot.anchor_before(Point::new(row.0, 0));
-        let mut cursor = self.creases.cursor::<ItemSummary>();
-        cursor.seek(&start, Bias::Left, snapshot);
+        let start = snapshot.anchor_before(Point.new(row.0, 0));
+        let mut cursor = self.creases.cursor.<ItemSummary>();
+        cursor.seek(&start, Bias.Left, snapshot);
         while let Some(item) = cursor.item() {
-            match Ord::cmp(&item.crease.range.start.to_point(snapshot).row, &row.0) {
-                Ordering::Less => cursor.next(snapshot),
-                Ordering::Equal => {
+            match Ord.cmp(&item.crease.range.start.to_point(snapshot).row, &row.0) {
+                Ordering.Less => cursor.next(snapshot),
+                Ordering.Equal => {
                     if item.crease.range.start.is_valid(snapshot) {
                         return Some(&item.crease);
                     } else {
                         cursor.next(snapshot);
                     }
                 }
-                Ordering::Greater => break,
+                Ordering.Greater => break,
             }
         }
         return None;
@@ -53,8 +53,8 @@ impl CreaseSnapshot {
         &self,
         snapshot: &MultiBufferSnapshot,
     ) -> Vec<(CreaseId, Range<Point>)> {
-        let mut cursor = self.creases.cursor::<ItemSummary>();
-        let mut results = Vec::new();
+        let mut cursor = self.creases.cursor.<ItemSummary>();
+        let mut results = Vec.new();
 
         cursor.next(snapshot);
         while let Some(item) = cursor.item() {
@@ -118,18 +118,18 @@ impl Crease {
         Crease {
             range,
             placeholder,
-            render_toggle: Arc::new(move |row, folded, toggle, cx| {
+            render_toggle: Arc.new(move |row, folded, toggle, cx| {
                 render_toggle(row, folded, toggle, cx).into_any_element()
             }),
-            render_trailer: Arc::new(move |row, folded, cx| {
+            render_trailer: Arc.new(move |row, folded, cx| {
                 render_trailer(row, folded, cx).into_any_element()
             }),
         }
     }
 }
 
-impl std::fmt::Debug for Crease {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std.fmt.Debug for Crease {
+    fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
         f.debug_struct("Crease")
             .field("range", &self.range)
             .finish()
@@ -152,12 +152,12 @@ impl CreaseMap {
         creases: impl IntoIterator<Item = Crease>,
         snapshot: &MultiBufferSnapshot,
     ) -> Vec<CreaseId> {
-        let mut new_ids = Vec::new();
+        let mut new_ids = Vec.new();
         self.snapshot.creases = {
-            let mut new_creases = SumTree::new();
-            let mut cursor = self.snapshot.creases.cursor::<ItemSummary>();
+            let mut new_creases = SumTree.new();
+            let mut cursor = self.snapshot.creases.cursor.<ItemSummary>();
             for crease in creases {
-                new_creases.append(cursor.slice(&crease.range, Bias::Left, snapshot), snapshot);
+                new_creases.append(cursor.slice(&crease.range, Bias.Left, snapshot), snapshot);
 
                 let id = self.next_id;
                 self.next_id.0 += 1;
@@ -176,22 +176,22 @@ impl CreaseMap {
         ids: impl IntoIterator<Item = CreaseId>,
         snapshot: &MultiBufferSnapshot,
     ) {
-        let mut removals = Vec::new();
+        let mut removals = Vec.new();
         for id in ids {
             if let Some(range) = self.id_to_range.remove(&id) {
                 removals.push((id, range.clone()));
             }
         }
         removals.sort_unstable_by(|(a_id, a_range), (b_id, b_range)| {
-            AnchorRangeExt::cmp(a_range, b_range, snapshot).then(b_id.cmp(&a_id))
+            AnchorRangeExt.cmp(a_range, b_range, snapshot).then(b_id.cmp(&a_id))
         });
 
         self.snapshot.creases = {
-            let mut new_creases = SumTree::new();
-            let mut cursor = self.snapshot.creases.cursor::<ItemSummary>();
+            let mut new_creases = SumTree.new();
+            let mut cursor = self.snapshot.creases.cursor.<ItemSummary>();
 
             for (id, range) in removals {
-                new_creases.append(cursor.slice(&range, Bias::Left, snapshot), snapshot);
+                new_creases.append(cursor.slice(&range, Bias.Left, snapshot), snapshot);
                 while let Some(item) = cursor.item() {
                     cursor.next(snapshot);
                     if item.id == id {
@@ -216,12 +216,12 @@ pub struct ItemSummary {
 impl Default for ItemSummary {
     fn default() -> Self {
         Self {
-            range: Anchor::min()..Anchor::min(),
+            range: Anchor.min()..Anchor.min(),
         }
     }
 }
 
-impl sum_tree::Summary for ItemSummary {
+impl sum_tree.Summary for ItemSummary {
     type Context = MultiBufferSnapshot;
 
     fn add_summary(&mut self, other: &Self, _snapshot: &MultiBufferSnapshot) {
@@ -229,10 +229,10 @@ impl sum_tree::Summary for ItemSummary {
     }
 }
 
-impl sum_tree::Item for CreaseItem {
+impl sum_tree.Item for CreaseItem {
     type Summary = ItemSummary;
 
-    fn summary(&self) -> Self::Summary {
+    fn summary(&self) -> Self.Summary {
         ItemSummary {
             range: self.crease.range.clone(),
         }
@@ -242,7 +242,7 @@ impl sum_tree::Item for CreaseItem {
 /// Implements `SeekTarget` for `Range<Anchor>` to enable seeking within a `SumTree` of `CreaseItem`s.
 impl SeekTarget<'_, ItemSummary, ItemSummary> for Range<Anchor> {
     fn cmp(&self, cursor_location: &ItemSummary, snapshot: &MultiBufferSnapshot) -> Ordering {
-        AnchorRangeExt::cmp(self, &cursor_location.range, snapshot)
+        AnchorRangeExt.cmp(self, &cursor_location.range, snapshot)
     }
 }
 
@@ -254,28 +254,28 @@ impl SeekTarget<'_, ItemSummary, ItemSummary> for Anchor {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use gpui::{div, AppContext};
-    use multi_buffer::MultiBuffer;
+    use super.*;
+    use gpui.{div, AppContext};
+    use multi_buffer.MultiBuffer;
 
-    #[gpui::test]
+    #[gpui.test]
     fn test_insert_and_remove_creases(cx: &mut AppContext) {
         let text = "line1\nline2\nline3\nline4\nline5";
-        let buffer = MultiBuffer::build_simple(text, cx);
+        let buffer = MultiBuffer.build_simple(text, cx);
         let snapshot = buffer.read_with(cx, |buffer, cx| buffer.snapshot(cx));
-        let mut crease_map = CreaseMap::default();
+        let mut crease_map = CreaseMap.default();
 
         // Insert creases
         let creases = [
-            Crease::new(
-                snapshot.anchor_before(Point::new(1, 0))..snapshot.anchor_after(Point::new(1, 5)),
-                FoldPlaceholder::test(),
+            Crease.new(
+                snapshot.anchor_before(Point.new(1, 0))..snapshot.anchor_after(Point.new(1, 5)),
+                FoldPlaceholder.test(),
                 |_row, _folded, _toggle, _cx| div(),
                 |_row, _folded, _cx| div(),
             ),
-            Crease::new(
-                snapshot.anchor_before(Point::new(3, 0))..snapshot.anchor_after(Point::new(3, 5)),
-                FoldPlaceholder::test(),
+            Crease.new(
+                snapshot.anchor_before(Point.new(3, 0))..snapshot.anchor_after(Point.new(3, 5)),
+                FoldPlaceholder.test(),
                 |_row, _folded, _toggle, _cx| div(),
                 |_row, _folded, _cx| div(),
             ),

@@ -1,30 +1,30 @@
-use serde::{Deserialize, Serialize};
+use serde.{Deserialize, Serialize};
 
 /// https://api.slack.com/reference/messaging/payload
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct WebhookBody {
     text: String,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec.is_empty")]
     blocks: Vec<Block>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option.is_none")]
     thread_ts: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option.is_none")]
     mrkdwn: Option<bool>,
 }
 
 impl WebhookBody {
     pub fn new(f: impl FnOnce(Self) -> Self) -> Self {
-        f(Self::default())
+        f(Self.default())
     }
 
     pub fn add_section(mut self, build: impl FnOnce(Section) -> Section) -> Self {
-        self.blocks.push(Block::Section(build(Section::default())));
+        self.blocks.push(Block.Section(build(Section.default())));
         self
     }
 
     pub fn add_rich_text(mut self, build: impl FnOnce(RichText) -> RichText) -> Self {
         self.blocks
-            .push(Block::RichText(build(RichText::default())));
+            .push(Block.RichText(build(RichText.default())));
         self
     }
 }
@@ -43,9 +43,9 @@ pub enum Block {
 /// https://api.slack.com/reference/block-kit/blocks#section
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Section {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option.is_none")]
     text: Option<Text>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec.is_empty")]
     fields: Vec<Text>,
     // fields, accessories...
 }
@@ -74,14 +74,14 @@ pub enum Text {
 
 impl Text {
     pub fn plain(s: String) -> Self {
-        Self::PlainText {
+        Self.PlainText {
             text: s,
             emoji: true,
         }
     }
 
     pub fn markdown(s: String) -> Self {
-        Self::Markdown {
+        Self.Markdown {
             text: s,
             verbatim: false,
         }
@@ -95,15 +95,15 @@ pub struct RichText {
 
 impl RichText {
     pub fn new(f: impl FnOnce(Self) -> Self) -> Self {
-        f(Self::default())
+        f(Self.default())
     }
 
     pub fn add_preformatted(
         mut self,
         build: impl FnOnce(RichTextPreformatted) -> RichTextPreformatted,
     ) -> Self {
-        self.elements.push(RichTextObject::Preformatted(build(
-            RichTextPreformatted::default(),
+        self.elements.push(RichTextObject.Preformatted(build(
+            RichTextPreformatted.default(),
         )));
         self
     }
@@ -121,15 +121,15 @@ pub enum RichTextObject {
 /// https://api.slack.com/reference/block-kit/blocks#rich_text_preformatted
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct RichTextPreformatted {
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec.is_empty")]
     elements: Vec<RichTextElement>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option.is_none")]
     border: Option<u8>,
 }
 
 impl RichTextPreformatted {
     pub fn add_text(mut self, text: String) -> Self {
-        self.elements.push(RichTextElement::Text { text });
+        self.elements.push(RichTextElement.Text { text });
         self
     }
 }

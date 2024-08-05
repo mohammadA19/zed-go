@@ -1,5 +1,5 @@
-use crate::db::BufferId;
-use sea_orm::entity::prelude::*;
+use crate.db.BufferId;
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "buffer_snapshots")]
@@ -15,16 +15,16 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::buffer::Entity",
-        from = "Column::BufferId",
-        to = "super::buffer::Column::Id"
+        belongs_to = "super.buffer.Entity",
+        from = "Column.BufferId",
+        to = "super.buffer.Column.Id"
     )]
     Buffer,
 }
 
-impl Related<super::buffer::Entity> for Entity {
+impl Related<super.buffer.Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Buffer.def()
+        Relation.Buffer.def()
     }
 }
 

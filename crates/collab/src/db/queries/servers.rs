@@ -1,12 +1,12 @@
-use super::*;
+use super.*;
 
 impl Database {
     /// Creates a new server in the given environment.
     pub async fn create_server(&self, environment: &str) -> Result<ServerId> {
         self.transaction(|tx| async move {
-            let server = server::ActiveModel {
-                environment: ActiveValue::set(environment.into()),
-                ..Default::default()
+            let server = server.ActiveModel {
+                environment: ActiveValue.set(environment.into()),
+                ..Default.default()
             }
             .insert(&*tx)
             .await?;
@@ -38,26 +38,26 @@ impl Database {
             let stale_server_epochs = self
                 .stale_server_ids(environment, new_server_id, &tx)
                 .await?;
-            let room_ids = room_participant::Entity::find()
+            let room_ids = room_participant.Entity.find()
                 .select_only()
-                .column(room_participant::Column::RoomId)
+                .column(room_participant.Column.RoomId)
                 .distinct()
                 .filter(
-                    room_participant::Column::AnsweringConnectionServerId
+                    room_participant.Column.AnsweringConnectionServerId
                         .is_in(stale_server_epochs.iter().copied()),
                 )
-                .into_values::<_, QueryRoomIds>()
+                .into_values.<_, QueryRoomIds>()
                 .all(&*tx)
                 .await?;
-            let channel_ids = channel_buffer_collaborator::Entity::find()
+            let channel_ids = channel_buffer_collaborator.Entity.find()
                 .select_only()
-                .column(channel_buffer_collaborator::Column::ChannelId)
+                .column(channel_buffer_collaborator.Column.ChannelId)
                 .distinct()
                 .filter(
-                    channel_buffer_collaborator::Column::ConnectionServerId
+                    channel_buffer_collaborator.Column.ConnectionServerId
                         .is_in(stale_server_epochs.iter().copied()),
                 )
-                .into_values::<_, QueryChannelIds>()
+                .into_values.<_, QueryChannelIds>()
                 .all(&*tx)
                 .await?;
 
@@ -73,11 +73,11 @@ impl Database {
         new_server_id: ServerId,
     ) -> Result<()> {
         self.transaction(|tx| async move {
-            server::Entity::delete_many()
+            server.Entity.delete_many()
                 .filter(
-                    Condition::all()
-                        .add(server::Column::Environment.eq(environment))
-                        .add(server::Column::Id.ne(new_server_id)),
+                    Condition.all()
+                        .add(server.Column.Environment.eq(environment))
+                        .add(server.Column.Id.ne(new_server_id)),
                 )
                 .exec(&*tx)
                 .await?;
@@ -92,11 +92,11 @@ impl Database {
         new_server_id: ServerId,
         tx: &DatabaseTransaction,
     ) -> Result<Vec<ServerId>> {
-        let stale_servers = server::Entity::find()
+        let stale_servers = server.Entity.find()
             .filter(
-                Condition::all()
-                    .add(server::Column::Environment.eq(environment))
-                    .add(server::Column::Id.ne(new_server_id)),
+                Condition.all()
+                    .add(server.Column.Environment.eq(environment))
+                    .add(server.Column.Id.ne(new_server_id)),
             )
             .all(tx)
             .await?;

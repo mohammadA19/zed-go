@@ -1,5 +1,5 @@
-use crate::db::ProjectId;
-use sea_orm::entity::prelude::*;
+use crate.db.ProjectId;
+use sea_orm.entity.prelude.*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "worktree_entries")]

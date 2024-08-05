@@ -1,26 +1,26 @@
-use super::{SlashCommand, SlashCommandOutput};
-use anyhow::{anyhow, Context, Result};
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
-use fs::Fs;
-use gpui::{AppContext, Model, Task, WeakView};
-use language::LspAdapterDelegate;
-use project::{Project, ProjectPath};
-use std::{
-    fmt::Write,
-    path::Path,
-    sync::{atomic::AtomicBool, Arc},
+use super.{SlashCommand, SlashCommandOutput};
+use anyhow.{anyhow, Context, Result};
+use assistant_slash_command.{ArgumentCompletion, SlashCommandOutputSection};
+use fs.Fs;
+use gpui.{AppContext, Model, Task, WeakView};
+use language.LspAdapterDelegate;
+use project.{Project, ProjectPath};
+use std.{
+    fmt.Write,
+    path.Path,
+    sync.{atomic.AtomicBool, Arc},
 };
-use ui::prelude::*;
-use workspace::Workspace;
+use ui.prelude.*;
+use workspace.Workspace;
 
 pub(crate) struct ProjectSlashCommand;
 
 impl ProjectSlashCommand {
     async fn build_message(fs: Arc<dyn Fs>, path_to_cargo_toml: &Path) -> Result<String> {
         let buffer = fs.load(path_to_cargo_toml).await?;
-        let cargo_toml: cargo_toml::Manifest = toml::from_str(&buffer)?;
+        let cargo_toml: cargo_toml.Manifest = toml.from_str(&buffer)?;
 
-        let mut message = String::new();
+        let mut message = String.new();
         writeln!(message, "You are in a Rust project.")?;
 
         if let Some(workspace) = cargo_toml.workspace {
@@ -82,7 +82,7 @@ impl ProjectSlashCommand {
             worktree_id: worktree.id(),
             path: entry.path.clone(),
         };
-        Some(Arc::from(
+        Some(Arc.from(
             project.read(cx).absolute_path(&path, cx)?.as_path(),
         ))
     }
@@ -108,7 +108,7 @@ impl SlashCommand for ProjectSlashCommand {
         _workspace: Option<WeakView<Workspace>>,
         _cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
-        Task::ready(Err(anyhow!("this command does not require argument")))
+        Task.ready(Err(anyhow!("this command does not require argument")))
     }
 
     fn requires_argument(&self) -> bool {
@@ -125,10 +125,10 @@ impl SlashCommand for ProjectSlashCommand {
         let output = workspace.update(cx, |workspace, cx| {
             let project = workspace.project().clone();
             let fs = workspace.project().read(cx).fs().clone();
-            let path = Self::path_to_cargo_toml(project, cx);
+            let path = Self.path_to_cargo_toml(project, cx);
             let output = cx.background_executor().spawn(async move {
                 let path = path.with_context(|| "Cargo.toml not found")?;
-                Self::build_message(fs, &path).await
+                Self.build_message(fs, &path).await
             });
 
             cx.foreground_executor().spawn(async move {
@@ -138,13 +138,13 @@ impl SlashCommand for ProjectSlashCommand {
                     text,
                     sections: vec![SlashCommandOutputSection {
                         range,
-                        icon: IconName::FileTree,
+                        icon: IconName.FileTree,
                         label: "Project".into(),
                     }],
                     run_commands_in_text: false,
                 })
             })
         });
-        output.unwrap_or_else(|error| Task::ready(Err(error)))
+        output.unwrap_or_else(|error| Task.ready(Err(error)))
     }
 }

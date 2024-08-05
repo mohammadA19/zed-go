@@ -1,17 +1,17 @@
-use super::{
-    diagnostics_command::write_single_file_diagnostics,
-    file_command::{build_entry_output_section, codeblock_fence_for_path},
+use super.{
+    diagnostics_command.write_single_file_diagnostics,
+    file_command.{build_entry_output_section, codeblock_fence_for_path},
     SlashCommand, SlashCommandOutput,
 };
-use anyhow::{anyhow, Result};
-use assistant_slash_command::ArgumentCompletion;
-use collections::HashMap;
-use editor::Editor;
-use gpui::{AppContext, Entity, Task, WeakView};
-use language::LspAdapterDelegate;
-use std::{fmt::Write, sync::Arc};
-use ui::WindowContext;
-use workspace::Workspace;
+use anyhow.{anyhow, Result};
+use assistant_slash_command.ArgumentCompletion;
+use collections.HashMap;
+use editor.Editor;
+use gpui.{AppContext, Entity, Task, WeakView};
+use language.LspAdapterDelegate;
+use std.{fmt.Write, sync.Arc};
+use ui.WindowContext;
+use workspace.Workspace;
 
 pub(crate) struct TabsSlashCommand;
 
@@ -35,11 +35,11 @@ impl SlashCommand for TabsSlashCommand {
     fn complete_argument(
         self: Arc<Self>,
         _query: String,
-        _cancel: Arc<std::sync::atomic::AtomicBool>,
+        _cancel: Arc<std.sync.atomic.AtomicBool>,
         _workspace: Option<WeakView<Workspace>>,
         _cx: &mut AppContext,
     ) -> Task<Result<Vec<ArgumentCompletion>>> {
-        Task::ready(Err(anyhow!("this command does not require argument")))
+        Task.ready(Err(anyhow!("this command does not require argument")))
     }
 
     fn run(
@@ -50,8 +50,8 @@ impl SlashCommand for TabsSlashCommand {
         cx: &mut WindowContext,
     ) -> Task<Result<SlashCommandOutput>> {
         let open_buffers = workspace.update(cx, |workspace, cx| {
-            let mut timestamps_by_entity_id = HashMap::default();
-            let mut open_buffers = Vec::new();
+            let mut timestamps_by_entity_id = HashMap.default();
+            let mut open_buffers = Vec.new();
 
             for pane in workspace.panes() {
                 let pane = pane.read(cx);
@@ -60,7 +60,7 @@ impl SlashCommand for TabsSlashCommand {
                 }
             }
 
-            for editor in workspace.items_of_type::<Editor>(cx) {
+            for editor in workspace.items_of_type.<Editor>(cx) {
                 if let Some(buffer) = editor.read(cx).buffer().read(cx).as_singleton() {
                     if let Some(timestamp) = timestamps_by_entity_id.get(&editor.entity_id()) {
                         let snapshot = buffer.read(cx).snapshot();
@@ -77,8 +77,8 @@ impl SlashCommand for TabsSlashCommand {
             Ok(mut open_buffers) => cx.background_executor().spawn(async move {
                 open_buffers.sort_by_key(|(_, _, timestamp)| *timestamp);
 
-                let mut sections = Vec::new();
-                let mut text = String::new();
+                let mut sections = Vec.new();
+                let mut text = String.new();
                 let mut has_diagnostics = false;
                 for (full_path, buffer, _) in open_buffers {
                     let section_start_ix = text.len();
@@ -112,7 +112,7 @@ impl SlashCommand for TabsSlashCommand {
                     run_commands_in_text: has_diagnostics,
                 })
             }),
-            Err(error) => Task::ready(Err(error)),
+            Err(error) => Task.ready(Err(error)),
         }
     }
 }

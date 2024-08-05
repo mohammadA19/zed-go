@@ -1,7 +1,7 @@
-use std::{future::Future, time::Duration};
+use std.{future.Future, time.Duration};
 
 #[cfg(test)]
-use gpui::BackgroundExecutor;
+use gpui.BackgroundExecutor;
 
 #[derive(Clone)]
 pub enum Executor {
@@ -16,11 +16,11 @@ impl Executor {
         F: 'static + Send + Future<Output = ()>,
     {
         match self {
-            Executor::Production => {
-                tokio::spawn(future);
+            Executor.Production => {
+                tokio.spawn(future);
             }
             #[cfg(test)]
-            Executor::Deterministic(background) => {
+            Executor.Deterministic(background) => {
                 background.spawn(future).detach();
             }
         }
@@ -30,9 +30,9 @@ impl Executor {
         let this = self.clone();
         async move {
             match this {
-                Executor::Production => tokio::time::sleep(duration).await,
+                Executor.Production => tokio.time.sleep(duration).await,
                 #[cfg(test)]
-                Executor::Deterministic(background) => background.timer(duration).await,
+                Executor.Deterministic(background) => background.timer(duration).await,
             }
         }
     }

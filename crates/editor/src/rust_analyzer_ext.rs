@@ -1,13 +1,13 @@
-use std::sync::Arc;
+use std.sync.Arc;
 
-use anyhow::Context as _;
-use gpui::{Context, View, ViewContext, VisualContext, WindowContext};
-use language::Language;
-use multi_buffer::MultiBuffer;
-use project::lsp_ext_command::ExpandMacro;
-use text::ToPointUtf16;
+use anyhow.Context as _;
+use gpui.{Context, View, ViewContext, VisualContext, WindowContext};
+use language.Language;
+use multi_buffer.MultiBuffer;
+use project.lsp_ext_command.ExpandMacro;
+use text.ToPointUtf16;
 
-use crate::{element::register_action, Editor, ExpandMacroRecursively};
+use crate.{element.register_action, Editor, ExpandMacroRecursively};
 
 pub fn apply_related_actions(editor: &View<Editor>, cx: &mut WindowContext) {
     let is_rust_related = editor.update(cx, |editor, cx| {
@@ -66,7 +66,7 @@ pub fn expand_macro_recursively(
                     if adapter.name.0.as_ref() == "rust-analyzer" {
                         Some((
                             trigger_anchor,
-                            Arc::clone(&rust_language),
+                            Arc.clone(&rust_language),
                             server.server_id(),
                             buffer.clone(),
                         ))
@@ -85,7 +85,7 @@ pub fn expand_macro_recursively(
     let expand_macro_task = project.update(cx, |project, cx| {
         project.request_lsp(
             buffer,
-            project::LanguageServerToQuery::Other(server_to_query),
+            project.LanguageServerToQuery.Other(server_to_query),
             ExpandMacro { position },
             cx,
         )
@@ -93,7 +93,7 @@ pub fn expand_macro_recursively(
     cx.spawn(|_editor, mut cx| async move {
         let macro_expansion = expand_macro_task.await.context("expand macro")?;
         if macro_expansion.is_empty() {
-            log::info!("Empty macro expansion for position {position:?}");
+            log.info!("Empty macro expansion for position {position:?}");
             return Ok(());
         }
 
@@ -106,11 +106,11 @@ pub fn expand_macro_recursively(
                 buffer.set_language(Some(rust_language), cx)
             });
             let multibuffer = cx.new_model(|cx| {
-                MultiBuffer::singleton(buffer, cx).with_title(macro_expansion.name)
+                MultiBuffer.singleton(buffer, cx).with_title(macro_expansion.name)
             });
             workspace.add_item_to_active_pane(
-                Box::new(
-                    cx.new_view(|cx| Editor::for_multibuffer(multibuffer, Some(project), true, cx)),
+                Box.new(
+                    cx.new_view(|cx| Editor.for_multibuffer(multibuffer, Some(project), true, cx)),
                 ),
                 None,
                 true,

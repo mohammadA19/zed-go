@@ -1,5 +1,5 @@
-use language::BufferSnapshot;
-use std::{fmt::Write, ops::Range};
+use language.BufferSnapshot;
+use std.{fmt.Write, ops.Range};
 
 pub fn generate_content_prompt(
     user_prompt: String,
@@ -7,7 +7,7 @@ pub fn generate_content_prompt(
     buffer: BufferSnapshot,
     range: Range<usize>,
 ) -> String {
-    let mut prompt = String::new();
+    let mut prompt = String.new();
 
     let content_type = match language_name {
         None | Some("Markdown" | "Plain Text") => {
@@ -117,15 +117,15 @@ pub fn generate_terminal_assistant_prompt(
     working_directory: Option<&str>,
     latest_output: &[String],
 ) -> String {
-    let mut prompt = String::new();
+    let mut prompt = String.new();
     writeln!(&mut prompt, "You are an expert terminal user.").unwrap();
     writeln!(&mut prompt, "You will be given a description of a command and you need to respond with a command that matches the description.").unwrap();
     writeln!(&mut prompt, "Do not include markdown blocks or any other text formatting in your response, always respond with a single command that can be executed in the given shell.").unwrap();
     writeln!(
         &mut prompt,
         "Current OS name is '{}', architecture is '{}'.",
-        std::env::consts::OS,
-        std::env::consts::ARCH,
+        std.env.consts.OS,
+        std.env.consts.ARCH,
     )
     .unwrap();
     if let Some(shell) = shell {

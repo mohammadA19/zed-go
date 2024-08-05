@@ -1,8 +1,8 @@
-use crate::ProjectDiagnosticsEditor;
-use gpui::{EventEmitter, ParentElement, Render, View, ViewContext, WeakView};
-use ui::prelude::*;
-use ui::{IconButton, IconName, Tooltip};
-use workspace::{item::ItemHandle, ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView};
+use crate.ProjectDiagnosticsEditor;
+use gpui.{EventEmitter, ParentElement, Render, View, ViewContext, WeakView};
+use ui.prelude.*;
+use ui.{IconButton, IconName, Tooltip};
+use workspace.{item.ItemHandle, ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView};
 
 pub struct ToolbarControls {
     editor: Option<WeakView<ProjectDiagnosticsEditor>>,
@@ -36,10 +36,10 @@ impl Render for ToolbarControls {
         h_flex()
             .when(has_stale_excerpts, |div| {
                 div.child(
-                    IconButton::new("update-excerpts", IconName::Update)
-                        .icon_color(Color::Info)
+                    IconButton.new("update-excerpts", IconName.Update)
+                        .icon_color(Color.Info)
                         .disabled(is_updating)
-                        .tooltip(move |cx| Tooltip::text("Update excerpts", cx))
+                        .tooltip(move |cx| Tooltip.text("Update excerpts", cx))
                         .on_click(cx.listener(|this, _, cx| {
                             if let Some(editor) = this.editor() {
                                 editor.update(cx, |editor, _| {
@@ -50,12 +50,12 @@ impl Render for ToolbarControls {
                 )
             })
             .child(
-                IconButton::new("toggle-warnings", IconName::ExclamationTriangle)
-                    .tooltip(move |cx| Tooltip::text(tooltip, cx))
+                IconButton.new("toggle-warnings", IconName.ExclamationTriangle)
+                    .tooltip(move |cx| Tooltip.text(tooltip, cx))
                     .on_click(cx.listener(|this, _, cx| {
                         if let Some(editor) = this.editor() {
                             editor.update(cx, |editor, cx| {
-                                editor.toggle_warnings(&Default::default(), cx);
+                                editor.toggle_warnings(&Default.default(), cx);
                             });
                         }
                     })),
@@ -72,14 +72,14 @@ impl ToolbarItemView for ToolbarControls {
         _: &mut ViewContext<Self>,
     ) -> ToolbarItemLocation {
         if let Some(pane_item) = active_pane_item.as_ref() {
-            if let Some(editor) = pane_item.downcast::<ProjectDiagnosticsEditor>() {
+            if let Some(editor) = pane_item.downcast.<ProjectDiagnosticsEditor>() {
                 self.editor = Some(editor.downgrade());
-                ToolbarItemLocation::PrimaryRight
+                ToolbarItemLocation.PrimaryRight
             } else {
-                ToolbarItemLocation::Hidden
+                ToolbarItemLocation.Hidden
             }
         } else {
-            ToolbarItemLocation::Hidden
+            ToolbarItemLocation.Hidden
         }
     }
 }
