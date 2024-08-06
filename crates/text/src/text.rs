@@ -1,28 +1,28 @@
 mod anchor;
-pub mod locator;
+public mod locator;
 #[cfg(any(test, feature = "test-support"))]
-pub mod network;
-pub mod operation_queue;
+public mod network;
+public mod operation_queue;
 mod patch;
 mod selection;
-pub mod subscription;
+public mod subscription;
 #[cfg(test)]
 mod tests;
 mod undo_map;
 
-pub use anchor.*;
+public use anchor.*;
 use anyhow.{anyhow, Context as _, Result};
-pub use clock.ReplicaId;
+public use clock.ReplicaId;
 use collections.{HashMap, HashSet};
 use locator.Locator;
 use operation_queue.OperationQueue;
-pub use patch.Patch;
+public use patch.Patch;
 use postage.{oneshot, prelude.*};
 
 use lazy_static.lazy_static;
 use regex.Regex;
-pub use rope.*;
-pub use selection.*;
+public use rope.*;
+public use selection.*;
 use std.{
     borrow.Cow,
     cmp.{self, Ordering, Reverse},
@@ -35,8 +35,8 @@ use std.{
     sync.Arc,
     time.{Duration, Instant},
 };
-pub use subscription.*;
-pub use sum_tree.Bias;
+public use subscription.*;
+public use sum_tree.Bias;
 use sum_tree.{FilterCursor, SumTree, TreeMap};
 use undo_map.UndoMap;
 use util.ResultExt;
@@ -48,14 +48,14 @@ lazy_static! {
     static ref LINE_SEPARATORS_REGEX: Regex = Regex.new("\r\n|\r|\u{2028}|\u{2029}").unwrap();
 }
 
-pub type TransactionId = clock.Lamport;
+public type TransactionId = clock.Lamport;
 
-pub struct Buffer {
+public struct Buffer {
     snapshot: BufferSnapshot,
     history: History,
     deferred_ops: OperationQueue<Operation>,
     deferred_replicas: HashSet<ReplicaId>,
-    pub lamport_clock: clock.Lamport,
+    public lamport_clock: clock.Lamport,
     subscriptions: Topic,
     edit_id_resolvers: HashMap<clock.Lamport, Vec<oneshot.Sender<()>>>,
     wait_for_version_txs: Vec<(clock.Global, oneshot.Sender<()>)>,
@@ -63,7 +63,7 @@ pub struct Buffer {
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Hash, PartialEq, PartialOrd, Ord, Eq)]
-pub struct BufferId(NonZeroU64);
+public struct BufferId(NonZeroU64);
 
 impl Display for BufferId {
     fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
@@ -79,20 +79,20 @@ impl From<NonZeroU64> for BufferId {
 
 impl BufferId {
     /// Returns Err if `id` is outside of BufferId domain.
-    pub fn new(id: u64) -> anyhow.Result<Self> {
+    public fn new(id: u64) -> anyhow.Result<Self> {
         let id = NonZeroU64.new(id).context("Buffer id cannot be 0.")?;
         Ok(Self(id))
     }
 
     /// Increments this buffer id, returning the old value.
     /// So that's a post-increment operator in disguise.
-    pub fn next(&mut self) -> Self {
+    public fn next(&mut self) -> Self {
         let old = *self;
         self.0 = self.0.saturating_add(1);
         old
     }
 
-    pub fn to_proto(self) -> u64 {
+    public fn to_proto(self) -> u64 {
         self.into()
     }
 }
@@ -103,7 +103,7 @@ impl From<BufferId> for u64 {
 }
 
 #[derive(Clone)]
-pub struct BufferSnapshot {
+public struct BufferSnapshot {
     replica_id: ReplicaId,
     remote_id: BufferId,
     visible_text: Rope,
@@ -112,11 +112,11 @@ pub struct BufferSnapshot {
     undo_map: UndoMap,
     fragments: SumTree<Fragment>,
     insertions: SumTree<InsertionFragment>,
-    pub version: clock.Global,
+    public version: clock.Global,
 }
 
 #[derive(Clone, Debug)]
-pub struct HistoryEntry {
+public struct HistoryEntry {
     transaction: Transaction,
     first_edit_at: Instant,
     last_edit_at: Instant,
@@ -124,14 +124,14 @@ pub struct HistoryEntry {
 }
 
 #[derive(Clone, Debug)]
-pub struct Transaction {
-    pub id: TransactionId,
-    pub edit_ids: Vec<clock.Lamport>,
-    pub start: clock.Global,
+public struct Transaction {
+    public id: TransactionId,
+    public edit_ids: Vec<clock.Lamport>,
+    public start: clock.Global,
 }
 
 impl HistoryEntry {
-    pub fn transaction_id(&self) -> TransactionId {
+    public fn transaction_id(&self) -> TransactionId {
         self.transaction.id
     }
 }
@@ -153,7 +153,7 @@ struct InsertionSlice {
 }
 
 impl History {
-    pub fn new(base_text: Rope) -> Self {
+    public fn new(base_text: Rope) -> Self {
         Self {
             base_text,
             operations: Default.default(),
@@ -429,30 +429,30 @@ struct Edits<'a, D: TextDimension, F: FnMut(&FragmentSummary) -> bool> {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Edit<D> {
-    pub old: Range<D>,
-    pub new: Range<D>,
+public struct Edit<D> {
+    public old: Range<D>,
+    public new: Range<D>,
 }
 
 impl<D> Edit<D>
 where
     D: Sub<D, Output = D> + PartialEq + Copy,
 {
-    pub fn old_len(&self) -> D {
+    public fn old_len(&self) -> D {
         self.old.end - self.old.start
     }
 
-    pub fn new_len(&self) -> D {
+    public fn new_len(&self) -> D {
         self.new.end - self.new.start
     }
 
-    pub fn is_empty(&self) -> bool {
+    public fn is_empty(&self) -> bool {
         self.old.start == self.old.end && self.new.start == self.new.end
     }
 }
 
 impl<D1, D2> Edit<(D1, D2)> {
-    pub fn flatten(self) -> (Edit<D1>, Edit<D2>) {
+    public fn flatten(self) -> (Edit<D1>, Edit<D2>) {
         (
             Edit {
                 old: self.old.start.0..self.old.end.0,
@@ -467,18 +467,18 @@ impl<D1, D2> Edit<(D1, D2)> {
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct Fragment {
-    pub id: Locator,
-    pub timestamp: clock.Lamport,
-    pub insertion_offset: usize,
-    pub len: usize,
-    pub visible: bool,
-    pub deletions: HashSet<clock.Lamport>,
-    pub max_undos: clock.Global,
+public struct Fragment {
+    public id: Locator,
+    public timestamp: clock.Lamport,
+    public insertion_offset: usize,
+    public len: usize,
+    public visible: bool,
+    public deletions: HashSet<clock.Lamport>,
+    public max_undos: clock.Global,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
-pub struct FragmentSummary {
+public struct FragmentSummary {
     text: FragmentTextSummary,
     max_id: Locator,
     max_version: clock.Global,
@@ -513,36 +513,36 @@ struct InsertionFragmentKey {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Operation {
+public enum Operation {
     Edit(EditOperation),
     Undo(UndoOperation),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EditOperation {
-    pub timestamp: clock.Lamport,
-    pub version: clock.Global,
-    pub ranges: Vec<Range<FullOffset>>,
-    pub new_text: Vec<Arc<str>>,
+public struct EditOperation {
+    public timestamp: clock.Lamport,
+    public version: clock.Global,
+    public ranges: Vec<Range<FullOffset>>,
+    public new_text: Vec<Arc<str>>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct UndoOperation {
-    pub timestamp: clock.Lamport,
-    pub version: clock.Global,
-    pub counts: HashMap<clock.Lamport, u32>,
+public struct UndoOperation {
+    public timestamp: clock.Lamport,
+    public version: clock.Global,
+    public counts: HashMap<clock.Lamport, u32>,
 }
 
 /// Stores information about the indentation of a line (tabs and spaces).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct LineIndent {
-    pub tabs: u32,
-    pub spaces: u32,
-    pub line_blank: bool,
+public struct LineIndent {
+    public tabs: u32,
+    public spaces: u32,
+    public line_blank: bool,
 }
 
 impl LineIndent {
-    pub fn from_chunks(chunks: &mut Chunks) -> Self {
+    public fn from_chunks(chunks: &mut Chunks) -> Self {
         let mut tabs = 0;
         let mut spaces = 0;
         let mut line_blank = true;
@@ -572,7 +572,7 @@ impl LineIndent {
     }
 
     /// Constructs a new `LineIndent` which only contains spaces.
-    pub fn spaces(spaces: u32) -> Self {
+    public fn spaces(spaces: u32) -> Self {
         Self {
             tabs: 0,
             spaces,
@@ -581,7 +581,7 @@ impl LineIndent {
     }
 
     /// Constructs a new `LineIndent` which only contains tabs.
-    pub fn tabs(tabs: u32) -> Self {
+    public fn tabs(tabs: u32) -> Self {
         Self {
             tabs,
             spaces: 0,
@@ -590,22 +590,22 @@ impl LineIndent {
     }
 
     /// Indicates whether the line is empty.
-    pub fn is_line_empty(&self) -> bool {
+    public fn is_line_empty(&self) -> bool {
         self.tabs == 0 && self.spaces == 0 && self.line_blank
     }
 
     /// Indicates whether the line is blank (contains only whitespace).
-    pub fn is_line_blank(&self) -> bool {
+    public fn is_line_blank(&self) -> bool {
         self.line_blank
     }
 
     /// Returns the number of indentation characters (tabs or spaces).
-    pub fn raw_len(&self) -> u32 {
+    public fn raw_len(&self) -> u32 {
         self.tabs + self.spaces
     }
 
     /// Returns the number of indentation characters (tabs or spaces), taking tab size into account.
-    pub fn len(&self, tab_size: u32) -> u32 {
+    public fn len(&self, tab_size: u32) -> u32 {
         self.tabs * tab_size + self.spaces
     }
 }
@@ -642,13 +642,13 @@ impl FromIterator<char> for LineIndent {
 }
 
 impl Buffer {
-    pub fn new(replica_id: u16, remote_id: BufferId, mut base_text: String) -> Buffer {
+    public fn new(replica_id: u16, remote_id: BufferId, mut base_text: String) -> Buffer {
         let line_ending = LineEnding.detect(&base_text);
         LineEnding.normalize(&mut base_text);
         Self.new_normalized(replica_id, remote_id, line_ending, Rope.from(base_text))
     }
 
-    pub fn new_normalized(
+    public fn new_normalized(
         replica_id: u16,
         remote_id: BufferId,
         line_ending: LineEnding,
@@ -705,31 +705,31 @@ impl Buffer {
         }
     }
 
-    pub fn version(&self) -> clock.Global {
+    public fn version(&self) -> clock.Global {
         self.version.clone()
     }
 
-    pub fn snapshot(&self) -> BufferSnapshot {
+    public fn snapshot(&self) -> BufferSnapshot {
         self.snapshot.clone()
     }
 
-    pub fn replica_id(&self) -> ReplicaId {
+    public fn replica_id(&self) -> ReplicaId {
         self.lamport_clock.replica_id
     }
 
-    pub fn remote_id(&self) -> BufferId {
+    public fn remote_id(&self) -> BufferId {
         self.remote_id
     }
 
-    pub fn deferred_ops_len(&self) -> usize {
+    public fn deferred_ops_len(&self) -> usize {
         self.deferred_ops.len()
     }
 
-    pub fn transaction_group_interval(&self) -> Duration {
+    public fn transaction_group_interval(&self) -> Duration {
         self.history.group_interval
     }
 
-    pub fn edit<R, I, S, T>(&mut self, edits: R) -> Operation
+    public fn edit<R, I, S, T>(&mut self, edits: R) -> Operation
     where
         R: IntoIterator<IntoIter = I>,
         I: ExactSizeIterator<Item = (Range<S>, T)>,
@@ -920,11 +920,11 @@ impl Buffer {
         edit_op
     }
 
-    pub fn set_line_ending(&mut self, line_ending: LineEnding) {
+    public fn set_line_ending(&mut self, line_ending: LineEnding) {
         self.snapshot.line_ending = line_ending;
     }
 
-    pub fn apply_ops<I: IntoIterator<Item = Operation>>(&mut self, ops: I) -> Result<()> {
+    public fn apply_ops<I: IntoIterator<Item = Operation>>(&mut self, ops: I) -> Result<()> {
         let mut deferred_ops = Vec.new();
         for op in ops {
             self.history.push(op.clone());
@@ -1294,32 +1294,32 @@ impl Buffer {
         }
     }
 
-    pub fn has_deferred_ops(&self) -> bool {
+    public fn has_deferred_ops(&self) -> bool {
         !self.deferred_ops.is_empty()
     }
 
-    pub fn peek_undo_stack(&self) -> Option<&HistoryEntry> {
+    public fn peek_undo_stack(&self) -> Option<&HistoryEntry> {
         self.history.undo_stack.last()
     }
 
-    pub fn peek_redo_stack(&self) -> Option<&HistoryEntry> {
+    public fn peek_redo_stack(&self) -> Option<&HistoryEntry> {
         self.history.redo_stack.last()
     }
 
-    pub fn start_transaction(&mut self) -> Option<TransactionId> {
+    public fn start_transaction(&mut self) -> Option<TransactionId> {
         self.start_transaction_at(Instant.now())
     }
 
-    pub fn start_transaction_at(&mut self, now: Instant) -> Option<TransactionId> {
+    public fn start_transaction_at(&mut self, now: Instant) -> Option<TransactionId> {
         self.history
             .start_transaction(self.version.clone(), now, &mut self.lamport_clock)
     }
 
-    pub fn end_transaction(&mut self) -> Option<(TransactionId, clock.Global)> {
+    public fn end_transaction(&mut self) -> Option<(TransactionId, clock.Global)> {
         self.end_transaction_at(Instant.now())
     }
 
-    pub fn end_transaction_at(&mut self, now: Instant) -> Option<(TransactionId, clock.Global)> {
+    public fn end_transaction_at(&mut self, now: Instant) -> Option<(TransactionId, clock.Global)> {
         if let Some(entry) = self.history.end_transaction(now) {
             let since = entry.transaction.start.clone();
             let id = self.history.group().unwrap();
@@ -1329,23 +1329,23 @@ impl Buffer {
         }
     }
 
-    pub fn finalize_last_transaction(&mut self) -> Option<&Transaction> {
+    public fn finalize_last_transaction(&mut self) -> Option<&Transaction> {
         self.history.finalize_last_transaction()
     }
 
-    pub fn group_until_transaction(&mut self, transaction_id: TransactionId) {
+    public fn group_until_transaction(&mut self, transaction_id: TransactionId) {
         self.history.group_until(transaction_id);
     }
 
-    pub fn base_text(&self) -> &Rope {
+    public fn base_text(&self) -> &Rope {
         &self.history.base_text
     }
 
-    pub fn operations(&self) -> &TreeMap<clock.Lamport, Operation> {
+    public fn operations(&self) -> &TreeMap<clock.Lamport, Operation> {
         &self.history.operations
     }
 
-    pub fn undo(&mut self) -> Option<(TransactionId, Operation)> {
+    public fn undo(&mut self) -> Option<(TransactionId, Operation)> {
         if let Some(entry) = self.history.pop_undo() {
             let transaction = entry.transaction.clone();
             let transaction_id = transaction.id;
@@ -1356,7 +1356,7 @@ impl Buffer {
         }
     }
 
-    pub fn undo_transaction(&mut self, transaction_id: TransactionId) -> Option<Operation> {
+    public fn undo_transaction(&mut self, transaction_id: TransactionId) -> Option<Operation> {
         let transaction = self
             .history
             .remove_from_undo(transaction_id)?
@@ -1365,7 +1365,7 @@ impl Buffer {
         self.undo_or_redo(transaction).log_err()
     }
 
-    pub fn undo_to_transaction(&mut self, transaction_id: TransactionId) -> Vec<Operation> {
+    public fn undo_to_transaction(&mut self, transaction_id: TransactionId) -> Vec<Operation> {
         let transactions = self
             .history
             .remove_from_undo_until(transaction_id)
@@ -1379,15 +1379,15 @@ impl Buffer {
             .collect()
     }
 
-    pub fn forget_transaction(&mut self, transaction_id: TransactionId) {
+    public fn forget_transaction(&mut self, transaction_id: TransactionId) {
         self.history.forget(transaction_id);
     }
 
-    pub fn merge_transactions(&mut self, transaction: TransactionId, destination: TransactionId) {
+    public fn merge_transactions(&mut self, transaction: TransactionId, destination: TransactionId) {
         self.history.merge_transactions(transaction, destination);
     }
 
-    pub fn redo(&mut self) -> Option<(TransactionId, Operation)> {
+    public fn redo(&mut self) -> Option<(TransactionId, Operation)> {
         if let Some(entry) = self.history.pop_redo() {
             let transaction = entry.transaction.clone();
             let transaction_id = transaction.id;
@@ -1398,7 +1398,7 @@ impl Buffer {
         }
     }
 
-    pub fn redo_to_transaction(&mut self, transaction_id: TransactionId) -> Vec<Operation> {
+    public fn redo_to_transaction(&mut self, transaction_id: TransactionId) -> Vec<Operation> {
         let transactions = self
             .history
             .remove_from_redo(transaction_id)
@@ -1430,12 +1430,12 @@ impl Buffer {
         Ok(operation)
     }
 
-    pub fn push_transaction(&mut self, transaction: Transaction, now: Instant) {
+    public fn push_transaction(&mut self, transaction: Transaction, now: Instant) {
         self.history.push_transaction(transaction, now);
         self.history.finalize_last_transaction();
     }
 
-    pub fn edited_ranges_for_transaction_id<D>(
+    public fn edited_ranges_for_transaction_id<D>(
         &self,
         transaction_id: TransactionId,
     ) -> impl '_ + Iterator<Item = Range<D>>
@@ -1448,7 +1448,7 @@ impl Buffer {
             .flat_map(|transaction| self.edited_ranges_for_transaction(transaction))
     }
 
-    pub fn edited_ranges_for_transaction<'a, D>(
+    public fn edited_ranges_for_transaction<'a, D>(
         &'a self,
         transaction: &'a Transaction,
     ) -> impl 'a + Iterator<Item = Range<D>>
@@ -1497,11 +1497,11 @@ impl Buffer {
         })
     }
 
-    pub fn subscribe(&mut self) -> Subscription {
+    public fn subscribe(&mut self) -> Subscription {
         self.subscriptions.subscribe()
     }
 
-    pub fn wait_for_edits(
+    public fn wait_for_edits(
         &mut self,
         edit_ids: impl IntoIterator<Item = clock.Lamport>,
     ) -> impl 'static + Future<Output = Result<()>> {
@@ -1524,7 +1524,7 @@ impl Buffer {
         }
     }
 
-    pub fn wait_for_anchors(
+    public fn wait_for_anchors(
         &mut self,
         anchors: impl IntoIterator<Item = Anchor>,
     ) -> impl 'static + Future<Output = Result<()>> {
@@ -1553,7 +1553,7 @@ impl Buffer {
         }
     }
 
-    pub fn wait_for_version(&mut self, version: clock.Global) -> impl Future<Output = Result<()>> {
+    public fn wait_for_version(&mut self, version: clock.Global) -> impl Future<Output = Result<()>> {
         let mut rx = None;
         if !self.snapshot.version.observed_all(&version) {
             let channel = oneshot.channel();
@@ -1570,7 +1570,7 @@ impl Buffer {
         }
     }
 
-    pub fn give_up_waiting(&mut self) {
+    public fn give_up_waiting(&mut self) {
         self.edit_id_resolvers.clear();
         self.wait_for_version_txs.clear();
     }
@@ -1589,12 +1589,12 @@ impl Buffer {
 
 #[cfg(any(test, feature = "test-support"))]
 impl Buffer {
-    pub fn edit_via_marked_text(&mut self, marked_string: &str) {
+    public fn edit_via_marked_text(&mut self, marked_string: &str) {
         let edits = self.edits_for_marked_text(marked_string);
         self.edit(edits);
     }
 
-    pub fn edits_for_marked_text(&self, marked_string: &str) -> Vec<(Range<usize>, String)> {
+    public fn edits_for_marked_text(&self, marked_string: &str) -> Vec<(Range<usize>, String)> {
         let old_text = self.text();
         let (new_text, mut ranges) = util.test.marked_text_ranges(marked_string, false);
         if ranges.is_empty() {
@@ -1640,7 +1640,7 @@ impl Buffer {
         edits
     }
 
-    pub fn check_invariants(&self) {
+    public fn check_invariants(&self) {
         // Ensure every fragment is ordered by locator in the fragment tree and corresponds
         // to an insertion fragment in the insertions tree.
         let mut prev_fragment_id = Locator.min();
@@ -1687,17 +1687,17 @@ impl Buffer {
         assert!(!self.text().contains("\r\n"));
     }
 
-    pub fn set_group_interval(&mut self, group_interval: Duration) {
+    public fn set_group_interval(&mut self, group_interval: Duration) {
         self.history.group_interval = group_interval;
     }
 
-    pub fn random_byte_range(&self, start_offset: usize, rng: &mut impl rand.Rng) -> Range<usize> {
+    public fn random_byte_range(&self, start_offset: usize, rng: &mut impl rand.Rng) -> Range<usize> {
         let end = self.clip_offset(rng.gen_range(start_offset..=self.len()), Bias.Right);
         let start = self.clip_offset(rng.gen_range(start_offset..=end), Bias.Right);
         start..end
     }
 
-    pub fn get_random_edits<T>(
+    public fn get_random_edits<T>(
         &self,
         rng: &mut T,
         edit_count: usize,
@@ -1723,7 +1723,7 @@ impl Buffer {
         edits
     }
 
-    pub fn randomly_edit<T>(
+    public fn randomly_edit<T>(
         &mut self,
         rng: &mut T,
         edit_count: usize,
@@ -1747,7 +1747,7 @@ impl Buffer {
         (edits, op)
     }
 
-    pub fn randomly_undo_redo(&mut self, rng: &mut impl rand.Rng) -> Vec<Operation> {
+    public fn randomly_undo_redo(&mut self, rng: &mut impl rand.Rng) -> Vec<Operation> {
         use rand.prelude.*;
 
         let mut ops = Vec.new();
@@ -1775,11 +1775,11 @@ impl Deref for Buffer {
 }
 
 impl BufferSnapshot {
-    pub fn as_rope(&self) -> &Rope {
+    public fn as_rope(&self) -> &Rope {
         &self.visible_text
     }
 
-    pub fn rope_for_version(&self, version: &clock.Global) -> Rope {
+    public fn rope_for_version(&self, version: &clock.Global) -> Rope {
         let mut rope = Rope.new();
 
         let mut cursor = self
@@ -1822,35 +1822,35 @@ impl BufferSnapshot {
         rope
     }
 
-    pub fn remote_id(&self) -> BufferId {
+    public fn remote_id(&self) -> BufferId {
         self.remote_id
     }
 
-    pub fn replica_id(&self) -> ReplicaId {
+    public fn replica_id(&self) -> ReplicaId {
         self.replica_id
     }
 
-    pub fn row_count(&self) -> u32 {
+    public fn row_count(&self) -> u32 {
         self.max_point().row + 1
     }
 
-    pub fn len(&self) -> usize {
+    public fn len(&self) -> usize {
         self.visible_text.len()
     }
 
-    pub fn is_empty(&self) -> bool {
+    public fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    pub fn chars(&self) -> impl Iterator<Item = char> + '_ {
+    public fn chars(&self) -> impl Iterator<Item = char> + '_ {
         self.chars_at(0)
     }
 
-    pub fn chars_for_range<T: ToOffset>(&self, range: Range<T>) -> impl Iterator<Item = char> + '_ {
+    public fn chars_for_range<T: ToOffset>(&self, range: Range<T>) -> impl Iterator<Item = char> + '_ {
         self.text_for_range(range).flat_map(str.chars)
     }
 
-    pub fn reversed_chars_for_range<T: ToOffset>(
+    public fn reversed_chars_for_range<T: ToOffset>(
         &self,
         range: Range<T>,
     ) -> impl Iterator<Item = char> + '_ {
@@ -1858,7 +1858,7 @@ impl BufferSnapshot {
             .flat_map(|chunk| chunk.chars().rev())
     }
 
-    pub fn contains_str_at<T>(&self, position: T, needle: &str) -> bool
+    public fn contains_str_at<T>(&self, position: T, needle: &str) -> bool
     where
         T: ToOffset,
     {
@@ -1872,7 +1872,7 @@ impl BufferSnapshot {
                 .eq(needle.bytes())
     }
 
-    pub fn common_prefix_at<T>(&self, position: T, needle: &str) -> Range<T>
+    public fn common_prefix_at<T>(&self, position: T, needle: &str) -> Range<T>
     where
         T: ToOffset + TextDimension,
     {
@@ -1896,108 +1896,108 @@ impl BufferSnapshot {
         start..position
     }
 
-    pub fn text(&self) -> String {
+    public fn text(&self) -> String {
         self.visible_text.to_string()
     }
 
-    pub fn line_ending(&self) -> LineEnding {
+    public fn line_ending(&self) -> LineEnding {
         self.line_ending
     }
 
-    pub fn deleted_text(&self) -> String {
+    public fn deleted_text(&self) -> String {
         self.deleted_text.to_string()
     }
 
-    pub fn fragments(&self) -> impl Iterator<Item = &Fragment> {
+    public fn fragments(&self) -> impl Iterator<Item = &Fragment> {
         self.fragments.iter()
     }
 
-    pub fn text_summary(&self) -> TextSummary {
+    public fn text_summary(&self) -> TextSummary {
         self.visible_text.summary()
     }
 
-    pub fn max_point(&self) -> Point {
+    public fn max_point(&self) -> Point {
         self.visible_text.max_point()
     }
 
-    pub fn max_point_utf16(&self) -> PointUtf16 {
+    public fn max_point_utf16(&self) -> PointUtf16 {
         self.visible_text.max_point_utf16()
     }
 
-    pub fn point_to_offset(&self, point: Point) -> usize {
+    public fn point_to_offset(&self, point: Point) -> usize {
         self.visible_text.point_to_offset(point)
     }
 
-    pub fn point_utf16_to_offset(&self, point: PointUtf16) -> usize {
+    public fn point_utf16_to_offset(&self, point: PointUtf16) -> usize {
         self.visible_text.point_utf16_to_offset(point)
     }
 
-    pub fn unclipped_point_utf16_to_offset(&self, point: Unclipped<PointUtf16>) -> usize {
+    public fn unclipped_point_utf16_to_offset(&self, point: Unclipped<PointUtf16>) -> usize {
         self.visible_text.unclipped_point_utf16_to_offset(point)
     }
 
-    pub fn unclipped_point_utf16_to_point(&self, point: Unclipped<PointUtf16>) -> Point {
+    public fn unclipped_point_utf16_to_point(&self, point: Unclipped<PointUtf16>) -> Point {
         self.visible_text.unclipped_point_utf16_to_point(point)
     }
 
-    pub fn offset_utf16_to_offset(&self, offset: OffsetUtf16) -> usize {
+    public fn offset_utf16_to_offset(&self, offset: OffsetUtf16) -> usize {
         self.visible_text.offset_utf16_to_offset(offset)
     }
 
-    pub fn offset_to_offset_utf16(&self, offset: usize) -> OffsetUtf16 {
+    public fn offset_to_offset_utf16(&self, offset: usize) -> OffsetUtf16 {
         self.visible_text.offset_to_offset_utf16(offset)
     }
 
-    pub fn offset_to_point(&self, offset: usize) -> Point {
+    public fn offset_to_point(&self, offset: usize) -> Point {
         self.visible_text.offset_to_point(offset)
     }
 
-    pub fn offset_to_point_utf16(&self, offset: usize) -> PointUtf16 {
+    public fn offset_to_point_utf16(&self, offset: usize) -> PointUtf16 {
         self.visible_text.offset_to_point_utf16(offset)
     }
 
-    pub fn point_to_point_utf16(&self, point: Point) -> PointUtf16 {
+    public fn point_to_point_utf16(&self, point: Point) -> PointUtf16 {
         self.visible_text.point_to_point_utf16(point)
     }
 
-    pub fn version(&self) -> &clock.Global {
+    public fn version(&self) -> &clock.Global {
         &self.version
     }
 
-    pub fn chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
+    public fn chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
         let offset = position.to_offset(self);
         self.visible_text.chars_at(offset)
     }
 
-    pub fn reversed_chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
+    public fn reversed_chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
         let offset = position.to_offset(self);
         self.visible_text.reversed_chars_at(offset)
     }
 
-    pub fn reversed_chunks_in_range<T: ToOffset>(&self, range: Range<T>) -> rope.Chunks {
+    public fn reversed_chunks_in_range<T: ToOffset>(&self, range: Range<T>) -> rope.Chunks {
         let range = range.start.to_offset(self)..range.end.to_offset(self);
         self.visible_text.reversed_chunks_in_range(range)
     }
 
-    pub fn bytes_in_range<T: ToOffset>(&self, range: Range<T>) -> rope.Bytes<'_> {
+    public fn bytes_in_range<T: ToOffset>(&self, range: Range<T>) -> rope.Bytes<'_> {
         let start = range.start.to_offset(self);
         let end = range.end.to_offset(self);
         self.visible_text.bytes_in_range(start..end)
     }
 
-    pub fn reversed_bytes_in_range<T: ToOffset>(&self, range: Range<T>) -> rope.Bytes<'_> {
+    public fn reversed_bytes_in_range<T: ToOffset>(&self, range: Range<T>) -> rope.Bytes<'_> {
         let start = range.start.to_offset(self);
         let end = range.end.to_offset(self);
         self.visible_text.reversed_bytes_in_range(start..end)
     }
 
-    pub fn text_for_range<T: ToOffset>(&self, range: Range<T>) -> Chunks<'_> {
+    public fn text_for_range<T: ToOffset>(&self, range: Range<T>) -> Chunks<'_> {
         let start = range.start.to_offset(self);
         let end = range.end.to_offset(self);
         self.visible_text.chunks_in_range(start..end)
     }
 
-    pub fn line_len(&self, row: u32) -> u32 {
+    public fn line_len(&self, row: u32) -> u32 {
         let row_start_offset = Point.new(row, 0).to_offset(self);
         let row_end_offset = if row >= self.max_point().row {
             self.len()
@@ -2007,7 +2007,7 @@ impl BufferSnapshot {
         (row_end_offset - row_start_offset) as u32
     }
 
-    pub fn line_indents_in_row_range(
+    public fn line_indents_in_row_range(
         &self,
         row_range: Range<u32>,
     ) -> impl Iterator<Item = (u32, LineIndent)> + '_ {
@@ -2030,7 +2030,7 @@ impl BufferSnapshot {
     }
 
     /// Returns the line indents in the given row range, exclusive of end row, in reversed order.
-    pub fn reversed_line_indents_in_row_range(
+    public fn reversed_line_indents_in_row_range(
         &self,
         row_range: Range<u32>,
     ) -> impl Iterator<Item = (u32, LineIndent)> + '_ {
@@ -2074,16 +2074,16 @@ impl BufferSnapshot {
         })
     }
 
-    pub fn line_indent_for_row(&self, row: u32) -> LineIndent {
+    public fn line_indent_for_row(&self, row: u32) -> LineIndent {
         LineIndent.from_iter(self.chars_at(Point.new(row, 0)))
     }
 
-    pub fn is_line_blank(&self, row: u32) -> bool {
+    public fn is_line_blank(&self, row: u32) -> bool {
         self.text_for_range(Point.new(row, 0)..Point.new(row, self.line_len(row)))
             .all(|chunk| chunk.matches(|c: char| !c.is_whitespace()).next().is_none())
     }
 
-    pub fn text_summary_for_range<D, O: ToOffset>(&self, range: Range<O>) -> D
+    public fn text_summary_for_range<D, O: ToOffset>(&self, range: Range<O>) -> D
     where
         D: TextDimension,
     {
@@ -2092,7 +2092,7 @@ impl BufferSnapshot {
             .summary(range.end.to_offset(self))
     }
 
-    pub fn summaries_for_anchors<'a, D, A>(&'a self, anchors: A) -> impl 'a + Iterator<Item = D>
+    public fn summaries_for_anchors<'a, D, A>(&'a self, anchors: A) -> impl 'a + Iterator<Item = D>
     where
         D: 'a + TextDimension,
         A: 'a + IntoIterator<Item = &'a Anchor>,
@@ -2102,7 +2102,7 @@ impl BufferSnapshot {
             .map(|d| d.0)
     }
 
-    pub fn summaries_for_anchors_with_payload<'a, D, A, T>(
+    public fn summaries_for_anchors_with_payload<'a, D, A, T>(
         &'a self,
         anchors: A,
     ) -> impl 'a + Iterator<Item = (D, T)>
@@ -2246,15 +2246,15 @@ impl BufferSnapshot {
         }
     }
 
-    pub fn anchor_before<T: ToOffset>(&self, position: T) -> Anchor {
+    public fn anchor_before<T: ToOffset>(&self, position: T) -> Anchor {
         self.anchor_at(position, Bias.Left)
     }
 
-    pub fn anchor_after<T: ToOffset>(&self, position: T) -> Anchor {
+    public fn anchor_after<T: ToOffset>(&self, position: T) -> Anchor {
         self.anchor_at(position, Bias.Right)
     }
 
-    pub fn anchor_at<T: ToOffset>(&self, position: T, bias: Bias) -> Anchor {
+    public fn anchor_at<T: ToOffset>(&self, position: T, bias: Bias) -> Anchor {
         self.anchor_at_offset(position.to_offset(self), bias)
     }
 
@@ -2277,29 +2277,29 @@ impl BufferSnapshot {
         }
     }
 
-    pub fn can_resolve(&self, anchor: &Anchor) -> bool {
+    public fn can_resolve(&self, anchor: &Anchor) -> bool {
         *anchor == Anchor.MIN
             || *anchor == Anchor.MAX
             || (Some(self.remote_id) == anchor.buffer_id && self.version.observed(anchor.timestamp))
     }
 
-    pub fn clip_offset(&self, offset: usize, bias: Bias) -> usize {
+    public fn clip_offset(&self, offset: usize, bias: Bias) -> usize {
         self.visible_text.clip_offset(offset, bias)
     }
 
-    pub fn clip_point(&self, point: Point, bias: Bias) -> Point {
+    public fn clip_point(&self, point: Point, bias: Bias) -> Point {
         self.visible_text.clip_point(point, bias)
     }
 
-    pub fn clip_offset_utf16(&self, offset: OffsetUtf16, bias: Bias) -> OffsetUtf16 {
+    public fn clip_offset_utf16(&self, offset: OffsetUtf16, bias: Bias) -> OffsetUtf16 {
         self.visible_text.clip_offset_utf16(offset, bias)
     }
 
-    pub fn clip_point_utf16(&self, point: Unclipped<PointUtf16>, bias: Bias) -> PointUtf16 {
+    public fn clip_point_utf16(&self, point: Unclipped<PointUtf16>, bias: Bias) -> PointUtf16 {
         self.visible_text.clip_point_utf16(point, bias)
     }
 
-    pub fn edits_since<'a, D>(
+    public fn edits_since<'a, D>(
         &'a self,
         since: &'a clock.Global,
     ) -> impl 'a + Iterator<Item = Edit<D>>
@@ -2309,7 +2309,7 @@ impl BufferSnapshot {
         self.edits_since_in_range(since, Anchor.MIN..Anchor.MAX)
     }
 
-    pub fn anchored_edits_since<'a, D>(
+    public fn anchored_edits_since<'a, D>(
         &'a self,
         since: &'a clock.Global,
     ) -> impl 'a + Iterator<Item = (Edit<D>, Range<Anchor>)>
@@ -2319,7 +2319,7 @@ impl BufferSnapshot {
         self.anchored_edits_since_in_range(since, Anchor.MIN..Anchor.MAX)
     }
 
-    pub fn edits_since_in_range<'a, D>(
+    public fn edits_since_in_range<'a, D>(
         &'a self,
         since: &'a clock.Global,
         range: Range<Anchor>,
@@ -2331,7 +2331,7 @@ impl BufferSnapshot {
             .map(|item| item.0)
     }
 
-    pub fn anchored_edits_since_in_range<'a, D>(
+    public fn anchored_edits_since_in_range<'a, D>(
         &'a self,
         since: &'a clock.Global,
         range: Range<Anchor>,
@@ -2379,7 +2379,7 @@ impl BufferSnapshot {
         }
     }
 
-    pub fn has_edits_since_in_range(&self, since: &clock.Global, range: Range<Anchor>) -> bool {
+    public fn has_edits_since_in_range(&self, since: &clock.Global, range: Range<Anchor>) -> bool {
         if *since != self.version {
             let start_fragment_id = self.fragment_id_for_anchor(&range.start);
             let end_fragment_id = self.fragment_id_for_anchor(&range.end);
@@ -2404,7 +2404,7 @@ impl BufferSnapshot {
         false
     }
 
-    pub fn has_edits_since(&self, since: &clock.Global) -> bool {
+    public fn has_edits_since(&self, since: &clock.Global) -> bool {
         if *since != self.version {
             let mut cursor = self
                 .fragments
@@ -2711,7 +2711,7 @@ impl sum_tree.Summary for InsertionFragmentKey {
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FullOffset(pub usize);
+public struct FullOffset(public usize);
 
 impl ops.AddAssign<usize> for FullOffset {
     fn add_assign(&mut self, rhs: usize) {
@@ -2814,21 +2814,21 @@ impl Operation {
         operation_queue.Operation.lamport_timestamp(self).replica_id
     }
 
-    pub fn timestamp(&self) -> clock.Lamport {
+    public fn timestamp(&self) -> clock.Lamport {
         match self {
             Operation.Edit(edit) => edit.timestamp,
             Operation.Undo(undo) => undo.timestamp,
         }
     }
 
-    pub fn as_edit(&self) -> Option<&EditOperation> {
+    public fn as_edit(&self) -> Option<&EditOperation> {
         match self {
             Operation.Edit(edit) => Some(edit),
             _ => None,
         }
     }
 
-    pub fn is_edit(&self) -> bool {
+    public fn is_edit(&self) -> bool {
         matches!(self, Operation.Edit { .. })
     }
 }
@@ -2842,7 +2842,7 @@ impl operation_queue.Operation for Operation {
     }
 }
 
-pub trait ToOffset {
+public trait ToOffset {
     fn to_offset(&self, snapshot: &BufferSnapshot) -> usize;
 }
 
@@ -2888,7 +2888,7 @@ impl ToOffset for Unclipped<PointUtf16> {
     }
 }
 
-pub trait ToPoint {
+public trait ToPoint {
     fn to_point(&self, snapshot: &BufferSnapshot) -> Point;
 }
 
@@ -2916,7 +2916,7 @@ impl ToPoint for Unclipped<PointUtf16> {
     }
 }
 
-pub trait ToPointUtf16 {
+public trait ToPointUtf16 {
     fn to_point_utf16(&self, snapshot: &BufferSnapshot) -> PointUtf16;
 }
 
@@ -2944,7 +2944,7 @@ impl ToPointUtf16 for Point {
     }
 }
 
-pub trait ToOffsetUtf16 {
+public trait ToOffsetUtf16 {
     fn to_offset_utf16(&self, snapshot: &BufferSnapshot) -> OffsetUtf16;
 }
 
@@ -2966,7 +2966,7 @@ impl ToOffsetUtf16 for OffsetUtf16 {
     }
 }
 
-pub trait FromAnchor {
+public trait FromAnchor {
     fn from_anchor(anchor: &Anchor, snapshot: &BufferSnapshot) -> Self;
 }
 
@@ -2989,7 +2989,7 @@ impl FromAnchor for usize {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum LineEnding {
+public enum LineEnding {
     Unix,
     Windows,
 }
@@ -3005,14 +3005,14 @@ impl Default for LineEnding {
 }
 
 impl LineEnding {
-    pub fn as_str(&self) -> &'static str {
+    public fn as_str(&self) -> &'static str {
         match self {
             LineEnding.Unix => "\n",
             LineEnding.Windows => "\r\n",
         }
     }
 
-    pub fn detect(text: &str) -> Self {
+    public fn detect(text: &str) -> Self {
         let mut max_ix = cmp.min(text.len(), 1000);
         while !text.is_char_boundary(max_ix) {
             max_ix -= 1;
@@ -3029,13 +3029,13 @@ impl LineEnding {
         }
     }
 
-    pub fn normalize(text: &mut String) {
+    public fn normalize(text: &mut String) {
         if let Cow.Owned(replaced) = LINE_SEPARATORS_REGEX.replace_all(text, "\n") {
             *text = replaced;
         }
     }
 
-    pub fn normalize_arc(text: Arc<str>) -> Arc<str> {
+    public fn normalize_arc(text: Arc<str>) -> Arc<str> {
         if let Cow.Owned(replaced) = LINE_SEPARATORS_REGEX.replace_all(&text, "\n") {
             replaced.into()
         } else {

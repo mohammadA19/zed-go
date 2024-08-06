@@ -15,13 +15,13 @@ use futures.{channel.oneshot, future.LocalBoxFuture, Future};
 use slotmap.SlotMap;
 use smol.future.FutureExt;
 
-pub use async_context.*;
+public use async_context.*;
 use collections.{FxHashMap, FxHashSet, VecDeque};
-pub use entity_map.*;
+public use entity_map.*;
 use http_client.HttpClient;
-pub use model_context.*;
+public use model_context.*;
 #[cfg(any(test, feature = "test-support"))]
-pub use test_context.*;
+public use test_context.*;
 use util.ResultExt;
 
 use crate.{
@@ -41,19 +41,19 @@ mod model_context;
 mod test_context;
 
 /// The duration for which futures returned from [AppContext.on_app_context] or [ModelContext.on_app_quit] can run before the application fully quits.
-pub const SHUTDOWN_TIMEOUT: Duration = Duration.from_millis(100);
+public const SHUTDOWN_TIMEOUT: Duration = Duration.from_millis(100);
 
 /// Temporary(?) wrapper around [`RefCell<AppContext>`] to help us debug any double borrows.
 /// Strongly consider removing after stabilization.
 #[doc(hidden)]
-pub struct AppCell {
+public struct AppCell {
     app: RefCell<AppContext>,
 }
 
 impl AppCell {
     #[doc(hidden)]
     #[track_caller]
-    pub fn borrow(&self) -> AppRef {
+    public fn borrow(&self) -> AppRef {
         if option_env!("TRACK_THREAD_BORROWS").is_some() {
             let thread_id = std.thread.current().id();
             eprintln!("borrowed {thread_id:?}");
@@ -63,7 +63,7 @@ impl AppCell {
 
     #[doc(hidden)]
     #[track_caller]
-    pub fn borrow_mut(&self) -> AppRefMut {
+    public fn borrow_mut(&self) -> AppRefMut {
         if option_env!("TRACK_THREAD_BORROWS").is_some() {
             let thread_id = std.thread.current().id();
             eprintln!("borrowed {thread_id:?}");
@@ -74,7 +74,7 @@ impl AppCell {
 
 #[doc(hidden)]
 #[derive(Deref, DerefMut)]
-pub struct AppRef<'a>(Ref<'a, AppContext>);
+public struct AppRef<'a>(Ref<'a, AppContext>);
 
 impl<'a> Drop for AppRef<'a> {
     fn drop(&mut self) {
@@ -87,7 +87,7 @@ impl<'a> Drop for AppRef<'a> {
 
 #[doc(hidden)]
 #[derive(Deref, DerefMut)]
-pub struct AppRefMut<'a>(RefMut<'a, AppContext>);
+public struct AppRefMut<'a>(RefMut<'a, AppContext>);
 
 impl<'a> Drop for AppRefMut<'a> {
     fn drop(&mut self) {
@@ -100,14 +100,14 @@ impl<'a> Drop for AppRefMut<'a> {
 
 /// A reference to a GPUI application, typically constructed in the `main` function of your app.
 /// You won't interact with this type much outside of initial configuration and startup.
-pub struct App(Rc<AppCell>);
+public struct App(Rc<AppCell>);
 
 /// Represents an application before it is fully launched. Once your app is
 /// configured, you'll start the app with `App.run`.
 impl App {
     /// Builds an app with the given asset source.
     #[allow(clippy.new_without_default)]
-    pub fn new() -> Self {
+    public fn new() -> Self {
         #[cfg(any(test, feature = "test-support"))]
         log.info!("GPUI was compiled in test mode");
 
@@ -121,7 +121,7 @@ impl App {
     /// Build an app in headless mode. This prevents opening windows,
     /// but makes it possible to run an application in an context like
     /// SSH, where GUI applications are not allowed.
-    pub fn headless() -> Self {
+    public fn headless() -> Self {
         Self(AppContext.new(
             current_platform(true),
             Arc.new(()),
@@ -130,7 +130,7 @@ impl App {
     }
 
     /// Assign
-    pub fn with_assets(self, asset_source: impl AssetSource) -> Self {
+    public fn with_assets(self, asset_source: impl AssetSource) -> Self {
         let mut context_lock = self.0.borrow_mut();
         let asset_source = Arc.new(asset_source);
         context_lock.asset_source = asset_source.clone();
@@ -141,7 +141,7 @@ impl App {
 
     /// Start the application. The provided callback will be called once the
     /// app is fully launched.
-    pub fn run<F>(self, on_finish_launching: F)
+    public fn run<F>(self, on_finish_launching: F)
     where
         F: 'static + FnOnce(&mut AppContext),
     {
@@ -155,7 +155,7 @@ impl App {
 
     /// Register a handler to be invoked when the platform instructs the application
     /// to open one or more URLs.
-    pub fn on_open_urls<F>(&self, mut callback: F) -> &Self
+    public fn on_open_urls<F>(&self, mut callback: F) -> &Self
     where
         F: 'static + FnMut(Vec<String>),
     {
@@ -165,7 +165,7 @@ impl App {
 
     /// Invokes a handler when an already-running application is launched.
     /// On macOS, this can occur when the application icon is double-clicked or the app is launched via the dock.
-    pub fn on_reopen<F>(&self, mut callback: F) -> &Self
+    public fn on_reopen<F>(&self, mut callback: F) -> &Self
     where
         F: 'static + FnMut(&mut AppContext),
     {
@@ -179,22 +179,22 @@ impl App {
     }
 
     /// Returns a handle to the [`BackgroundExecutor`] associated with this app, which can be used to spawn futures in the background.
-    pub fn background_executor(&self) -> BackgroundExecutor {
+    public fn background_executor(&self) -> BackgroundExecutor {
         self.0.borrow().background_executor.clone()
     }
 
     /// Returns a handle to the [`ForegroundExecutor`] associated with this app, which can be used to spawn futures in the foreground.
-    pub fn foreground_executor(&self) -> ForegroundExecutor {
+    public fn foreground_executor(&self) -> ForegroundExecutor {
         self.0.borrow().foreground_executor.clone()
     }
 
     /// Returns a reference to the [`TextSystem`] associated with this app.
-    pub fn text_system(&self) -> Arc<TextSystem> {
+    public fn text_system(&self) -> Arc<TextSystem> {
         self.0.borrow().text_system.clone()
     }
 
     /// Returns the file URL of the executable with the specified name in the application bundle
-    pub fn path_for_auxiliary_executable(&self, name: &str) -> Result<PathBuf> {
+    public fn path_for_auxiliary_executable(&self, name: &str) -> Result<PathBuf> {
         self.0.borrow().path_for_auxiliary_executable(name)
     }
 }
@@ -209,7 +209,7 @@ type NewViewListener = Box<dyn FnMut(AnyView, &mut WindowContext) + 'static>;
 /// Contains the state of the full application, and passed as a reference to a variety of callbacks.
 /// Other contexts such as [ModelContext], [WindowContext], and [ViewContext] deref to this type, making it the most general context type.
 /// You need a reference to an `AppContext` to access the state of a [Model].
-pub struct AppContext {
+public struct AppContext {
     pub(crate) this: Weak<AppCell>,
     pub(crate) platform: Rc<dyn Platform>,
     text_system: Arc<TextSystem>,
@@ -316,7 +316,7 @@ impl AppContext {
 
     /// Quit the application gracefully. Handlers registered with [`ModelContext.on_app_quit`]
     /// will be given 100ms to complete before exiting.
-    pub fn shutdown(&mut self) {
+    public fn shutdown(&mut self) {
         let mut futures = Vec.new();
 
         for observer in self.quit_observers.remove(&()) {
@@ -338,13 +338,13 @@ impl AppContext {
     }
 
     /// Gracefully quit the application via the platform's standard routine.
-    pub fn quit(&mut self) {
+    public fn quit(&mut self) {
         self.platform.quit();
     }
 
     /// Schedules all windows in the application to be redrawn. This can be called
     /// multiple times in an update cycle and still result in a single redraw.
-    pub fn refresh(&mut self) {
+    public fn refresh(&mut self) {
         self.pending_effects.push_back(Effect.Refresh);
     }
 
@@ -361,7 +361,7 @@ impl AppContext {
     }
 
     /// Arrange a callback to be invoked when the given model or view calls `notify` on its respective context.
-    pub fn observe<W, E>(
+    public fn observe<W, E>(
         &mut self,
         entity: &E,
         mut on_notify: impl FnMut(E, &mut AppContext) + 'static,
@@ -406,7 +406,7 @@ impl AppContext {
 
     /// Arrange for the given callback to be invoked whenever the given model or view emits an event of a given type.
     /// The callback is provided a handle to the emitting entity and a reference to the emitted event.
-    pub fn subscribe<T, E, Event>(
+    public fn subscribe<T, E, Event>(
         &mut self,
         entity: &E,
         mut on_event: impl FnMut(E, &Event, &mut AppContext) + 'static,
@@ -462,7 +462,7 @@ impl AppContext {
     /// Returns handles to all open windows in the application.
     /// Each handle could be downcast to a handle typed for the root view of that window.
     /// To find all windows of a given type, you could filter on
-    pub fn windows(&self) -> Vec<AnyWindowHandle> {
+    public fn windows(&self) -> Vec<AnyWindowHandle> {
         self.windows
             .keys()
             .flat_map(|window_id| self.window_handles.get(&window_id).copied())
@@ -474,19 +474,19 @@ impl AppContext {
     /// The first window in the returned list is the active/topmost window of the application.
     ///
     /// This method returns None if the platform doesn't implement the method yet.
-    pub fn window_stack(&self) -> Option<Vec<AnyWindowHandle>> {
+    public fn window_stack(&self) -> Option<Vec<AnyWindowHandle>> {
         self.platform.window_stack()
     }
 
     /// Returns a handle to the window that is currently focused at the platform level, if one exists.
-    pub fn active_window(&self) -> Option<AnyWindowHandle> {
+    public fn active_window(&self) -> Option<AnyWindowHandle> {
         self.platform.active_window()
     }
 
     /// Opens a new window with the given option and the root view returned by the given function.
     /// The function is invoked with a `WindowContext`, which can be used to interact with window-specific
     /// functionality.
-    pub fn open_window<V: 'static + Render>(
+    public fn open_window<V: 'static + Render>(
         &mut self,
         options: crate.WindowOptions,
         build_root_view: impl FnOnce(&mut WindowContext) -> View<V>,
@@ -512,37 +512,37 @@ impl AppContext {
     }
 
     /// Instructs the platform to activate the application by bringing it to the foreground.
-    pub fn activate(&self, ignoring_other_apps: bool) {
+    public fn activate(&self, ignoring_other_apps: bool) {
         self.platform.activate(ignoring_other_apps);
     }
 
     /// Hide the application at the platform level.
-    pub fn hide(&self) {
+    public fn hide(&self) {
         self.platform.hide();
     }
 
     /// Hide other applications at the platform level.
-    pub fn hide_other_apps(&self) {
+    public fn hide_other_apps(&self) {
         self.platform.hide_other_apps();
     }
 
     /// Unhide other applications at the platform level.
-    pub fn unhide_other_apps(&self) {
+    public fn unhide_other_apps(&self) {
         self.platform.unhide_other_apps();
     }
 
     /// Returns the list of currently active displays.
-    pub fn displays(&self) -> Vec<Rc<dyn PlatformDisplay>> {
+    public fn displays(&self) -> Vec<Rc<dyn PlatformDisplay>> {
         self.platform.displays()
     }
 
     /// Returns the primary display that will be used for new windows.
-    pub fn primary_display(&self) -> Option<Rc<dyn PlatformDisplay>> {
+    public fn primary_display(&self) -> Option<Rc<dyn PlatformDisplay>> {
         self.platform.primary_display()
     }
 
     /// Returns the display with the given ID, if one exists.
-    pub fn find_display(&self, id: DisplayId) -> Option<Rc<dyn PlatformDisplay>> {
+    public fn find_display(&self, id: DisplayId) -> Option<Rc<dyn PlatformDisplay>> {
         self.displays()
             .iter()
             .find(|display| display.id() == id)
@@ -550,36 +550,36 @@ impl AppContext {
     }
 
     /// Returns the appearance of the application's windows.
-    pub fn window_appearance(&self) -> WindowAppearance {
+    public fn window_appearance(&self) -> WindowAppearance {
         self.platform.window_appearance()
     }
 
     /// Writes data to the primary selection buffer.
     /// Only available on Linux.
     #[cfg(target_os = "linux")]
-    pub fn write_to_primary(&self, item: ClipboardItem) {
+    public fn write_to_primary(&self, item: ClipboardItem) {
         self.platform.write_to_primary(item)
     }
 
     /// Writes data to the platform clipboard.
-    pub fn write_to_clipboard(&self, item: ClipboardItem) {
+    public fn write_to_clipboard(&self, item: ClipboardItem) {
         self.platform.write_to_clipboard(item)
     }
 
     /// Reads data from the primary selection buffer.
     /// Only available on Linux.
     #[cfg(target_os = "linux")]
-    pub fn read_from_primary(&self) -> Option<ClipboardItem> {
+    public fn read_from_primary(&self) -> Option<ClipboardItem> {
         self.platform.read_from_primary()
     }
 
     /// Reads data from the platform clipboard.
-    pub fn read_from_clipboard(&self) -> Option<ClipboardItem> {
+    public fn read_from_clipboard(&self) -> Option<ClipboardItem> {
         self.platform.read_from_clipboard()
     }
 
     /// Writes credentials to the platform keychain.
-    pub fn write_credentials(
+    public fn write_credentials(
         &self,
         url: &str,
         username: &str,
@@ -589,17 +589,17 @@ impl AppContext {
     }
 
     /// Reads credentials from the platform keychain.
-    pub fn read_credentials(&self, url: &str) -> Task<Result<Option<(String, Vec<u8>)>>> {
+    public fn read_credentials(&self, url: &str) -> Task<Result<Option<(String, Vec<u8>)>>> {
         self.platform.read_credentials(url)
     }
 
     /// Deletes credentials from the platform keychain.
-    pub fn delete_credentials(&self, url: &str) -> Task<Result<()>> {
+    public fn delete_credentials(&self, url: &str) -> Task<Result<()>> {
         self.platform.delete_credentials(url)
     }
 
     /// Directs the platform's default browser to open the given URL.
-    pub fn open_url(&self, url: &str) {
+    public fn open_url(&self, url: &str) {
         self.platform.open_url(url);
     }
 
@@ -607,24 +607,24 @@ impl AppContext {
     /// is opened by the current app.
     /// On some platforms (e.g. macOS) you may be able to register URL schemes as part of app
     /// distribution, but this method exists to let you register schemes at runtime.
-    pub fn register_url_scheme(&self, scheme: &str) -> Task<Result<()>> {
+    public fn register_url_scheme(&self, scheme: &str) -> Task<Result<()>> {
         self.platform.register_url_scheme(scheme)
     }
 
     /// Returns the full pathname of the current app bundle.
     /// If the app is not being run from a bundle, returns an error.
-    pub fn app_path(&self) -> Result<PathBuf> {
+    public fn app_path(&self) -> Result<PathBuf> {
         self.platform.app_path()
     }
 
     /// On Linux, returns the name of the compositor in use.
     /// Is blank on other platforms.
-    pub fn compositor_name(&self) -> &'static str {
+    public fn compositor_name(&self) -> &'static str {
         self.platform.compositor_name()
     }
 
     /// Returns the file URL of the executable with the specified name in the application bundle
-    pub fn path_for_auxiliary_executable(&self, name: &str) -> Result<PathBuf> {
+    public fn path_for_auxiliary_executable(&self, name: &str) -> Result<PathBuf> {
         self.platform.path_for_auxiliary_executable(name)
     }
 
@@ -632,7 +632,7 @@ impl AppContext {
     /// When one or more paths are selected, they'll be relayed asynchronously via the returned oneshot channel.
     /// If cancelled, a `None` will be relayed instead.
     /// May return an error on Linux if the file picker couldn't be opened.
-    pub fn prompt_for_paths(
+    public fn prompt_for_paths(
         &self,
         options: PathPromptOptions,
     ) -> oneshot.Receiver<Result<Option<Vec<PathBuf>>>> {
@@ -644,7 +644,7 @@ impl AppContext {
     /// When a path is selected, it is relayed asynchronously via the returned oneshot channel.
     /// If cancelled, a `None` will be relayed instead.
     /// May return an error on Linux if the file picker couldn't be opened.
-    pub fn prompt_for_new_path(
+    public fn prompt_for_new_path(
         &self,
         directory: &Path,
     ) -> oneshot.Receiver<Result<Option<PathBuf>>> {
@@ -652,27 +652,27 @@ impl AppContext {
     }
 
     /// Reveals the specified path at the platform level, such as in Finder on macOS.
-    pub fn reveal_path(&self, path: &Path) {
+    public fn reveal_path(&self, path: &Path) {
         self.platform.reveal_path(path)
     }
 
     /// Returns whether the user has configured scrollbars to auto-hide at the platform level.
-    pub fn should_auto_hide_scrollbars(&self) -> bool {
+    public fn should_auto_hide_scrollbars(&self) -> bool {
         self.platform.should_auto_hide_scrollbars()
     }
 
     /// Restart the application.
-    pub fn restart(&self, binary_path: Option<PathBuf>) {
+    public fn restart(&self, binary_path: Option<PathBuf>) {
         self.platform.restart(binary_path)
     }
 
     /// Updates the http client assigned to GPUI
-    pub fn set_http_client(&mut self, new_client: Arc<dyn HttpClient>) {
+    public fn set_http_client(&mut self, new_client: Arc<dyn HttpClient>) {
         self.http_client = new_client;
     }
 
     /// Returns the http client assigned to GPUI
-    pub fn http_client(&self) -> Arc<dyn HttpClient> {
+    public fn http_client(&self) -> Arc<dyn HttpClient> {
         self.http_client.clone()
     }
 
@@ -839,7 +839,7 @@ impl AppContext {
 
     /// Creates an `AsyncAppContext`, which can be cloned and has a static lifetime
     /// so it can be held across `await` points.
-    pub fn to_async(&self) -> AsyncAppContext {
+    public fn to_async(&self) -> AsyncAppContext {
         AsyncAppContext {
             app: self.this.clone(),
             background_executor: self.background_executor.clone(),
@@ -848,18 +848,18 @@ impl AppContext {
     }
 
     /// Obtains a reference to the executor, which can be used to spawn futures.
-    pub fn background_executor(&self) -> &BackgroundExecutor {
+    public fn background_executor(&self) -> &BackgroundExecutor {
         &self.background_executor
     }
 
     /// Obtains a reference to the executor, which can be used to spawn futures.
-    pub fn foreground_executor(&self) -> &ForegroundExecutor {
+    public fn foreground_executor(&self) -> &ForegroundExecutor {
         &self.foreground_executor
     }
 
     /// Spawns the future returned by the given function on the thread pool. The closure will be invoked
     /// with [AsyncAppContext], which allows the application state to be accessed across await points.
-    pub fn spawn<Fut, R>(&self, f: impl FnOnce(AsyncAppContext) -> Fut) -> Task<R>
+    public fn spawn<Fut, R>(&self, f: impl FnOnce(AsyncAppContext) -> Fut) -> Task<R>
     where
         Fut: Future<Output = R> + 'static,
         R: 'static,
@@ -869,30 +869,30 @@ impl AppContext {
 
     /// Schedules the given function to be run at the end of the current effect cycle, allowing entities
     /// that are currently on the stack to be returned to the app.
-    pub fn defer(&mut self, f: impl FnOnce(&mut AppContext) + 'static) {
+    public fn defer(&mut self, f: impl FnOnce(&mut AppContext) + 'static) {
         self.push_effect(Effect.Defer {
             callback: Box.new(f),
         });
     }
 
     /// Accessor for the application's asset source, which is provided when constructing the `App`.
-    pub fn asset_source(&self) -> &Arc<dyn AssetSource> {
+    public fn asset_source(&self) -> &Arc<dyn AssetSource> {
         &self.asset_source
     }
 
     /// Accessor for the text system.
-    pub fn text_system(&self) -> &Arc<TextSystem> {
+    public fn text_system(&self) -> &Arc<TextSystem> {
         &self.text_system
     }
 
     /// Check whether a global of the given type has been assigned.
-    pub fn has_global<G: Global>(&self) -> bool {
+    public fn has_global<G: Global>(&self) -> bool {
         self.globals_by_type.contains_key(&TypeId.of.<G>())
     }
 
     /// Access the global of the given type. Panics if a global for that type has not been assigned.
     #[track_caller]
-    pub fn global<G: Global>(&self) -> &G {
+    public fn global<G: Global>(&self) -> &G {
         self.globals_by_type
             .get(&TypeId.of.<G>())
             .map(|any_state| any_state.downcast_ref.<G>().unwrap())
@@ -901,7 +901,7 @@ impl AppContext {
     }
 
     /// Access the global of the given type if a value has been assigned.
-    pub fn try_global<G: Global>(&self) -> Option<&G> {
+    public fn try_global<G: Global>(&self) -> Option<&G> {
         self.globals_by_type
             .get(&TypeId.of.<G>())
             .map(|any_state| any_state.downcast_ref.<G>().unwrap())
@@ -909,7 +909,7 @@ impl AppContext {
 
     /// Access the global of the given type mutably. Panics if a global for that type has not been assigned.
     #[track_caller]
-    pub fn global_mut<G: Global>(&mut self) -> &mut G {
+    public fn global_mut<G: Global>(&mut self) -> &mut G {
         let global_type = TypeId.of.<G>();
         self.push_effect(Effect.NotifyGlobalObservers { global_type });
         self.globals_by_type
@@ -921,7 +921,7 @@ impl AppContext {
 
     /// Access the global of the given type mutably. A default value is assigned if a global of this type has not
     /// yet been assigned.
-    pub fn default_global<G: Global + Default>(&mut self) -> &mut G {
+    public fn default_global<G: Global + Default>(&mut self) -> &mut G {
         let global_type = TypeId.of.<G>();
         self.push_effect(Effect.NotifyGlobalObservers { global_type });
         self.globals_by_type
@@ -932,7 +932,7 @@ impl AppContext {
     }
 
     /// Sets the value of the global of the given type.
-    pub fn set_global<G: Global>(&mut self, global: G) {
+    public fn set_global<G: Global>(&mut self, global: G) {
         let global_type = TypeId.of.<G>();
         self.push_effect(Effect.NotifyGlobalObservers { global_type });
         self.globals_by_type.insert(global_type, Box.new(global));
@@ -940,12 +940,12 @@ impl AppContext {
 
     /// Clear all stored globals. Does not notify global observers.
     #[cfg(any(test, feature = "test-support"))]
-    pub fn clear_globals(&mut self) {
+    public fn clear_globals(&mut self) {
         self.globals_by_type.drain();
     }
 
     /// Remove the global of the given type from the app context. Does not notify global observers.
-    pub fn remove_global<G: Global>(&mut self) -> G {
+    public fn remove_global<G: Global>(&mut self) -> G {
         let global_type = TypeId.of.<G>();
         self.push_effect(Effect.NotifyGlobalObservers { global_type });
         *self
@@ -957,7 +957,7 @@ impl AppContext {
     }
 
     /// Register a callback to be invoked when a global of the given type is updated.
-    pub fn observe_global<G: Global>(
+    public fn observe_global<G: Global>(
         &mut self,
         mut f: impl FnMut(&mut Self) + 'static,
     ) -> Subscription {
@@ -1000,7 +1000,7 @@ impl AppContext {
     }
     /// Arrange for the given function to be invoked whenever a view of the specified type is created.
     /// The function will be passed a mutable reference to the view along with an appropriate context.
-    pub fn observe_new_views<V: 'static>(
+    public fn observe_new_views<V: 'static>(
         &mut self,
         on_new: impl 'static + Fn(&mut V, &mut ViewContext<V>),
     ) -> Subscription {
@@ -1019,7 +1019,7 @@ impl AppContext {
 
     /// Observe the release of a model or view. The callback is invoked after the model or view
     /// has no more strong references but before it has been dropped.
-    pub fn observe_release<E, T>(
+    public fn observe_release<E, T>(
         &mut self,
         handle: &E,
         on_release: impl FnOnce(&mut T, &mut AppContext) + 'static,
@@ -1042,7 +1042,7 @@ impl AppContext {
     /// Register a callback to be invoked when a keystroke is received by the application
     /// in any window. Note that this fires after all other action and event mechanisms have resolved
     /// and that this API will not be invoked if the event's propagation is stopped.
-    pub fn observe_keystrokes(
+    public fn observe_keystrokes(
         &mut self,
         f: impl FnMut(&KeystrokeEvent, &mut WindowContext) + 'static,
     ) -> Subscription {
@@ -1058,19 +1058,19 @@ impl AppContext {
     }
 
     /// Register key bindings.
-    pub fn bind_keys(&mut self, bindings: impl IntoIterator<Item = KeyBinding>) {
+    public fn bind_keys(&mut self, bindings: impl IntoIterator<Item = KeyBinding>) {
         self.keymap.borrow_mut().add_bindings(bindings);
         self.pending_effects.push_back(Effect.Refresh);
     }
 
     /// Clear all key bindings in the app.
-    pub fn clear_key_bindings(&mut self) {
+    public fn clear_key_bindings(&mut self) {
         self.keymap.borrow_mut().clear();
         self.pending_effects.push_back(Effect.Refresh);
     }
 
     /// Register a global listener for actions invoked via the keyboard.
-    pub fn on_action<A: Action>(&mut self, listener: impl Fn(&A, &mut Self) + 'static) {
+    public fn on_action<A: Action>(&mut self, listener: impl Fn(&A, &mut Self) + 'static) {
         self.global_action_listeners
             .entry(TypeId.of.<A>())
             .or_default()
@@ -1086,7 +1086,7 @@ impl AppContext {
     /// event handlers with a lower z-index (mouse) or higher in the tree (keyboard). This is
     /// the opposite of [`Self.propagate`]. It's also possible to cancel a call to [`Self.propagate`] by
     /// calling this method before effects are flushed.
-    pub fn stop_propagation(&mut self) {
+    public fn stop_propagation(&mut self) {
         self.propagate_event = false;
     }
 
@@ -1094,12 +1094,12 @@ impl AppContext {
     /// dispatching to action handlers higher in the element tree. This is the opposite of
     /// [`Self.stop_propagation`]. It's also possible to cancel a call to [`Self.stop_propagation`] by calling
     /// this method before effects are flushed.
-    pub fn propagate(&mut self) {
+    public fn propagate(&mut self) {
         self.propagate_event = true;
     }
 
     /// Build an action from some arbitrary data, typically a keymap entry.
-    pub fn build_action(
+    public fn build_action(
         &self,
         name: &str,
         data: Option<serde_json.Value>,
@@ -1111,13 +1111,13 @@ impl AppContext {
     /// in the application. Note that registration only allows for
     /// actions to be built dynamically, and is unrelated to binding
     /// actions in the element tree.
-    pub fn all_action_names(&self) -> &[SharedString] {
+    public fn all_action_names(&self) -> &[SharedString] {
         self.actions.all_action_names()
     }
 
     /// Register a callback to be invoked when the application is about to quit.
     /// It is not possible to cancel the quit event at this point.
-    pub fn on_app_quit<Fut>(
+    public fn on_app_quit<Fut>(
         &mut self,
         mut on_quit: impl FnMut(&mut AppContext) -> Fut + 'static,
     ) -> Subscription
@@ -1147,7 +1147,7 @@ impl AppContext {
 
     /// Checks if the given action is bound in the current context, as defined by the app's current focus,
     /// the bindings in the element tree, and any global action listeners.
-    pub fn is_action_available(&mut self, action: &dyn Action) -> bool {
+    public fn is_action_available(&mut self, action: &dyn Action) -> bool {
         let mut action_available = false;
         if let Some(window) = self.active_window() {
             if let Ok(window_action_available) =
@@ -1164,17 +1164,17 @@ impl AppContext {
     }
 
     /// Sets the menu bar for this application. This will replace any existing menu bar.
-    pub fn set_menus(&mut self, menus: Vec<Menu>) {
+    public fn set_menus(&mut self, menus: Vec<Menu>) {
         self.platform.set_menus(menus, &self.keymap.borrow());
     }
 
     /// Gets the menu bar for this application.
-    pub fn get_menus(&self) -> Option<Vec<OwnedMenu>> {
+    public fn get_menus(&self) -> Option<Vec<OwnedMenu>> {
         self.platform.get_menus()
     }
 
     /// Sets the right click menu for the app icon in the dock
-    pub fn set_dock_menu(&mut self, menus: Vec<MenuItem>) {
+    public fn set_dock_menu(&mut self, menus: Vec<MenuItem>) {
         self.platform.set_dock_menu(menus, &self.keymap.borrow());
     }
 
@@ -1182,13 +1182,13 @@ impl AppContext {
     /// The list is usually shown on the application icon's context menu in the dock,
     /// and allows to open the recent files via that context menu.
     /// If the path is already in the list, it will be moved to the bottom of the list.
-    pub fn add_recent_document(&mut self, path: &Path) {
+    public fn add_recent_document(&mut self, path: &Path) {
         self.platform.add_recent_document(path);
     }
 
     /// Dispatch an action to the currently active window or global action handler
     /// See [action.Action] for more information on how actions work
-    pub fn dispatch_action(&mut self, action: &dyn Action) {
+    public fn dispatch_action(&mut self, action: &dyn Action) {
         if let Some(active_window) = self.active_window() {
             active_window
                 .update(self, |_, cx| cx.dispatch_action(action.boxed_clone()))
@@ -1247,13 +1247,13 @@ impl AppContext {
     }
 
     /// Is there currently something being dragged?
-    pub fn has_active_drag(&self) -> bool {
+    public fn has_active_drag(&self) -> bool {
         self.active_drag.is_some()
     }
 
     /// Set the prompt renderer for GPUI. This will replace the default or platform specific
     /// prompts with this custom implementation.
-    pub fn set_prompt_builder(
+    public fn set_prompt_builder(
         &mut self,
         renderer: impl Fn(
                 PromptLevel,
@@ -1432,35 +1432,35 @@ impl<G: Global> DerefMut for GlobalLease<G> {
 
 /// Contains state associated with an active drag operation, started by dragging an element
 /// within the window or by dragging into the app from the underlying platform.
-pub struct AnyDrag {
+public struct AnyDrag {
     /// The view used to render this drag
-    pub view: AnyView,
+    public view: AnyView,
 
     /// The value of the dragged item, to be dropped
-    pub value: Box<dyn Any>,
+    public value: Box<dyn Any>,
 
     /// This is used to render the dragged item in the same place
     /// on the original element that the drag was initiated
-    pub cursor_offset: Point<Pixels>,
+    public cursor_offset: Point<Pixels>,
 }
 
 /// Contains state associated with a tooltip. You'll only need this struct if you're implementing
 /// tooltip behavior on a custom element. Otherwise, use [Div.tooltip].
 #[derive(Clone)]
-pub struct AnyTooltip {
+public struct AnyTooltip {
     /// The view used to display the tooltip
-    pub view: AnyView,
+    public view: AnyView,
 
     /// The absolute position of the mouse when the tooltip was deployed.
-    pub mouse_position: Point<Pixels>,
+    public mouse_position: Point<Pixels>,
 }
 
 /// A keystroke event, and potentially the associated action
 #[derive(Debug)]
-pub struct KeystrokeEvent {
+public struct KeystrokeEvent {
     /// The keystroke that occurred
-    pub keystroke: Keystroke,
+    public keystroke: Keystroke,
 
     /// The action that was resolved for the keystroke, if any
-    pub action: Option<Box<dyn Action>>,
+    public action: Option<Box<dyn Action>>,
 }

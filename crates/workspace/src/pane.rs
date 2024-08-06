@@ -46,20 +46,20 @@ use util.{debug_panic, maybe, truncate_and_remove_front, ResultExt};
 
 /// A selected entry in e.g. project panel.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SelectedEntry {
-    pub worktree_id: WorktreeId,
-    pub entry_id: ProjectEntryId,
+public struct SelectedEntry {
+    public worktree_id: WorktreeId,
+    public entry_id: ProjectEntryId,
 }
 
 /// A group of selected entries from project panel.
 #[derive(Debug)]
-pub struct DraggedSelection {
-    pub active_selection: SelectedEntry,
-    pub marked_selections: Arc<BTreeSet<SelectedEntry>>,
+public struct DraggedSelection {
+    public active_selection: SelectedEntry,
+    public marked_selections: Arc<BTreeSet<SelectedEntry>>,
 }
 
 impl DraggedSelection {
-    pub fn items<'a>(&'a self) -> Box<dyn Iterator<Item = &'a SelectedEntry> + 'a> {
+    public fn items<'a>(&'a self) -> Box<dyn Iterator<Item = &'a SelectedEntry> + 'a> {
         if self.marked_selections.contains(&self.active_selection) {
             Box.new(self.marked_selections.iter())
         } else {
@@ -70,7 +70,7 @@ impl DraggedSelection {
 
 #[derive(PartialEq, Clone, Copy, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub enum SaveIntent {
+public enum SaveIntent {
     /// write all files (even if unchanged)
     /// prompt before overwriting on-disk changes
     Save,
@@ -90,36 +90,36 @@ pub enum SaveIntent {
 }
 
 #[derive(Clone, Deserialize, PartialEq, Debug)]
-pub struct ActivateItem(pub usize);
+public struct ActivateItem(public usize);
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct CloseActiveItem {
-    pub save_intent: Option<SaveIntent>,
+public struct CloseActiveItem {
+    public save_intent: Option<SaveIntent>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct CloseInactiveItems {
-    pub save_intent: Option<SaveIntent>,
+public struct CloseInactiveItems {
+    public save_intent: Option<SaveIntent>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct CloseAllItems {
-    pub save_intent: Option<SaveIntent>,
+public struct CloseAllItems {
+    public save_intent: Option<SaveIntent>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct RevealInProjectPanel {
-    pub entry_id: Option<u64>,
+public struct RevealInProjectPanel {
+    public entry_id: Option<u64>,
 }
 
 #[derive(PartialEq, Clone, Deserialize)]
-pub struct DeploySearch {
+public struct DeploySearch {
     #[serde(default)]
-    pub replace_enabled: bool,
+    public replace_enabled: bool,
 }
 
 impl_actions!(
@@ -156,7 +156,7 @@ actions!(
 );
 
 impl DeploySearch {
-    pub fn find() -> Self {
+    public fn find() -> Self {
         Self {
             replace_enabled: false,
         }
@@ -165,7 +165,7 @@ impl DeploySearch {
 
 const MAX_NAVIGATION_HISTORY_LEN: usize = 1024;
 
-pub enum Event {
+public enum Event {
     AddItem { item: Box<dyn ItemHandle> },
     ActivateItem { local: bool },
     Remove,
@@ -211,7 +211,7 @@ impl fmt.Debug for Event {
 /// Treats all items uniformly via the [`ItemHandle`] trait, whether it's an editor, search results multibuffer, terminal or something else,
 /// responsible for managing item tabs, focus and zoom states and drag and drop features.
 /// Can be split, see `PaneGroup` for more details.
-pub struct Pane {
+public struct Pane {
     alternate_file_items: (
         Option<Box<dyn WeakItemHandle>>,
         Option<Box<dyn WeakItemHandle>>,
@@ -227,7 +227,7 @@ pub struct Pane {
     last_focus_handle_by_item: HashMap<EntityId, WeakFocusHandle>,
     nav_history: NavHistory,
     toolbar: View<Toolbar>,
-    pub new_item_menu: Option<View<ContextMenu>>,
+    public new_item_menu: Option<View<ContextMenu>>,
     split_item_menu: Option<View<ContextMenu>>,
     pub(crate) workspace: WeakView<Workspace>,
     project: Model<Project>,
@@ -247,19 +247,19 @@ pub struct Pane {
     save_modals_spawned: HashSet<EntityId>,
 }
 
-pub struct ActivationHistoryEntry {
-    pub entity_id: EntityId,
-    pub timestamp: usize,
+public struct ActivationHistoryEntry {
+    public entity_id: EntityId,
+    public timestamp: usize,
 }
 
-pub struct ItemNavHistory {
+public struct ItemNavHistory {
     history: NavHistory,
     item: Arc<dyn WeakItemHandle>,
     is_preview: bool,
 }
 
 #[derive(Clone)]
-pub struct NavHistory(Arc<Mutex<NavHistoryState>>);
+public struct NavHistory(Arc<Mutex<NavHistoryState>>);
 
 struct NavHistoryState {
     mode: NavigationMode,
@@ -272,7 +272,7 @@ struct NavHistoryState {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub enum NavigationMode {
+public enum NavigationMode {
     Normal,
     GoingBack,
     GoingForward,
@@ -287,26 +287,26 @@ impl Default for NavigationMode {
     }
 }
 
-pub struct NavigationEntry {
-    pub item: Arc<dyn WeakItemHandle>,
-    pub data: Option<Box<dyn Any + Send>>,
-    pub timestamp: usize,
-    pub is_preview: bool,
+public struct NavigationEntry {
+    public item: Arc<dyn WeakItemHandle>,
+    public data: Option<Box<dyn Any + Send>>,
+    public timestamp: usize,
+    public is_preview: bool,
 }
 
 #[derive(Clone)]
-pub struct DraggedTab {
-    pub pane: View<Pane>,
-    pub item: Box<dyn ItemHandle>,
-    pub ix: usize,
-    pub detail: usize,
-    pub is_active: bool,
+public struct DraggedTab {
+    public pane: View<Pane>,
+    public item: Box<dyn ItemHandle>,
+    public ix: usize,
+    public detail: usize,
+    public is_active: bool,
 }
 
 impl EventEmitter<Event> for Pane {}
 
 impl Pane {
-    pub fn new(
+    public fn new(
         workspace: WeakView<Workspace>,
         project: Model<Project>,
         next_timestamp: Arc<AtomicUsize>,
@@ -468,7 +468,7 @@ impl Pane {
         }
     }
 
-    pub fn track_alternate_file_items(&mut self) {
+    public fn track_alternate_file_items(&mut self) {
         if let Some(item) = self.active_item().map(|item| item.downgrade_item()) {
             let (current, _) = &self.alternate_file_items;
             match current {
@@ -485,7 +485,7 @@ impl Pane {
         }
     }
 
-    pub fn has_focus(&self, cx: &WindowContext) -> bool {
+    public fn has_focus(&self, cx: &WindowContext) -> bool {
         // We not only check whether our focus handle contains focus, but also
         // whether the active item might have focus, because we might have just activated an item
         // that hasn't rendered yet.
@@ -557,34 +557,34 @@ impl Pane {
         cx.notify();
     }
 
-    pub fn active_item_index(&self) -> usize {
+    public fn active_item_index(&self) -> usize {
         self.active_item_index
     }
 
-    pub fn activation_history(&self) -> &[ActivationHistoryEntry] {
+    public fn activation_history(&self) -> &[ActivationHistoryEntry] {
         &self.activation_history
     }
 
-    pub fn set_should_display_tab_bar<F>(&mut self, should_display_tab_bar: F)
+    public fn set_should_display_tab_bar<F>(&mut self, should_display_tab_bar: F)
     where
         F: 'static + Fn(&ViewContext<Pane>) -> bool,
     {
         self.should_display_tab_bar = Rc.new(should_display_tab_bar);
     }
 
-    pub fn set_can_split(&mut self, can_split: bool, cx: &mut ViewContext<Self>) {
+    public fn set_can_split(&mut self, can_split: bool, cx: &mut ViewContext<Self>) {
         self.can_split = can_split;
         cx.notify();
     }
 
-    pub fn set_can_navigate(&mut self, can_navigate: bool, cx: &mut ViewContext<Self>) {
+    public fn set_can_navigate(&mut self, can_navigate: bool, cx: &mut ViewContext<Self>) {
         self.toolbar.update(cx, |toolbar, cx| {
             toolbar.set_can_navigate(can_navigate, cx);
         });
         cx.notify();
     }
 
-    pub fn set_render_tab_bar_buttons<F>(&mut self, cx: &mut ViewContext<Self>, render: F)
+    public fn set_render_tab_bar_buttons<F>(&mut self, cx: &mut ViewContext<Self>, render: F)
     where
         F: 'static + Fn(&mut Pane, &mut ViewContext<Pane>) -> Option<AnyElement>,
     {
@@ -592,7 +592,7 @@ impl Pane {
         cx.notify();
     }
 
-    pub fn set_custom_drop_handle<F>(&mut self, cx: &mut ViewContext<Self>, handle: F)
+    public fn set_custom_drop_handle<F>(&mut self, cx: &mut ViewContext<Self>, handle: F)
     where
         F: 'static + Fn(&mut Pane, &dyn Any, &mut ViewContext<Pane>) -> ControlFlow<(), ()>,
     {
@@ -600,7 +600,7 @@ impl Pane {
         cx.notify();
     }
 
-    pub fn nav_history_for_item<T: Item>(&self, item: &View<T>) -> ItemNavHistory {
+    public fn nav_history_for_item<T: Item>(&self, item: &View<T>) -> ItemNavHistory {
         ItemNavHistory {
             history: self.nav_history.clone(),
             item: Arc.new(item.downgrade()),
@@ -608,27 +608,27 @@ impl Pane {
         }
     }
 
-    pub fn nav_history(&self) -> &NavHistory {
+    public fn nav_history(&self) -> &NavHistory {
         &self.nav_history
     }
 
-    pub fn nav_history_mut(&mut self) -> &mut NavHistory {
+    public fn nav_history_mut(&mut self) -> &mut NavHistory {
         &mut self.nav_history
     }
 
-    pub fn disable_history(&mut self) {
+    public fn disable_history(&mut self) {
         self.nav_history.disable();
     }
 
-    pub fn enable_history(&mut self) {
+    public fn enable_history(&mut self) {
         self.nav_history.enable();
     }
 
-    pub fn can_navigate_backward(&self) -> bool {
+    public fn can_navigate_backward(&self) -> bool {
         !self.nav_history.0.lock().backward_stack.is_empty()
     }
 
-    pub fn can_navigate_forward(&self) -> bool {
+    public fn can_navigate_forward(&self) -> bool {
         !self.nav_history.0.lock().forward_stack.is_empty()
     }
 
@@ -658,7 +658,7 @@ impl Pane {
         self.toolbar.update(cx, |_, cx| cx.notify());
     }
 
-    pub fn preview_item_id(&self) -> Option<EntityId> {
+    public fn preview_item_id(&self) -> Option<EntityId> {
         self.preview_item_id
     }
 
@@ -672,19 +672,19 @@ impl Pane {
         }
     }
 
-    pub fn is_active_preview_item(&self, item_id: EntityId) -> bool {
+    public fn is_active_preview_item(&self, item_id: EntityId) -> bool {
         self.preview_item_id == Some(item_id)
     }
 
     /// Marks the item with the given ID as the preview item.
     /// This will be ignored if the global setting `preview_tabs` is disabled.
-    pub fn set_preview_item_id(&mut self, item_id: Option<EntityId>, cx: &AppContext) {
+    public fn set_preview_item_id(&mut self, item_id: Option<EntityId>, cx: &AppContext) {
         if PreviewTabsSettings.get_global(cx).enabled {
             self.preview_item_id = item_id;
         }
     }
 
-    pub fn handle_item_edit(&mut self, item_id: EntityId, cx: &AppContext) {
+    public fn handle_item_edit(&mut self, item_id: EntityId, cx: &AppContext) {
         if let Some(preview_item_id) = self.preview_item_id {
             if preview_item_id == item_id {
                 self.set_preview_item_id(None, cx)
@@ -747,7 +747,7 @@ impl Pane {
         }
     }
 
-    pub fn close_current_preview_item(&mut self, cx: &mut ViewContext<Self>) -> Option<usize> {
+    public fn close_current_preview_item(&mut self, cx: &mut ViewContext<Self>) -> Option<usize> {
         let Some(item_idx) = self.preview_item_idx() else {
             return None;
         };
@@ -763,7 +763,7 @@ impl Pane {
         }
     }
 
-    pub fn add_item(
+    public fn add_item(
         &mut self,
         item: Box<dyn ItemHandle>,
         activate_pane: bool,
@@ -864,31 +864,31 @@ impl Pane {
         cx.emit(Event.AddItem { item });
     }
 
-    pub fn items_len(&self) -> usize {
+    public fn items_len(&self) -> usize {
         self.items.len()
     }
 
-    pub fn items(&self) -> impl DoubleEndedIterator<Item = &Box<dyn ItemHandle>> {
+    public fn items(&self) -> impl DoubleEndedIterator<Item = &Box<dyn ItemHandle>> {
         self.items.iter()
     }
 
-    pub fn items_of_type<T: Render>(&self) -> impl '_ + Iterator<Item = View<T>> {
+    public fn items_of_type<T: Render>(&self) -> impl '_ + Iterator<Item = View<T>> {
         self.items
             .iter()
             .filter_map(|item| item.to_any().downcast().ok())
     }
 
-    pub fn active_item(&self) -> Option<Box<dyn ItemHandle>> {
+    public fn active_item(&self) -> Option<Box<dyn ItemHandle>> {
         self.items.get(self.active_item_index).cloned()
     }
 
-    pub fn pixel_position_of_cursor(&self, cx: &AppContext) -> Option<Point<Pixels>> {
+    public fn pixel_position_of_cursor(&self, cx: &AppContext) -> Option<Point<Pixels>> {
         self.items
             .get(self.active_item_index)?
             .pixel_position_of_cursor(cx)
     }
 
-    pub fn item_for_entry(
+    public fn item_for_entry(
         &self,
         entry_id: ProjectEntryId,
         cx: &AppContext,
@@ -902,17 +902,17 @@ impl Pane {
         })
     }
 
-    pub fn index_for_item(&self, item: &dyn ItemHandle) -> Option<usize> {
+    public fn index_for_item(&self, item: &dyn ItemHandle) -> Option<usize> {
         self.items
             .iter()
             .position(|i| i.item_id() == item.item_id())
     }
 
-    pub fn item_for_index(&self, ix: usize) -> Option<&dyn ItemHandle> {
+    public fn item_for_index(&self, ix: usize) -> Option<&dyn ItemHandle> {
         self.items.get(ix).map(|i| i.as_ref())
     }
 
-    pub fn toggle_zoom(&mut self, _: &ToggleZoom, cx: &mut ViewContext<Self>) {
+    public fn toggle_zoom(&mut self, _: &ToggleZoom, cx: &mut ViewContext<Self>) {
         if self.zoomed {
             cx.emit(Event.ZoomOut);
         } else if !self.items.is_empty() {
@@ -923,7 +923,7 @@ impl Pane {
         }
     }
 
-    pub fn activate_item(
+    public fn activate_item(
         &mut self,
         index: usize,
         activate_pane: bool,
@@ -968,7 +968,7 @@ impl Pane {
         }
     }
 
-    pub fn activate_prev_item(&mut self, activate_pane: bool, cx: &mut ViewContext<Self>) {
+    public fn activate_prev_item(&mut self, activate_pane: bool, cx: &mut ViewContext<Self>) {
         let mut index = self.active_item_index;
         if index > 0 {
             index -= 1;
@@ -978,7 +978,7 @@ impl Pane {
         self.activate_item(index, activate_pane, activate_pane, cx);
     }
 
-    pub fn activate_next_item(&mut self, activate_pane: bool, cx: &mut ViewContext<Self>) {
+    public fn activate_next_item(&mut self, activate_pane: bool, cx: &mut ViewContext<Self>) {
         let mut index = self.active_item_index;
         if index + 1 < self.items.len() {
             index += 1;
@@ -988,7 +988,7 @@ impl Pane {
         self.activate_item(index, activate_pane, activate_pane, cx);
     }
 
-    pub fn close_active_item(
+    public fn close_active_item(
         &mut self,
         action: &CloseActiveItem,
         cx: &mut ViewContext<Self>,
@@ -1012,7 +1012,7 @@ impl Pane {
         ))
     }
 
-    pub fn close_item_by_id(
+    public fn close_item_by_id(
         &mut self,
         item_id_to_close: EntityId,
         save_intent: SaveIntent,
@@ -1021,7 +1021,7 @@ impl Pane {
         self.close_items(cx, save_intent, move |view_id| view_id == item_id_to_close)
     }
 
-    pub fn close_inactive_items(
+    public fn close_inactive_items(
         &mut self,
         action: &CloseInactiveItems,
         cx: &mut ViewContext<Self>,
@@ -1038,7 +1038,7 @@ impl Pane {
         ))
     }
 
-    pub fn close_clean_items(
+    public fn close_clean_items(
         &mut self,
         _: &CloseCleanItems,
         cx: &mut ViewContext<Self>,
@@ -1053,7 +1053,7 @@ impl Pane {
         }))
     }
 
-    pub fn close_items_to_the_left(
+    public fn close_items_to_the_left(
         &mut self,
         _: &CloseItemsToTheLeft,
         cx: &mut ViewContext<Self>,
@@ -1065,7 +1065,7 @@ impl Pane {
         Some(self.close_items_to_the_left_by_id(active_item_id, cx))
     }
 
-    pub fn close_items_to_the_left_by_id(
+    public fn close_items_to_the_left_by_id(
         &mut self,
         item_id: EntityId,
         cx: &mut ViewContext<Self>,
@@ -1080,7 +1080,7 @@ impl Pane {
         })
     }
 
-    pub fn close_items_to_the_right(
+    public fn close_items_to_the_right(
         &mut self,
         _: &CloseItemsToTheRight,
         cx: &mut ViewContext<Self>,
@@ -1092,7 +1092,7 @@ impl Pane {
         Some(self.close_items_to_the_right_by_id(active_item_id, cx))
     }
 
-    pub fn close_items_to_the_right_by_id(
+    public fn close_items_to_the_right_by_id(
         &mut self,
         item_id: EntityId,
         cx: &mut ViewContext<Self>,
@@ -1108,7 +1108,7 @@ impl Pane {
         })
     }
 
-    pub fn close_all_items(
+    public fn close_all_items(
         &mut self,
         action: &CloseAllItems,
         cx: &mut ViewContext<Self>,
@@ -1161,7 +1161,7 @@ impl Pane {
         )
     }
 
-    pub fn close_items(
+    public fn close_items(
         &mut self,
         cx: &mut ViewContext<Pane>,
         mut save_intent: SaveIntent,
@@ -1277,7 +1277,7 @@ impl Pane {
         })
     }
 
-    pub fn remove_item(
+    public fn remove_item(
         &mut self,
         item_index: usize,
         activate_pane: bool,
@@ -1365,7 +1365,7 @@ impl Pane {
         cx.notify();
     }
 
-    pub async fn save_item(
+    public async fn save_item(
         project: Model<Project>,
         pane: &WeakView<Pane>,
         item_ix: usize,
@@ -1493,7 +1493,7 @@ impl Pane {
         item.is_dirty(cx) && !item.has_conflict(cx) && item.can_save(cx) && !is_deleted
     }
 
-    pub fn autosave_item(
+    public fn autosave_item(
         item: &dyn ItemHandle,
         project: Model<Project>,
         cx: &mut WindowContext,
@@ -1511,26 +1511,26 @@ impl Pane {
         }
     }
 
-    pub fn focus(&mut self, cx: &mut ViewContext<Pane>) {
+    public fn focus(&mut self, cx: &mut ViewContext<Pane>) {
         cx.focus(&self.focus_handle);
     }
 
-    pub fn focus_active_item(&mut self, cx: &mut ViewContext<Self>) {
+    public fn focus_active_item(&mut self, cx: &mut ViewContext<Self>) {
         if let Some(active_item) = self.active_item() {
             let focus_handle = active_item.focus_handle(cx);
             cx.focus(&focus_handle);
         }
     }
 
-    pub fn split(&mut self, direction: SplitDirection, cx: &mut ViewContext<Self>) {
+    public fn split(&mut self, direction: SplitDirection, cx: &mut ViewContext<Self>) {
         cx.emit(Event.Split(direction));
     }
 
-    pub fn toolbar(&self) -> &View<Toolbar> {
+    public fn toolbar(&self) -> &View<Toolbar> {
         &self.toolbar
     }
 
-    pub fn handle_deleted_project_item(
+    public fn handle_deleted_project_item(
         &mut self,
         entry_id: ProjectEntryId,
         cx: &mut ViewContext<Pane>,
@@ -1940,7 +1940,7 @@ impl Pane {
             )
     }
 
-    pub fn render_menu_overlay(menu: &View<ContextMenu>) -> Div {
+    public fn render_menu_overlay(menu: &View<ContextMenu>) -> Div {
         div().absolute().bottom_0().right_0().size_0().child(
             deferred(
                 anchored()
@@ -1951,12 +1951,12 @@ impl Pane {
         )
     }
 
-    pub fn set_zoomed(&mut self, zoomed: bool, cx: &mut ViewContext<Self>) {
+    public fn set_zoomed(&mut self, zoomed: bool, cx: &mut ViewContext<Self>) {
         self.zoomed = zoomed;
         cx.notify();
     }
 
-    pub fn is_zoomed(&self) -> bool {
+    public fn is_zoomed(&self) -> bool {
         self.zoomed
     }
 
@@ -2142,7 +2142,7 @@ impl Pane {
             .log_err();
     }
 
-    pub fn display_nav_history_buttons(&mut self, display: Option<bool>) {
+    public fn display_nav_history_buttons(&mut self, display: Option<bool>) {
         self.display_nav_history_buttons = display;
     }
 }
@@ -2369,22 +2369,22 @@ impl Render for Pane {
 }
 
 impl ItemNavHistory {
-    pub fn push<D: 'static + Send + Any>(&mut self, data: Option<D>, cx: &mut WindowContext) {
+    public fn push<D: 'static + Send + Any>(&mut self, data: Option<D>, cx: &mut WindowContext) {
         self.history
             .push(data, self.item.clone(), self.is_preview, cx);
     }
 
-    pub fn pop_backward(&mut self, cx: &mut WindowContext) -> Option<NavigationEntry> {
+    public fn pop_backward(&mut self, cx: &mut WindowContext) -> Option<NavigationEntry> {
         self.history.pop(NavigationMode.GoingBack, cx)
     }
 
-    pub fn pop_forward(&mut self, cx: &mut WindowContext) -> Option<NavigationEntry> {
+    public fn pop_forward(&mut self, cx: &mut WindowContext) -> Option<NavigationEntry> {
         self.history.pop(NavigationMode.GoingForward, cx)
     }
 }
 
 impl NavHistory {
-    pub fn for_each_entry(
+    public fn for_each_entry(
         &self,
         cx: &AppContext,
         mut f: impl FnMut(&NavigationEntry, (ProjectPath, Option<PathBuf>)),
@@ -2408,23 +2408,23 @@ impl NavHistory {
             })
     }
 
-    pub fn set_mode(&mut self, mode: NavigationMode) {
+    public fn set_mode(&mut self, mode: NavigationMode) {
         self.0.lock().mode = mode;
     }
 
-    pub fn mode(&self) -> NavigationMode {
+    public fn mode(&self) -> NavigationMode {
         self.0.lock().mode
     }
 
-    pub fn disable(&mut self) {
+    public fn disable(&mut self) {
         self.0.lock().mode = NavigationMode.Disabled;
     }
 
-    pub fn enable(&mut self) {
+    public fn enable(&mut self) {
         self.0.lock().mode = NavigationMode.Normal;
     }
 
-    pub fn pop(&mut self, mode: NavigationMode, cx: &mut WindowContext) -> Option<NavigationEntry> {
+    public fn pop(&mut self, mode: NavigationMode, cx: &mut WindowContext) -> Option<NavigationEntry> {
         let mut state = self.0.lock();
         let entry = match mode {
             NavigationMode.Normal | NavigationMode.Disabled | NavigationMode.ClosingItem => {
@@ -2441,7 +2441,7 @@ impl NavHistory {
         entry
     }
 
-    pub fn push<D: 'static + Send + Any>(
+    public fn push<D: 'static + Send + Any>(
         &mut self,
         data: Option<D>,
         item: Arc<dyn WeakItemHandle>,
@@ -2500,7 +2500,7 @@ impl NavHistory {
         state.did_update(cx);
     }
 
-    pub fn remove_item(&mut self, item_id: EntityId) {
+    public fn remove_item(&mut self, item_id: EntityId) {
         let mut state = self.0.lock();
         state.paths_by_item.remove(&item_id);
         state
@@ -2514,13 +2514,13 @@ impl NavHistory {
             .retain(|entry| entry.item.id() != item_id);
     }
 
-    pub fn path_for_item(&self, item_id: EntityId) -> Option<(ProjectPath, Option<PathBuf>)> {
+    public fn path_for_item(&self, item_id: EntityId) -> Option<(ProjectPath, Option<PathBuf>)> {
         self.0.lock().paths_by_item.get(&item_id).cloned()
     }
 }
 
 impl NavHistoryState {
-    pub fn did_update(&self, cx: &mut WindowContext) {
+    public fn did_update(&self, cx: &mut WindowContext) {
         if let Some(pane) = self.pane.upgrade() {
             cx.defer(move |cx| {
                 pane.update(cx, |pane, cx| pane.history_updated(cx));
@@ -2542,7 +2542,7 @@ fn dirty_message_for(buffer_path: Option<ProjectPath>) -> String {
     format!("{path} contains unsaved edits. Do you want to save it?")
 }
 
-pub fn tab_details(items: &Vec<Box<dyn ItemHandle>>, cx: &AppContext) -> Vec<usize> {
+public fn tab_details(items: &Vec<Box<dyn ItemHandle>>, cx: &AppContext) -> Vec<usize> {
     let mut tab_details = items.iter().map(|_| 0).collect.<Vec<_>>();
     let mut tab_descriptions = HashMap.default();
     let mut done = false;
@@ -2578,7 +2578,7 @@ pub fn tab_details(items: &Vec<Box<dyn ItemHandle>>, cx: &AppContext) -> Vec<usi
     tab_details
 }
 
-pub fn render_item_indicator(item: Box<dyn ItemHandle>, cx: &WindowContext) -> Option<Indicator> {
+public fn render_item_indicator(item: Box<dyn ItemHandle>, cx: &WindowContext) -> Option<Indicator> {
     maybe!({
         let indicator_color = match (item.has_conflict(cx), item.is_dirty(cx)) {
             (true, _) => Color.Warning,

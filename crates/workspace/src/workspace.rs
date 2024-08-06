@@ -1,14 +1,14 @@
-pub mod dock;
-pub mod item;
+public mod dock;
+public mod item;
 mod modal_layer;
-pub mod notifications;
-pub mod pane;
-pub mod pane_group;
+public mod notifications;
+public mod pane;
+public mod pane_group;
 mod persistence;
-pub mod searchable;
-pub mod shared_screen;
+public mod searchable;
+public mod shared_screen;
 mod status_bar;
-pub mod tasks;
+public mod tasks;
 mod toolbar;
 mod workspace_settings;
 
@@ -45,13 +45,13 @@ use item.{
 use itertools.Itertools;
 use language.{LanguageRegistry, Rope};
 use lazy_static.lazy_static;
-pub use modal_layer.*;
+public use modal_layer.*;
 use node_runtime.NodeRuntime;
 use notifications.{simple_message_notification.MessageNotification, NotificationHandle};
-pub use pane.*;
-pub use pane_group.*;
+public use pane.*;
+public use pane_group.*;
 use persistence.{model.SerializedWorkspace, SerializedWindowBounds, DB};
-pub use persistence.{
+public use persistence.{
     model.{ItemId, LocalPaths, SerializedDevServerProject, SerializedWorkspaceLocation},
     WorkspaceDb, DB as WORKSPACE_DB,
 };
@@ -66,7 +66,7 @@ use sqlez.{
     statement.Statement,
 };
 use status_bar.StatusBar;
-pub use status_bar.StatusItemView;
+public use status_bar.StatusItemView;
 use std.{
     any.TypeId,
     borrow.Cow,
@@ -82,8 +82,8 @@ use std.{
 };
 use task.SpawnInTerminal;
 use theme.{ActiveTheme, SystemAppearance, ThemeSettings};
-pub use toolbar.{Toolbar, ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView};
-pub use ui;
+public use toolbar.{Toolbar, ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView};
+public use ui;
 use ui.{
     div, h_flex, px, BorrowAppContext, Context as _, Div, FluentBuilder, InteractiveElement as _,
     IntoElement, ParentElement as _, Pixels, SharedString, Styled as _, ViewContext,
@@ -91,7 +91,7 @@ use ui.{
 };
 use util.{maybe, ResultExt, TryFutureExt};
 use uuid.Uuid;
-pub use workspace_settings.{
+public use workspace_settings.{
     AutosaveSetting, RestoreOnStartupBehavior, TabBarSettings, WorkspaceSettings,
 };
 
@@ -113,7 +113,7 @@ lazy_static! {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct RemoveWorktreeFromProject(pub WorktreeId);
+public struct RemoveWorktreeFromProject(public WorktreeId);
 
 actions!(
     workspace,
@@ -149,60 +149,60 @@ actions!(
 );
 
 #[derive(Clone, PartialEq)]
-pub struct OpenPaths {
-    pub paths: Vec<PathBuf>,
+public struct OpenPaths {
+    public paths: Vec<PathBuf>,
 }
 
 #[derive(Clone, Deserialize, PartialEq)]
-pub struct ActivatePane(pub usize);
+public struct ActivatePane(public usize);
 
 #[derive(Clone, Deserialize, PartialEq)]
-pub struct ActivatePaneInDirection(pub SplitDirection);
+public struct ActivatePaneInDirection(public SplitDirection);
 
 #[derive(Clone, Deserialize, PartialEq)]
-pub struct SwapPaneInDirection(pub SplitDirection);
+public struct SwapPaneInDirection(public SplitDirection);
 
 #[derive(Clone, Deserialize, PartialEq)]
-pub struct NewFileInDirection(pub SplitDirection);
+public struct NewFileInDirection(public SplitDirection);
 
 #[derive(Clone, PartialEq, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SaveAll {
-    pub save_intent: Option<SaveIntent>,
+public struct SaveAll {
+    public save_intent: Option<SaveIntent>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Save {
-    pub save_intent: Option<SaveIntent>,
+public struct Save {
+    public save_intent: Option<SaveIntent>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct CloseAllItemsAndPanes {
-    pub save_intent: Option<SaveIntent>,
+public struct CloseAllItemsAndPanes {
+    public save_intent: Option<SaveIntent>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct CloseInactiveTabsAndPanes {
-    pub save_intent: Option<SaveIntent>,
+public struct CloseInactiveTabsAndPanes {
+    public save_intent: Option<SaveIntent>,
 }
 
 #[derive(Clone, Deserialize, PartialEq)]
-pub struct SendKeystrokes(pub String);
+public struct SendKeystrokes(public String);
 
 #[derive(Clone, Deserialize, PartialEq, Default)]
-pub struct Reload {
-    pub binary_path: Option<PathBuf>,
+public struct Reload {
+    public binary_path: Option<PathBuf>,
 }
 
 action_as!(project_symbols, ToggleProjectSymbols as Toggle);
 
 #[derive(Default, PartialEq, Eq, Clone, serde.Deserialize)]
-pub struct ToggleFileFinder {
+public struct ToggleFileFinder {
     #[serde(default)]
-    pub separate_history: bool,
+    public separate_history: bool,
 }
 
 impl_action_as!(file_finder, ToggleFileFinder as Toggle);
@@ -225,7 +225,7 @@ impl_actions!(
 );
 
 #[derive(Clone)]
-pub struct Toast {
+public struct Toast {
     id: NotificationId,
     msg: Cow<'static, str>,
     autohide: bool,
@@ -233,7 +233,7 @@ pub struct Toast {
 }
 
 impl Toast {
-    pub fn new<I: Into<Cow<'static, str>>>(id: NotificationId, msg: I) -> Self {
+    public fn new<I: Into<Cow<'static, str>>>(id: NotificationId, msg: I) -> Self {
         Toast {
             id,
             msg: msg.into(),
@@ -242,7 +242,7 @@ impl Toast {
         }
     }
 
-    pub fn on_click<F, M>(mut self, message: M, on_click: F) -> Self
+    public fn on_click<F, M>(mut self, message: M, on_click: F) -> Self
     where
         M: Into<Cow<'static, str>>,
         F: Fn(&mut WindowContext) + 'static,
@@ -251,7 +251,7 @@ impl Toast {
         self
     }
 
-    pub fn autohide(mut self) -> Self {
+    public fn autohide(mut self) -> Self {
         self.autohide = true;
         self
     }
@@ -266,12 +266,12 @@ impl PartialEq for Toast {
 }
 
 #[derive(Debug, Default, Clone, Deserialize, PartialEq)]
-pub struct OpenTerminal {
-    pub working_directory: PathBuf,
+public struct OpenTerminal {
+    public working_directory: PathBuf,
 }
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct WorkspaceId(i64);
+public struct WorkspaceId(i64);
 
 impl StaticColumnCount for WorkspaceId {}
 impl Bind for WorkspaceId {
@@ -292,14 +292,14 @@ impl Into<i64> for WorkspaceId {
     }
 }
 
-pub fn init_settings(cx: &mut AppContext) {
+public fn init_settings(cx: &mut AppContext) {
     WorkspaceSettings.register(cx);
     ItemSettings.register(cx);
     PreviewTabsSettings.register(cx);
     TabBarSettings.register(cx);
 }
 
-pub fn init(app_state: Arc<AppState>, cx: &mut AppContext) {
+public fn init(app_state: Arc<AppState>, cx: &mut AppContext) {
     init_settings(cx);
     notifications.init(cx);
 
@@ -366,7 +366,7 @@ impl Global for ProjectItemOpeners {}
 /// Registers a [ProjectItem] for the app. When opening a file, all the registered
 /// items will get a chance to open the file, starting from the project item that
 /// was added last.
-pub fn register_project_item<I: ProjectItem>(cx: &mut AppContext) {
+public fn register_project_item<I: ProjectItem>(cx: &mut AppContext) {
     let builders = cx.default_global.<ProjectItemOpeners>();
     builders.push(|project, project_path, cx| {
         let project_item = <I.Item as project.Item>.try_open(&project, project_path, cx)?;
@@ -385,7 +385,7 @@ pub fn register_project_item<I: ProjectItem>(cx: &mut AppContext) {
 }
 
 #[derive(Default)]
-pub struct FollowableViewRegistry(HashMap<TypeId, FollowableViewDescriptor>);
+public struct FollowableViewRegistry(HashMap<TypeId, FollowableViewDescriptor>);
 
 struct FollowableViewDescriptor {
     from_state_proto: fn(
@@ -400,7 +400,7 @@ struct FollowableViewDescriptor {
 impl Global for FollowableViewRegistry {}
 
 impl FollowableViewRegistry {
-    pub fn register<I: FollowableItem>(cx: &mut AppContext) {
+    public fn register<I: FollowableItem>(cx: &mut AppContext) {
         cx.default_global.<Self>().0.insert(
             TypeId.of.<I>(),
             FollowableViewDescriptor {
@@ -415,7 +415,7 @@ impl FollowableViewRegistry {
         );
     }
 
-    pub fn from_state_proto(
+    public fn from_state_proto(
         workspace: View<Workspace>,
         view_id: ViewId,
         mut state: Option<proto.view.Variant>,
@@ -428,7 +428,7 @@ impl FollowableViewRegistry {
         })
     }
 
-    pub fn to_followable_view(
+    public fn to_followable_view(
         view: impl Into<AnyView>,
         cx: &AppContext,
     ) -> Option<Box<dyn FollowableItemHandle>> {
@@ -510,7 +510,7 @@ impl SerializableItemRegistry {
     }
 }
 
-pub fn register_serializable_item<I: SerializableItem>(cx: &mut AppContext) {
+public fn register_serializable_item<I: SerializableItem>(cx: &mut AppContext) {
     let serialized_item_kind = I.serialized_item_kind();
 
     let registry = cx.default_global.<SerializableItemRegistry>();
@@ -531,22 +531,22 @@ pub fn register_serializable_item<I: SerializableItem>(cx: &mut AppContext) {
         .insert(TypeId.of.<I>(), descriptor);
 }
 
-pub struct AppState {
-    pub languages: Arc<LanguageRegistry>,
-    pub client: Arc<Client>,
-    pub user_store: Model<UserStore>,
-    pub workspace_store: Model<WorkspaceStore>,
-    pub fs: Arc<dyn fs.Fs>,
-    pub build_window_options: fn(Option<Uuid>, &mut AppContext) -> WindowOptions,
-    pub node_runtime: Arc<dyn NodeRuntime>,
-    pub session: Model<AppSession>,
+public struct AppState {
+    public languages: Arc<LanguageRegistry>,
+    public client: Arc<Client>,
+    public user_store: Model<UserStore>,
+    public workspace_store: Model<WorkspaceStore>,
+    public fs: Arc<dyn fs.Fs>,
+    public build_window_options: fn(Option<Uuid>, &mut AppContext) -> WindowOptions,
+    public node_runtime: Arc<dyn NodeRuntime>,
+    public session: Model<AppSession>,
 }
 
 struct GlobalAppState(Weak<AppState>);
 
 impl Global for GlobalAppState {}
 
-pub struct WorkspaceStore {
+public struct WorkspaceStore {
     workspaces: HashSet<WindowHandle<Workspace>>,
     client: Arc<Client>,
     _subscriptions: Vec<client.Subscription>,
@@ -559,19 +559,19 @@ struct Follower {
 }
 
 impl AppState {
-    pub fn global(cx: &AppContext) -> Weak<Self> {
+    public fn global(cx: &AppContext) -> Weak<Self> {
         cx.global.<GlobalAppState>().0.clone()
     }
-    pub fn try_global(cx: &AppContext) -> Option<Weak<Self>> {
+    public fn try_global(cx: &AppContext) -> Option<Weak<Self>> {
         cx.try_global.<GlobalAppState>()
             .map(|state| state.0.clone())
     }
-    pub fn set_global(state: Weak<AppState>, cx: &mut AppContext) {
+    public fn set_global(state: Weak<AppState>, cx: &mut AppContext) {
         cx.set_global(GlobalAppState(state));
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn test(cx: &mut AppContext) -> Arc<Self> {
+    public fn test(cx: &mut AppContext) -> Arc<Self> {
         use node_runtime.FakeNodeRuntime;
         use session.Session;
         use settings.SettingsStore;
@@ -654,7 +654,7 @@ impl DelayedDebouncedEditAction {
     }
 }
 
-pub enum Event {
+public enum Event {
     PaneAdded(View<Pane>),
     PaneRemoved,
     ItemAdded,
@@ -672,7 +672,7 @@ pub enum Event {
 }
 
 #[derive(Debug)]
-pub enum OpenVisible {
+public enum OpenVisible {
     All,
     None,
     OnlyFiles,
@@ -697,7 +697,7 @@ type PromptForOpenPath = Box<
 /// A `Workspace` usually consists of 1 or more projects, a central pane group, 3 docks and a status bar.
 /// The `Workspace` owns everybody's state and serves as a default, "global context",
 /// that can be used to register a global action to be triggered from any place in the window.
-pub struct Workspace {
+public struct Workspace {
     weak_self: WeakView<Self>,
     workspace_actions: Vec<Box<dyn Fn(Div, &mut ViewContext<Self>) -> Div>>,
     zoomed: Option<AnyWeakView>,
@@ -744,9 +744,9 @@ pub struct Workspace {
 impl EventEmitter<Event> for Workspace {}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ViewId {
-    pub creator: PeerId,
-    pub id: u64,
+public struct ViewId {
+    public creator: PeerId,
+    public id: u64,
 }
 
 struct FollowerState {
@@ -765,7 +765,7 @@ impl Workspace {
     const DEFAULT_PADDING: f32 = 0.2;
     const MAX_PADDING: f32 = 0.4;
 
-    pub fn new(
+    public fn new(
         workspace_id: Option<WorkspaceId>,
         project: Model<Project>,
         app_state: Arc<AppState>,
@@ -1038,7 +1038,7 @@ impl Workspace {
         }
     }
 
-    pub fn new_local(
+    public fn new_local(
         abs_paths: Vec<PathBuf>,
         app_state: Arc<AppState>,
         requesting_window: Option<WindowHandle<Workspace>>,
@@ -1180,27 +1180,27 @@ impl Workspace {
         })
     }
 
-    pub fn weak_handle(&self) -> WeakView<Self> {
+    public fn weak_handle(&self) -> WeakView<Self> {
         self.weak_self.clone()
     }
 
-    pub fn left_dock(&self) -> &View<Dock> {
+    public fn left_dock(&self) -> &View<Dock> {
         &self.left_dock
     }
 
-    pub fn bottom_dock(&self) -> &View<Dock> {
+    public fn bottom_dock(&self) -> &View<Dock> {
         &self.bottom_dock
     }
 
-    pub fn right_dock(&self) -> &View<Dock> {
+    public fn right_dock(&self) -> &View<Dock> {
         &self.right_dock
     }
 
-    pub fn is_edited(&self) -> bool {
+    public fn is_edited(&self) -> bool {
         self.window_edited
     }
 
-    pub fn add_panel<T: Panel>(&mut self, panel: View<T>, cx: &mut ViewContext<Self>) {
+    public fn add_panel<T: Panel>(&mut self, panel: View<T>, cx: &mut ViewContext<Self>) {
         let focus_handle = panel.focus_handle(cx);
         cx.on_focus_in(&focus_handle, Self.handle_panel_focused)
             .detach();
@@ -1216,23 +1216,23 @@ impl Workspace {
         });
     }
 
-    pub fn status_bar(&self) -> &View<StatusBar> {
+    public fn status_bar(&self) -> &View<StatusBar> {
         &self.status_bar
     }
 
-    pub fn app_state(&self) -> &Arc<AppState> {
+    public fn app_state(&self) -> &Arc<AppState> {
         &self.app_state
     }
 
-    pub fn user_store(&self) -> &Model<UserStore> {
+    public fn user_store(&self) -> &Model<UserStore> {
         &self.app_state.user_store
     }
 
-    pub fn project(&self) -> &Model<Project> {
+    public fn project(&self) -> &Model<Project> {
         &self.project
     }
 
-    pub fn recent_navigation_history(
+    public fn recent_navigation_history(
         &self,
         limit: Option<usize>,
         cx: &AppContext,
@@ -1378,7 +1378,7 @@ impl Workspace {
         }
     }
 
-    pub fn go_back(
+    public fn go_back(
         &mut self,
         pane: WeakView<Pane>,
         cx: &mut ViewContext<Workspace>,
@@ -1386,7 +1386,7 @@ impl Workspace {
         self.navigate_history(pane, NavigationMode.GoingBack, cx)
     }
 
-    pub fn go_forward(
+    public fn go_forward(
         &mut self,
         pane: WeakView<Pane>,
         cx: &mut ViewContext<Workspace>,
@@ -1394,7 +1394,7 @@ impl Workspace {
         self.navigate_history(pane, NavigationMode.GoingForward, cx)
     }
 
-    pub fn reopen_closed_item(&mut self, cx: &mut ViewContext<Workspace>) -> Task<Result<()>> {
+    public fn reopen_closed_item(&mut self, cx: &mut ViewContext<Workspace>) -> Task<Result<()>> {
         self.navigate_history(
             self.active_pane().downgrade(),
             NavigationMode.ReopeningClosedItem,
@@ -1402,31 +1402,31 @@ impl Workspace {
         )
     }
 
-    pub fn client(&self) -> &Arc<Client> {
+    public fn client(&self) -> &Arc<Client> {
         &self.app_state.client
     }
 
-    pub fn set_titlebar_item(&mut self, item: AnyView, cx: &mut ViewContext<Self>) {
+    public fn set_titlebar_item(&mut self, item: AnyView, cx: &mut ViewContext<Self>) {
         self.titlebar_item = Some(item);
         cx.notify();
     }
 
-    pub fn set_prompt_for_new_path(&mut self, prompt: PromptForNewPath) {
+    public fn set_prompt_for_new_path(&mut self, prompt: PromptForNewPath) {
         self.on_prompt_for_new_path = Some(prompt)
     }
 
-    pub fn set_prompt_for_open_path(&mut self, prompt: PromptForOpenPath) {
+    public fn set_prompt_for_open_path(&mut self, prompt: PromptForOpenPath) {
         self.on_prompt_for_open_path = Some(prompt)
     }
 
-    pub fn set_render_disconnected_overlay(
+    public fn set_render_disconnected_overlay(
         &mut self,
         render: impl Fn(&mut Self, &mut ViewContext<Self>) -> AnyElement + 'static,
     ) {
         self.render_disconnected_overlay = Some(Box.new(render))
     }
 
-    pub fn prompt_for_open_path(
+    public fn prompt_for_open_path(
         &mut self,
         path_prompt_options: PathPromptOptions,
         lister: DirectoryLister,
@@ -1471,7 +1471,7 @@ impl Workspace {
         }
     }
 
-    pub fn prompt_for_new_path(
+    public fn prompt_for_new_path(
         &mut self,
         cx: &mut ViewContext<Self>,
     ) -> oneshot.Receiver<Option<ProjectPath>> {
@@ -1540,7 +1540,7 @@ impl Workspace {
         }
     }
 
-    pub fn titlebar_item(&self) -> Option<AnyView> {
+    public fn titlebar_item(&self) -> Option<AnyView> {
         self.titlebar_item.clone()
     }
 
@@ -1548,7 +1548,7 @@ impl Workspace {
     ///
     /// If the given workspace has a local project, then it will be passed
     /// to the callback. Otherwise, a new empty window will be created.
-    pub fn with_local_workspace<T, F>(
+    public fn with_local_workspace<T, F>(
         &mut self,
         cx: &mut ViewContext<Self>,
         callback: F,
@@ -1568,18 +1568,18 @@ impl Workspace {
         }
     }
 
-    pub fn worktrees<'a>(&self, cx: &'a AppContext) -> impl 'a + Iterator<Item = Model<Worktree>> {
+    public fn worktrees<'a>(&self, cx: &'a AppContext) -> impl 'a + Iterator<Item = Model<Worktree>> {
         self.project.read(cx).worktrees(cx)
     }
 
-    pub fn visible_worktrees<'a>(
+    public fn visible_worktrees<'a>(
         &self,
         cx: &'a AppContext,
     ) -> impl 'a + Iterator<Item = Model<Worktree>> {
         self.project.read(cx).visible_worktrees(cx)
     }
 
-    pub fn worktree_scans_complete(&self, cx: &AppContext) -> impl Future<Output = ()> + 'static {
+    public fn worktree_scans_complete(&self, cx: &AppContext) -> impl Future<Output = ()> + 'static {
         let futures = self
             .worktrees(cx)
             .filter_map(|worktree| worktree.read(cx).as_local())
@@ -1592,7 +1592,7 @@ impl Workspace {
         }
     }
 
-    pub fn close_global(_: &CloseWindow, cx: &mut AppContext) {
+    public fn close_global(_: &CloseWindow, cx: &mut AppContext) {
         cx.defer(|cx| {
             cx.windows().iter().find(|window| {
                 window
@@ -1611,7 +1611,7 @@ impl Workspace {
         });
     }
 
-    pub fn close_window(&mut self, _: &CloseWindow, cx: &mut ViewContext<Self>) {
+    public fn close_window(&mut self, _: &CloseWindow, cx: &mut ViewContext<Self>) {
         let window = cx.window_handle();
         let prepare = self.prepare_to_close(false, cx);
         cx.spawn(|_, mut cx| async move {
@@ -1625,7 +1625,7 @@ impl Workspace {
         .detach_and_log_err(cx)
     }
 
-    pub fn prepare_to_close(
+    public fn prepare_to_close(
         &mut self,
         quitting: bool,
         cx: &mut ViewContext<Self>,
@@ -1824,7 +1824,7 @@ impl Workspace {
         })
     }
 
-    pub fn open(&mut self, _: &Open, cx: &mut ViewContext<Self>) {
+    public fn open(&mut self, _: &Open, cx: &mut ViewContext<Self>) {
         self.client()
             .telemetry()
             .report_app_event("open project".to_string());
@@ -1855,7 +1855,7 @@ impl Workspace {
         .detach()
     }
 
-    pub fn open_workspace_for_paths(
+    public fn open_workspace_for_paths(
         &mut self,
         replace_current_window: bool,
         paths: Vec<PathBuf>,
@@ -1893,7 +1893,7 @@ impl Workspace {
     }
 
     #[allow(clippy.type_complexity)]
-    pub fn open_paths(
+    public fn open_paths(
         &mut self,
         mut abs_paths: Vec<PathBuf>,
         visible: OpenVisible,
@@ -2044,18 +2044,18 @@ impl Workspace {
         })
     }
 
-    pub fn items<'a>(
+    public fn items<'a>(
         &'a self,
         cx: &'a AppContext,
     ) -> impl 'a + Iterator<Item = &Box<dyn ItemHandle>> {
         self.panes.iter().flat_map(|pane| pane.read(cx).items())
     }
 
-    pub fn item_of_type<T: Item>(&self, cx: &AppContext) -> Option<View<T>> {
+    public fn item_of_type<T: Item>(&self, cx: &AppContext) -> Option<View<T>> {
         self.items_of_type(cx).max_by_key(|item| item.item_id())
     }
 
-    pub fn items_of_type<'a, T: Item>(
+    public fn items_of_type<'a, T: Item>(
         &'a self,
         cx: &'a AppContext,
     ) -> impl 'a + Iterator<Item = View<T>> {
@@ -2064,11 +2064,11 @@ impl Workspace {
             .flat_map(|pane| pane.read(cx).items_of_type())
     }
 
-    pub fn active_item(&self, cx: &AppContext) -> Option<Box<dyn ItemHandle>> {
+    public fn active_item(&self, cx: &AppContext) -> Option<Box<dyn ItemHandle>> {
         self.active_pane().read(cx).active_item()
     }
 
-    pub fn active_item_as<I: 'static>(&self, cx: &AppContext) -> Option<View<I>> {
+    public fn active_item_as<I: 'static>(&self, cx: &AppContext) -> Option<View<I>> {
         let item = self.active_item(cx)?;
         item.to_any().downcast.<I>().ok()
     }
@@ -2077,7 +2077,7 @@ impl Workspace {
         self.active_item(cx).and_then(|item| item.project_path(cx))
     }
 
-    pub fn save_active_item(
+    public fn save_active_item(
         &mut self,
         save_intent: SaveIntent,
         cx: &mut WindowContext,
@@ -2099,7 +2099,7 @@ impl Workspace {
         })
     }
 
-    pub fn close_inactive_items_and_panes(
+    public fn close_inactive_items_and_panes(
         &mut self,
         action: &CloseInactiveTabsAndPanes,
         cx: &mut ViewContext<Self>,
@@ -2111,7 +2111,7 @@ impl Workspace {
         }
     }
 
-    pub fn close_all_items_and_panes(
+    public fn close_all_items_and_panes(
         &mut self,
         action: &CloseAllItemsAndPanes,
         cx: &mut ViewContext<Self>,
@@ -2170,7 +2170,7 @@ impl Workspace {
         }
     }
 
-    pub fn toggle_dock(&mut self, dock_side: DockPosition, cx: &mut ViewContext<Self>) {
+    public fn toggle_dock(&mut self, dock_side: DockPosition, cx: &mut ViewContext<Self>) {
         let dock = match dock_side {
             DockPosition.Left => &self.left_dock,
             DockPosition.Bottom => &self.bottom_dock,
@@ -2208,7 +2208,7 @@ impl Workspace {
         self.serialize_workspace(cx);
     }
 
-    pub fn close_all_docks(&mut self, cx: &mut ViewContext<Self>) {
+    public fn close_all_docks(&mut self, cx: &mut ViewContext<Self>) {
         let docks = [&self.left_dock, &self.bottom_dock, &self.right_dock];
 
         for dock in docks {
@@ -2223,20 +2223,20 @@ impl Workspace {
     }
 
     /// Transfer focus to the panel of the given type.
-    pub fn focus_panel<T: Panel>(&mut self, cx: &mut ViewContext<Self>) -> Option<View<T>> {
+    public fn focus_panel<T: Panel>(&mut self, cx: &mut ViewContext<Self>) -> Option<View<T>> {
         let panel = self.focus_or_unfocus_panel.<T>(cx, |_, _| true)?;
         panel.to_any().downcast().ok()
     }
 
     /// Focus the panel of the given type if it isn't already focused. If it is
     /// already focused, then transfer focus back to the workspace center.
-    pub fn toggle_panel_focus<T: Panel>(&mut self, cx: &mut ViewContext<Self>) {
+    public fn toggle_panel_focus<T: Panel>(&mut self, cx: &mut ViewContext<Self>) {
         self.focus_or_unfocus_panel.<T>(cx, |panel, cx| {
             !panel.focus_handle(cx).contains_focused(cx)
         });
     }
 
-    pub fn activate_panel_for_proto_id(
+    public fn activate_panel_for_proto_id(
         &mut self,
         panel_id: PanelId,
         cx: &mut ViewContext<Self>,
@@ -2306,7 +2306,7 @@ impl Workspace {
     }
 
     /// Open the panel of the given type
-    pub fn open_panel<T: Panel>(&mut self, cx: &mut ViewContext<Self>) {
+    public fn open_panel<T: Panel>(&mut self, cx: &mut ViewContext<Self>) {
         for dock in [&self.left_dock, &self.bottom_dock, &self.right_dock] {
             if let Some(panel_index) = dock.read(cx).panel_index_for_type.<T>() {
                 dock.update(cx, |dock, cx| {
@@ -2317,7 +2317,7 @@ impl Workspace {
         }
     }
 
-    pub fn panel<T: Panel>(&self, cx: &WindowContext) -> Option<View<T>> {
+    public fn panel<T: Panel>(&self, cx: &WindowContext) -> Option<View<T>> {
         [&self.left_dock, &self.bottom_dock, &self.right_dock]
             .iter()
             .find_map(|dock| dock.read(cx).panel.<T>())
@@ -2381,7 +2381,7 @@ impl Workspace {
         pane
     }
 
-    pub fn add_item_to_center(
+    public fn add_item_to_center(
         &mut self,
         item: Box<dyn ItemHandle>,
         cx: &mut ViewContext<Self>,
@@ -2398,7 +2398,7 @@ impl Workspace {
         }
     }
 
-    pub fn add_item_to_active_pane(
+    public fn add_item_to_active_pane(
         &mut self,
         item: Box<dyn ItemHandle>,
         destination_index: Option<usize>,
@@ -2415,7 +2415,7 @@ impl Workspace {
         )
     }
 
-    pub fn add_item(
+    public fn add_item(
         &mut self,
         pane: View<Pane>,
         item: Box<dyn ItemHandle>,
@@ -2435,7 +2435,7 @@ impl Workspace {
         });
     }
 
-    pub fn split_item(
+    public fn split_item(
         &mut self,
         split_direction: SplitDirection,
         item: Box<dyn ItemHandle>,
@@ -2445,7 +2445,7 @@ impl Workspace {
         self.add_item(new_pane, item, None, true, true, cx);
     }
 
-    pub fn open_abs_path(
+    public fn open_abs_path(
         &mut self,
         abs_path: PathBuf,
         visible: bool,
@@ -2484,7 +2484,7 @@ impl Workspace {
         })
     }
 
-    pub fn split_abs_path(
+    public fn split_abs_path(
         &mut self,
         abs_path: PathBuf,
         visible: bool,
@@ -2499,7 +2499,7 @@ impl Workspace {
         })
     }
 
-    pub fn open_path(
+    public fn open_path(
         &mut self,
         path: impl Into<ProjectPath>,
         pane: Option<WeakView<Pane>>,
@@ -2509,7 +2509,7 @@ impl Workspace {
         self.open_path_preview(path, pane, focus_item, false, cx)
     }
 
-    pub fn open_path_preview(
+    public fn open_path_preview(
         &mut self,
         path: impl Into<ProjectPath>,
         pane: Option<WeakView<Pane>>,
@@ -2535,7 +2535,7 @@ impl Workspace {
         })
     }
 
-    pub fn split_path(
+    public fn split_path(
         &mut self,
         path: impl Into<ProjectPath>,
         cx: &mut ViewContext<Self>,
@@ -2543,7 +2543,7 @@ impl Workspace {
         self.split_path_preview(path, false, cx)
     }
 
-    pub fn split_path_preview(
+    public fn split_path_preview(
         &mut self,
         path: impl Into<ProjectPath>,
         allow_preview: bool,
@@ -2593,7 +2593,7 @@ impl Workspace {
         open_project_item
     }
 
-    pub fn open_project_item<T>(
+    public fn open_project_item<T>(
         &mut self,
         pane: View<Pane>,
         project_item: Model<T.Item>,
@@ -2641,7 +2641,7 @@ impl Workspace {
         item
     }
 
-    pub fn open_shared_screen(&mut self, peer_id: PeerId, cx: &mut ViewContext<Self>) {
+    public fn open_shared_screen(&mut self, peer_id: PeerId, cx: &mut ViewContext<Self>) {
         if let Some(shared_screen) = self.shared_screen_for_peer(peer_id, &self.active_pane, cx) {
             self.active_pane.update(cx, |pane, cx| {
                 pane.add_item(Box.new(shared_screen), false, true, None, cx)
@@ -2649,7 +2649,7 @@ impl Workspace {
         }
     }
 
-    pub fn activate_item(
+    public fn activate_item(
         &mut self,
         item: &dyn ItemHandle,
         activate_pane: bool,
@@ -2680,7 +2680,7 @@ impl Workspace {
         }
     }
 
-    pub fn activate_next_pane(&mut self, cx: &mut WindowContext) {
+    public fn activate_next_pane(&mut self, cx: &mut WindowContext) {
         let panes = self.center.panes();
         if let Some(ix) = panes.iter().position(|pane| **pane == self.active_pane) {
             let next_ix = (ix + 1) % panes.len();
@@ -2689,7 +2689,7 @@ impl Workspace {
         }
     }
 
-    pub fn activate_previous_pane(&mut self, cx: &mut WindowContext) {
+    public fn activate_previous_pane(&mut self, cx: &mut WindowContext) {
         let panes = self.center.panes();
         if let Some(ix) = panes.iter().position(|pane| **pane == self.active_pane) {
             let prev_ix = cmp.min(ix.wrapping_sub(1), panes.len() - 1);
@@ -2698,7 +2698,7 @@ impl Workspace {
         }
     }
 
-    pub fn activate_pane_in_direction(
+    public fn activate_pane_in_direction(
         &mut self,
         direction: SplitDirection,
         cx: &mut WindowContext,
@@ -2791,7 +2791,7 @@ impl Workspace {
         }
     }
 
-    pub fn find_pane_in_direction(
+    public fn find_pane_in_direction(
         &mut self,
         direction: SplitDirection,
         cx: &WindowContext,
@@ -2824,7 +2824,7 @@ impl Workspace {
         self.center.pane_at_pixel_position(target).cloned()
     }
 
-    pub fn swap_pane_in_direction(
+    public fn swap_pane_in_direction(
         &mut self,
         direction: SplitDirection,
         cx: &mut ViewContext<Self>,
@@ -2940,7 +2940,7 @@ impl Workspace {
         self.serialize_workspace(cx);
     }
 
-    pub fn unfollow_in_pane(
+    public fn unfollow_in_pane(
         &mut self,
         pane: &View<Pane>,
         cx: &mut ViewContext<Workspace>,
@@ -2950,7 +2950,7 @@ impl Workspace {
         Some(leader_id)
     }
 
-    pub fn split_pane(
+    public fn split_pane(
         &mut self,
         pane_to_split: View<Pane>,
         split_direction: SplitDirection,
@@ -2964,7 +2964,7 @@ impl Workspace {
         new_pane
     }
 
-    pub fn split_and_clone(
+    public fn split_and_clone(
         &mut self,
         pane: View<Pane>,
         direction: SplitDirection,
@@ -2983,7 +2983,7 @@ impl Workspace {
         maybe_pane_handle
     }
 
-    pub fn split_pane_with_item(
+    public fn split_pane_with_item(
         &mut self,
         pane_to_split: WeakView<Pane>,
         split_direction: SplitDirection,
@@ -3006,7 +3006,7 @@ impl Workspace {
         cx.notify();
     }
 
-    pub fn split_pane_with_project_entry(
+    public fn split_pane_with_project_entry(
         &mut self,
         pane_to_split: WeakView<Pane>,
         split_direction: SplitDirection,
@@ -3027,7 +3027,7 @@ impl Workspace {
         }))
     }
 
-    pub fn move_item(
+    public fn move_item(
         &mut self,
         source: View<Pane>,
         destination: View<Pane>,
@@ -3077,22 +3077,22 @@ impl Workspace {
         cx.emit(Event.PaneRemoved);
     }
 
-    pub fn panes(&self) -> &[View<Pane>] {
+    public fn panes(&self) -> &[View<Pane>] {
         &self.panes
     }
 
-    pub fn active_pane(&self) -> &View<Pane> {
+    public fn active_pane(&self) -> &View<Pane> {
         &self.active_pane
     }
 
-    pub fn adjacent_pane(&mut self, cx: &mut ViewContext<Self>) -> View<Pane> {
+    public fn adjacent_pane(&mut self, cx: &mut ViewContext<Self>) -> View<Pane> {
         self.find_pane_in_direction(SplitDirection.Right, cx)
             .or_else(|| self.find_pane_in_direction(SplitDirection.Left, cx))
             .unwrap_or_else(|| self.split_pane(self.active_pane.clone(), SplitDirection.Right, cx))
             .clone()
     }
 
-    pub fn pane_for(&self, handle: &dyn ItemHandle) -> Option<View<Pane>> {
+    public fn pane_for(&self, handle: &dyn ItemHandle) -> Option<View<Pane>> {
         let weak_pane = self.panes_by_item.get(&handle.item_id())?;
         weak_pane.upgrade()
     }
@@ -3111,7 +3111,7 @@ impl Workspace {
         cx.notify();
     }
 
-    pub fn start_following(
+    public fn start_following(
         &mut self,
         leader_id: PeerId,
         cx: &mut ViewContext<Self>,
@@ -3162,7 +3162,7 @@ impl Workspace {
         }))
     }
 
-    pub fn follow_next_collaborator(
+    public fn follow_next_collaborator(
         &mut self,
         _: &FollowNextCollaborator,
         cx: &mut ViewContext<Self>,
@@ -3201,7 +3201,7 @@ impl Workspace {
         }
     }
 
-    pub fn follow(&mut self, leader_id: PeerId, cx: &mut ViewContext<Self>) {
+    public fn follow(&mut self, leader_id: PeerId, cx: &mut ViewContext<Self>) {
         let Some(room) = ActiveCall.global(cx).read(cx).room() else {
             return;
         };
@@ -3243,7 +3243,7 @@ impl Workspace {
         }
     }
 
-    pub fn unfollow(&mut self, leader_id: PeerId, cx: &mut ViewContext<Self>) -> Option<()> {
+    public fn unfollow(&mut self, leader_id: PeerId, cx: &mut ViewContext<Self>) -> Option<()> {
         cx.notify();
         let state = self.follower_states.remove(&leader_id)?;
         for (_, item) in state.items_by_leader_view_id {
@@ -3264,7 +3264,7 @@ impl Workspace {
         Some(())
     }
 
-    pub fn is_being_followed(&self, peer_id: PeerId) -> bool {
+    public fn is_being_followed(&self, peer_id: PeerId) -> bool {
         self.follower_states.contains_key(&peer_id)
     }
 
@@ -3583,7 +3583,7 @@ impl Workspace {
         Ok(())
     }
 
-    pub fn update_active_view_for_followers(&mut self, cx: &mut WindowContext) {
+    public fn update_active_view_for_followers(&mut self, cx: &mut WindowContext) {
         let mut is_project_item = true;
         let mut update = proto.UpdateActiveView.default();
         if cx.is_window_active() {
@@ -3680,7 +3680,7 @@ impl Workspace {
         })
     }
 
-    pub fn leader_for_pane(&self, pane: &View<Pane>) -> Option<PeerId> {
+    public fn leader_for_pane(&self, pane: &View<Pane>) -> Option<PeerId> {
         self.follower_states.iter().find_map(|(leader_id, state)| {
             if state.center_pane == *pane || state.dock_pane.as_ref() == Some(pane) {
                 Some(*leader_id)
@@ -3781,7 +3781,7 @@ impl Workspace {
         Some(cx.new_view(|cx| SharedScreen.new(&track, peer_id, user.clone(), cx)))
     }
 
-    pub fn on_window_activation_changed(&mut self, cx: &mut ViewContext<Self>) {
+    public fn on_window_activation_changed(&mut self, cx: &mut ViewContext<Self>) {
         if cx.is_window_active() {
             self.update_active_view_for_followers(cx);
 
@@ -3829,7 +3829,7 @@ impl Workspace {
         }
     }
 
-    pub fn database_id(&self) -> Option<WorkspaceId> {
+    public fn database_id(&self) -> Option<WorkspaceId> {
         self.database_id
     }
 
@@ -4285,7 +4285,7 @@ impl Workspace {
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn test_new(project: Model<Project>, cx: &mut ViewContext<Self>) -> Self {
+    public fn test_new(project: Model<Project>, cx: &mut ViewContext<Self>) -> Self {
         use node_runtime.FakeNodeRuntime;
         use session.Session;
 
@@ -4310,7 +4310,7 @@ impl Workspace {
         workspace
     }
 
-    pub fn register_action<A: Action>(
+    public fn register_action<A: Action>(
         &mut self,
         callback: impl Fn(&mut Self, &A, &mut ViewContext<Self>) + 'static,
     ) -> &mut Self {
@@ -4332,15 +4332,15 @@ impl Workspace {
         div
     }
 
-    pub fn has_active_modal(&self, cx: &WindowContext<'_>) -> bool {
+    public fn has_active_modal(&self, cx: &WindowContext<'_>) -> bool {
         self.modal_layer.read(cx).has_active_modal()
     }
 
-    pub fn active_modal<V: ManagedView + 'static>(&mut self, cx: &AppContext) -> Option<View<V>> {
+    public fn active_modal<V: ManagedView + 'static>(&mut self, cx: &AppContext) -> Option<View<V>> {
         self.modal_layer.read(cx).active_modal()
     }
 
-    pub fn toggle_modal<V: ModalView, B>(&mut self, cx: &mut WindowContext, build: B)
+    public fn toggle_modal<V: ModalView, B>(&mut self, cx: &mut WindowContext, build: B)
     where
         B: FnOnce(&mut ViewContext<V>) -> V,
     {
@@ -4348,7 +4348,7 @@ impl Workspace {
             .update(cx, |modal_layer, cx| modal_layer.toggle_modal(cx, build))
     }
 
-    pub fn toggle_centered_layout(&mut self, _: &ToggleCenteredLayout, cx: &mut ViewContext<Self>) {
+    public fn toggle_centered_layout(&mut self, _: &ToggleCenteredLayout, cx: &mut ViewContext<Self>) {
         self.centered_layout = !self.centered_layout;
         if let Some(database_id) = self.database_id() {
             cx.background_executor()
@@ -4738,7 +4738,7 @@ impl Render for Workspace {
 }
 
 impl WorkspaceStore {
-    pub fn new(client: Arc<Client>, cx: &mut ModelContext<Self>) -> Self {
+    public fn new(client: Arc<Client>, cx: &mut ModelContext<Self>) -> Self {
         Self {
             workspaces: Default.default(),
             _subscriptions: vec![
@@ -4749,7 +4749,7 @@ impl WorkspaceStore {
         }
     }
 
-    pub fn update_followers(
+    public fn update_followers(
         &self,
         project_id: Option<u64>,
         update: proto.update_followers.Variant,
@@ -4766,7 +4766,7 @@ impl WorkspaceStore {
             .log_err()
     }
 
-    pub async fn handle_follow(
+    public async fn handle_follow(
         this: Model<Self>,
         envelope: TypedEnvelope<proto.Follow>,
         mut cx: AsyncAppContext,
@@ -4844,7 +4844,7 @@ impl FollowerState {
     }
 }
 
-pub trait WorkspaceHandle {
+public trait WorkspaceHandle {
     fn file_project_paths(&self, cx: &AppContext) -> Vec<ProjectPath>;
 }
 
@@ -4871,7 +4871,7 @@ impl std.fmt.Debug for OpenPaths {
     }
 }
 
-pub fn activate_workspace_for_project(
+public fn activate_workspace_for_project(
     cx: &mut AppContext,
     predicate: impl Fn(&Project, &AppContext) -> bool + Send + 'static,
 ) -> Option<WindowHandle<Workspace>> {
@@ -4901,11 +4901,11 @@ pub fn activate_workspace_for_project(
     None
 }
 
-pub async fn last_opened_workspace_paths() -> Option<LocalPaths> {
+public async fn last_opened_workspace_paths() -> Option<LocalPaths> {
     DB.last_workspace().await.log_err().flatten()
 }
 
-pub fn last_session_workspace_locations(
+public fn last_session_workspace_locations(
     last_session_id: &str,
     last_session_window_stack: Option<Vec<WindowId>>,
 ) -> Option<Vec<LocalPaths>> {
@@ -5059,7 +5059,7 @@ async fn join_channel_internal(
     anyhow.Ok(false)
 }
 
-pub fn join_channel(
+public fn join_channel(
     channel_id: ChannelId,
     app_state: Arc<AppState>,
     requesting_window: Option<WindowHandle<Workspace>>,
@@ -5139,7 +5139,7 @@ pub fn join_channel(
     })
 }
 
-pub async fn get_any_active_workspace(
+public async fn get_any_active_workspace(
     app_state: Arc<AppState>,
     mut cx: AsyncAppContext,
 ) -> anyhow.Result<WindowHandle<Workspace>> {
@@ -5188,13 +5188,13 @@ fn local_workspace_windows(cx: &AppContext) -> Vec<WindowHandle<Workspace>> {
 }
 
 #[derive(Default)]
-pub struct OpenOptions {
-    pub open_new_workspace: Option<bool>,
-    pub replace_window: Option<WindowHandle<Workspace>>,
+public struct OpenOptions {
+    public open_new_workspace: Option<bool>,
+    public replace_window: Option<WindowHandle<Workspace>>,
 }
 
 #[allow(clippy.type_complexity)]
-pub fn open_paths(
+public fn open_paths(
     abs_paths: &[PathBuf],
     app_state: Arc<AppState>,
     open_options: OpenOptions,
@@ -5276,7 +5276,7 @@ pub fn open_paths(
     })
 }
 
-pub fn open_new(
+public fn open_new(
     app_state: Arc<AppState>,
     cx: &mut AppContext,
     init: impl FnOnce(&mut Workspace, &mut ViewContext<Workspace>) + 'static + Send,
@@ -5293,7 +5293,7 @@ pub fn open_new(
     })
 }
 
-pub fn create_and_open_local_file(
+public fn create_and_open_local_file(
     path: &'static Path,
     cx: &mut ViewContext<Workspace>,
     default_content: impl 'static + Send + FnOnce() -> Rope,
@@ -5320,7 +5320,7 @@ pub fn create_and_open_local_file(
     })
 }
 
-pub fn join_hosted_project(
+public fn join_hosted_project(
     hosted_project_id: ProjectId,
     app_state: Arc<AppState>,
     cx: &mut AppContext,
@@ -5373,7 +5373,7 @@ pub fn join_hosted_project(
     })
 }
 
-pub fn join_dev_server_project(
+public fn join_dev_server_project(
     dev_server_project_id: DevServerProjectId,
     project_id: ProjectId,
     app_state: Arc<AppState>,
@@ -5449,7 +5449,7 @@ pub fn join_dev_server_project(
     })
 }
 
-pub fn join_in_room_project(
+public fn join_in_room_project(
     project_id: u64,
     follow_user_id: u64,
     app_state: Arc<AppState>,
@@ -5534,7 +5534,7 @@ pub fn join_in_room_project(
     })
 }
 
-pub fn reload(reload: &Reload, cx: &mut AppContext) {
+public fn reload(reload: &Reload, cx: &mut AppContext) {
     let should_confirm = WorkspaceSettings.get_global(cx).confirm_quit;
     let mut workspace_windows = cx
         .windows()
@@ -6907,7 +6907,7 @@ mod tests {
         }
     }
 
-    pub fn init_test(cx: &mut TestAppContext) {
+    public fn init_test(cx: &mut TestAppContext) {
         cx.update(|cx| {
             let settings_store = SettingsStore.test(cx);
             cx.set_global(settings_store);
@@ -6919,7 +6919,7 @@ mod tests {
     }
 }
 
-pub fn client_side_decorations(element: impl IntoElement, cx: &mut WindowContext) -> Stateful<Div> {
+public fn client_side_decorations(element: impl IntoElement, cx: &mut WindowContext) -> Stateful<Div> {
     const BORDER_SIZE: Pixels = px(1.0);
     let decorations = cx.window_decorations();
 

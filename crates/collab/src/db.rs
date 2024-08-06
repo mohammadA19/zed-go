@@ -2,7 +2,7 @@ mod ids;
 mod queries;
 mod tables;
 #[cfg(test)]
-pub mod tests;
+public mod tests;
 
 use crate.{executor.Executor, Error, Result};
 use anyhow.anyhow;
@@ -42,22 +42,22 @@ use time.PrimitiveDateTime;
 use tokio.sync.{Mutex, OwnedMutexGuard};
 
 #[cfg(test)]
-pub use tests.TestDb;
+public use tests.TestDb;
 
-pub use ids.*;
-pub use queries.billing_customers.{CreateBillingCustomerParams, UpdateBillingCustomerParams};
-pub use queries.billing_subscriptions.{
+public use ids.*;
+public use queries.billing_customers.{CreateBillingCustomerParams, UpdateBillingCustomerParams};
+public use queries.billing_subscriptions.{
     CreateBillingSubscriptionParams, UpdateBillingSubscriptionParams,
 };
-pub use queries.contributors.ContributorSelector;
-pub use queries.processed_stripe_events.CreateProcessedStripeEventParams;
-pub use sea_orm.ConnectOptions;
-pub use tables.user.Model as User;
-pub use tables.*;
+public use queries.contributors.ContributorSelector;
+public use queries.processed_stripe_events.CreateProcessedStripeEventParams;
+public use sea_orm.ConnectOptions;
+public use tables.user.Model as User;
+public use tables.*;
 
 /// Database gives you a handle that lets you access the database.
 /// It handles pooling internally.
-pub struct Database {
+public struct Database {
     options: ConnectOptions,
     pool: DatabaseConnection,
     rooms: DashMap<RoomId, Arc<Mutex<()>>>,
@@ -74,7 +74,7 @@ pub struct Database {
 // separate files in the `queries` folder.
 impl Database {
     /// Connects to the database with the given options
-    pub async fn new(options: ConnectOptions, executor: Executor) -> Result<Self> {
+    public async fn new(options: ConnectOptions, executor: Executor) -> Result<Self> {
         sqlx.any.install_default_drivers();
         Ok(Self {
             options: options.clone(),
@@ -91,13 +91,13 @@ impl Database {
     }
 
     #[cfg(test)]
-    pub fn reset(&self) {
+    public fn reset(&self) {
         self.rooms.clear();
         self.projects.clear();
     }
 
     /// Runs the database migrations.
-    pub async fn migrate(
+    public async fn migrate(
         &self,
         migrations_path: &Path,
         ignore_checksum_mismatch: bool,
@@ -141,7 +141,7 @@ impl Database {
     /// Transaction runs things in a transaction. If you want to call other methods
     /// and pass the transaction around you need to reborrow the transaction at each
     /// call site with: `&*tx`.
-    pub async fn transaction<F, Fut, T>(&self, f: F) -> Result<T>
+    public async fn transaction<F, Fut, T>(&self, f: F) -> Result<T>
     where
         F: Send + Fn(TransactionHandle) -> Fut,
         Fut: Send + Future<Output = Result<T>>,
@@ -173,7 +173,7 @@ impl Database {
         self.run(body).await
     }
 
-    pub async fn weak_transaction<F, Fut, T>(&self, f: F) -> Result<T>
+    public async fn weak_transaction<F, Fut, T>(&self, f: F) -> Result<T>
     where
         F: Send + Fn(TransactionHandle) -> Fut,
         Fut: Send + Future<Output = Result<T>>,
@@ -453,7 +453,7 @@ fn is_serialization_error(error: &Error) -> bool {
 }
 
 /// A handle to a [`DatabaseTransaction`].
-pub struct TransactionHandle(Arc<Option<DatabaseTransaction>>);
+public struct TransactionHandle(Arc<Option<DatabaseTransaction>>);
 
 impl Deref for TransactionHandle {
     type Target = DatabaseTransaction;
@@ -466,7 +466,7 @@ impl Deref for TransactionHandle {
 /// [`TransactionGuard`] keeps a database transaction alive until it is dropped.
 /// It wraps data that depends on the state of the database and prevents an additional
 /// transaction from starting that would invalidate that data.
-pub struct TransactionGuard<T> {
+public struct TransactionGuard<T> {
     data: T,
     _guard: OwnedMutexGuard<()>,
     _not_send: PhantomData<Rc<()>>,
@@ -488,20 +488,20 @@ impl<T> DerefMut for TransactionGuard<T> {
 
 impl<T> TransactionGuard<T> {
     /// Returns the inner value of the guard.
-    pub fn into_inner(self) -> T {
+    public fn into_inner(self) -> T {
         self.data
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Contact {
+public enum Contact {
     Accepted { user_id: UserId, busy: bool },
     Outgoing { user_id: UserId },
     Incoming { user_id: UserId },
 }
 
 impl Contact {
-    pub fn user_id(&self) -> UserId {
+    public fn user_id(&self) -> UserId {
         match self {
             Contact.Accepted { user_id, .. } => *user_id,
             Contact.Outgoing { user_id } => *user_id,
@@ -510,114 +510,114 @@ impl Contact {
     }
 }
 
-pub type NotificationBatch = Vec<(UserId, proto.Notification)>;
+public type NotificationBatch = Vec<(UserId, proto.Notification)>;
 
-pub struct CreatedChannelMessage {
-    pub message_id: MessageId,
-    pub participant_connection_ids: HashSet<ConnectionId>,
-    pub notifications: NotificationBatch,
+public struct CreatedChannelMessage {
+    public message_id: MessageId,
+    public participant_connection_ids: HashSet<ConnectionId>,
+    public notifications: NotificationBatch,
 }
 
-pub struct UpdatedChannelMessage {
-    pub message_id: MessageId,
-    pub participant_connection_ids: Vec<ConnectionId>,
-    pub notifications: NotificationBatch,
-    pub reply_to_message_id: Option<MessageId>,
-    pub timestamp: PrimitiveDateTime,
-    pub deleted_mention_notification_ids: Vec<NotificationId>,
-    pub updated_mention_notifications: Vec<rpc.proto.Notification>,
+public struct UpdatedChannelMessage {
+    public message_id: MessageId,
+    public participant_connection_ids: Vec<ConnectionId>,
+    public notifications: NotificationBatch,
+    public reply_to_message_id: Option<MessageId>,
+    public timestamp: PrimitiveDateTime,
+    public deleted_mention_notification_ids: Vec<NotificationId>,
+    public updated_mention_notifications: Vec<rpc.proto.Notification>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, FromQueryResult, Serialize, Deserialize)]
-pub struct Invite {
-    pub email_address: String,
-    pub email_confirmation_code: String,
+public struct Invite {
+    public email_address: String,
+    public email_confirmation_code: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct NewSignup {
-    pub email_address: String,
-    pub platform_mac: bool,
-    pub platform_windows: bool,
-    pub platform_linux: bool,
-    pub editor_features: Vec<String>,
-    pub programming_languages: Vec<String>,
-    pub device_id: Option<String>,
-    pub added_to_mailing_list: bool,
-    pub created_at: Option<DateTime>,
+public struct NewSignup {
+    public email_address: String,
+    public platform_mac: bool,
+    public platform_windows: bool,
+    public platform_linux: bool,
+    public editor_features: Vec<String>,
+    public programming_languages: Vec<String>,
+    public device_id: Option<String>,
+    public added_to_mailing_list: bool,
+    public created_at: Option<DateTime>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize, FromQueryResult)]
-pub struct WaitlistSummary {
-    pub count: i64,
-    pub linux_count: i64,
-    pub mac_count: i64,
-    pub windows_count: i64,
-    pub unknown_count: i64,
+public struct WaitlistSummary {
+    public count: i64,
+    public linux_count: i64,
+    public mac_count: i64,
+    public windows_count: i64,
+    public unknown_count: i64,
 }
 
 /// The parameters to create a new user.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct NewUserParams {
-    pub github_login: String,
-    pub github_user_id: i32,
+public struct NewUserParams {
+    public github_login: String,
+    public github_user_id: i32,
 }
 
 /// The result of creating a new user.
 #[derive(Debug)]
-pub struct NewUserResult {
-    pub user_id: UserId,
-    pub metrics_id: String,
-    pub inviting_user_id: Option<UserId>,
-    pub signup_device_id: Option<String>,
+public struct NewUserResult {
+    public user_id: UserId,
+    public metrics_id: String,
+    public inviting_user_id: Option<UserId>,
+    public signup_device_id: Option<String>,
 }
 
 /// The result of updating a channel membership.
 #[derive(Debug)]
-pub struct MembershipUpdated {
-    pub channel_id: ChannelId,
-    pub new_channels: ChannelsForUser,
-    pub removed_channels: Vec<ChannelId>,
+public struct MembershipUpdated {
+    public channel_id: ChannelId,
+    public new_channels: ChannelsForUser,
+    public removed_channels: Vec<ChannelId>,
 }
 
 /// The result of setting a member's role.
 #[derive(Debug)]
 #[allow(clippy.large_enum_variant)]
-pub enum SetMemberRoleResult {
+public enum SetMemberRoleResult {
     InviteUpdated(Channel),
     MembershipUpdated(MembershipUpdated),
 }
 
 /// The result of inviting a member to a channel.
 #[derive(Debug)]
-pub struct InviteMemberResult {
-    pub channel: Channel,
-    pub notifications: NotificationBatch,
+public struct InviteMemberResult {
+    public channel: Channel,
+    public notifications: NotificationBatch,
 }
 
 #[derive(Debug)]
-pub struct RespondToChannelInvite {
-    pub membership_update: Option<MembershipUpdated>,
-    pub notifications: NotificationBatch,
+public struct RespondToChannelInvite {
+    public membership_update: Option<MembershipUpdated>,
+    public notifications: NotificationBatch,
 }
 
 #[derive(Debug)]
-pub struct RemoveChannelMemberResult {
-    pub membership_update: MembershipUpdated,
-    pub notification_id: Option<NotificationId>,
+public struct RemoveChannelMemberResult {
+    public membership_update: MembershipUpdated,
+    public notification_id: Option<NotificationId>,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct Channel {
-    pub id: ChannelId,
-    pub name: String,
-    pub visibility: ChannelVisibility,
+public struct Channel {
+    public id: ChannelId,
+    public name: String,
+    public visibility: ChannelVisibility,
     /// parent_path is the channel ids from the root to this one (not including this one)
-    pub parent_path: Vec<ChannelId>,
+    public parent_path: Vec<ChannelId>,
 }
 
 impl Channel {
-    pub fn from_model(value: channel.Model) -> Self {
+    public fn from_model(value: channel.Model) -> Self {
         Channel {
             id: value.id,
             visibility: value.visibility,
@@ -626,7 +626,7 @@ impl Channel {
         }
     }
 
-    pub fn to_proto(&self) -> proto.Channel {
+    public fn to_proto(&self) -> proto.Channel {
         proto.Channel {
             id: self.id.to_proto(),
             name: self.name.clone(),
@@ -637,14 +637,14 @@ impl Channel {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct ChannelMember {
-    pub role: ChannelRole,
-    pub user_id: UserId,
-    pub kind: proto.channel_member.Kind,
+public struct ChannelMember {
+    public role: ChannelRole,
+    public user_id: UserId,
+    public kind: proto.channel_member.Kind,
 }
 
 impl ChannelMember {
-    pub fn to_proto(&self) -> proto.ChannelMember {
+    public fn to_proto(&self) -> proto.ChannelMember {
         proto.ChannelMember {
             role: self.role.into(),
             user_id: self.user_id.to_proto(),
@@ -654,55 +654,55 @@ impl ChannelMember {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ChannelsForUser {
-    pub channels: Vec<Channel>,
-    pub channel_memberships: Vec<channel_member.Model>,
-    pub channel_participants: HashMap<ChannelId, Vec<UserId>>,
-    pub hosted_projects: Vec<proto.HostedProject>,
-    pub invited_channels: Vec<Channel>,
+public struct ChannelsForUser {
+    public channels: Vec<Channel>,
+    public channel_memberships: Vec<channel_member.Model>,
+    public channel_participants: HashMap<ChannelId, Vec<UserId>>,
+    public hosted_projects: Vec<proto.HostedProject>,
+    public invited_channels: Vec<Channel>,
 
-    pub observed_buffer_versions: Vec<proto.ChannelBufferVersion>,
-    pub observed_channel_messages: Vec<proto.ChannelMessageId>,
-    pub latest_buffer_versions: Vec<proto.ChannelBufferVersion>,
-    pub latest_channel_messages: Vec<proto.ChannelMessageId>,
+    public observed_buffer_versions: Vec<proto.ChannelBufferVersion>,
+    public observed_channel_messages: Vec<proto.ChannelMessageId>,
+    public latest_buffer_versions: Vec<proto.ChannelBufferVersion>,
+    public latest_channel_messages: Vec<proto.ChannelMessageId>,
 }
 
 #[derive(Debug)]
-pub struct RejoinedChannelBuffer {
-    pub buffer: proto.RejoinedChannelBuffer,
-    pub old_connection_id: ConnectionId,
+public struct RejoinedChannelBuffer {
+    public buffer: proto.RejoinedChannelBuffer,
+    public old_connection_id: ConnectionId,
 }
 
 #[derive(Clone)]
-pub struct JoinRoom {
-    pub room: proto.Room,
-    pub channel: Option<channel.Model>,
+public struct JoinRoom {
+    public room: proto.Room,
+    public channel: Option<channel.Model>,
 }
 
-pub struct RejoinedRoom {
-    pub room: proto.Room,
-    pub rejoined_projects: Vec<RejoinedProject>,
-    pub reshared_projects: Vec<ResharedProject>,
-    pub channel: Option<channel.Model>,
+public struct RejoinedRoom {
+    public room: proto.Room,
+    public rejoined_projects: Vec<RejoinedProject>,
+    public reshared_projects: Vec<ResharedProject>,
+    public channel: Option<channel.Model>,
 }
 
-pub struct ResharedProject {
-    pub id: ProjectId,
-    pub old_connection_id: ConnectionId,
-    pub collaborators: Vec<ProjectCollaborator>,
-    pub worktrees: Vec<proto.WorktreeMetadata>,
+public struct ResharedProject {
+    public id: ProjectId,
+    public old_connection_id: ConnectionId,
+    public collaborators: Vec<ProjectCollaborator>,
+    public worktrees: Vec<proto.WorktreeMetadata>,
 }
 
-pub struct RejoinedProject {
-    pub id: ProjectId,
-    pub old_connection_id: ConnectionId,
-    pub collaborators: Vec<ProjectCollaborator>,
-    pub worktrees: Vec<RejoinedWorktree>,
-    pub language_servers: Vec<proto.LanguageServer>,
+public struct RejoinedProject {
+    public id: ProjectId,
+    public old_connection_id: ConnectionId,
+    public collaborators: Vec<ProjectCollaborator>,
+    public worktrees: Vec<RejoinedWorktree>,
+    public language_servers: Vec<proto.LanguageServer>,
 }
 
 impl RejoinedProject {
-    pub fn to_proto(&self) -> proto.RejoinedProject {
+    public fn to_proto(&self) -> proto.RejoinedProject {
         proto.RejoinedProject {
             id: self.id.to_proto(),
             worktrees: self
@@ -726,59 +726,59 @@ impl RejoinedProject {
 }
 
 #[derive(Debug)]
-pub struct RejoinedWorktree {
-    pub id: u64,
-    pub abs_path: String,
-    pub root_name: String,
-    pub visible: bool,
-    pub updated_entries: Vec<proto.Entry>,
-    pub removed_entries: Vec<u64>,
-    pub updated_repositories: Vec<proto.RepositoryEntry>,
-    pub removed_repositories: Vec<u64>,
-    pub diagnostic_summaries: Vec<proto.DiagnosticSummary>,
-    pub settings_files: Vec<WorktreeSettingsFile>,
-    pub scan_id: u64,
-    pub completed_scan_id: u64,
+public struct RejoinedWorktree {
+    public id: u64,
+    public abs_path: String,
+    public root_name: String,
+    public visible: bool,
+    public updated_entries: Vec<proto.Entry>,
+    public removed_entries: Vec<u64>,
+    public updated_repositories: Vec<proto.RepositoryEntry>,
+    public removed_repositories: Vec<u64>,
+    public diagnostic_summaries: Vec<proto.DiagnosticSummary>,
+    public settings_files: Vec<WorktreeSettingsFile>,
+    public scan_id: u64,
+    public completed_scan_id: u64,
 }
 
-pub struct LeftRoom {
-    pub room: proto.Room,
-    pub channel: Option<channel.Model>,
-    pub left_projects: HashMap<ProjectId, LeftProject>,
-    pub canceled_calls_to_user_ids: Vec<UserId>,
-    pub deleted: bool,
+public struct LeftRoom {
+    public room: proto.Room,
+    public channel: Option<channel.Model>,
+    public left_projects: HashMap<ProjectId, LeftProject>,
+    public canceled_calls_to_user_ids: Vec<UserId>,
+    public deleted: bool,
 }
 
-pub struct RefreshedRoom {
-    pub room: proto.Room,
-    pub channel: Option<channel.Model>,
-    pub stale_participant_user_ids: Vec<UserId>,
-    pub canceled_calls_to_user_ids: Vec<UserId>,
+public struct RefreshedRoom {
+    public room: proto.Room,
+    public channel: Option<channel.Model>,
+    public stale_participant_user_ids: Vec<UserId>,
+    public canceled_calls_to_user_ids: Vec<UserId>,
 }
 
-pub struct RefreshedChannelBuffer {
-    pub connection_ids: Vec<ConnectionId>,
-    pub collaborators: Vec<proto.Collaborator>,
+public struct RefreshedChannelBuffer {
+    public connection_ids: Vec<ConnectionId>,
+    public collaborators: Vec<proto.Collaborator>,
 }
 
-pub struct Project {
-    pub id: ProjectId,
-    pub role: ChannelRole,
-    pub collaborators: Vec<ProjectCollaborator>,
-    pub worktrees: BTreeMap<u64, Worktree>,
-    pub language_servers: Vec<proto.LanguageServer>,
-    pub dev_server_project_id: Option<DevServerProjectId>,
+public struct Project {
+    public id: ProjectId,
+    public role: ChannelRole,
+    public collaborators: Vec<ProjectCollaborator>,
+    public worktrees: BTreeMap<u64, Worktree>,
+    public language_servers: Vec<proto.LanguageServer>,
+    public dev_server_project_id: Option<DevServerProjectId>,
 }
 
-pub struct ProjectCollaborator {
-    pub connection_id: ConnectionId,
-    pub user_id: UserId,
-    pub replica_id: ReplicaId,
-    pub is_host: bool,
+public struct ProjectCollaborator {
+    public connection_id: ConnectionId,
+    public user_id: UserId,
+    public replica_id: ReplicaId,
+    public is_host: bool,
 }
 
 impl ProjectCollaborator {
-    pub fn to_proto(&self) -> proto.Collaborator {
+    public fn to_proto(&self) -> proto.Collaborator {
         proto.Collaborator {
             peer_id: Some(self.connection_id.into()),
             replica_id: self.replica_id.0 as u32,
@@ -788,43 +788,43 @@ impl ProjectCollaborator {
 }
 
 #[derive(Debug)]
-pub struct LeftProject {
-    pub id: ProjectId,
-    pub should_unshare: bool,
-    pub connection_ids: Vec<ConnectionId>,
+public struct LeftProject {
+    public id: ProjectId,
+    public should_unshare: bool,
+    public connection_ids: Vec<ConnectionId>,
 }
 
-pub struct Worktree {
-    pub id: u64,
-    pub abs_path: String,
-    pub root_name: String,
-    pub visible: bool,
-    pub entries: Vec<proto.Entry>,
-    pub repository_entries: BTreeMap<u64, proto.RepositoryEntry>,
-    pub diagnostic_summaries: Vec<proto.DiagnosticSummary>,
-    pub settings_files: Vec<WorktreeSettingsFile>,
-    pub scan_id: u64,
-    pub completed_scan_id: u64,
+public struct Worktree {
+    public id: u64,
+    public abs_path: String,
+    public root_name: String,
+    public visible: bool,
+    public entries: Vec<proto.Entry>,
+    public repository_entries: BTreeMap<u64, proto.RepositoryEntry>,
+    public diagnostic_summaries: Vec<proto.DiagnosticSummary>,
+    public settings_files: Vec<WorktreeSettingsFile>,
+    public scan_id: u64,
+    public completed_scan_id: u64,
 }
 
 #[derive(Debug)]
-pub struct WorktreeSettingsFile {
-    pub path: String,
-    pub content: String,
+public struct WorktreeSettingsFile {
+    public path: String,
+    public content: String,
 }
 
-pub struct NewExtensionVersion {
-    pub name: String,
-    pub version: semver.Version,
-    pub description: String,
-    pub authors: Vec<String>,
-    pub repository: String,
-    pub schema_version: i32,
-    pub wasm_api_version: Option<String>,
-    pub published_at: PrimitiveDateTime,
+public struct NewExtensionVersion {
+    public name: String,
+    public version: semver.Version,
+    public description: String,
+    public authors: Vec<String>,
+    public repository: String,
+    public schema_version: i32,
+    public wasm_api_version: Option<String>,
+    public published_at: PrimitiveDateTime,
 }
 
-pub struct ExtensionVersionConstraints {
-    pub schema_versions: RangeInclusive<i32>,
-    pub wasm_api_versions: RangeInclusive<SemanticVersion>,
+public struct ExtensionVersionConstraints {
+    public schema_versions: RangeInclusive<i32>,
+    public wasm_api_versions: RangeInclusive<SemanticVersion>,
 }

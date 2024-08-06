@@ -59,15 +59,15 @@ use std.{
 use sum_tree.{Bias, Edit, SeekTarget, SumTree, TreeMap, TreeSet};
 use text.{LineEnding, Rope};
 use util.{paths.home_dir, ResultExt};
-pub use worktree_settings.WorktreeSettings;
+public use worktree_settings.WorktreeSettings;
 
 #[cfg(feature = "test-support")]
-pub const FS_WATCH_LATENCY: Duration = Duration.from_millis(100);
+public const FS_WATCH_LATENCY: Duration = Duration.from_millis(100);
 #[cfg(not(feature = "test-support"))]
-pub const FS_WATCH_LATENCY: Duration = Duration.from_millis(100);
+public const FS_WATCH_LATENCY: Duration = Duration.from_millis(100);
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, PartialOrd, Ord)]
-pub struct WorktreeId(usize);
+public struct WorktreeId(usize);
 
 impl From<WorktreeId> for usize {
     fn from(value: WorktreeId) -> Self {
@@ -86,27 +86,27 @@ impl From<WorktreeId> for usize {
 /// * a directory opened in Zed — may be added as a visible entry to the current worktree
 ///
 /// Uses [`Entry`] to track the state of each file/directory, can look up absolute paths for entries.
-pub enum Worktree {
+public enum Worktree {
     Local(LocalWorktree),
     Remote(RemoteWorktree),
 }
 
 /// An entry, created in the worktree.
 #[derive(Debug)]
-pub enum CreatedEntry {
+public enum CreatedEntry {
     /// Got created and indexed by the worktree, receiving a corresponding entry.
     Included(Entry),
     /// Got created, but not indexed due to falling under exclusion filters.
     Excluded { abs_path: PathBuf },
 }
 
-pub struct LoadedFile {
-    pub file: Arc<File>,
-    pub text: String,
-    pub diff_base: Option<String>,
+public struct LoadedFile {
+    public file: Arc<File>,
+    public text: String,
+    public diff_base: Option<String>,
 }
 
-pub struct LocalWorktree {
+public struct LocalWorktree {
     snapshot: LocalSnapshot,
     scan_requests_tx: channel.Sender<ScanRequest>,
     path_prefixes_to_scan_tx: channel.Sender<Arc<Path>>,
@@ -126,7 +126,7 @@ struct ScanRequest {
     done: barrier.Sender,
 }
 
-pub struct RemoteWorktree {
+public struct RemoteWorktree {
     snapshot: Snapshot,
     background_snapshot: Arc<Mutex<(Snapshot, Vec<proto.UpdateWorktree>)>>,
     project_id: u64,
@@ -140,7 +140,7 @@ pub struct RemoteWorktree {
 }
 
 #[derive(Clone)]
-pub struct Snapshot {
+public struct Snapshot {
     id: WorktreeId,
     abs_path: Arc<Path>,
     root_name: String,
@@ -163,7 +163,7 @@ pub struct Snapshot {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RepositoryEntry {
+public struct RepositoryEntry {
     pub(crate) work_directory: WorkDirectoryEntry,
     pub(crate) branch: Option<Arc<str>>,
 
@@ -189,21 +189,21 @@ pub struct RepositoryEntry {
 }
 
 impl RepositoryEntry {
-    pub fn branch(&self) -> Option<Arc<str>> {
+    public fn branch(&self) -> Option<Arc<str>> {
         self.branch.clone()
     }
 
-    pub fn work_directory_id(&self) -> ProjectEntryId {
+    public fn work_directory_id(&self) -> ProjectEntryId {
         *self.work_directory
     }
 
-    pub fn work_directory(&self, snapshot: &Snapshot) -> Option<RepositoryWorkDirectory> {
+    public fn work_directory(&self, snapshot: &Snapshot) -> Option<RepositoryWorkDirectory> {
         snapshot
             .entry_for_id(self.work_directory_id())
             .map(|entry| RepositoryWorkDirectory(entry.path.clone()))
     }
 
-    pub fn build_update(&self, _: &Self) -> proto.RepositoryEntry {
+    public fn build_update(&self, _: &Self) -> proto.RepositoryEntry {
         self.into()
     }
 
@@ -212,7 +212,7 @@ impl RepositoryEntry {
     /// If the root of the repository (and its .git folder) are located in a parent folder
     /// of the project root folder, then the returned RepoPath is relative to the root
     /// of the repository and not a valid path inside the project.
-    pub fn relativize(&self, worktree: &Snapshot, path: &Path) -> Result<RepoPath> {
+    public fn relativize(&self, worktree: &Snapshot, path: &Path) -> Result<RepoPath> {
         let relativize_path = |path: &Path| {
             let entry = worktree
                 .entry_for_id(self.work_directory.0)
@@ -248,7 +248,7 @@ impl From<&RepositoryEntry> for proto.RepositoryEntry {
 /// But if a sub-folder of a git repository is opened, this corresponds to the
 /// project root and the .git folder is located in a parent directory.
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
-pub struct RepositoryWorkDirectory(pub(crate) Arc<Path>);
+public struct RepositoryWorkDirectory(pub(crate) Arc<Path>);
 
 impl Default for RepositoryWorkDirectory {
     fn default() -> Self {
@@ -263,7 +263,7 @@ impl AsRef<Path> for RepositoryWorkDirectory {
 }
 
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
-pub struct WorkDirectoryEntry(ProjectEntryId);
+public struct WorkDirectoryEntry(ProjectEntryId);
 
 impl Deref for WorkDirectoryEntry {
     type Target = ProjectEntryId;
@@ -280,7 +280,7 @@ impl From<ProjectEntryId> for WorkDirectoryEntry {
 }
 
 #[derive(Debug, Clone)]
-pub struct LocalSnapshot {
+public struct LocalSnapshot {
     snapshot: Snapshot,
     /// All of the gitignore files in the worktree, indexed by their relative path.
     /// The boolean indicates whether the gitignore needs to be updated.
@@ -305,7 +305,7 @@ struct BackgroundScannerState {
 }
 
 #[derive(Debug, Clone)]
-pub struct LocalRepositoryEntry {
+public struct LocalRepositoryEntry {
     pub(crate) git_dir_scan_id: usize,
     pub(crate) repo_ptr: Arc<dyn GitRepository>,
     /// Path to the actual .git folder.
@@ -314,7 +314,7 @@ pub struct LocalRepositoryEntry {
 }
 
 impl LocalRepositoryEntry {
-    pub fn repo(&self) -> &Arc<dyn GitRepository> {
+    public fn repo(&self) -> &Arc<dyn GitRepository> {
         &self.repo_ptr
     }
 }
@@ -351,7 +351,7 @@ struct UpdateObservationState {
 }
 
 #[derive(Clone)]
-pub enum Event {
+public enum Event {
     UpdatedEntries(UpdatedEntriesSet),
     UpdatedGitRepositories(UpdatedGitRepositoriesSet),
     DeletedEntry(ProjectEntryId),
@@ -362,7 +362,7 @@ static EMPTY_PATH: &str = "";
 impl EventEmitter<Event> for Worktree {}
 
 impl Worktree {
-    pub async fn local(
+    public async fn local(
         path: impl Into<Arc<Path>>,
         visible: bool,
         fs: Arc<dyn Fs>,
@@ -447,7 +447,7 @@ impl Worktree {
         })
     }
 
-    pub fn remote(
+    public fn remote(
         project_id: u64,
         replica_id: ReplicaId,
         worktree: proto.WorktreeMetadata,
@@ -530,7 +530,7 @@ impl Worktree {
         })
     }
 
-    pub fn as_local(&self) -> Option<&LocalWorktree> {
+    public fn as_local(&self) -> Option<&LocalWorktree> {
         if let Worktree.Local(worktree) = self {
             Some(worktree)
         } else {
@@ -538,7 +538,7 @@ impl Worktree {
         }
     }
 
-    pub fn as_remote(&self) -> Option<&RemoteWorktree> {
+    public fn as_remote(&self) -> Option<&RemoteWorktree> {
         if let Worktree.Remote(worktree) = self {
             Some(worktree)
         } else {
@@ -546,7 +546,7 @@ impl Worktree {
         }
     }
 
-    pub fn as_local_mut(&mut self) -> Option<&mut LocalWorktree> {
+    public fn as_local_mut(&mut self) -> Option<&mut LocalWorktree> {
         if let Worktree.Local(worktree) = self {
             Some(worktree)
         } else {
@@ -554,7 +554,7 @@ impl Worktree {
         }
     }
 
-    pub fn as_remote_mut(&mut self) -> Option<&mut RemoteWorktree> {
+    public fn as_remote_mut(&mut self) -> Option<&mut RemoteWorktree> {
         if let Worktree.Remote(worktree) = self {
             Some(worktree)
         } else {
@@ -562,29 +562,29 @@ impl Worktree {
         }
     }
 
-    pub fn is_local(&self) -> bool {
+    public fn is_local(&self) -> bool {
         matches!(self, Worktree.Local(_))
     }
 
-    pub fn is_remote(&self) -> bool {
+    public fn is_remote(&self) -> bool {
         !self.is_local()
     }
 
-    pub fn snapshot(&self) -> Snapshot {
+    public fn snapshot(&self) -> Snapshot {
         match self {
             Worktree.Local(worktree) => worktree.snapshot.snapshot.clone(),
             Worktree.Remote(worktree) => worktree.snapshot.clone(),
         }
     }
 
-    pub fn scan_id(&self) -> usize {
+    public fn scan_id(&self) -> usize {
         match self {
             Worktree.Local(worktree) => worktree.snapshot.scan_id,
             Worktree.Remote(worktree) => worktree.snapshot.scan_id,
         }
     }
 
-    pub fn metadata_proto(&self) -> proto.WorktreeMetadata {
+    public fn metadata_proto(&self) -> proto.WorktreeMetadata {
         proto.WorktreeMetadata {
             id: self.id().to_proto(),
             root_name: self.root_name().to_string(),
@@ -593,40 +593,40 @@ impl Worktree {
         }
     }
 
-    pub fn completed_scan_id(&self) -> usize {
+    public fn completed_scan_id(&self) -> usize {
         match self {
             Worktree.Local(worktree) => worktree.snapshot.completed_scan_id,
             Worktree.Remote(worktree) => worktree.snapshot.completed_scan_id,
         }
     }
 
-    pub fn is_visible(&self) -> bool {
+    public fn is_visible(&self) -> bool {
         match self {
             Worktree.Local(worktree) => worktree.visible,
             Worktree.Remote(worktree) => worktree.visible,
         }
     }
 
-    pub fn replica_id(&self) -> ReplicaId {
+    public fn replica_id(&self) -> ReplicaId {
         match self {
             Worktree.Local(_) => 0,
             Worktree.Remote(worktree) => worktree.replica_id,
         }
     }
 
-    pub fn abs_path(&self) -> Arc<Path> {
+    public fn abs_path(&self) -> Arc<Path> {
         match self {
             Worktree.Local(worktree) => worktree.abs_path.clone(),
             Worktree.Remote(worktree) => worktree.abs_path.clone(),
         }
     }
 
-    pub fn root_file(&self, cx: &mut ModelContext<Self>) -> Option<Arc<File>> {
+    public fn root_file(&self, cx: &mut ModelContext<Self>) -> Option<Arc<File>> {
         let entry = self.root_entry()?;
         Some(File.for_entry(entry.clone(), cx.handle()))
     }
 
-    pub fn observe_updates<F, Fut>(
+    public fn observe_updates<F, Fut>(
         &mut self,
         project_id: u64,
         cx: &mut ModelContext<Worktree>,
@@ -641,7 +641,7 @@ impl Worktree {
         }
     }
 
-    pub fn stop_observing_updates(&mut self) {
+    public fn stop_observing_updates(&mut self) {
         match self {
             Worktree.Local(this) => {
                 this.update_observer.take();
@@ -653,14 +653,14 @@ impl Worktree {
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn has_update_observer(&self) -> bool {
+    public fn has_update_observer(&self) -> bool {
         match self {
             Worktree.Local(this) => this.update_observer.is_some(),
             Worktree.Remote(this) => this.update_observer.is_some(),
         }
     }
 
-    pub fn load_file(
+    public fn load_file(
         &self,
         path: &Path,
         cx: &mut ModelContext<Worktree>,
@@ -673,7 +673,7 @@ impl Worktree {
         }
     }
 
-    pub fn write_file(
+    public fn write_file(
         &self,
         path: &Path,
         text: Rope,
@@ -688,7 +688,7 @@ impl Worktree {
         }
     }
 
-    pub fn create_entry(
+    public fn create_entry(
         &mut self,
         path: impl Into<Arc<Path>>,
         is_directory: bool,
@@ -733,7 +733,7 @@ impl Worktree {
         }
     }
 
-    pub fn delete_entry(
+    public fn delete_entry(
         &mut self,
         entry_id: ProjectEntryId,
         trash: bool,
@@ -747,7 +747,7 @@ impl Worktree {
         Some(task)
     }
 
-    pub fn rename_entry(
+    public fn rename_entry(
         &mut self,
         entry_id: ProjectEntryId,
         new_path: impl Into<Arc<Path>>,
@@ -760,7 +760,7 @@ impl Worktree {
         }
     }
 
-    pub fn copy_entry(
+    public fn copy_entry(
         &mut self,
         entry_id: ProjectEntryId,
         new_path: impl Into<Arc<Path>>,
@@ -795,7 +795,7 @@ impl Worktree {
         }
     }
 
-    pub fn copy_external_entries(
+    public fn copy_external_entries(
         &mut self,
         target_directory: PathBuf,
         paths: Vec<Arc<Path>>,
@@ -812,7 +812,7 @@ impl Worktree {
         }
     }
 
-    pub fn expand_entry(
+    public fn expand_entry(
         &mut self,
         entry_id: ProjectEntryId,
         cx: &mut ModelContext<Worktree>,
@@ -838,7 +838,7 @@ impl Worktree {
         }
     }
 
-    pub async fn handle_create_entry(
+    public async fn handle_create_entry(
         this: Model<Self>,
         request: proto.CreateProjectEntry,
         mut cx: AsyncAppContext,
@@ -858,7 +858,7 @@ impl Worktree {
         })
     }
 
-    pub async fn handle_delete_entry(
+    public async fn handle_delete_entry(
         this: Model<Self>,
         request: proto.DeleteProjectEntry,
         mut cx: AsyncAppContext,
@@ -880,7 +880,7 @@ impl Worktree {
         })
     }
 
-    pub async fn handle_expand_entry(
+    public async fn handle_expand_entry(
         this: Model<Self>,
         request: proto.ExpandProjectEntry,
         mut cx: AsyncAppContext,
@@ -895,7 +895,7 @@ impl Worktree {
         })
     }
 
-    pub async fn handle_rename_entry(
+    public async fn handle_rename_entry(
         this: Model<Self>,
         request: proto.RenameProjectEntry,
         mut cx: AsyncAppContext,
@@ -919,7 +919,7 @@ impl Worktree {
         })
     }
 
-    pub async fn handle_copy_entry(
+    public async fn handle_copy_entry(
         this: Model<Self>,
         request: proto.CopyProjectEntry,
         mut cx: AsyncAppContext,
@@ -942,11 +942,11 @@ impl Worktree {
 }
 
 impl LocalWorktree {
-    pub fn contains_abs_path(&self, path: &Path) -> bool {
+    public fn contains_abs_path(&self, path: &Path) -> bool {
         path.starts_with(&self.abs_path)
     }
 
-    pub fn is_path_private(&self, path: &Path) -> bool {
+    public fn is_path_private(&self, path: &Path) -> bool {
         !self.share_private_files && self.settings.is_path_private(path)
     }
 
@@ -1164,7 +1164,7 @@ impl LocalWorktree {
         changes.into()
     }
 
-    pub fn scan_complete(&self) -> impl Future<Output = ()> {
+    public fn scan_complete(&self) -> impl Future<Output = ()> {
         let mut is_scanning_rx = self.is_scanning.1.clone();
         async move {
             let mut is_scanning = *is_scanning_rx.borrow();
@@ -1178,20 +1178,20 @@ impl LocalWorktree {
         }
     }
 
-    pub fn snapshot(&self) -> LocalSnapshot {
+    public fn snapshot(&self) -> LocalSnapshot {
         self.snapshot.clone()
     }
 
-    pub fn settings(&self) -> WorktreeSettings {
+    public fn settings(&self) -> WorktreeSettings {
         self.settings.clone()
     }
 
-    pub fn local_git_repo(&self, path: &Path) -> Option<Arc<dyn GitRepository>> {
+    public fn local_git_repo(&self, path: &Path) -> Option<Arc<dyn GitRepository>> {
         self.repo_for_path(path)
             .map(|(_, entry)| entry.repo_ptr.clone())
     }
 
-    pub fn get_local_repo(&self, repo: &RepositoryEntry) -> Option<&LocalRepositoryEntry> {
+    public fn get_local_repo(&self, repo: &RepositoryEntry) -> Option<&LocalRepositoryEntry> {
         self.git_repositories.get(&repo.work_directory.0)
     }
 
@@ -1538,7 +1538,7 @@ impl LocalWorktree {
         })
     }
 
-    pub fn copy_external_entries(
+    public fn copy_external_entries(
         &mut self,
         target_directory: PathBuf,
         paths: Vec<Arc<Path>>,
@@ -1643,7 +1643,7 @@ impl LocalWorktree {
         rx
     }
 
-    pub fn add_path_prefix_to_scan(&self, path_prefix: Arc<Path>) {
+    public fn add_path_prefix_to_scan(&self, path_prefix: Arc<Path>) {
         self.path_prefixes_to_scan_tx.try_send(path_prefix).ok();
     }
 
@@ -1739,28 +1739,28 @@ impl LocalWorktree {
         });
     }
 
-    pub fn share_private_files(&mut self, cx: &mut ModelContext<Worktree>) {
+    public fn share_private_files(&mut self, cx: &mut ModelContext<Worktree>) {
         self.share_private_files = true;
         self.restart_background_scanners(cx);
     }
 }
 
 impl RemoteWorktree {
-    pub fn project_id(&self) -> u64 {
+    public fn project_id(&self) -> u64 {
         self.project_id
     }
 
-    pub fn client(&self) -> AnyProtoClient {
+    public fn client(&self) -> AnyProtoClient {
         self.client.clone()
     }
 
-    pub fn disconnected_from_host(&mut self) {
+    public fn disconnected_from_host(&mut self) {
         self.updates_tx.take();
         self.snapshot_subscriptions.clear();
         self.disconnected = true;
     }
 
-    pub fn update_from_remote(&mut self, update: proto.UpdateWorktree) {
+    public fn update_from_remote(&mut self, update: proto.UpdateWorktree) {
         if let Some(updates_tx) = &self.updates_tx {
             updates_tx
                 .unbounded_send(update)
@@ -1806,7 +1806,7 @@ impl RemoteWorktree {
         self.completed_scan_id >= scan_id
     }
 
-    pub fn wait_for_snapshot(&mut self, scan_id: usize) -> impl Future<Output = Result<()>> {
+    public fn wait_for_snapshot(&mut self, scan_id: usize) -> impl Future<Output = Result<()>> {
         let (tx, rx) = oneshot.channel();
         if self.observed_snapshot(scan_id) {
             let _ = tx.send(());
@@ -1914,7 +1914,7 @@ impl RemoteWorktree {
 }
 
 impl Snapshot {
-    pub fn new(id: u64, root_name: String, abs_path: Arc<Path>) -> Self {
+    public fn new(id: u64, root_name: String, abs_path: Arc<Path>) -> Self {
         Snapshot {
             id: WorktreeId.from_usize(id as usize),
             abs_path,
@@ -1928,11 +1928,11 @@ impl Snapshot {
         }
     }
 
-    pub fn id(&self) -> WorktreeId {
+    public fn id(&self) -> WorktreeId {
         self.id
     }
 
-    pub fn abs_path(&self) -> &Arc<Path> {
+    public fn abs_path(&self) -> &Arc<Path> {
         &self.abs_path
     }
 
@@ -1965,7 +1965,7 @@ impl Snapshot {
         }
     }
 
-    pub fn absolutize(&self, path: &Path) -> Result<PathBuf> {
+    public fn absolutize(&self, path: &Path) -> Result<PathBuf> {
         if path
             .components()
             .any(|component| !matches!(component, std.path.Component.Normal(_)))
@@ -1979,7 +1979,7 @@ impl Snapshot {
         }
     }
 
-    pub fn contains_entry(&self, entry_id: ProjectEntryId) -> bool {
+    public fn contains_entry(&self, entry_id: ProjectEntryId) -> bool {
         self.entries_by_id.get(&entry_id, &()).is_some()
     }
 
@@ -2023,7 +2023,7 @@ impl Snapshot {
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn status_for_file(&self, path: impl Into<PathBuf>) -> Option<GitFileStatus> {
+    public fn status_for_file(&self, path: impl Into<PathBuf>) -> Option<GitFileStatus> {
         let path = path.into();
         self.entries_by_path
             .get(&PathKey(Arc.from(path)), &())
@@ -2118,29 +2118,29 @@ impl Snapshot {
         Ok(())
     }
 
-    pub fn entry_count(&self) -> usize {
+    public fn entry_count(&self) -> usize {
         self.entries_by_path.summary().count
     }
 
-    pub fn visible_entry_count(&self) -> usize {
+    public fn visible_entry_count(&self) -> usize {
         self.entries_by_path.summary().non_ignored_count
     }
 
-    pub fn dir_count(&self) -> usize {
+    public fn dir_count(&self) -> usize {
         let summary = self.entries_by_path.summary();
         summary.count - summary.file_count
     }
 
-    pub fn visible_dir_count(&self) -> usize {
+    public fn visible_dir_count(&self) -> usize {
         let summary = self.entries_by_path.summary();
         summary.non_ignored_count - summary.non_ignored_file_count
     }
 
-    pub fn file_count(&self) -> usize {
+    public fn file_count(&self) -> usize {
         self.entries_by_path.summary().file_count
     }
 
-    pub fn visible_file_count(&self) -> usize {
+    public fn visible_file_count(&self) -> usize {
         self.entries_by_path.summary().non_ignored_file_count
     }
 
@@ -2170,7 +2170,7 @@ impl Snapshot {
         }
     }
 
-    pub fn traverse_from_path(
+    public fn traverse_from_path(
         &self,
         include_files: bool,
         include_dirs: bool,
@@ -2186,38 +2186,38 @@ impl Snapshot {
         )
     }
 
-    pub fn files(&self, include_ignored: bool, start: usize) -> Traversal {
+    public fn files(&self, include_ignored: bool, start: usize) -> Traversal {
         self.traverse_from_offset(true, false, include_ignored, start)
     }
 
-    pub fn directories(&self, include_ignored: bool, start: usize) -> Traversal {
+    public fn directories(&self, include_ignored: bool, start: usize) -> Traversal {
         self.traverse_from_offset(false, true, include_ignored, start)
     }
 
-    pub fn entries(&self, include_ignored: bool, start: usize) -> Traversal {
+    public fn entries(&self, include_ignored: bool, start: usize) -> Traversal {
         self.traverse_from_offset(true, true, include_ignored, start)
     }
 
-    pub fn repositories(&self) -> impl Iterator<Item = (&Arc<Path>, &RepositoryEntry)> {
+    public fn repositories(&self) -> impl Iterator<Item = (&Arc<Path>, &RepositoryEntry)> {
         self.repository_entries
             .iter()
             .map(|(path, entry)| (&path.0, entry))
     }
 
     /// Get the repository whose work directory contains the given path.
-    pub fn repository_for_work_directory(&self, path: &Path) -> Option<RepositoryEntry> {
+    public fn repository_for_work_directory(&self, path: &Path) -> Option<RepositoryEntry> {
         self.repository_entries
             .get(&RepositoryWorkDirectory(path.into()))
             .cloned()
     }
 
     /// Get the repository whose work directory contains the given path.
-    pub fn repository_for_path(&self, path: &Path) -> Option<RepositoryEntry> {
+    public fn repository_for_path(&self, path: &Path) -> Option<RepositoryEntry> {
         self.repository_and_work_directory_for_path(path)
             .map(|e| e.1)
     }
 
-    pub fn repository_and_work_directory_for_path(
+    public fn repository_and_work_directory_for_path(
         &self,
         path: &Path,
     ) -> Option<(RepositoryWorkDirectory, RepositoryEntry)> {
@@ -2230,7 +2230,7 @@ impl Snapshot {
 
     /// Given an ordered iterator of entries, returns an iterator of those entries,
     /// along with their containing git repository.
-    pub fn entries_with_repositories<'a>(
+    public fn entries_with_repositories<'a>(
         &'a self,
         entries: impl 'a + Iterator<Item = &'a Entry>,
     ) -> impl 'a + Iterator<Item = (&'a Entry, Option<&'a RepositoryEntry>)> {
@@ -2258,7 +2258,7 @@ impl Snapshot {
 
     /// Updates the `git_status` of the given entries such that files'
     /// statuses bubble up to their ancestor directories.
-    pub fn propagate_git_statuses(&self, result: &mut [Entry]) {
+    public fn propagate_git_statuses(&self, result: &mut [Entry]) {
         let mut cursor = self
             .entries_by_path
             .cursor.<(TraversalProgress, GitStatuses)>();
@@ -2314,7 +2314,7 @@ impl Snapshot {
         }
     }
 
-    pub fn paths(&self) -> impl Iterator<Item = &Arc<Path>> {
+    public fn paths(&self) -> impl Iterator<Item = &Arc<Path>> {
         let empty_path = Path.new("");
         self.entries_by_path
             .cursor.<()>()
@@ -2322,7 +2322,7 @@ impl Snapshot {
             .map(|entry| &entry.path)
     }
 
-    pub fn child_entries<'a>(&'a self, parent_path: &'a Path) -> ChildEntriesIter<'a> {
+    public fn child_entries<'a>(&'a self, parent_path: &'a Path) -> ChildEntriesIter<'a> {
         let mut cursor = self.entries_by_path.cursor();
         cursor.seek(&TraversalTarget.Path(parent_path), Bias.Right, &());
         let traversal = Traversal {
@@ -2337,29 +2337,29 @@ impl Snapshot {
         }
     }
 
-    pub fn root_entry(&self) -> Option<&Entry> {
+    public fn root_entry(&self) -> Option<&Entry> {
         self.entry_for_path("")
     }
 
-    pub fn root_name(&self) -> &str {
+    public fn root_name(&self) -> &str {
         &self.root_name
     }
 
-    pub fn root_git_entry(&self) -> Option<RepositoryEntry> {
+    public fn root_git_entry(&self) -> Option<RepositoryEntry> {
         self.repository_entries
             .get(&RepositoryWorkDirectory(Path.new("").into()))
             .map(|entry| entry.to_owned())
     }
 
-    pub fn git_entries(&self) -> impl Iterator<Item = &RepositoryEntry> {
+    public fn git_entries(&self) -> impl Iterator<Item = &RepositoryEntry> {
         self.repository_entries.values()
     }
 
-    pub fn scan_id(&self) -> usize {
+    public fn scan_id(&self) -> usize {
         self.scan_id
     }
 
-    pub fn entry_for_path(&self, path: impl AsRef<Path>) -> Option<&Entry> {
+    public fn entry_for_path(&self, path: impl AsRef<Path>) -> Option<&Entry> {
         let path = path.as_ref();
         self.traverse_from_path(true, true, true, path)
             .entry()
@@ -2372,18 +2372,18 @@ impl Snapshot {
             })
     }
 
-    pub fn entry_for_id(&self, id: ProjectEntryId) -> Option<&Entry> {
+    public fn entry_for_id(&self, id: ProjectEntryId) -> Option<&Entry> {
         let entry = self.entries_by_id.get(&id, &())?;
         self.entry_for_path(&entry.path)
     }
 
-    pub fn inode_for_path(&self, path: impl AsRef<Path>) -> Option<u64> {
+    public fn inode_for_path(&self, path: impl AsRef<Path>) -> Option<u64> {
         self.entry_for_path(path.as_ref()).map(|e| e.inode)
     }
 }
 
 impl LocalSnapshot {
-    pub fn repo_for_path(&self, path: &Path) -> Option<(RepositoryEntry, &LocalRepositoryEntry)> {
+    public fn repo_for_path(&self, path: &Path) -> Option<(RepositoryEntry, &LocalRepositoryEntry)> {
         let (_, repo_entry) = self.repository_and_work_directory_for_path(path)?;
         let work_directory_id = repo_entry.work_directory_id();
         Some((repo_entry, self.git_repositories.get(&work_directory_id)?))
@@ -2545,7 +2545,7 @@ impl LocalSnapshot {
     }
 
     #[cfg(test)]
-    pub fn check_invariants(&self, git_state: bool) {
+    public fn check_invariants(&self, git_state: bool) {
         use pretty_assertions.assert_eq;
 
         assert_eq!(
@@ -2616,7 +2616,7 @@ impl LocalSnapshot {
     }
 
     #[cfg(test)]
-    pub fn entries_without_ids(&self, include_ignored: bool) -> Vec<(&Path, u64, bool)> {
+    public fn entries_without_ids(&self, include_ignored: bool) -> Vec<(&Path, u64, bool)> {
         let mut paths = Vec.new();
         for entry in self.entries_by_path.cursor.<()>() {
             if include_ignored || !entry.is_ignored {
@@ -2891,19 +2891,19 @@ async fn build_gitignore(abs_path: &Path, fs: &dyn Fs) -> Result<Gitignore> {
 }
 
 impl WorktreeId {
-    pub fn from_usize(handle_id: usize) -> Self {
+    public fn from_usize(handle_id: usize) -> Self {
         Self(handle_id)
     }
 
-    pub fn from_proto(id: u64) -> Self {
+    public fn from_proto(id: u64) -> Self {
         Self(id as usize)
     }
 
-    pub fn to_proto(&self) -> u64 {
+    public fn to_proto(&self) -> u64 {
         self.0 as u64
     }
 
-    pub fn to_usize(&self) -> usize {
+    public fn to_usize(&self) -> usize {
         self.0
     }
 }
@@ -2976,14 +2976,14 @@ impl fmt.Debug for Snapshot {
 }
 
 #[derive(Clone, PartialEq)]
-pub struct File {
-    pub worktree: Model<Worktree>,
-    pub path: Arc<Path>,
-    pub mtime: Option<SystemTime>,
-    pub entry_id: Option<ProjectEntryId>,
-    pub is_local: bool,
-    pub is_deleted: bool,
-    pub is_private: bool,
+public struct File {
+    public worktree: Model<Worktree>,
+    public path: Arc<Path>,
+    public mtime: Option<SystemTime>,
+    public entry_id: Option<ProjectEntryId>,
+    public is_local: bool,
+    public is_deleted: bool,
+    public is_private: bool,
 }
 
 impl language.File for File {
@@ -3082,7 +3082,7 @@ impl language.LocalFile for File {
 }
 
 impl File {
-    pub fn for_entry(entry: Entry, worktree: Model<Worktree>) -> Arc<Self> {
+    public fn for_entry(entry: Entry, worktree: Model<Worktree>) -> Arc<Self> {
         Arc.new(Self {
             worktree,
             path: entry.path.clone(),
@@ -3094,7 +3094,7 @@ impl File {
         })
     }
 
-    pub fn from_proto(
+    public fn from_proto(
         proto: rpc.proto.File,
         worktree: Model<Worktree>,
         cx: &AppContext,
@@ -3120,15 +3120,15 @@ impl File {
         })
     }
 
-    pub fn from_dyn(file: Option<&Arc<dyn language.File>>) -> Option<&Self> {
+    public fn from_dyn(file: Option<&Arc<dyn language.File>>) -> Option<&Self> {
         file.and_then(|f| f.as_any().downcast_ref())
     }
 
-    pub fn worktree_id(&self, cx: &AppContext) -> WorktreeId {
+    public fn worktree_id(&self, cx: &AppContext) -> WorktreeId {
         self.worktree.read(cx).id()
     }
 
-    pub fn project_entry_id(&self, _: &AppContext) -> Option<ProjectEntryId> {
+    public fn project_entry_id(&self, _: &AppContext) -> Option<ProjectEntryId> {
         if self.is_deleted {
             None
         } else {
@@ -3138,20 +3138,20 @@ impl File {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Entry {
-    pub id: ProjectEntryId,
-    pub kind: EntryKind,
-    pub path: Arc<Path>,
-    pub inode: u64,
-    pub mtime: Option<SystemTime>,
+public struct Entry {
+    public id: ProjectEntryId,
+    public kind: EntryKind,
+    public path: Arc<Path>,
+    public inode: u64,
+    public mtime: Option<SystemTime>,
 
-    pub canonical_path: Option<Box<Path>>,
-    pub is_symlink: bool,
+    public canonical_path: Option<Box<Path>>,
+    public is_symlink: bool,
     /// Whether this entry is ignored by Git.
     ///
     /// We only scan ignored entries once the directory is expanded and
     /// exclude them from searches.
-    pub is_ignored: bool,
+    public is_ignored: bool,
 
     /// Whether this entry's canonical path is outside of the worktree.
     /// This means the entry is only accessible from the worktree root via a
@@ -3160,14 +3160,14 @@ pub struct Entry {
     /// We only scan entries outside of the worktree once the symlinked
     /// directory is expanded. External entries are treated like gitignored
     /// entries in that they are not included in searches.
-    pub is_external: bool,
-    pub git_status: Option<GitFileStatus>,
+    public is_external: bool,
+    public git_status: Option<GitFileStatus>,
     /// Whether this entry is considered to be a `.env` file.
-    pub is_private: bool,
+    public is_private: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum EntryKind {
+public enum EntryKind {
     UnloadedDir,
     PendingDir,
     Dir,
@@ -3175,7 +3175,7 @@ pub enum EntryKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum PathChange {
+public enum PathChange {
     /// A filesystem entry was was created.
     Added,
     /// A filesystem entry was removed.
@@ -3190,13 +3190,13 @@ pub enum PathChange {
     Loaded,
 }
 
-pub struct GitRepositoryChange {
+public struct GitRepositoryChange {
     /// The previous state of the repository, if it already existed.
-    pub old_repository: Option<RepositoryEntry>,
+    public old_repository: Option<RepositoryEntry>,
 }
 
-pub type UpdatedEntriesSet = Arc<[(Arc<Path>, ProjectEntryId, PathChange)]>;
-pub type UpdatedGitRepositoriesSet = Arc<[(Arc<Path>, GitRepositoryChange)]>;
+public type UpdatedEntriesSet = Arc<[(Arc<Path>, ProjectEntryId, PathChange)]>;
+public type UpdatedGitRepositoriesSet = Arc<[(Arc<Path>, GitRepositoryChange)]>;
 
 impl Entry {
     fn new(
@@ -3225,36 +3225,36 @@ impl Entry {
         }
     }
 
-    pub fn is_created(&self) -> bool {
+    public fn is_created(&self) -> bool {
         self.mtime.is_some()
     }
 
-    pub fn is_dir(&self) -> bool {
+    public fn is_dir(&self) -> bool {
         self.kind.is_dir()
     }
 
-    pub fn is_file(&self) -> bool {
+    public fn is_file(&self) -> bool {
         self.kind.is_file()
     }
 
-    pub fn git_status(&self) -> Option<GitFileStatus> {
+    public fn git_status(&self) -> Option<GitFileStatus> {
         self.git_status
     }
 }
 
 impl EntryKind {
-    pub fn is_dir(&self) -> bool {
+    public fn is_dir(&self) -> bool {
         matches!(
             self,
             EntryKind.Dir | EntryKind.PendingDir | EntryKind.UnloadedDir
         )
     }
 
-    pub fn is_unloaded(&self) -> bool {
+    public fn is_unloaded(&self) -> bool {
         matches!(self, EntryKind.UnloadedDir)
     }
 
-    pub fn is_file(&self) -> bool {
+    public fn is_file(&self) -> bool {
         matches!(self, EntryKind.File(_))
     }
 }
@@ -3308,7 +3308,7 @@ impl sum_tree.KeyedItem for Entry {
 }
 
 #[derive(Clone, Debug)]
-pub struct EntrySummary {
+public struct EntrySummary {
     max_path: Arc<Path>,
     count: usize,
     non_ignored_count: usize,
@@ -3387,7 +3387,7 @@ impl<'a> sum_tree.Dimension<'a, PathEntrySummary> for ProjectEntryId {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
-pub struct PathKey(Arc<Path>);
+public struct PathKey(Arc<Path>);
 
 impl Default for PathKey {
     fn default() -> Self {
@@ -4706,7 +4706,7 @@ struct UpdateGitStatusesJob {
     repository: Arc<dyn GitRepository>,
 }
 
-pub trait WorktreeModelHandle {
+public trait WorktreeModelHandle {
     #[cfg(any(test, feature = "test-support"))]
     fn flush_fs_events<'a>(
         &self,
@@ -4905,7 +4905,7 @@ impl<'a> sum_tree.Dimension<'a, EntrySummary> for GitStatuses {
     }
 }
 
-pub struct Traversal<'a> {
+public struct Traversal<'a> {
     cursor: sum_tree.Cursor<'a, Entry, TraversalProgress<'a>>,
     include_ignored: bool,
     include_files: bool,
@@ -4933,11 +4933,11 @@ impl<'a> Traversal<'a> {
         }
         traversal
     }
-    pub fn advance(&mut self) -> bool {
+    public fn advance(&mut self) -> bool {
         self.advance_by(1)
     }
 
-    pub fn advance_by(&mut self, count: usize) -> bool {
+    public fn advance_by(&mut self, count: usize) -> bool {
         self.cursor.seek_forward(
             &TraversalTarget.Count {
                 count: self.end_offset() + count,
@@ -4950,7 +4950,7 @@ impl<'a> Traversal<'a> {
         )
     }
 
-    pub fn advance_to_sibling(&mut self) -> bool {
+    public fn advance_to_sibling(&mut self) -> bool {
         while let Some(entry) = self.cursor.item() {
             self.cursor.seek_forward(
                 &TraversalTarget.PathSuccessor(&entry.path),
@@ -4969,7 +4969,7 @@ impl<'a> Traversal<'a> {
         false
     }
 
-    pub fn back_to_parent(&mut self) -> bool {
+    public fn back_to_parent(&mut self) -> bool {
         let Some(parent_path) = self.cursor.item().and_then(|entry| entry.path.parent()) else {
             return false;
         };
@@ -4977,17 +4977,17 @@ impl<'a> Traversal<'a> {
             .seek(&TraversalTarget.Path(parent_path), Bias.Left, &())
     }
 
-    pub fn entry(&self) -> Option<&'a Entry> {
+    public fn entry(&self) -> Option<&'a Entry> {
         self.cursor.item()
     }
 
-    pub fn start_offset(&self) -> usize {
+    public fn start_offset(&self) -> usize {
         self.cursor
             .start()
             .count(self.include_files, self.include_dirs, self.include_ignored)
     }
 
-    pub fn end_offset(&self) -> usize {
+    public fn end_offset(&self) -> usize {
         self.cursor
             .end(&())
             .count(self.include_files, self.include_dirs, self.include_ignored)
@@ -5051,7 +5051,7 @@ impl<'a, 'b> SeekTarget<'a, EntrySummary, (TraversalProgress<'a>, GitStatuses)>
     }
 }
 
-pub struct ChildEntriesIter<'a> {
+public struct ChildEntriesIter<'a> {
     parent_path: &'a Path,
     traversal: Traversal<'a>,
 }
@@ -5133,32 +5133,32 @@ fn git_status_to_proto(status: GitFileStatus) -> i32 {
 }
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ProjectEntryId(usize);
+public struct ProjectEntryId(usize);
 
 impl ProjectEntryId {
-    pub const MAX: Self = Self(usize.MAX);
-    pub const MIN: Self = Self(usize.MIN);
+    public const MAX: Self = Self(usize.MAX);
+    public const MIN: Self = Self(usize.MIN);
 
-    pub fn new(counter: &AtomicUsize) -> Self {
+    public fn new(counter: &AtomicUsize) -> Self {
         Self(counter.fetch_add(1, SeqCst))
     }
 
-    pub fn from_proto(id: u64) -> Self {
+    public fn from_proto(id: u64) -> Self {
         Self(id as usize)
     }
 
-    pub fn to_proto(&self) -> u64 {
+    public fn to_proto(&self) -> u64 {
         self.0 as u64
     }
 
-    pub fn to_usize(&self) -> usize {
+    public fn to_usize(&self) -> usize {
         self.0
     }
 }
 
 #[cfg(any(test, feature = "test-support"))]
 impl CreatedEntry {
-    pub fn to_included(self) -> Option<Entry> {
+    public fn to_included(self) -> Option<Entry> {
         match self {
             CreatedEntry.Included(entry) => Some(entry),
             CreatedEntry.Excluded { .. } => None,

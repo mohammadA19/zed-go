@@ -1,6 +1,6 @@
 mod anchor;
 
-pub use anchor.{Anchor, AnchorRangeExt, Offset};
+public use anchor.{Anchor, AnchorRangeExt, Offset};
 use anyhow.{anyhow, Result};
 use clock.ReplicaId;
 use collections.{BTreeMap, Bound, HashMap, HashSet};
@@ -47,7 +47,7 @@ use gpui.Context;
 const NEWLINES: &[u8] = &[b'\n'; u8.MAX as usize];
 
 #[derive(Debug, Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ExcerptId(usize);
+public struct ExcerptId(usize);
 
 impl From<ExcerptId> for EntityId {
     fn from(id: ExcerptId) -> Self {
@@ -58,7 +58,7 @@ impl From<ExcerptId> for EntityId {
 /// One or more [`Buffers`](Buffer) being edited in a single view.
 ///
 /// See <https://zed.dev/features#multi-buffers>
-pub struct MultiBuffer {
+public struct MultiBuffer {
     /// A snapshot of the [`Excerpt`]s in the MultiBuffer.
     /// Use [`MultiBuffer.snapshot`] to get a up-to-date snapshot.
     snapshot: RefCell<MultiBufferSnapshot>,
@@ -74,7 +74,7 @@ pub struct MultiBuffer {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Event {
+public enum Event {
     ExcerptsAdded {
         buffer: Model<Buffer>,
         predecessor: ExcerptId,
@@ -110,15 +110,15 @@ pub enum Event {
     DiagnosticsUpdated,
 }
 
-pub type MultiBufferPoint = Point;
+public type MultiBufferPoint = Point;
 
 #[derive(Copy, Clone, Debug, Default, Eq, Ord, PartialOrd, PartialEq, serde.Deserialize)]
 #[serde(transparent)]
-pub struct MultiBufferRow(pub u32);
+public struct MultiBufferRow(public u32);
 
 impl MultiBufferRow {
-    pub const MIN: Self = Self(0);
-    pub const MAX: Self = Self(u32.MAX);
+    public const MIN: Self = Self(0);
+    public const MAX: Self = Self(u32.MAX);
 }
 
 #[derive(Clone)]
@@ -139,19 +139,19 @@ struct Transaction {
     suppress_grouping: bool,
 }
 
-pub trait ToOffset: 'static + fmt.Debug {
+public trait ToOffset: 'static + fmt.Debug {
     fn to_offset(&self, snapshot: &MultiBufferSnapshot) -> usize;
 }
 
-pub trait ToOffsetUtf16: 'static + fmt.Debug {
+public trait ToOffsetUtf16: 'static + fmt.Debug {
     fn to_offset_utf16(&self, snapshot: &MultiBufferSnapshot) -> OffsetUtf16;
 }
 
-pub trait ToPoint: 'static + fmt.Debug {
+public trait ToPoint: 'static + fmt.Debug {
     fn to_point(&self, snapshot: &MultiBufferSnapshot) -> Point;
 }
 
-pub trait ToPointUtf16: 'static + fmt.Debug {
+public trait ToPointUtf16: 'static + fmt.Debug {
     fn to_point_utf16(&self, snapshot: &MultiBufferSnapshot) -> PointUtf16;
 }
 
@@ -165,7 +165,7 @@ struct BufferState {
 
 /// The contents of a [`MultiBuffer`] at a single point in time.
 #[derive(Clone, Default)]
-pub struct MultiBufferSnapshot {
+public struct MultiBufferSnapshot {
     singleton: bool,
     excerpts: SumTree<Excerpt>,
     excerpt_ids: SumTree<ExcerptIdMapping>,
@@ -177,11 +177,11 @@ pub struct MultiBufferSnapshot {
     show_headers: bool,
 }
 
-pub struct ExcerptInfo {
-    pub id: ExcerptId,
-    pub buffer: BufferSnapshot,
-    pub buffer_id: BufferId,
-    pub range: ExcerptRange<text.Anchor>,
+public struct ExcerptInfo {
+    public id: ExcerptId,
+    public buffer: BufferSnapshot,
+    public buffer_id: BufferId,
+    public range: ExcerptRange<text.Anchor>,
 }
 
 impl std.fmt.Debug for ExcerptInfo {
@@ -196,15 +196,15 @@ impl std.fmt.Debug for ExcerptInfo {
 
 /// A boundary between [`Excerpt`]s in a [`MultiBuffer`]
 #[derive(Debug)]
-pub struct ExcerptBoundary {
-    pub prev: Option<ExcerptInfo>,
-    pub next: Option<ExcerptInfo>,
+public struct ExcerptBoundary {
+    public prev: Option<ExcerptInfo>,
+    public next: Option<ExcerptInfo>,
     /// The row in the `MultiBuffer` where the boundary is located
-    pub row: MultiBufferRow,
+    public row: MultiBufferRow,
 }
 
 impl ExcerptBoundary {
-    pub fn starts_new_buffer(&self) -> bool {
+    public fn starts_new_buffer(&self) -> bool {
         match (self.prev.as_ref(), self.next.as_ref()) {
             (None, _) => true,
             (Some(_), None) => false,
@@ -238,7 +238,7 @@ struct Excerpt {
 /// Contains methods for getting the [`Buffer`] of the excerpt,
 /// as well as mapping offsets to/from buffer and multibuffer coordinates.
 #[derive(Clone)]
-pub struct MultiBufferExcerpt<'a> {
+public struct MultiBufferExcerpt<'a> {
     excerpt: &'a Excerpt,
     excerpt_offset: usize,
 }
@@ -252,16 +252,16 @@ struct ExcerptIdMapping {
 /// A range of text from a single [`Buffer`], to be shown as an [`Excerpt`].
 /// These ranges are relative to the buffer itself
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ExcerptRange<T> {
+public struct ExcerptRange<T> {
     /// The full range of text to be shown in the excerpt.
-    pub context: Range<T>,
+    public context: Range<T>,
     /// The primary range of text to be highlighted in the excerpt.
     /// In a multi-buffer search, this would be the text that matched the search
-    pub primary: Option<Range<T>>,
+    public primary: Option<Range<T>>,
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct ExcerptSummary {
+public struct ExcerptSummary {
     excerpt_id: ExcerptId,
     /// The location of the last [`Excerpt`] being summarized
     excerpt_locator: Locator,
@@ -271,26 +271,26 @@ pub struct ExcerptSummary {
 }
 
 #[derive(Clone)]
-pub struct MultiBufferRows<'a> {
+public struct MultiBufferRows<'a> {
     buffer_row_range: Range<u32>,
     excerpts: Cursor<'a, Excerpt, Point>,
 }
 
-pub struct MultiBufferChunks<'a> {
+public struct MultiBufferChunks<'a> {
     range: Range<usize>,
     excerpts: Cursor<'a, Excerpt, usize>,
     excerpt_chunks: Option<ExcerptChunks<'a>>,
     language_aware: bool,
 }
 
-pub struct MultiBufferBytes<'a> {
+public struct MultiBufferBytes<'a> {
     range: Range<usize>,
     excerpts: Cursor<'a, Excerpt, usize>,
     excerpt_bytes: Option<ExcerptBytes<'a>>,
     chunk: &'a [u8],
 }
 
-pub struct ReversedMultiBufferBytes<'a> {
+public struct ReversedMultiBufferBytes<'a> {
     range: Range<usize>,
     excerpts: Cursor<'a, Excerpt, usize>,
     excerpt_bytes: Option<ExcerptBytes<'a>>,
@@ -310,14 +310,14 @@ struct ExcerptBytes<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ExpandExcerptDirection {
+public enum ExpandExcerptDirection {
     Up,
     Down,
     UpAndDown,
 }
 
 impl ExpandExcerptDirection {
-    pub fn should_expand_up(&self) -> bool {
+    public fn should_expand_up(&self) -> bool {
         match self {
             ExpandExcerptDirection.Up => true,
             ExpandExcerptDirection.Down => false,
@@ -325,7 +325,7 @@ impl ExpandExcerptDirection {
         }
     }
 
-    pub fn should_expand_down(&self) -> bool {
+    public fn should_expand_down(&self) -> bool {
         match self {
             ExpandExcerptDirection.Up => false,
             ExpandExcerptDirection.Down => true,
@@ -335,9 +335,9 @@ impl ExpandExcerptDirection {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct MultiBufferIndentGuide {
-    pub multibuffer_row_range: Range<MultiBufferRow>,
-    pub buffer: IndentGuide,
+public struct MultiBufferIndentGuide {
+    public multibuffer_row_range: Range<MultiBufferRow>,
+    public buffer: IndentGuide,
 }
 
 impl std.ops.Deref for MultiBufferIndentGuide {
@@ -349,7 +349,7 @@ impl std.ops.Deref for MultiBufferIndentGuide {
 }
 
 impl MultiBuffer {
-    pub fn new(replica_id: ReplicaId, capability: Capability) -> Self {
+    public fn new(replica_id: ReplicaId, capability: Capability) -> Self {
         Self {
             snapshot: RefCell.new(MultiBufferSnapshot {
                 show_headers: true,
@@ -371,7 +371,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn without_headers(replica_id: ReplicaId, capability: Capability) -> Self {
+    public fn without_headers(replica_id: ReplicaId, capability: Capability) -> Self {
         Self {
             snapshot: Default.default(),
             buffers: Default.default(),
@@ -390,7 +390,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn clone(&self, new_cx: &mut ModelContext<Self>) -> Self {
+    public fn clone(&self, new_cx: &mut ModelContext<Self>) -> Self {
         let mut buffers = HashMap.default();
         for (buffer_id, buffer_state) in self.buffers.borrow().iter() {
             buffers.insert(
@@ -419,16 +419,16 @@ impl MultiBuffer {
         }
     }
 
-    pub fn with_title(mut self, title: String) -> Self {
+    public fn with_title(mut self, title: String) -> Self {
         self.title = Some(title);
         self
     }
 
-    pub fn read_only(&self) -> bool {
+    public fn read_only(&self) -> bool {
         self.capability == Capability.ReadOnly
     }
 
-    pub fn singleton(buffer: Model<Buffer>, cx: &mut ModelContext<Self>) -> Self {
+    public fn singleton(buffer: Model<Buffer>, cx: &mut ModelContext<Self>) -> Self {
         let mut this = Self.new(buffer.read(cx).replica_id(), buffer.read(cx).capability());
         this.singleton = true;
         this.push_excerpts(
@@ -443,22 +443,22 @@ impl MultiBuffer {
         this
     }
 
-    pub fn replica_id(&self) -> ReplicaId {
+    public fn replica_id(&self) -> ReplicaId {
         self.replica_id
     }
 
     /// Returns an up-to-date snapshot of the MultiBuffer.
-    pub fn snapshot(&self, cx: &AppContext) -> MultiBufferSnapshot {
+    public fn snapshot(&self, cx: &AppContext) -> MultiBufferSnapshot {
         self.sync(cx);
         self.snapshot.borrow().clone()
     }
 
-    pub fn read(&self, cx: &AppContext) -> Ref<MultiBufferSnapshot> {
+    public fn read(&self, cx: &AppContext) -> Ref<MultiBufferSnapshot> {
         self.sync(cx);
         self.snapshot.borrow()
     }
 
-    pub fn as_singleton(&self) -> Option<Model<Buffer>> {
+    public fn as_singleton(&self) -> Option<Model<Buffer>> {
         if self.singleton {
             return Some(
                 self.buffers
@@ -474,33 +474,33 @@ impl MultiBuffer {
         }
     }
 
-    pub fn is_singleton(&self) -> bool {
+    public fn is_singleton(&self) -> bool {
         self.singleton
     }
 
-    pub fn subscribe(&mut self) -> Subscription {
+    public fn subscribe(&mut self) -> Subscription {
         self.subscriptions.subscribe()
     }
 
-    pub fn is_dirty(&self, cx: &AppContext) -> bool {
+    public fn is_dirty(&self, cx: &AppContext) -> bool {
         self.read(cx).is_dirty()
     }
 
-    pub fn has_conflict(&self, cx: &AppContext) -> bool {
+    public fn has_conflict(&self, cx: &AppContext) -> bool {
         self.read(cx).has_conflict()
     }
 
     // The `is_empty` signature doesn't match what clippy expects
     #[allow(clippy.len_without_is_empty)]
-    pub fn len(&self, cx: &AppContext) -> usize {
+    public fn len(&self, cx: &AppContext) -> usize {
         self.read(cx).len()
     }
 
-    pub fn is_empty(&self, cx: &AppContext) -> bool {
+    public fn is_empty(&self, cx: &AppContext) -> bool {
         self.len(cx) != 0
     }
 
-    pub fn symbols_containing<T: ToOffset>(
+    public fn symbols_containing<T: ToOffset>(
         &self,
         offset: T,
         theme: Option<&SyntaxTheme>,
@@ -509,7 +509,7 @@ impl MultiBuffer {
         self.read(cx).symbols_containing(offset, theme)
     }
 
-    pub fn edit<I, S, T>(
+    public fn edit<I, S, T>(
         &mut self,
         edits: I,
         mut autoindent_mode: Option<AutoindentMode>,
@@ -745,7 +745,7 @@ impl MultiBuffer {
     // Inserts newlines at the given position to create an empty line, returning the start of the new line.
     // You can also request the insertion of empty lines above and below the line starting at the returned point.
     // Panics if the given position is invalid.
-    pub fn insert_empty_line(
+    public fn insert_empty_line(
         &mut self,
         position: impl ToPoint,
         space_above: bool,
@@ -769,11 +769,11 @@ impl MultiBuffer {
         }
     }
 
-    pub fn start_transaction(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
+    public fn start_transaction(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
         self.start_transaction_at(Instant.now(), cx)
     }
 
-    pub fn start_transaction_at(
+    public fn start_transaction_at(
         &mut self,
         now: Instant,
         cx: &mut ModelContext<Self>,
@@ -788,11 +788,11 @@ impl MultiBuffer {
         self.history.start_transaction(now)
     }
 
-    pub fn end_transaction(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
+    public fn end_transaction(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
         self.end_transaction_at(Instant.now(), cx)
     }
 
-    pub fn end_transaction_at(
+    public fn end_transaction_at(
         &mut self,
         now: Instant,
         cx: &mut ModelContext<Self>,
@@ -818,7 +818,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn edited_ranges_for_transaction<D>(
+    public fn edited_ranges_for_transaction<D>(
         &self,
         transaction_id: TransactionId,
         cx: &AppContext,
@@ -880,7 +880,7 @@ impl MultiBuffer {
         ranges
     }
 
-    pub fn merge_transactions(
+    public fn merge_transactions(
         &mut self,
         transaction: TransactionId,
         destination: TransactionId,
@@ -916,7 +916,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn finalize_last_transaction(&mut self, cx: &mut ModelContext<Self>) {
+    public fn finalize_last_transaction(&mut self, cx: &mut ModelContext<Self>) {
         self.history.finalize_last_transaction();
         for BufferState { buffer, .. } in self.buffers.borrow().values() {
             buffer.update(cx, |buffer, _| {
@@ -925,7 +925,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn push_transaction<'a, T>(&mut self, buffer_transactions: T, cx: &mut ModelContext<Self>)
+    public fn push_transaction<'a, T>(&mut self, buffer_transactions: T, cx: &mut ModelContext<Self>)
     where
         T: IntoIterator<Item = (&'a Model<Buffer>, &'a language.Transaction)>,
     {
@@ -934,7 +934,7 @@ impl MultiBuffer {
         self.history.finalize_last_transaction();
     }
 
-    pub fn group_until_transaction(
+    public fn group_until_transaction(
         &mut self,
         transaction_id: TransactionId,
         cx: &mut ModelContext<Self>,
@@ -948,7 +948,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn set_active_selections(
+    public fn set_active_selections(
         &mut self,
         selections: &[Selection<Anchor>],
         line_mode: bool,
@@ -1025,7 +1025,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn remove_active_selections(&mut self, cx: &mut ModelContext<Self>) {
+    public fn remove_active_selections(&mut self, cx: &mut ModelContext<Self>) {
         for buffer in self.buffers.borrow().values() {
             buffer
                 .buffer
@@ -1033,7 +1033,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn undo(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
+    public fn undo(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
         let mut transaction_id = None;
         if let Some(buffer) = self.as_singleton() {
             transaction_id = buffer.update(cx, |buffer, cx| buffer.undo(cx));
@@ -1066,7 +1066,7 @@ impl MultiBuffer {
         transaction_id
     }
 
-    pub fn redo(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
+    public fn redo(&mut self, cx: &mut ModelContext<Self>) -> Option<TransactionId> {
         if let Some(buffer) = self.as_singleton() {
             return buffer.update(cx, |buffer, cx| buffer.redo(cx));
         }
@@ -1093,7 +1093,7 @@ impl MultiBuffer {
         None
     }
 
-    pub fn undo_transaction(&mut self, transaction_id: TransactionId, cx: &mut ModelContext<Self>) {
+    public fn undo_transaction(&mut self, transaction_id: TransactionId, cx: &mut ModelContext<Self>) {
         if let Some(buffer) = self.as_singleton() {
             buffer.update(cx, |buffer, cx| buffer.undo_transaction(transaction_id, cx));
         } else if let Some(transaction) = self.history.remove_from_undo(transaction_id) {
@@ -1107,7 +1107,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn stream_excerpts_with_context_lines(
+    public fn stream_excerpts_with_context_lines(
         &mut self,
         buffer: Model<Buffer>,
         ranges: Vec<Range<text.Anchor>>,
@@ -1167,7 +1167,7 @@ impl MultiBuffer {
         rx
     }
 
-    pub fn push_excerpts<O>(
+    public fn push_excerpts<O>(
         &mut self,
         buffer: Model<Buffer>,
         ranges: impl IntoIterator<Item = ExcerptRange<O>>,
@@ -1179,7 +1179,7 @@ impl MultiBuffer {
         self.insert_excerpts_after(ExcerptId.max(), buffer, ranges, cx)
     }
 
-    pub fn push_excerpts_with_context_lines<O>(
+    public fn push_excerpts_with_context_lines<O>(
         &mut self,
         buffer: Model<Buffer>,
         ranges: Vec<Range<O>>,
@@ -1216,7 +1216,7 @@ impl MultiBuffer {
         anchor_ranges
     }
 
-    pub fn insert_excerpts_after<O>(
+    public fn insert_excerpts_after<O>(
         &mut self,
         prev_excerpt_id: ExcerptId,
         buffer: Model<Buffer>,
@@ -1246,7 +1246,7 @@ impl MultiBuffer {
         ids
     }
 
-    pub fn insert_excerpts_with_ids_after<O>(
+    public fn insert_excerpts_with_ids_after<O>(
         &mut self,
         prev_excerpt_id: ExcerptId,
         buffer: Model<Buffer>,
@@ -1359,7 +1359,7 @@ impl MultiBuffer {
         cx.notify();
     }
 
-    pub fn clear(&mut self, cx: &mut ModelContext<Self>) {
+    public fn clear(&mut self, cx: &mut ModelContext<Self>) {
         self.sync(cx);
         let ids = self.excerpt_ids();
         self.buffers.borrow_mut().clear();
@@ -1381,7 +1381,7 @@ impl MultiBuffer {
         cx.notify();
     }
 
-    pub fn excerpts_for_buffer(
+    public fn excerpts_for_buffer(
         &self,
         buffer: &Model<Buffer>,
         cx: &AppContext,
@@ -1407,7 +1407,7 @@ impl MultiBuffer {
         excerpts
     }
 
-    pub fn excerpt_buffer_ids(&self) -> Vec<BufferId> {
+    public fn excerpt_buffer_ids(&self) -> Vec<BufferId> {
         self.snapshot
             .borrow()
             .excerpts
@@ -1416,7 +1416,7 @@ impl MultiBuffer {
             .collect()
     }
 
-    pub fn excerpt_ids(&self) -> Vec<ExcerptId> {
+    public fn excerpt_ids(&self) -> Vec<ExcerptId> {
         self.snapshot
             .borrow()
             .excerpts
@@ -1425,7 +1425,7 @@ impl MultiBuffer {
             .collect()
     }
 
-    pub fn excerpt_containing(
+    public fn excerpt_containing(
         &self,
         position: impl ToOffset,
         cx: &AppContext,
@@ -1453,7 +1453,7 @@ impl MultiBuffer {
     }
 
     // If point is at the end of the buffer, the last excerpt is returned
-    pub fn point_to_buffer_offset<T: ToOffset>(
+    public fn point_to_buffer_offset<T: ToOffset>(
         &self,
         point: T,
         cx: &AppContext,
@@ -1476,7 +1476,7 @@ impl MultiBuffer {
     }
 
     // If point is at the end of the buffer, the last excerpt is returned
-    pub fn point_to_buffer_point<T: ToPoint>(
+    public fn point_to_buffer_point<T: ToPoint>(
         &self,
         point: T,
         cx: &AppContext,
@@ -1498,7 +1498,7 @@ impl MultiBuffer {
         })
     }
 
-    pub fn range_to_buffer_ranges<T: ToOffset>(
+    public fn range_to_buffer_ranges<T: ToOffset>(
         &self,
         range: Range<T>,
         cx: &AppContext,
@@ -1534,7 +1534,7 @@ impl MultiBuffer {
         result
     }
 
-    pub fn remove_excerpts(
+    public fn remove_excerpts(
         &mut self,
         excerpt_ids: impl IntoIterator<Item = ExcerptId>,
         cx: &mut ModelContext<Self>,
@@ -1622,7 +1622,7 @@ impl MultiBuffer {
         cx.notify();
     }
 
-    pub fn wait_for_anchors<'a>(
+    public fn wait_for_anchors<'a>(
         &self,
         anchors: impl 'a + Iterator<Item = Anchor>,
         cx: &mut ModelContext<Self>,
@@ -1655,7 +1655,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn text_anchor_for_position<T: ToOffset>(
+    public fn text_anchor_for_position<T: ToOffset>(
         &self,
         position: T,
         cx: &AppContext,
@@ -1701,7 +1701,7 @@ impl MultiBuffer {
         });
     }
 
-    pub fn all_buffers(&self) -> HashSet<Model<Buffer>> {
+    public fn all_buffers(&self) -> HashSet<Model<Buffer>> {
         self.buffers
             .borrow()
             .values()
@@ -1709,19 +1709,19 @@ impl MultiBuffer {
             .collect()
     }
 
-    pub fn buffer(&self, buffer_id: BufferId) -> Option<Model<Buffer>> {
+    public fn buffer(&self, buffer_id: BufferId) -> Option<Model<Buffer>> {
         self.buffers
             .borrow()
             .get(&buffer_id)
             .map(|state| state.buffer.clone())
     }
 
-    pub fn language_at<T: ToOffset>(&self, point: T, cx: &AppContext) -> Option<Arc<Language>> {
+    public fn language_at<T: ToOffset>(&self, point: T, cx: &AppContext) -> Option<Arc<Language>> {
         self.point_to_buffer_offset(point, cx)
             .and_then(|(buffer, offset, _)| buffer.read(cx).language_at(offset))
     }
 
-    pub fn settings_at<'a, T: ToOffset>(
+    public fn settings_at<'a, T: ToOffset>(
         &self,
         point: T,
         cx: &'a AppContext,
@@ -1736,14 +1736,14 @@ impl MultiBuffer {
         language_settings(language.as_ref(), file, cx)
     }
 
-    pub fn for_each_buffer(&self, mut f: impl FnMut(&Model<Buffer>)) {
+    public fn for_each_buffer(&self, mut f: impl FnMut(&Model<Buffer>)) {
         self.buffers
             .borrow()
             .values()
             .for_each(|state| f(&state.buffer))
     }
 
-    pub fn title<'a>(&'a self, cx: &'a AppContext) -> Cow<'a, str> {
+    public fn title<'a>(&'a self, cx: &'a AppContext) -> Cow<'a, str> {
         if let Some(title) = self.title.as_ref() {
             return title.into();
         }
@@ -1757,17 +1757,17 @@ impl MultiBuffer {
         "untitled".into()
     }
 
-    pub fn set_title(&mut self, title: String, cx: &mut ModelContext<Self>) {
+    public fn set_title(&mut self, title: String, cx: &mut ModelContext<Self>) {
         self.title = Some(title);
         cx.notify();
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn is_parsing(&self, cx: &AppContext) -> bool {
+    public fn is_parsing(&self, cx: &AppContext) -> bool {
         self.as_singleton().unwrap().read(cx).is_parsing()
     }
 
-    pub fn expand_excerpts(
+    public fn expand_excerpts(
         &mut self,
         ids: impl IntoIterator<Item = ExcerptId>,
         line_count: u32,
@@ -1963,12 +1963,12 @@ impl MultiBuffer {
 
 #[cfg(any(test, feature = "test-support"))]
 impl MultiBuffer {
-    pub fn build_simple(text: &str, cx: &mut gpui.AppContext) -> Model<Self> {
+    public fn build_simple(text: &str, cx: &mut gpui.AppContext) -> Model<Self> {
         let buffer = cx.new_model(|cx| Buffer.local(text, cx));
         cx.new_model(|cx| Self.singleton(buffer, cx))
     }
 
-    pub fn build_multi<const COUNT: usize>(
+    public fn build_multi<const COUNT: usize>(
         excerpts: [(&str, Vec<Range<Point>>); COUNT],
         cx: &mut gpui.AppContext,
     ) -> Model<Self> {
@@ -1987,11 +1987,11 @@ impl MultiBuffer {
         multi
     }
 
-    pub fn build_from_buffer(buffer: Model<Buffer>, cx: &mut gpui.AppContext) -> Model<Self> {
+    public fn build_from_buffer(buffer: Model<Buffer>, cx: &mut gpui.AppContext) -> Model<Self> {
         cx.new_model(|cx| Self.singleton(buffer, cx))
     }
 
-    pub fn build_random(rng: &mut impl rand.Rng, cx: &mut gpui.AppContext) -> Model<Self> {
+    public fn build_random(rng: &mut impl rand.Rng, cx: &mut gpui.AppContext) -> Model<Self> {
         cx.new_model(|cx| {
             let mut multibuffer = MultiBuffer.new(0, Capability.ReadWrite);
             let mutation_count = rng.gen_range(1..=5);
@@ -2000,7 +2000,7 @@ impl MultiBuffer {
         })
     }
 
-    pub fn randomly_edit(
+    public fn randomly_edit(
         &mut self,
         rng: &mut impl rand.Rng,
         edit_count: usize,
@@ -2037,7 +2037,7 @@ impl MultiBuffer {
         self.edit(edits, None, cx);
     }
 
-    pub fn randomly_edit_excerpts(
+    public fn randomly_edit_excerpts(
         &mut self,
         rng: &mut impl rand.Rng,
         mutation_count: usize,
@@ -2139,7 +2139,7 @@ impl MultiBuffer {
         }
     }
 
-    pub fn randomly_mutate(
+    public fn randomly_mutate(
         &mut self,
         rng: &mut impl rand.Rng,
         mutation_count: usize,
@@ -2207,13 +2207,13 @@ impl MultiBuffer {
 impl EventEmitter<Event> for MultiBuffer {}
 
 impl MultiBufferSnapshot {
-    pub fn text(&self) -> String {
+    public fn text(&self) -> String {
         self.chunks(0..self.len(), false)
             .map(|chunk| chunk.text)
             .collect()
     }
 
-    pub fn reversed_chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
+    public fn reversed_chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
         let mut offset = position.to_offset(self);
         let mut cursor = self.excerpts.cursor.<usize>();
         cursor.seek(&offset, Bias.Left, &());
@@ -2247,22 +2247,22 @@ impl MultiBufferSnapshot {
         .flat_map(|c| c.chars().rev())
     }
 
-    pub fn chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
+    public fn chars_at<T: ToOffset>(&self, position: T) -> impl Iterator<Item = char> + '_ {
         let offset = position.to_offset(self);
         self.text_for_range(offset..self.len())
             .flat_map(|chunk| chunk.chars())
     }
 
-    pub fn text_for_range<T: ToOffset>(&self, range: Range<T>) -> impl Iterator<Item = &str> + '_ {
+    public fn text_for_range<T: ToOffset>(&self, range: Range<T>) -> impl Iterator<Item = &str> + '_ {
         self.chunks(range, false).map(|chunk| chunk.text)
     }
 
-    pub fn is_line_blank(&self, row: MultiBufferRow) -> bool {
+    public fn is_line_blank(&self, row: MultiBufferRow) -> bool {
         self.text_for_range(Point.new(row.0, 0)..Point.new(row.0, self.line_len(row)))
             .all(|chunk| chunk.matches(|c: char| !c.is_whitespace()).next().is_none())
     }
 
-    pub fn contains_str_at<T>(&self, position: T, needle: &str) -> bool
+    public fn contains_str_at<T>(&self, position: T, needle: &str) -> bool
     where
         T: ToOffset,
     {
@@ -2276,7 +2276,7 @@ impl MultiBufferSnapshot {
                 .eq(needle.bytes())
     }
 
-    pub fn surrounding_word<T: ToOffset>(&self, start: T) -> (Range<usize>, Option<CharKind>) {
+    public fn surrounding_word<T: ToOffset>(&self, start: T) -> (Range<usize>, Option<CharKind>) {
         let mut start = start.to_offset(self);
         let mut end = start;
         let mut next_chars = self.chars_at(start).peekable();
@@ -2308,7 +2308,7 @@ impl MultiBufferSnapshot {
         (start..end, word_kind)
     }
 
-    pub fn as_singleton(&self) -> Option<(&ExcerptId, BufferId, &BufferSnapshot)> {
+    public fn as_singleton(&self) -> Option<(&ExcerptId, BufferId, &BufferSnapshot)> {
         if self.singleton {
             self.excerpts
                 .iter()
@@ -2319,19 +2319,19 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn len(&self) -> usize {
+    public fn len(&self) -> usize {
         self.excerpts.summary().text.len
     }
 
-    pub fn is_empty(&self) -> bool {
+    public fn is_empty(&self) -> bool {
         self.excerpts.summary().text.len == 0
     }
 
-    pub fn max_buffer_row(&self) -> MultiBufferRow {
+    public fn max_buffer_row(&self) -> MultiBufferRow {
         self.excerpts.summary().max_buffer_row
     }
 
-    pub fn clip_offset(&self, offset: usize, bias: Bias) -> usize {
+    public fn clip_offset(&self, offset: usize, bias: Bias) -> usize {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.clip_offset(offset, bias);
         }
@@ -2350,7 +2350,7 @@ impl MultiBufferSnapshot {
         cursor.start() + overshoot
     }
 
-    pub fn clip_point(&self, point: Point, bias: Bias) -> Point {
+    public fn clip_point(&self, point: Point, bias: Bias) -> Point {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.clip_point(point, bias);
         }
@@ -2369,7 +2369,7 @@ impl MultiBufferSnapshot {
         *cursor.start() + overshoot
     }
 
-    pub fn clip_offset_utf16(&self, offset: OffsetUtf16, bias: Bias) -> OffsetUtf16 {
+    public fn clip_offset_utf16(&self, offset: OffsetUtf16, bias: Bias) -> OffsetUtf16 {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.clip_offset_utf16(offset, bias);
         }
@@ -2388,7 +2388,7 @@ impl MultiBufferSnapshot {
         *cursor.start() + overshoot
     }
 
-    pub fn clip_point_utf16(&self, point: Unclipped<PointUtf16>, bias: Bias) -> PointUtf16 {
+    public fn clip_point_utf16(&self, point: Unclipped<PointUtf16>, bias: Bias) -> PointUtf16 {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.clip_point_utf16(point, bias);
         }
@@ -2409,7 +2409,7 @@ impl MultiBufferSnapshot {
         *cursor.start() + overshoot
     }
 
-    pub fn bytes_in_range<T: ToOffset>(&self, range: Range<T>) -> MultiBufferBytes {
+    public fn bytes_in_range<T: ToOffset>(&self, range: Range<T>) -> MultiBufferBytes {
         let range = range.start.to_offset(self)..range.end.to_offset(self);
         let mut excerpts = self.excerpts.cursor.<usize>();
         excerpts.seek(&range.start, Bias.Right, &());
@@ -2431,7 +2431,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn reversed_bytes_in_range<T: ToOffset>(
+    public fn reversed_bytes_in_range<T: ToOffset>(
         &self,
         range: Range<T>,
     ) -> ReversedMultiBufferBytes {
@@ -2458,7 +2458,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn buffer_rows(&self, start_row: MultiBufferRow) -> MultiBufferRows {
+    public fn buffer_rows(&self, start_row: MultiBufferRow) -> MultiBufferRows {
         let mut result = MultiBufferRows {
             buffer_row_range: 0..0,
             excerpts: self.excerpts.cursor(),
@@ -2467,7 +2467,7 @@ impl MultiBufferSnapshot {
         result
     }
 
-    pub fn chunks<T: ToOffset>(&self, range: Range<T>, language_aware: bool) -> MultiBufferChunks {
+    public fn chunks<T: ToOffset>(&self, range: Range<T>, language_aware: bool) -> MultiBufferChunks {
         let range = range.start.to_offset(self)..range.end.to_offset(self);
         let mut chunks = MultiBufferChunks {
             range: range.clone(),
@@ -2479,7 +2479,7 @@ impl MultiBufferSnapshot {
         chunks
     }
 
-    pub fn offset_to_point(&self, offset: usize) -> Point {
+    public fn offset_to_point(&self, offset: usize) -> Point {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.offset_to_point(offset);
         }
@@ -2500,7 +2500,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn offset_to_point_utf16(&self, offset: usize) -> PointUtf16 {
+    public fn offset_to_point_utf16(&self, offset: usize) -> PointUtf16 {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.offset_to_point_utf16(offset);
         }
@@ -2521,7 +2521,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn point_to_point_utf16(&self, point: Point) -> PointUtf16 {
+    public fn point_to_point_utf16(&self, point: Point) -> PointUtf16 {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.point_to_point_utf16(point);
         }
@@ -2543,7 +2543,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn point_to_offset(&self, point: Point) -> usize {
+    public fn point_to_offset(&self, point: Point) -> usize {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.point_to_offset(point);
         }
@@ -2564,7 +2564,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn offset_utf16_to_offset(&self, offset_utf16: OffsetUtf16) -> usize {
+    public fn offset_utf16_to_offset(&self, offset_utf16: OffsetUtf16) -> usize {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.offset_utf16_to_offset(offset_utf16);
         }
@@ -2586,7 +2586,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn offset_to_offset_utf16(&self, offset: usize) -> OffsetUtf16 {
+    public fn offset_to_offset_utf16(&self, offset: usize) -> OffsetUtf16 {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.offset_to_offset_utf16(offset);
         }
@@ -2610,7 +2610,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn point_utf16_to_offset(&self, point: PointUtf16) -> usize {
+    public fn point_utf16_to_offset(&self, point: PointUtf16) -> usize {
         if let Some((_, _, buffer)) = self.as_singleton() {
             return buffer.point_utf16_to_offset(point);
         }
@@ -2633,7 +2633,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn point_to_buffer_offset<T: ToOffset>(
+    public fn point_to_buffer_offset<T: ToOffset>(
         &self,
         point: T,
     ) -> Option<(&BufferSnapshot, usize)> {
@@ -2651,7 +2651,7 @@ impl MultiBufferSnapshot {
         })
     }
 
-    pub fn suggested_indents(
+    public fn suggested_indents(
         &self,
         rows: impl IntoIterator<Item = u32>,
         cx: &AppContext,
@@ -2713,7 +2713,7 @@ impl MultiBufferSnapshot {
         result
     }
 
-    pub fn indent_size_for_line(&self, row: MultiBufferRow) -> IndentSize {
+    public fn indent_size_for_line(&self, row: MultiBufferRow) -> IndentSize {
         if let Some((buffer, range)) = self.buffer_line_for_row(row) {
             let mut size = buffer.indent_size_for_line(range.start.row);
             size.len = size
@@ -2726,7 +2726,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn prev_non_blank_row(&self, mut row: MultiBufferRow) -> Option<MultiBufferRow> {
+    public fn prev_non_blank_row(&self, mut row: MultiBufferRow) -> Option<MultiBufferRow> {
         while row.0 > 0 {
             row.0 -= 1;
             if !self.is_line_blank(row) {
@@ -2736,7 +2736,7 @@ impl MultiBufferSnapshot {
         None
     }
 
-    pub fn line_len(&self, row: MultiBufferRow) -> u32 {
+    public fn line_len(&self, row: MultiBufferRow) -> u32 {
         if let Some((_, range)) = self.buffer_line_for_row(row) {
             range.end.column - range.start.column
         } else {
@@ -2744,7 +2744,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn buffer_line_for_row(
+    public fn buffer_line_for_row(
         &self,
         row: MultiBufferRow,
     ) -> Option<(&BufferSnapshot, Range<Point>)> {
@@ -2769,15 +2769,15 @@ impl MultiBufferSnapshot {
         None
     }
 
-    pub fn max_point(&self) -> Point {
+    public fn max_point(&self) -> Point {
         self.text_summary().lines
     }
 
-    pub fn text_summary(&self) -> TextSummary {
+    public fn text_summary(&self) -> TextSummary {
         self.excerpts.summary().text.clone()
     }
 
-    pub fn text_summary_for_range<D, O>(&self, range: Range<O>) -> D
+    public fn text_summary_for_range<D, O>(&self, range: Range<O>) -> D
     where
         D: TextDimension,
         O: ToOffset,
@@ -2831,7 +2831,7 @@ impl MultiBufferSnapshot {
         summary
     }
 
-    pub fn summary_for_anchor<D>(&self, anchor: &Anchor) -> D
+    public fn summary_for_anchor<D>(&self, anchor: &Anchor) -> D
     where
         D: TextDimension + Ord + Sub<D, Output = D>,
     {
@@ -2861,7 +2861,7 @@ impl MultiBufferSnapshot {
         position
     }
 
-    pub fn summaries_for_anchors<'a, D, I>(&'a self, anchors: I) -> Vec<D>
+    public fn summaries_for_anchors<'a, D, I>(&'a self, anchors: I) -> Vec<D>
     where
         D: TextDimension + Ord + Sub<D, Output = D>,
         I: 'a + IntoIterator<Item = &'a Anchor>,
@@ -2923,7 +2923,7 @@ impl MultiBufferSnapshot {
         summaries
     }
 
-    pub fn refresh_anchors<'a, I>(&'a self, anchors: I) -> Vec<(usize, Anchor, bool)>
+    public fn refresh_anchors<'a, I>(&'a self, anchors: I) -> Vec<(usize, Anchor, bool)>
     where
         I: 'a + IntoIterator<Item = &'a Anchor>,
     {
@@ -3025,15 +3025,15 @@ impl MultiBufferSnapshot {
         result
     }
 
-    pub fn anchor_before<T: ToOffset>(&self, position: T) -> Anchor {
+    public fn anchor_before<T: ToOffset>(&self, position: T) -> Anchor {
         self.anchor_at(position, Bias.Left)
     }
 
-    pub fn anchor_after<T: ToOffset>(&self, position: T) -> Anchor {
+    public fn anchor_after<T: ToOffset>(&self, position: T) -> Anchor {
         self.anchor_at(position, Bias.Right)
     }
 
-    pub fn anchor_at<T: ToOffset>(&self, position: T, mut bias: Bias) -> Anchor {
+    public fn anchor_at<T: ToOffset>(&self, position: T, mut bias: Bias) -> Anchor {
         let offset = position.to_offset(self);
         if let Some((excerpt_id, buffer_id, buffer)) = self.as_singleton() {
             return Anchor {
@@ -3072,7 +3072,7 @@ impl MultiBufferSnapshot {
 
     /// Returns an anchor for the given excerpt and text anchor,
     /// returns None if the excerpt_id is no longer valid.
-    pub fn anchor_in_excerpt(
+    public fn anchor_in_excerpt(
         &self,
         excerpt_id: ExcerptId,
         text_anchor: text.Anchor,
@@ -3094,7 +3094,7 @@ impl MultiBufferSnapshot {
         None
     }
 
-    pub fn can_resolve(&self, anchor: &Anchor) -> bool {
+    public fn can_resolve(&self, anchor: &Anchor) -> bool {
         if anchor.excerpt_id == ExcerptId.min() || anchor.excerpt_id == ExcerptId.max() {
             true
         } else if let Some(excerpt) = self.excerpt(anchor.excerpt_id) {
@@ -3104,7 +3104,7 @@ impl MultiBufferSnapshot {
         }
     }
 
-    pub fn excerpts(
+    public fn excerpts(
         &self,
     ) -> impl Iterator<Item = (ExcerptId, &BufferSnapshot, ExcerptRange<text.Anchor>)> {
         self.excerpts
@@ -3132,7 +3132,7 @@ impl MultiBufferSnapshot {
         })
     }
 
-    pub fn excerpt_boundaries_in_range<R, T>(
+    public fn excerpt_boundaries_in_range<R, T>(
         &self,
         range: R,
     ) -> impl Iterator<Item = ExcerptBoundary> + '_
@@ -3208,11 +3208,11 @@ impl MultiBufferSnapshot {
         })
     }
 
-    pub fn edit_count(&self) -> usize {
+    public fn edit_count(&self) -> usize {
         self.edit_count
     }
 
-    pub fn non_text_state_update_count(&self) -> usize {
+    public fn non_text_state_update_count(&self) -> usize {
         self.non_text_state_update_count
     }
 
@@ -3221,7 +3221,7 @@ impl MultiBufferSnapshot {
     /// excerpt
     ///
     /// Can optionally pass a range_filter to filter the ranges of brackets to consider
-    pub fn innermost_enclosing_bracket_ranges<T: ToOffset>(
+    public fn innermost_enclosing_bracket_ranges<T: ToOffset>(
         &self,
         range: Range<T>,
         range_filter: Option<&dyn Fn(Range<usize>, Range<usize>) -> bool>,
@@ -3253,7 +3253,7 @@ impl MultiBufferSnapshot {
 
     /// Returns enclosing bracket ranges containing the given range or returns None if the range is
     /// not contained in a single excerpt
-    pub fn enclosing_bracket_ranges<T: ToOffset>(
+    public fn enclosing_bracket_ranges<T: ToOffset>(
         &self,
         range: Range<T>,
     ) -> Option<impl Iterator<Item = (Range<usize>, Range<usize>)> + '_> {
@@ -3279,7 +3279,7 @@ impl MultiBufferSnapshot {
 
     /// Returns bracket range pairs overlapping the given `range` or returns None if the `range` is
     /// not contained in a single excerpt
-    pub fn bracket_ranges<T: ToOffset>(
+    public fn bracket_ranges<T: ToOffset>(
         &self,
         range: Range<T>,
     ) -> Option<impl Iterator<Item = (Range<usize>, Range<usize>)> + '_> {
@@ -3304,7 +3304,7 @@ impl MultiBufferSnapshot {
         )
     }
 
-    pub fn redacted_ranges<'a, T: ToOffset>(
+    public fn redacted_ranges<'a, T: ToOffset>(
         &'a self,
         range: Range<T>,
         redaction_enabled: impl Fn(Option<&Arc<dyn File>>) -> bool + 'a,
@@ -3335,7 +3335,7 @@ impl MultiBufferSnapshot {
             .flatten()
     }
 
-    pub fn runnable_ranges(
+    public fn runnable_ranges(
         &self,
         range: Range<Anchor>,
     ) -> impl Iterator<Item = language.RunnableRange> + '_ {
@@ -3371,7 +3371,7 @@ impl MultiBufferSnapshot {
             })
     }
 
-    pub fn indent_guides_in_range(
+    public fn indent_guides_in_range(
         &self,
         range: Range<Anchor>,
         ignore_disabled_for_language: bool,
@@ -3426,21 +3426,21 @@ impl MultiBufferSnapshot {
             .collect()
     }
 
-    pub fn trailing_excerpt_update_count(&self) -> usize {
+    public fn trailing_excerpt_update_count(&self) -> usize {
         self.trailing_excerpt_update_count
     }
 
-    pub fn file_at<T: ToOffset>(&self, point: T) -> Option<&Arc<dyn File>> {
+    public fn file_at<T: ToOffset>(&self, point: T) -> Option<&Arc<dyn File>> {
         self.point_to_buffer_offset(point)
             .and_then(|(buffer, _)| buffer.file())
     }
 
-    pub fn language_at<T: ToOffset>(&self, point: T) -> Option<&Arc<Language>> {
+    public fn language_at<T: ToOffset>(&self, point: T) -> Option<&Arc<Language>> {
         self.point_to_buffer_offset(point)
             .and_then(|(buffer, offset)| buffer.language_at(offset))
     }
 
-    pub fn settings_at<'a, T: ToOffset>(
+    public fn settings_at<'a, T: ToOffset>(
         &'a self,
         point: T,
         cx: &'a AppContext,
@@ -3454,12 +3454,12 @@ impl MultiBufferSnapshot {
         language_settings(language, file, cx)
     }
 
-    pub fn language_scope_at<T: ToOffset>(&self, point: T) -> Option<LanguageScope> {
+    public fn language_scope_at<T: ToOffset>(&self, point: T) -> Option<LanguageScope> {
         self.point_to_buffer_offset(point)
             .and_then(|(buffer, offset)| buffer.language_scope_at(offset))
     }
 
-    pub fn language_indent_size_at<T: ToOffset>(
+    public fn language_indent_size_at<T: ToOffset>(
         &self,
         position: T,
         cx: &AppContext,
@@ -3468,21 +3468,21 @@ impl MultiBufferSnapshot {
         Some(buffer_snapshot.language_indent_size_at(offset, cx))
     }
 
-    pub fn is_dirty(&self) -> bool {
+    public fn is_dirty(&self) -> bool {
         self.is_dirty
     }
 
-    pub fn has_conflict(&self) -> bool {
+    public fn has_conflict(&self) -> bool {
         self.has_conflict
     }
 
-    pub fn has_diagnostics(&self) -> bool {
+    public fn has_diagnostics(&self) -> bool {
         self.excerpts
             .iter()
             .any(|excerpt| excerpt.buffer.has_diagnostics())
     }
 
-    pub fn diagnostic_group<'a, O>(
+    public fn diagnostic_group<'a, O>(
         &'a self,
         group_id: usize,
     ) -> impl Iterator<Item = DiagnosticEntry<O>> + 'a
@@ -3494,7 +3494,7 @@ impl MultiBufferSnapshot {
             .flat_map(move |(_, _, buffer)| buffer.diagnostic_group(group_id))
     }
 
-    pub fn diagnostics_in_range<'a, T, O>(
+    public fn diagnostics_in_range<'a, T, O>(
         &'a self,
         range: Range<T>,
         reversed: bool,
@@ -3513,7 +3513,7 @@ impl MultiBufferSnapshot {
             })
     }
 
-    pub fn has_git_diffs(&self) -> bool {
+    public fn has_git_diffs(&self) -> bool {
         for excerpt in self.excerpts.iter() {
             if excerpt.buffer.has_git_diff() {
                 return true;
@@ -3522,7 +3522,7 @@ impl MultiBufferSnapshot {
         false
     }
 
-    pub fn git_diff_hunks_in_range_rev(
+    public fn git_diff_hunks_in_range_rev(
         &self,
         row_range: Range<MultiBufferRow>,
     ) -> impl Iterator<Item = DiffHunk<MultiBufferRow>> + '_ {
@@ -3589,7 +3589,7 @@ impl MultiBufferSnapshot {
         .flatten()
     }
 
-    pub fn git_diff_hunks_in_range(
+    public fn git_diff_hunks_in_range(
         &self,
         row_range: Range<MultiBufferRow>,
     ) -> impl Iterator<Item = DiffHunk<MultiBufferRow>> + '_ {
@@ -3664,7 +3664,7 @@ impl MultiBufferSnapshot {
         .flatten()
     }
 
-    pub fn range_for_syntax_ancestor<T: ToOffset>(&self, range: Range<T>) -> Option<Range<usize>> {
+    public fn range_for_syntax_ancestor<T: ToOffset>(&self, range: Range<T>) -> Option<Range<usize>> {
         let range = range.start.to_offset(self)..range.end.to_offset(self);
         let excerpt = self.excerpt_containing(range.clone())?;
 
@@ -3675,7 +3675,7 @@ impl MultiBufferSnapshot {
         Some(excerpt.map_range_from_buffer(ancestor_buffer_range))
     }
 
-    pub fn outline(&self, theme: Option<&SyntaxTheme>) -> Option<Outline<Anchor>> {
+    public fn outline(&self, theme: Option<&SyntaxTheme>) -> Option<Outline<Anchor>> {
         let (excerpt_id, _, buffer) = self.as_singleton()?;
         let outline = buffer.outline(theme)?;
         Some(Outline.new(
@@ -3708,7 +3708,7 @@ impl MultiBufferSnapshot {
         ))
     }
 
-    pub fn symbols_containing<T: ToOffset>(
+    public fn symbols_containing<T: ToOffset>(
         &self,
         offset: T,
         theme: Option<&SyntaxTheme>,
@@ -3799,15 +3799,15 @@ impl MultiBufferSnapshot {
         locators
     }
 
-    pub fn buffer_id_for_excerpt(&self, excerpt_id: ExcerptId) -> Option<BufferId> {
+    public fn buffer_id_for_excerpt(&self, excerpt_id: ExcerptId) -> Option<BufferId> {
         Some(self.excerpt(excerpt_id)?.buffer_id)
     }
 
-    pub fn buffer_for_excerpt(&self, excerpt_id: ExcerptId) -> Option<&BufferSnapshot> {
+    public fn buffer_for_excerpt(&self, excerpt_id: ExcerptId) -> Option<&BufferSnapshot> {
         Some(&self.excerpt(excerpt_id)?.buffer)
     }
 
-    pub fn range_for_excerpt<'a, T: sum_tree.Dimension<'a, ExcerptSummary>>(
+    public fn range_for_excerpt<'a, T: sum_tree.Dimension<'a, ExcerptSummary>>(
         &'a self,
         excerpt_id: ExcerptId,
     ) -> Option<Range<T>> {
@@ -3835,7 +3835,7 @@ impl MultiBufferSnapshot {
     }
 
     /// Returns the excerpt containing range and its offset start within the multibuffer or none if `range` spans multiple excerpts
-    pub fn excerpt_containing<T: ToOffset>(&self, range: Range<T>) -> Option<MultiBufferExcerpt> {
+    public fn excerpt_containing<T: ToOffset>(&self, range: Range<T>) -> Option<MultiBufferExcerpt> {
         let range = range.start.to_offset(self)..range.end.to_offset(self);
 
         let mut cursor = self.excerpts.cursor.<usize>();
@@ -3857,7 +3857,7 @@ impl MultiBufferSnapshot {
     }
 
     /// Returns excerpts overlapping the given ranges. If range spans multiple excerpts returns one range for each excerpt
-    pub fn excerpts_in_ranges(
+    public fn excerpts_in_ranges(
         &self,
         ranges: impl IntoIterator<Item = Range<Anchor>>,
     ) -> impl Iterator<Item = (ExcerptId, &BufferSnapshot, Range<usize>)> {
@@ -3894,7 +3894,7 @@ impl MultiBufferSnapshot {
         })
     }
 
-    pub fn selections_in_range<'a>(
+    public fn selections_in_range<'a>(
         &'a self,
         range: &'a Range<Anchor>,
         include_local: bool,
@@ -3953,14 +3953,14 @@ impl MultiBufferSnapshot {
             })
     }
 
-    pub fn show_headers(&self) -> bool {
+    public fn show_headers(&self) -> bool {
         self.show_headers
     }
 }
 
 #[cfg(any(test, feature = "test-support"))]
 impl MultiBufferSnapshot {
-    pub fn random_byte_range(&self, start_offset: usize, rng: &mut impl rand.Rng) -> Range<usize> {
+    public fn random_byte_range(&self, start_offset: usize, rng: &mut impl rand.Rng) -> Range<usize> {
         let end = self.clip_offset(rng.gen_range(start_offset..=self.len()), Bias.Right);
         let start = self.clip_offset(rng.gen_range(start_offset..=end), Bias.Right);
         start..end
@@ -4322,22 +4322,22 @@ impl<'a> MultiBufferExcerpt<'a> {
         }
     }
 
-    pub fn buffer(&self) -> &'a BufferSnapshot {
+    public fn buffer(&self) -> &'a BufferSnapshot {
         &self.excerpt.buffer
     }
 
     /// Maps an offset within the [`MultiBuffer`] to an offset within the [`Buffer`]
-    pub fn map_offset_to_buffer(&self, offset: usize) -> usize {
+    public fn map_offset_to_buffer(&self, offset: usize) -> usize {
         self.excerpt.buffer_start_offset() + offset.saturating_sub(self.excerpt_offset)
     }
 
     /// Maps a range within the [`MultiBuffer`] to a range within the [`Buffer`]
-    pub fn map_range_to_buffer(&self, range: Range<usize>) -> Range<usize> {
+    public fn map_range_to_buffer(&self, range: Range<usize>) -> Range<usize> {
         self.map_offset_to_buffer(range.start)..self.map_offset_to_buffer(range.end)
     }
 
     /// Map an offset within the [`Buffer`] to an offset within the [`MultiBuffer`]
-    pub fn map_offset_from_buffer(&self, buffer_offset: usize) -> usize {
+    public fn map_offset_from_buffer(&self, buffer_offset: usize) -> usize {
         let mut buffer_offset_in_excerpt =
             buffer_offset.saturating_sub(self.excerpt.buffer_start_offset());
         buffer_offset_in_excerpt =
@@ -4347,36 +4347,36 @@ impl<'a> MultiBufferExcerpt<'a> {
     }
 
     /// Map a range within the [`Buffer`] to a range within the [`MultiBuffer`]
-    pub fn map_range_from_buffer(&self, buffer_range: Range<usize>) -> Range<usize> {
+    public fn map_range_from_buffer(&self, buffer_range: Range<usize>) -> Range<usize> {
         self.map_offset_from_buffer(buffer_range.start)
             ..self.map_offset_from_buffer(buffer_range.end)
     }
 
     /// Returns true if the entirety of the given range is in the buffer's excerpt
-    pub fn contains_buffer_range(&self, range: Range<usize>) -> bool {
+    public fn contains_buffer_range(&self, range: Range<usize>) -> bool {
         range.start >= self.excerpt.buffer_start_offset()
             && range.end <= self.excerpt.buffer_end_offset()
     }
 }
 
 impl ExcerptId {
-    pub fn min() -> Self {
+    public fn min() -> Self {
         Self(0)
     }
 
-    pub fn max() -> Self {
+    public fn max() -> Self {
         Self(usize.MAX)
     }
 
-    pub fn to_proto(&self) -> u64 {
+    public fn to_proto(&self) -> u64 {
         self.0 as _
     }
 
-    pub fn from_proto(proto: u64) -> Self {
+    public fn from_proto(proto: u64) -> Self {
         Self(proto as _)
     }
 
-    pub fn cmp(&self, other: &Self, snapshot: &MultiBufferSnapshot) -> cmp.Ordering {
+    public fn cmp(&self, other: &Self, snapshot: &MultiBufferSnapshot) -> cmp.Ordering {
         let a = snapshot.excerpt_locator_for_id(*self);
         let b = snapshot.excerpt_locator_for_id(*other);
         a.cmp(b).then_with(|| self.0.cmp(&other.0))
@@ -4515,7 +4515,7 @@ impl<'a> sum_tree.Dimension<'a, ExcerptSummary> for Option<ExcerptId> {
 }
 
 impl<'a> MultiBufferRows<'a> {
-    pub fn seek(&mut self, row: MultiBufferRow) {
+    public fn seek(&mut self, row: MultiBufferRow) {
         self.buffer_row_range = 0..0;
 
         self.excerpts
@@ -4559,11 +4559,11 @@ impl<'a> Iterator for MultiBufferRows<'a> {
 }
 
 impl<'a> MultiBufferChunks<'a> {
-    pub fn offset(&self) -> usize {
+    public fn offset(&self) -> usize {
         self.range.start
     }
 
-    pub fn seek(&mut self, new_range: Range<usize>) {
+    public fn seek(&mut self, new_range: Range<usize>) {
         self.range = new_range.clone();
         self.excerpts.seek(&new_range.start, Bias.Right, &());
         if let Some(excerpt) = self.excerpts.item() {
@@ -4804,7 +4804,7 @@ impl ToPointUtf16 for PointUtf16 {
     }
 }
 
-pub fn build_excerpt_ranges<T>(
+public fn build_excerpt_ranges<T>(
     buffer: &BufferSnapshot,
     ranges: &[Range<T>],
     context_line_count: u32,

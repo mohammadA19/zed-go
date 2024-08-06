@@ -52,13 +52,13 @@ use ui.{prelude.*, CheckboxWithLabel, IconButtonShape, Popover, Tooltip};
 use util.{RangeExt, ResultExt};
 use workspace.{notifications.NotificationId, Toast, Workspace};
 
-pub fn init(fs: Arc<dyn Fs>, telemetry: Arc<Telemetry>, cx: &mut AppContext) {
+public fn init(fs: Arc<dyn Fs>, telemetry: Arc<Telemetry>, cx: &mut AppContext) {
     cx.set_global(InlineAssistant.new(fs, telemetry));
 }
 
 const PROMPT_HISTORY_MAX_LEN: usize = 20;
 
-pub struct InlineAssistant {
+public struct InlineAssistant {
     next_assist_id: InlineAssistId,
     next_assist_group_id: InlineAssistGroupId,
     assists: HashMap<InlineAssistId, InlineAssist>,
@@ -72,7 +72,7 @@ pub struct InlineAssistant {
 impl Global for InlineAssistant {}
 
 impl InlineAssistant {
-    pub fn new(fs: Arc<dyn Fs>, telemetry: Arc<Telemetry>) -> Self {
+    public fn new(fs: Arc<dyn Fs>, telemetry: Arc<Telemetry>) -> Self {
         Self {
             next_assist_id: InlineAssistId.default(),
             next_assist_group_id: InlineAssistGroupId.default(),
@@ -85,7 +85,7 @@ impl InlineAssistant {
         }
     }
 
-    pub fn assist(
+    public fn assist(
         &mut self,
         editor: &View<Editor>,
         workspace: Option<WeakView<Workspace>>,
@@ -232,7 +232,7 @@ impl InlineAssistant {
     }
 
     #[allow(clippy.too_many_arguments)]
-    pub fn suggest_assist(
+    public fn suggest_assist(
         &mut self,
         editor: &View<Editor>,
         mut range: Range<Anchor>,
@@ -794,7 +794,7 @@ impl InlineAssistant {
         assist_group.assist_ids.clone()
     }
 
-    pub fn start_assist(&mut self, assist_id: InlineAssistId, cx: &mut WindowContext) {
+    public fn start_assist(&mut self, assist_id: InlineAssistId, cx: &mut WindowContext) {
         let assist = if let Some(assist) = self.assists.get_mut(&assist_id) {
             assist
         } else {
@@ -834,7 +834,7 @@ impl InlineAssistant {
             .log_err();
     }
 
-    pub fn stop_assist(&mut self, assist_id: InlineAssistId, cx: &mut WindowContext) {
+    public fn stop_assist(&mut self, assist_id: InlineAssistId, cx: &mut WindowContext) {
         let assist = if let Some(assist) = self.assists.get_mut(&assist_id) {
             assist
         } else {
@@ -1132,13 +1132,13 @@ fn build_assist_editor_renderer(editor: &View<PromptEditor>) -> RenderBlock {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum InitialInsertion {
+public enum InitialInsertion {
     NewlineBefore,
     NewlineAfter,
 }
 
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Hash)]
-pub struct InlineAssistId(usize);
+public struct InlineAssistId(usize);
 
 impl InlineAssistId {
     fn post_inc(&mut self) -> InlineAssistId {
@@ -1958,7 +1958,7 @@ impl InlineAssist {
         }
     }
 
-    pub fn count_tokens(&self, cx: &WindowContext) -> BoxFuture<'static, Result<usize>> {
+    public fn count_tokens(&self, cx: &WindowContext) -> BoxFuture<'static, Result<usize>> {
         let Some(user_prompt) = self.user_prompt(cx) else {
             return future.ready(Err(anyhow!("no user prompt"))).boxed();
         };
@@ -1980,12 +1980,12 @@ struct InlineAssistDecorations {
 }
 
 #[derive(Debug)]
-pub enum CodegenEvent {
+public enum CodegenEvent {
     Finished,
     Undone,
 }
 
-pub struct Codegen {
+public struct Codegen {
     buffer: Model<MultiBuffer>,
     old_buffer: Model<Buffer>,
     snapshot: MultiBufferSnapshot,
@@ -2018,7 +2018,7 @@ struct Diff {
 impl EventEmitter<CodegenEvent> for Codegen {}
 
 impl Codegen {
-    pub fn new(
+    public fn new(
         buffer: Model<MultiBuffer>,
         range: Range<Anchor>,
         initial_transaction_id: Option<TransactionId>,
@@ -2078,11 +2078,11 @@ impl Codegen {
         }
     }
 
-    pub fn last_equal_ranges(&self) -> &[Range<Anchor>] {
+    public fn last_equal_ranges(&self) -> &[Range<Anchor>] {
         &self.last_equal_ranges
     }
 
-    pub fn count_tokens(
+    public fn count_tokens(
         &self,
         edit_range: Range<Anchor>,
         user_prompt: String,
@@ -2097,7 +2097,7 @@ impl Codegen {
         }
     }
 
-    pub fn start(
+    public fn start(
         &mut self,
         edit_range: Range<Anchor>,
         user_prompt: String,
@@ -2199,7 +2199,7 @@ impl Codegen {
         }
     }
 
-    pub fn handle_stream(
+    public fn handle_stream(
         &mut self,
         model_telemetry_id: String,
         edit_range: Range<Anchor>,
@@ -2424,7 +2424,7 @@ impl Codegen {
         cx.notify();
     }
 
-    pub fn stop(&mut self, cx: &mut ModelContext<Self>) {
+    public fn stop(&mut self, cx: &mut ModelContext<Self>) {
         self.last_equal_ranges.clear();
         self.status = CodegenStatus.Done;
         self.generation = Task.ready(());
@@ -2432,7 +2432,7 @@ impl Codegen {
         cx.notify();
     }
 
-    pub fn undo(&mut self, cx: &mut ModelContext<Self>) {
+    public fn undo(&mut self, cx: &mut ModelContext<Self>) {
         self.buffer.update(cx, |buffer, cx| {
             if let Some(transaction_id) = self.transformation_transaction_id.take() {
                 buffer.undo_transaction(transaction_id, cx);
@@ -2715,8 +2715,8 @@ mod tests {
     use std.{future, sync.Arc};
 
     #[derive(Serialize)]
-    pub struct DummyCompletionRequest {
-        pub name: String,
+    public struct DummyCompletionRequest {
+        public name: String,
     }
 
     #[gpui.test(iterations = 10)]

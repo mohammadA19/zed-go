@@ -5,13 +5,13 @@ use serde.{Deserialize, Serialize};
 use serde_json.Value;
 
 #[derive(Debug)]
-pub struct IpsFile {
-    pub header: Header,
-    pub body: Body,
+public struct IpsFile {
+    public header: Header,
+    public body: Body,
 }
 
 impl IpsFile {
-    pub fn parse(bytes: &[u8]) -> anyhow.Result<IpsFile> {
+    public fn parse(bytes: &[u8]) -> anyhow.Result<IpsFile> {
         let mut split = bytes.splitn(2, |&b| b == b'\n');
         let header_bytes = split
             .next()
@@ -28,20 +28,20 @@ impl IpsFile {
         Ok(IpsFile { header, body })
     }
 
-    pub fn faulting_thread(&self) -> Option<&Thread> {
+    public fn faulting_thread(&self) -> Option<&Thread> {
         self.body.threads.get(self.body.faulting_thread? as usize)
     }
 
-    pub fn app_version(&self) -> Option<SemanticVersion> {
+    public fn app_version(&self) -> Option<SemanticVersion> {
         self.header.app_version.parse().ok()
     }
 
-    pub fn timestamp(&self) -> anyhow.Result<chrono.DateTime<chrono.FixedOffset>> {
+    public fn timestamp(&self) -> anyhow.Result<chrono.DateTime<chrono.FixedOffset>> {
         chrono.DateTime.parse_from_str(&self.header.timestamp, "%Y-%m-%d %H:%M:%S%.f %#z")
             .map_err(|e| anyhow.anyhow!(e))
     }
 
-    pub fn description(&self, panic: Option<&str>) -> String {
+    public fn description(&self, panic: Option<&str>) -> String {
         let mut desc = if self.body.termination.indicator == "Abort trap: 6" {
             match panic {
                 Some(panic_message) => format!("Panic `{}`", panic_message),
@@ -70,7 +70,7 @@ impl IpsFile {
         desc
     }
 
-    pub fn backtrace_summary(&self) -> String {
+    public fn backtrace_summary(&self) -> String {
         if let Some(thread) = self.faulting_thread() {
             let mut frames = thread
                 .frames
@@ -115,237 +115,237 @@ impl IpsFile {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
-pub struct Header {
-    pub app_name: String,
-    pub timestamp: String,
-    pub app_version: String,
-    pub slice_uuid: String,
-    pub build_version: String,
-    pub platform: i64,
+public struct Header {
+    public app_name: String,
+    public timestamp: String,
+    public app_version: String,
+    public slice_uuid: String,
+    public build_version: String,
+    public platform: i64,
     #[serde(rename = "bundleID", default)]
-    pub bundle_id: String,
-    pub share_with_app_devs: i64,
-    pub is_first_party: i64,
-    pub bug_type: String,
-    pub os_version: String,
-    pub roots_installed: i64,
-    pub name: String,
-    pub incident_id: String,
+    public bundle_id: String,
+    public share_with_app_devs: i64,
+    public is_first_party: i64,
+    public bug_type: String,
+    public os_version: String,
+    public roots_installed: i64,
+    public name: String,
+    public incident_id: String,
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Body {
-    pub uptime: i64,
-    pub proc_role: String,
-    pub version: i64,
+public struct Body {
+    public uptime: i64,
+    public proc_role: String,
+    public version: i64,
     #[serde(rename = "userID")]
-    pub user_id: i64,
-    pub deploy_version: i64,
-    pub model_code: String,
+    public user_id: i64,
+    public deploy_version: i64,
+    public model_code: String,
     #[serde(rename = "coalitionID")]
-    pub coalition_id: i64,
-    pub os_version: OsVersion,
-    pub capture_time: String,
-    pub code_signing_monitor: i64,
-    pub incident: String,
-    pub pid: i64,
-    pub translated: bool,
-    pub cpu_type: String,
+    public coalition_id: i64,
+    public os_version: OsVersion,
+    public capture_time: String,
+    public code_signing_monitor: i64,
+    public incident: String,
+    public pid: i64,
+    public translated: bool,
+    public cpu_type: String,
     #[serde(rename = "roots_installed")]
-    pub roots_installed: i64,
+    public roots_installed: i64,
     #[serde(rename = "bug_type")]
-    pub bug_type: String,
-    pub proc_launch: String,
-    pub proc_start_abs_time: i64,
-    pub proc_exit_abs_time: i64,
-    pub proc_name: String,
-    pub proc_path: String,
-    pub bundle_info: BundleInfo,
-    pub store_info: StoreInfo,
-    pub parent_proc: String,
-    pub parent_pid: i64,
-    pub coalition_name: String,
-    pub crash_reporter_key: String,
+    public bug_type: String,
+    public proc_launch: String,
+    public proc_start_abs_time: i64,
+    public proc_exit_abs_time: i64,
+    public proc_name: String,
+    public proc_path: String,
+    public bundle_info: BundleInfo,
+    public store_info: StoreInfo,
+    public parent_proc: String,
+    public parent_pid: i64,
+    public coalition_name: String,
+    public crash_reporter_key: String,
     #[serde(rename = "codeSigningID")]
-    pub code_signing_id: String,
+    public code_signing_id: String,
     #[serde(rename = "codeSigningTeamID")]
-    pub code_signing_team_id: String,
-    pub code_signing_flags: i64,
-    pub code_signing_validation_category: i64,
-    pub code_signing_trust_level: i64,
-    pub instruction_byte_stream: InstructionByteStream,
-    pub sip: String,
-    pub exception: Exception,
-    pub termination: Termination,
-    pub asi: Asi,
-    pub ext_mods: ExtMods,
-    pub faulting_thread: Option<i64>,
-    pub threads: Vec<Thread>,
-    pub used_images: Vec<UsedImage>,
-    pub shared_cache: SharedCache,
-    pub vm_summary: String,
-    pub legacy_info: LegacyInfo,
-    pub log_writing_signature: String,
-    pub trial_info: TrialInfo,
+    public code_signing_team_id: String,
+    public code_signing_flags: i64,
+    public code_signing_validation_category: i64,
+    public code_signing_trust_level: i64,
+    public instruction_byte_stream: InstructionByteStream,
+    public sip: String,
+    public exception: Exception,
+    public termination: Termination,
+    public asi: Asi,
+    public ext_mods: ExtMods,
+    public faulting_thread: Option<i64>,
+    public threads: Vec<Thread>,
+    public used_images: Vec<UsedImage>,
+    public shared_cache: SharedCache,
+    public vm_summary: String,
+    public legacy_info: LegacyInfo,
+    public log_writing_signature: String,
+    public trial_info: TrialInfo,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct OsVersion {
-    pub train: String,
-    pub build: String,
-    pub release_type: String,
+public struct OsVersion {
+    public train: String,
+    public build: String,
+    public release_type: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct BundleInfo {
+public struct BundleInfo {
     #[serde(rename = "CFBundleShortVersionString")]
-    pub cfbundle_short_version_string: String,
+    public cfbundle_short_version_string: String,
     #[serde(rename = "CFBundleVersion")]
-    pub cfbundle_version: String,
+    public cfbundle_version: String,
     #[serde(rename = "CFBundleIdentifier")]
-    pub cfbundle_identifier: String,
+    public cfbundle_identifier: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct StoreInfo {
-    pub device_identifier_for_vendor: String,
-    pub third_party: bool,
+public struct StoreInfo {
+    public device_identifier_for_vendor: String,
+    public third_party: bool,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct InstructionByteStream {
+public struct InstructionByteStream {
     #[serde(rename = "beforePC")]
-    pub before_pc: String,
+    public before_pc: String,
     #[serde(rename = "atPC")]
-    pub at_pc: String,
+    public at_pc: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Exception {
-    pub codes: String,
-    pub raw_codes: Vec<i64>,
+public struct Exception {
+    public codes: String,
+    public raw_codes: Vec<i64>,
     #[serde(rename = "type")]
-    pub type_field: String,
-    pub subtype: Option<String>,
-    pub signal: String,
-    pub port: Option<i64>,
-    pub guard_id: Option<i64>,
-    pub message: Option<String>,
+    public type_field: String,
+    public subtype: Option<String>,
+    public signal: String,
+    public port: Option<i64>,
+    public guard_id: Option<i64>,
+    public message: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Termination {
-    pub flags: i64,
-    pub code: i64,
-    pub namespace: String,
-    pub indicator: String,
-    pub by_proc: String,
-    pub by_pid: i64,
+public struct Termination {
+    public flags: i64,
+    public code: i64,
+    public namespace: String,
+    public indicator: String,
+    public by_proc: String,
+    public by_pid: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Asi {
+public struct Asi {
     #[serde(rename = "libsystem_c.dylib")]
-    pub libsystem_c_dylib: Vec<String>,
+    public libsystem_c_dylib: Vec<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct ExtMods {
-    pub caller: ExtMod,
-    pub system: ExtMod,
-    pub targeted: ExtMod,
-    pub warnings: i64,
+public struct ExtMods {
+    public caller: ExtMod,
+    public system: ExtMod,
+    public targeted: ExtMod,
+    public warnings: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct ExtMod {
+public struct ExtMod {
     #[serde(rename = "thread_create")]
-    pub thread_create: i64,
+    public thread_create: i64,
     #[serde(rename = "thread_set_state")]
-    pub thread_set_state: i64,
+    public thread_set_state: i64,
     #[serde(rename = "task_for_pid")]
-    pub task_for_pid: i64,
+    public task_for_pid: i64,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Thread {
-    pub thread_state: HashMap<String, Value>,
-    pub id: i64,
-    pub triggered: Option<bool>,
-    pub name: Option<String>,
-    pub queue: Option<String>,
-    pub frames: Vec<Frame>,
+public struct Thread {
+    public thread_state: HashMap<String, Value>,
+    public id: i64,
+    public triggered: Option<bool>,
+    public name: Option<String>,
+    public queue: Option<String>,
+    public frames: Vec<Frame>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Frame {
-    pub image_offset: i64,
-    pub symbol: Option<String>,
-    pub symbol_location: Option<i64>,
-    pub image_index: usize,
+public struct Frame {
+    public image_offset: i64,
+    public symbol: Option<String>,
+    public symbol_location: Option<i64>,
+    public image_index: usize,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct UsedImage {
-    pub source: String,
-    pub arch: Option<String>,
-    pub base: i64,
+public struct UsedImage {
+    public source: String,
+    public arch: Option<String>,
+    public base: i64,
     #[serde(rename = "CFBundleShortVersionString")]
-    pub cfbundle_short_version_string: Option<String>,
+    public cfbundle_short_version_string: Option<String>,
     #[serde(rename = "CFBundleIdentifier")]
-    pub cfbundle_identifier: Option<String>,
-    pub size: i64,
-    pub uuid: String,
-    pub path: Option<String>,
-    pub name: Option<String>,
+    public cfbundle_identifier: Option<String>,
+    public size: i64,
+    public uuid: String,
+    public path: Option<String>,
+    public name: Option<String>,
     #[serde(rename = "CFBundleVersion")]
-    pub cfbundle_version: Option<String>,
+    public cfbundle_version: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct SharedCache {
-    pub base: i64,
-    pub size: i64,
-    pub uuid: String,
+public struct SharedCache {
+    public base: i64,
+    public size: i64,
+    public uuid: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct LegacyInfo {
-    pub thread_triggered: ThreadTriggered,
+public struct LegacyInfo {
+    public thread_triggered: ThreadTriggered,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct ThreadTriggered {
-    pub name: String,
-    pub queue: String,
+public struct ThreadTriggered {
+    public name: String,
+    public queue: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct TrialInfo {
-    pub rollouts: Vec<Rollout>,
-    pub experiments: Vec<Value>,
+public struct TrialInfo {
+    public rollouts: Vec<Rollout>,
+    public experiments: Vec<Value>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct Rollout {
-    pub rollout_id: String,
-    pub factor_pack_ids: HashMap<String, Value>,
-    pub deployment_id: i64,
+public struct Rollout {
+    public rollout_id: String,
+    public factor_pack_ids: HashMap<String, Value>,
+    public deployment_id: i64,
 }

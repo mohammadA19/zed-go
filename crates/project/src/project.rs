@@ -1,18 +1,18 @@
-pub mod buffer_store;
-pub mod connection_manager;
-pub mod debounced_delay;
-pub mod lsp_command;
-pub mod lsp_ext_command;
+public mod buffer_store;
+public mod connection_manager;
+public mod debounced_delay;
+public mod lsp_command;
+public mod lsp_ext_command;
 mod prettier_support;
-pub mod project_settings;
-pub mod search;
+public mod project_settings;
+public mod search;
 mod task_inventory;
-pub mod terminals;
-pub mod worktree_store;
+public mod terminals;
+public mod worktree_store;
 
 #[cfg(test)]
 mod project_tests;
-pub mod search_history;
+public mod search_history;
 mod yarn;
 
 use anyhow.{anyhow, bail, Context as _, Result};
@@ -123,14 +123,14 @@ use worktree.{CreatedEntry, Snapshot, Traversal};
 use worktree_store.{WorktreeStore, WorktreeStoreEvent};
 use yarn.YarnPathStore;
 
-pub use fs.*;
-pub use language.Location;
+public use fs.*;
+public use language.Location;
 #[cfg(any(test, feature = "test-support"))]
-pub use prettier.FORMAT_SUFFIX as TEST_PRETTIER_FORMAT_SUFFIX;
-pub use task_inventory.{
+public use prettier.FORMAT_SUFFIX as TEST_PRETTIER_FORMAT_SUFFIX;
+public use task_inventory.{
     BasicContextProvider, ContextProviderWithTasks, Inventory, TaskSourceKind,
 };
-pub use worktree.{
+public use worktree.{
     Entry, EntryKind, File, LocalWorktree, PathChange, ProjectEntryId, RepositoryEntry,
     UpdatedEntriesSet, UpdatedGitRepositoriesSet, Worktree, WorktreeId, WorktreeSettings,
     FS_WATCH_LATENCY,
@@ -139,11 +139,11 @@ pub use worktree.{
 const MAX_SERVER_REINSTALL_ATTEMPT_COUNT: u64 = 4;
 const SERVER_REINSTALL_DEBOUNCE_TIMEOUT: Duration = Duration.from_secs(1);
 const SERVER_LAUNCHING_BEFORE_SHUTDOWN_TIMEOUT: Duration = Duration.from_secs(5);
-pub const SERVER_PROGRESS_THROTTLE_TIMEOUT: Duration = Duration.from_millis(100);
+public const SERVER_PROGRESS_THROTTLE_TIMEOUT: Duration = Duration.from_millis(100);
 
 const MAX_PROJECT_SEARCH_HISTORY_SIZE: usize = 500;
 
-pub trait Item {
+public trait Item {
     fn try_open(
         project: &Model<Project>,
         path: &ProjectPath,
@@ -156,7 +156,7 @@ pub trait Item {
 }
 
 #[derive(Clone)]
-pub enum OpenedBufferEvent {
+public enum OpenedBufferEvent {
     Disconnected,
     Ok(BufferId),
     Err(BufferId, Arc<anyhow.Error>),
@@ -167,7 +167,7 @@ pub enum OpenedBufferEvent {
 /// Maps [`Worktree`] entries with its own logic using [`ProjectEntryId`] and [`ProjectPath`] structs.
 ///
 /// Can be either local (for the project opened on the same host) or remote.(for collab projects, browsed by multiple remote users).
-pub struct Project {
+public struct Project {
     active_entry: Option<ProjectEntryId>,
     buffer_ordered_messages_tx: mpsc.UnboundedSender<BufferOrderedMessage>,
     languages: Arc<LanguageRegistry>,
@@ -232,7 +232,7 @@ pub struct Project {
     cached_shell_environments: HashMap<WorktreeId, HashMap<String, String>>,
 }
 
-pub enum LanguageServerToQuery {
+public enum LanguageServerToQuery {
     Primary,
     Other(LanguageServerId),
 }
@@ -284,16 +284,16 @@ enum ProjectClientState {
 
 /// A prompt requested by LSP server.
 #[derive(Clone, Debug)]
-pub struct LanguageServerPromptRequest {
-    pub level: PromptLevel,
-    pub message: String,
-    pub actions: Vec<MessageActionItem>,
-    pub lsp_name: String,
+public struct LanguageServerPromptRequest {
+    public level: PromptLevel,
+    public message: String,
+    public actions: Vec<MessageActionItem>,
+    public lsp_name: String,
     response_channel: Sender<MessageActionItem>,
 }
 
 impl LanguageServerPromptRequest {
-    pub async fn respond(self, index: usize) -> Option<()> {
+    public async fn respond(self, index: usize) -> Option<()> {
         if let Some(response) = self.actions.into_iter().nth(index) {
             self.response_channel.send(response).await.ok()
         } else {
@@ -308,7 +308,7 @@ impl PartialEq for LanguageServerPromptRequest {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Event {
+public enum Event {
     LanguageServerAdded(LanguageServerId),
     LanguageServerRemoved(LanguageServerId),
     LanguageServerLog(LanguageServerId, String),
@@ -350,7 +350,7 @@ pub enum Event {
     SnippetEdit(BufferId, Vec<(lsp.Range, Snippet)>),
 }
 
-pub enum LanguageServerState {
+public enum LanguageServerState {
     Starting(Task<Option<Arc<LanguageServer>>>),
 
     Running {
@@ -362,39 +362,39 @@ pub enum LanguageServerState {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct LanguageServerStatus {
-    pub name: String,
-    pub pending_work: BTreeMap<String, LanguageServerProgress>,
-    pub has_pending_diagnostic_updates: bool,
+public struct LanguageServerStatus {
+    public name: String,
+    public pending_work: BTreeMap<String, LanguageServerProgress>,
+    public has_pending_diagnostic_updates: bool,
     progress_tokens: HashSet<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct LanguageServerProgress {
-    pub is_disk_based_diagnostics_progress: bool,
-    pub is_cancellable: bool,
-    pub title: Option<String>,
-    pub message: Option<String>,
-    pub percentage: Option<usize>,
+public struct LanguageServerProgress {
+    public is_disk_based_diagnostics_progress: bool,
+    public is_cancellable: bool,
+    public title: Option<String>,
+    public message: Option<String>,
+    public percentage: Option<usize>,
     #[serde(skip_serializing)]
-    pub last_update_at: Instant,
+    public last_update_at: Instant,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, PartialOrd, Ord)]
-pub struct ProjectPath {
-    pub worktree_id: WorktreeId,
-    pub path: Arc<Path>,
+public struct ProjectPath {
+    public worktree_id: WorktreeId,
+    public path: Arc<Path>,
 }
 
 impl ProjectPath {
-    pub fn from_proto(p: proto.ProjectPath) -> Self {
+    public fn from_proto(p: proto.ProjectPath) -> Self {
         Self {
             worktree_id: WorktreeId.from_proto(p.worktree_id),
             path: Arc.from(PathBuf.from(p.path)),
         }
     }
 
-    pub fn to_proto(&self) -> proto.ProjectPath {
+    public fn to_proto(&self) -> proto.ProjectPath {
         proto.ProjectPath {
             worktree_id: self.worktree_id.to_proto(),
             path: self.path.to_string_lossy().to_string(),
@@ -403,35 +403,35 @@ impl ProjectPath {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct InlayHint {
-    pub position: language.Anchor,
-    pub label: InlayHintLabel,
-    pub kind: Option<InlayHintKind>,
-    pub padding_left: bool,
-    pub padding_right: bool,
-    pub tooltip: Option<InlayHintTooltip>,
-    pub resolve_state: ResolveState,
+public struct InlayHint {
+    public position: language.Anchor,
+    public label: InlayHintLabel,
+    public kind: Option<InlayHintKind>,
+    public padding_left: bool,
+    public padding_right: bool,
+    public tooltip: Option<InlayHintTooltip>,
+    public resolve_state: ResolveState,
 }
 
 /// A completion provided by a language server
 #[derive(Clone)]
-pub struct Completion {
+public struct Completion {
     /// The range of the buffer that will be replaced.
-    pub old_range: Range<Anchor>,
+    public old_range: Range<Anchor>,
     /// The new text that will be inserted.
-    pub new_text: String,
+    public new_text: String,
     /// A label for this completion that is shown in the menu.
-    pub label: CodeLabel,
+    public label: CodeLabel,
     /// The id of the language server that produced this completion.
-    pub server_id: LanguageServerId,
+    public server_id: LanguageServerId,
     /// The documentation for this completion.
-    pub documentation: Option<Documentation>,
+    public documentation: Option<Documentation>,
     /// The raw completion provided by the language server.
-    pub lsp_completion: lsp.CompletionItem,
+    public lsp_completion: lsp.CompletionItem,
     /// An optional callback to invoke when this completion is confirmed.
-    pub confirm: Option<Arc<dyn Send + Sync + Fn(&mut WindowContext)>>,
+    public confirm: Option<Arc<dyn Send + Sync + Fn(&mut WindowContext)>>,
     /// If true, the editor will show a new completion menu after this completion is confirmed.
-    pub show_new_completions_on_confirm: bool,
+    public show_new_completions_on_confirm: bool,
 }
 
 impl std.fmt.Debug for Completion {
@@ -458,24 +458,24 @@ struct CoreCompletion {
 
 /// A code action provided by a language server.
 #[derive(Clone, Debug)]
-pub struct CodeAction {
+public struct CodeAction {
     /// The id of the language server that produced this code action.
-    pub server_id: LanguageServerId,
+    public server_id: LanguageServerId,
     /// The range of the buffer where this code action is applicable.
-    pub range: Range<Anchor>,
+    public range: Range<Anchor>,
     /// The raw code action provided by the language server.
-    pub lsp_action: lsp.CodeAction,
+    public lsp_action: lsp.CodeAction,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ResolveState {
+public enum ResolveState {
     Resolved,
     CanResolve(LanguageServerId, Option<lsp.LSPAny>),
     Resolving,
 }
 
 impl InlayHint {
-    pub fn text(&self) -> String {
+    public fn text(&self) -> String {
         match &self.label {
             InlayHintLabel.String(s) => s.to_owned(),
             InlayHintLabel.LabelParts(parts) => parts.iter().map(|part| &part.value).join(""),
@@ -484,102 +484,102 @@ impl InlayHint {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InlayHintLabel {
+public enum InlayHintLabel {
     String(String),
     LabelParts(Vec<InlayHintLabelPart>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct InlayHintLabelPart {
-    pub value: String,
-    pub tooltip: Option<InlayHintLabelPartTooltip>,
-    pub location: Option<(LanguageServerId, lsp.Location)>,
+public struct InlayHintLabelPart {
+    public value: String,
+    public tooltip: Option<InlayHintLabelPartTooltip>,
+    public location: Option<(LanguageServerId, lsp.Location)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InlayHintTooltip {
+public enum InlayHintTooltip {
     String(String),
     MarkupContent(MarkupContent),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InlayHintLabelPartTooltip {
+public enum InlayHintLabelPartTooltip {
     String(String),
     MarkupContent(MarkupContent),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MarkupContent {
-    pub kind: HoverBlockKind,
-    pub value: String,
+public struct MarkupContent {
+    public kind: HoverBlockKind,
+    public value: String,
 }
 
 #[derive(Debug, Clone)]
-pub struct LocationLink {
-    pub origin: Option<Location>,
-    pub target: Location,
+public struct LocationLink {
+    public origin: Option<Location>,
+    public target: Location,
 }
 
 #[derive(Debug)]
-pub struct DocumentHighlight {
-    pub range: Range<language.Anchor>,
-    pub kind: DocumentHighlightKind,
+public struct DocumentHighlight {
+    public range: Range<language.Anchor>,
+    public kind: DocumentHighlightKind,
 }
 
 #[derive(Clone, Debug)]
-pub struct Symbol {
-    pub language_server_name: LanguageServerName,
-    pub source_worktree_id: WorktreeId,
-    pub path: ProjectPath,
-    pub label: CodeLabel,
-    pub name: String,
-    pub kind: lsp.SymbolKind,
-    pub range: Range<Unclipped<PointUtf16>>,
-    pub signature: [u8; 32],
+public struct Symbol {
+    public language_server_name: LanguageServerName,
+    public source_worktree_id: WorktreeId,
+    public path: ProjectPath,
+    public label: CodeLabel,
+    public name: String,
+    public kind: lsp.SymbolKind,
+    public range: Range<Unclipped<PointUtf16>>,
+    public signature: [u8; 32],
 }
 
 #[derive(Clone, Debug)]
 struct CoreSymbol {
-    pub language_server_name: LanguageServerName,
-    pub source_worktree_id: WorktreeId,
-    pub path: ProjectPath,
-    pub name: String,
-    pub kind: lsp.SymbolKind,
-    pub range: Range<Unclipped<PointUtf16>>,
-    pub signature: [u8; 32],
+    public language_server_name: LanguageServerName,
+    public source_worktree_id: WorktreeId,
+    public path: ProjectPath,
+    public name: String,
+    public kind: lsp.SymbolKind,
+    public range: Range<Unclipped<PointUtf16>>,
+    public signature: [u8; 32],
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct HoverBlock {
-    pub text: String,
-    pub kind: HoverBlockKind,
+public struct HoverBlock {
+    public text: String,
+    public kind: HoverBlockKind,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum HoverBlockKind {
+public enum HoverBlockKind {
     PlainText,
     Markdown,
     Code { language: String },
 }
 
 #[derive(Debug, Clone)]
-pub struct Hover {
-    pub contents: Vec<HoverBlock>,
-    pub range: Option<Range<language.Anchor>>,
-    pub language: Option<Arc<Language>>,
+public struct Hover {
+    public contents: Vec<HoverBlock>,
+    public range: Option<Range<language.Anchor>>,
+    public language: Option<Arc<Language>>,
 }
 
 impl Hover {
-    pub fn is_empty(&self) -> bool {
+    public fn is_empty(&self) -> bool {
         self.contents.iter().all(|block| block.text.is_empty())
     }
 }
 
 #[derive(Default)]
-pub struct ProjectTransaction(pub HashMap<Model<Buffer>, language.Transaction>);
+public struct ProjectTransaction(public HashMap<Model<Buffer>, language.Transaction>);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FormatTrigger {
+public enum FormatTrigger {
     Save,
     Manual,
 }
@@ -604,20 +604,20 @@ impl FormatTrigger {
 }
 
 #[derive(Clone)]
-pub enum DirectoryLister {
+public enum DirectoryLister {
     Project(Model<Project>),
     Local(Arc<dyn Fs>),
 }
 
 impl DirectoryLister {
-    pub fn is_local(&self, cx: &AppContext) -> bool {
+    public fn is_local(&self, cx: &AppContext) -> bool {
         match self {
             DirectoryLister.Local(_) => true,
             DirectoryLister.Project(project) => project.read(cx).is_local(),
         }
     }
 
-    pub fn default_query(&self, cx: &mut AppContext) -> String {
+    public fn default_query(&self, cx: &mut AppContext) -> String {
         if let DirectoryLister.Project(project) = self {
             if let Some(worktree) = project.read(cx).visible_worktrees(cx).next() {
                 return worktree.read(cx).abs_path().to_string_lossy().to_string();
@@ -625,7 +625,7 @@ impl DirectoryLister {
         };
         "~/".to_string()
     }
-    pub fn list_directory(&self, query: String, cx: &mut AppContext) -> Task<Result<Vec<PathBuf>>> {
+    public fn list_directory(&self, query: String, cx: &mut AppContext) -> Task<Result<Vec<PathBuf>>> {
         match self {
             DirectoryLister.Project(project) => {
                 project.update(cx, |project, cx| project.list_directory(query, cx))
@@ -664,7 +664,7 @@ enum SearchMatchCandidate {
     },
 }
 
-pub enum SearchResult {
+public enum SearchResult {
     Buffer {
         buffer: Model<Buffer>,
         ranges: Vec<Range<Anchor>>,
@@ -673,18 +673,18 @@ pub enum SearchResult {
 }
 
 #[cfg(any(test, feature = "test-support"))]
-pub const DEFAULT_COMPLETION_CONTEXT: CompletionContext = CompletionContext {
+public const DEFAULT_COMPLETION_CONTEXT: CompletionContext = CompletionContext {
     trigger_kind: lsp.CompletionTriggerKind.INVOKED,
     trigger_character: None,
 };
 
 impl Project {
-    pub fn init_settings(cx: &mut AppContext) {
+    public fn init_settings(cx: &mut AppContext) {
         WorktreeSettings.register(cx);
         ProjectSettings.register(cx);
     }
 
-    pub fn init(client: &Arc<Client>, cx: &mut AppContext) {
+    public fn init(client: &Arc<Client>, cx: &mut AppContext) {
         connection_manager.init(client.clone(), cx);
         Self.init_settings(cx);
 
@@ -746,7 +746,7 @@ impl Project {
         client.add_model_request_handler(BufferStore.handle_blame_buffer);
     }
 
-    pub fn local(
+    public fn local(
         client: Arc<Client>,
         node: Arc<dyn NodeRuntime>,
         user_store: Model<UserStore>,
@@ -833,7 +833,7 @@ impl Project {
         })
     }
 
-    pub fn ssh(
+    public fn ssh(
         ssh: Arc<SshSession>,
         client: Arc<Client>,
         node: Arc<dyn NodeRuntime>,
@@ -856,7 +856,7 @@ impl Project {
         this
     }
 
-    pub async fn remote(
+    public async fn remote(
         remote_id: u64,
         client: Arc<Client>,
         user_store: Model<UserStore>,
@@ -874,7 +874,7 @@ impl Project {
         Ok(project)
     }
 
-    pub async fn in_room(
+    public async fn in_room(
         remote_id: u64,
         client: Arc<Client>,
         user_store: Model<UserStore>,
@@ -1056,7 +1056,7 @@ impl Project {
         Ok(this)
     }
 
-    pub async fn hosted(
+    public async fn hosted(
         remote_id: ProjectId,
         user_store: Model<UserStore>,
         client: Arc<Client>,
@@ -1131,7 +1131,7 @@ impl Project {
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub async fn example(
+    public async fn example(
         root_paths: impl IntoIterator<Item = &Path>,
         cx: &mut AsyncAppContext,
     ) -> Model<Project> {
@@ -1175,7 +1175,7 @@ impl Project {
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub async fn test(
+    public async fn test(
         fs: Arc<dyn Fs>,
         root_paths: impl IntoIterator<Item = &Path>,
         cx: &mut gpui.TestAppContext,
@@ -1321,43 +1321,43 @@ impl Project {
         cx.notify();
     }
 
-    pub fn buffer_for_id(&self, remote_id: BufferId, cx: &AppContext) -> Option<Model<Buffer>> {
+    public fn buffer_for_id(&self, remote_id: BufferId, cx: &AppContext) -> Option<Model<Buffer>> {
         self.buffer_store.read(cx).get(remote_id)
     }
 
-    pub fn languages(&self) -> &Arc<LanguageRegistry> {
+    public fn languages(&self) -> &Arc<LanguageRegistry> {
         &self.languages
     }
 
-    pub fn client(&self) -> Arc<Client> {
+    public fn client(&self) -> Arc<Client> {
         self.client.clone()
     }
 
-    pub fn user_store(&self) -> Model<UserStore> {
+    public fn user_store(&self) -> Model<UserStore> {
         self.user_store.clone()
     }
 
-    pub fn node_runtime(&self) -> Option<&Arc<dyn NodeRuntime>> {
+    public fn node_runtime(&self) -> Option<&Arc<dyn NodeRuntime>> {
         self.node.as_ref()
     }
 
-    pub fn opened_buffers(&self, cx: &AppContext) -> Vec<Model<Buffer>> {
+    public fn opened_buffers(&self, cx: &AppContext) -> Vec<Model<Buffer>> {
         self.buffer_store.read(cx).buffers().collect()
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    pub fn has_open_buffer(&self, path: impl Into<ProjectPath>, cx: &AppContext) -> bool {
+    public fn has_open_buffer(&self, path: impl Into<ProjectPath>, cx: &AppContext) -> bool {
         self.buffer_store
             .read(cx)
             .get_by_path(&path.into(), cx)
             .is_some()
     }
 
-    pub fn fs(&self) -> &Arc<dyn Fs> {
+    public fn fs(&self) -> &Arc<dyn Fs> {
         &self.fs
     }
 
-    pub fn remote_id(&self) -> Option<u64> {
+    public fn remote_id(&self) -> Option<u64> {
         match self.client_state {
             ProjectClientState.Local => None,
             ProjectClientState.Shared { remote_id, .. }
@@ -1365,15 +1365,15 @@ impl Project {
         }
     }
 
-    pub fn hosted_project_id(&self) -> Option<ProjectId> {
+    public fn hosted_project_id(&self) -> Option<ProjectId> {
         self.hosted_project_id
     }
 
-    pub fn dev_server_project_id(&self) -> Option<DevServerProjectId> {
+    public fn dev_server_project_id(&self) -> Option<DevServerProjectId> {
         self.dev_server_project_id
     }
 
-    pub fn supports_remote_terminal(&self, cx: &AppContext) -> bool {
+    public fn supports_remote_terminal(&self, cx: &AppContext) -> bool {
         let Some(id) = self.dev_server_project_id else {
             return false;
         };
@@ -1386,7 +1386,7 @@ impl Project {
         server.ssh_connection_string.is_some()
     }
 
-    pub fn ssh_connection_string(&self, cx: &ModelContext<Self>) -> Option<SharedString> {
+    public fn ssh_connection_string(&self, cx: &ModelContext<Self>) -> Option<SharedString> {
         if self.is_local() {
             return None;
         }
@@ -1399,7 +1399,7 @@ impl Project {
             .clone()
     }
 
-    pub fn replica_id(&self) -> ReplicaId {
+    public fn replica_id(&self) -> ReplicaId {
         match self.client_state {
             ProjectClientState.Remote { replica_id, .. } => replica_id,
             _ => 0,
@@ -1415,38 +1415,38 @@ impl Project {
         cx.notify();
     }
 
-    pub fn task_inventory(&self) -> &Model<Inventory> {
+    public fn task_inventory(&self) -> &Model<Inventory> {
         &self.tasks
     }
 
-    pub fn snippets(&self) -> &Model<SnippetProvider> {
+    public fn snippets(&self) -> &Model<SnippetProvider> {
         &self.snippets
     }
 
-    pub fn search_history(&self) -> &SearchHistory {
+    public fn search_history(&self) -> &SearchHistory {
         &self.search_history
     }
 
-    pub fn search_history_mut(&mut self) -> &mut SearchHistory {
+    public fn search_history_mut(&mut self) -> &mut SearchHistory {
         &mut self.search_history
     }
 
-    pub fn collaborators(&self) -> &HashMap<proto.PeerId, Collaborator> {
+    public fn collaborators(&self) -> &HashMap<proto.PeerId, Collaborator> {
         &self.collaborators
     }
 
-    pub fn host(&self) -> Option<&Collaborator> {
+    public fn host(&self) -> Option<&Collaborator> {
         self.collaborators.values().find(|c| c.replica_id == 0)
     }
 
-    pub fn set_worktrees_reordered(&mut self, worktrees_reordered: bool, cx: &mut AppContext) {
+    public fn set_worktrees_reordered(&mut self, worktrees_reordered: bool, cx: &mut AppContext) {
         self.worktree_store.update(cx, |store, _| {
             store.set_worktrees_reordered(worktrees_reordered);
         });
     }
 
     /// Collect all worktrees, including ones that don't appear in the project panel
-    pub fn worktrees<'a>(
+    public fn worktrees<'a>(
         &self,
         cx: &'a AppContext,
     ) -> impl 'a + DoubleEndedIterator<Item = Model<Worktree>> {
@@ -1454,23 +1454,23 @@ impl Project {
     }
 
     /// Collect all user-visible worktrees, the ones that appear in the project panel.
-    pub fn visible_worktrees<'a>(
+    public fn visible_worktrees<'a>(
         &'a self,
         cx: &'a AppContext,
     ) -> impl 'a + DoubleEndedIterator<Item = Model<Worktree>> {
         self.worktree_store.read(cx).visible_worktrees(cx)
     }
 
-    pub fn worktree_root_names<'a>(&'a self, cx: &'a AppContext) -> impl Iterator<Item = &'a str> {
+    public fn worktree_root_names<'a>(&'a self, cx: &'a AppContext) -> impl Iterator<Item = &'a str> {
         self.visible_worktrees(cx)
             .map(|tree| tree.read(cx).root_name())
     }
 
-    pub fn worktree_for_id(&self, id: WorktreeId, cx: &AppContext) -> Option<Model<Worktree>> {
+    public fn worktree_for_id(&self, id: WorktreeId, cx: &AppContext) -> Option<Model<Worktree>> {
         self.worktree_store.read(cx).worktree_for_id(id, cx)
     }
 
-    pub fn worktree_for_entry(
+    public fn worktree_for_entry(
         &self,
         entry_id: ProjectEntryId,
         cx: &AppContext,
@@ -1480,7 +1480,7 @@ impl Project {
             .worktree_for_entry(entry_id, cx)
     }
 
-    pub fn worktree_id_for_entry(
+    public fn worktree_id_for_entry(
         &self,
         entry_id: ProjectEntryId,
         cx: &AppContext,
@@ -1490,7 +1490,7 @@ impl Project {
     }
 
     /// Checks if the entry is the root of a worktree.
-    pub fn entry_is_worktree_root(&self, entry_id: ProjectEntryId, cx: &AppContext) -> bool {
+    public fn entry_is_worktree_root(&self, entry_id: ProjectEntryId, cx: &AppContext) -> bool {
         self.worktree_for_entry(entry_id, cx)
             .map(|worktree| {
                 worktree
@@ -1501,7 +1501,7 @@ impl Project {
             .unwrap_or(false)
     }
 
-    pub fn visibility_for_paths(&self, paths: &[PathBuf], cx: &AppContext) -> Option<bool> {
+    public fn visibility_for_paths(&self, paths: &[PathBuf], cx: &AppContext) -> Option<bool> {
         paths
             .iter()
             .map(|path| self.visibility_for_path(path, cx))
@@ -1509,7 +1509,7 @@ impl Project {
             .flatten()
     }
 
-    pub fn visibility_for_path(&self, path: &Path, cx: &AppContext) -> Option<bool> {
+    public fn visibility_for_path(&self, path: &Path, cx: &AppContext) -> Option<bool> {
         self.worktrees(cx)
             .filter_map(|worktree| {
                 let worktree = worktree.read(cx);
@@ -1521,7 +1521,7 @@ impl Project {
             .max()
     }
 
-    pub fn create_entry(
+    public fn create_entry(
         &mut self,
         project_path: impl Into<ProjectPath>,
         is_directory: bool,
@@ -1538,7 +1538,7 @@ impl Project {
         })
     }
 
-    pub fn copy_entry(
+    public fn copy_entry(
         &mut self,
         entry_id: ProjectEntryId,
         new_path: impl Into<Arc<Path>>,
@@ -1552,7 +1552,7 @@ impl Project {
         })
     }
 
-    pub fn rename_entry(
+    public fn rename_entry(
         &mut self,
         entry_id: ProjectEntryId,
         new_path: impl Into<Arc<Path>>,
@@ -1566,7 +1566,7 @@ impl Project {
         })
     }
 
-    pub fn delete_entry(
+    public fn delete_entry(
         &mut self,
         entry_id: ProjectEntryId,
         trash: bool,
@@ -1578,7 +1578,7 @@ impl Project {
         })
     }
 
-    pub fn expand_entry(
+    public fn expand_entry(
         &mut self,
         worktree_id: WorktreeId,
         entry_id: ProjectEntryId,
@@ -1588,7 +1588,7 @@ impl Project {
         worktree.update(cx, |worktree, cx| worktree.expand_entry(entry_id, cx))
     }
 
-    pub fn shared(&mut self, project_id: u64, cx: &mut ModelContext<Self>) -> Result<()> {
+    public fn shared(&mut self, project_id: u64, cx: &mut ModelContext<Self>) -> Result<()> {
         if !matches!(self.client_state, ProjectClientState.Local) {
             if let ProjectClientState.Remote { in_room, .. } = &mut self.client_state {
                 if *in_room || self.dev_server_project_id.is_none() {
@@ -1744,7 +1744,7 @@ impl Project {
         Ok(())
     }
 
-    pub fn reshared(
+    public fn reshared(
         &mut self,
         message: proto.ResharedProject,
         cx: &mut ModelContext<Self>,
@@ -1756,7 +1756,7 @@ impl Project {
         Ok(())
     }
 
-    pub fn rejoined(
+    public fn rejoined(
         &mut self,
         message: proto.RejoinedProject,
         message_id: u32,
@@ -1797,7 +1797,7 @@ impl Project {
         Ok(())
     }
 
-    pub fn unshare(&mut self, cx: &mut ModelContext<Self>) -> Result<()> {
+    public fn unshare(&mut self, cx: &mut ModelContext<Self>) -> Result<()> {
         self.unshare_internal(cx)?;
         self.metadata_changed(cx);
         cx.notify();
@@ -1837,7 +1837,7 @@ impl Project {
         }
     }
 
-    pub fn disconnected_from_host(&mut self, cx: &mut ModelContext<Self>) {
+    public fn disconnected_from_host(&mut self, cx: &mut ModelContext<Self>) {
         if self.is_disconnected() {
             return;
         }
@@ -1846,7 +1846,7 @@ impl Project {
         cx.notify();
     }
 
-    pub fn set_role(&mut self, role: proto.ChannelRole, cx: &mut ModelContext<Self>) {
+    public fn set_role(&mut self, role: proto.ChannelRole, cx: &mut ModelContext<Self>) {
         let new_capability =
             if role == proto.ChannelRole.Member || role == proto.ChannelRole.Admin {
                 Capability.ReadWrite
@@ -1882,11 +1882,11 @@ impl Project {
         }
     }
 
-    pub fn close(&mut self, cx: &mut ModelContext<Self>) {
+    public fn close(&mut self, cx: &mut ModelContext<Self>) {
         cx.emit(Event.Closed);
     }
 
-    pub fn is_disconnected(&self) -> bool {
+    public fn is_disconnected(&self) -> bool {
         match &self.client_state {
             ProjectClientState.Remote {
                 sharing_has_stopped,
@@ -1896,36 +1896,36 @@ impl Project {
         }
     }
 
-    pub fn capability(&self) -> Capability {
+    public fn capability(&self) -> Capability {
         match &self.client_state {
             ProjectClientState.Remote { capability, .. } => *capability,
             ProjectClientState.Shared { .. } | ProjectClientState.Local => Capability.ReadWrite,
         }
     }
 
-    pub fn is_read_only(&self) -> bool {
+    public fn is_read_only(&self) -> bool {
         self.is_disconnected() || self.capability() == Capability.ReadOnly
     }
 
-    pub fn is_local(&self) -> bool {
+    public fn is_local(&self) -> bool {
         match &self.client_state {
             ProjectClientState.Local | ProjectClientState.Shared { .. } => true,
             ProjectClientState.Remote { .. } => false,
         }
     }
 
-    pub fn is_ssh(&self) -> bool {
+    public fn is_ssh(&self) -> bool {
         match &self.client_state {
             ProjectClientState.Local | ProjectClientState.Shared { .. } => true,
             ProjectClientState.Remote { .. } => false,
         }
     }
 
-    pub fn is_remote(&self) -> bool {
+    public fn is_remote(&self) -> bool {
         !self.is_local()
     }
 
-    pub fn create_buffer(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<Model<Buffer>>> {
+    public fn create_buffer(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<Model<Buffer>>> {
         self.buffer_store.update(cx, |buffer_store, cx| {
             buffer_store.create_buffer(
                 if self.is_remote() {
@@ -1938,7 +1938,7 @@ impl Project {
         })
     }
 
-    pub fn create_local_buffer(
+    public fn create_local_buffer(
         &mut self,
         text: &str,
         language: Option<Arc<Language>>,
@@ -1952,7 +1952,7 @@ impl Project {
         })
     }
 
-    pub fn open_path(
+    public fn open_path(
         &mut self,
         path: ProjectPath,
         cx: &mut ModelContext<Self>,
@@ -1969,7 +1969,7 @@ impl Project {
         })
     }
 
-    pub fn open_local_buffer(
+    public fn open_local_buffer(
         &mut self,
         abs_path: impl AsRef<Path>,
         cx: &mut ModelContext<Self>,
@@ -1981,7 +1981,7 @@ impl Project {
         }
     }
 
-    pub fn open_buffer(
+    public fn open_buffer(
         &mut self,
         path: impl Into<ProjectPath>,
         cx: &mut ModelContext<Self>,
@@ -1995,7 +1995,7 @@ impl Project {
         })
     }
 
-    pub fn open_local_buffer_via_lsp(
+    public fn open_local_buffer_via_lsp(
         &mut self,
         mut abs_path: lsp.Url,
         language_server_id: LanguageServerId,
@@ -2068,7 +2068,7 @@ impl Project {
         })
     }
 
-    pub fn open_buffer_by_id(
+    public fn open_buffer_by_id(
         &mut self,
         id: BufferId,
         cx: &mut ModelContext<Self>,
@@ -2094,7 +2094,7 @@ impl Project {
         }
     }
 
-    pub fn save_buffers(
+    public fn save_buffers(
         &self,
         buffers: HashSet<Model<Buffer>>,
         cx: &mut ModelContext<Self>,
@@ -2109,7 +2109,7 @@ impl Project {
         })
     }
 
-    pub fn save_buffer(
+    public fn save_buffer(
         &self,
         buffer: Model<Buffer>,
         cx: &mut ModelContext<Self>,
@@ -2118,7 +2118,7 @@ impl Project {
             .update(cx, |buffer_store, cx| buffer_store.save_buffer(buffer, cx))
     }
 
-    pub fn save_buffer_as(
+    public fn save_buffer_as(
         &mut self,
         buffer: Model<Buffer>,
         path: ProjectPath,
@@ -2129,7 +2129,7 @@ impl Project {
         })
     }
 
-    pub fn get_open_buffer(
+    public fn get_open_buffer(
         &mut self,
         path: &ProjectPath,
         cx: &mut ModelContext<Self>,
@@ -2909,7 +2909,7 @@ impl Project {
         };
     }
 
-    pub fn set_language_for_buffer(
+    public fn set_language_for_buffer(
         &mut self,
         buffer: &Model<Buffer>,
         new_language: Arc<Language>,
@@ -3931,7 +3931,7 @@ impl Project {
         Ok(proto.Ack {})
     }
 
-    pub fn restart_language_servers_for_buffers(
+    public fn restart_language_servers_for_buffers(
         &mut self,
         buffers: impl IntoIterator<Item = Model<Buffer>>,
         cx: &mut ModelContext<Self>,
@@ -4023,7 +4023,7 @@ impl Project {
         .detach();
     }
 
-    pub fn cancel_language_server_work_for_buffers(
+    public fn cancel_language_server_work_for_buffers(
         &mut self,
         buffers: impl IntoIterator<Item = Model<Buffer>>,
         cx: &mut ModelContext<Self>,
@@ -4041,7 +4041,7 @@ impl Project {
         }
     }
 
-    pub fn cancel_language_server_work(
+    public fn cancel_language_server_work(
         &mut self,
         server_id: LanguageServerId,
         token_to_cancel: Option<String>,
@@ -4478,7 +4478,7 @@ impl Project {
         })
     }
 
-    pub fn language_server_statuses(
+    public fn language_server_statuses(
         &self,
     ) -> impl DoubleEndedIterator<Item = (LanguageServerId, &LanguageServerStatus)> {
         self.language_server_statuses
@@ -4486,11 +4486,11 @@ impl Project {
             .map(|(key, value)| (*key, value))
     }
 
-    pub fn last_formatting_failure(&self) -> Option<&str> {
+    public fn last_formatting_failure(&self) -> Option<&str> {
         self.last_formatting_failure.as_deref()
     }
 
-    pub fn update_diagnostics(
+    public fn update_diagnostics(
         &mut self,
         language_server_id: LanguageServerId,
         mut params: lsp.PublishDiagnosticsParams,
@@ -4612,7 +4612,7 @@ impl Project {
         Ok(())
     }
 
-    pub fn update_diagnostic_entries(
+    public fn update_diagnostic_entries(
         &mut self,
         server_id: LanguageServerId,
         abs_path: PathBuf,
@@ -4651,7 +4651,7 @@ impl Project {
         Ok(())
     }
 
-    pub fn update_worktree_diagnostics(
+    public fn update_worktree_diagnostics(
         &mut self,
         worktree_id: WorktreeId,
         server_id: LanguageServerId,
@@ -4785,7 +4785,7 @@ impl Project {
         Ok(())
     }
 
-    pub fn reload_buffers(
+    public fn reload_buffers(
         &self,
         buffers: HashSet<Model<Buffer>>,
         push_to_history: bool,
@@ -4850,7 +4850,7 @@ impl Project {
         })
     }
 
-    pub fn format(
+    public fn format(
         &mut self,
         buffers: HashSet<Model<Buffer>>,
         push_to_history: bool,
@@ -5453,7 +5453,7 @@ impl Project {
             cx,
         )
     }
-    pub fn definition<T: ToPointUtf16>(
+    public fn definition<T: ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -5477,7 +5477,7 @@ impl Project {
         )
     }
 
-    pub fn type_definition<T: ToPointUtf16>(
+    public fn type_definition<T: ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -5501,7 +5501,7 @@ impl Project {
         )
     }
 
-    pub fn implementation<T: ToPointUtf16>(
+    public fn implementation<T: ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -5524,7 +5524,7 @@ impl Project {
             cx,
         )
     }
-    pub fn references<T: ToPointUtf16>(
+    public fn references<T: ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -5548,7 +5548,7 @@ impl Project {
         )
     }
 
-    pub fn document_highlights<T: ToPointUtf16>(
+    public fn document_highlights<T: ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -5558,7 +5558,7 @@ impl Project {
         self.document_highlights_impl(buffer, position, cx)
     }
 
-    pub fn symbols(&self, query: &str, cx: &mut ModelContext<Self>) -> Task<Result<Vec<Symbol>>> {
+    public fn symbols(&self, query: &str, cx: &mut ModelContext<Self>) -> Task<Result<Vec<Symbol>>> {
         let language_registry = self.languages.clone();
 
         if self.is_local() {
@@ -5713,7 +5713,7 @@ impl Project {
         }
     }
 
-    pub fn open_buffer_for_symbol(
+    public fn open_buffer_for_symbol(
         &mut self,
         symbol: &Symbol,
         cx: &mut ModelContext<Self>,
@@ -5770,7 +5770,7 @@ impl Project {
         }
     }
 
-    pub fn signature_help<T: ToPointUtf16>(
+    public fn signature_help<T: ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -5925,7 +5925,7 @@ impl Project {
         }
     }
 
-    pub fn hover<T: ToPointUtf16>(
+    public fn hover<T: ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -5982,7 +5982,7 @@ impl Project {
         )
     }
 
-    pub fn linked_edit(
+    public fn linked_edit(
         &self,
         buffer: &Model<Buffer>,
         position: Anchor,
@@ -6090,7 +6090,7 @@ impl Project {
         }
     }
 
-    pub fn completions<T: ToOffset + ToPointUtf16>(
+    public fn completions<T: ToOffset + ToPointUtf16>(
         &self,
         buffer: &Model<Buffer>,
         position: T,
@@ -6101,7 +6101,7 @@ impl Project {
         self.completions_impl(buffer, position, context, cx)
     }
 
-    pub fn resolve_completions(
+    public fn resolve_completions(
         &self,
         buffer: Model<Buffer>,
         completion_indices: Vec<usize>,
@@ -6314,7 +6314,7 @@ impl Project {
         }
     }
 
-    pub fn apply_additional_edits_for_completion(
+    public fn apply_additional_edits_for_completion(
         &self,
         buffer_handle: Model<Buffer>,
         completion: Completion,
@@ -6509,7 +6509,7 @@ impl Project {
         }
     }
 
-    pub fn code_actions<T: Clone + ToOffset>(
+    public fn code_actions<T: Clone + ToOffset>(
         &mut self,
         buffer_handle: &Model<Buffer>,
         range: Range<T>,
@@ -6520,7 +6520,7 @@ impl Project {
         self.code_actions_impl(buffer_handle, range, cx)
     }
 
-    pub fn apply_code_action(
+    public fn apply_code_action(
         &self,
         buffer_handle: Model<Buffer>,
         mut action: CodeAction,
@@ -6931,7 +6931,7 @@ impl Project {
             cx,
         )
     }
-    pub fn prepare_rename<T: ToPointUtf16>(
+    public fn prepare_rename<T: ToPointUtf16>(
         &mut self,
         buffer: Model<Buffer>,
         position: T,
@@ -6961,7 +6961,7 @@ impl Project {
             cx,
         )
     }
-    pub fn perform_rename<T: ToPointUtf16>(
+    public fn perform_rename<T: ToPointUtf16>(
         &mut self,
         buffer: Model<Buffer>,
         position: T,
@@ -6973,7 +6973,7 @@ impl Project {
         self.perform_rename_impl(buffer, position, new_name, push_to_history, cx)
     }
 
-    pub fn on_type_format_impl(
+    public fn on_type_format_impl(
         &mut self,
         buffer: Model<Buffer>,
         position: PointUtf16,
@@ -7001,7 +7001,7 @@ impl Project {
         )
     }
 
-    pub fn on_type_format<T: ToPointUtf16>(
+    public fn on_type_format<T: ToPointUtf16>(
         &mut self,
         buffer: Model<Buffer>,
         position: T,
@@ -7013,7 +7013,7 @@ impl Project {
         self.on_type_format_impl(buffer, position, trigger, push_to_history, cx)
     }
 
-    pub fn inlay_hints<T: ToOffset>(
+    public fn inlay_hints<T: ToOffset>(
         &mut self,
         buffer_handle: Model<Buffer>,
         range: Range<T>,
@@ -7080,7 +7080,7 @@ impl Project {
         }
     }
 
-    pub fn resolve_inlay_hint(
+    public fn resolve_inlay_hint(
         &self,
         hint: InlayHint,
         buffer_handle: Model<Buffer>,
@@ -7144,7 +7144,7 @@ impl Project {
     }
 
     #[allow(clippy.type_complexity)]
-    pub fn search(
+    public fn search(
         &self,
         query: SearchQuery,
         cx: &mut ModelContext<Self>,
@@ -7194,7 +7194,7 @@ impl Project {
         }
     }
 
-    pub fn search_local(
+    public fn search_local(
         &self,
         query: SearchQuery,
         cx: &mut ModelContext<Self>,
@@ -7479,7 +7479,7 @@ impl Project {
             .await;
     }
 
-    pub fn request_lsp<R: LspCommand>(
+    public fn request_lsp<R: LspCommand>(
         &self,
         buffer_handle: Model<Buffer>,
         server: LanguageServerToQuery,
@@ -7669,7 +7669,7 @@ impl Project {
     /// # Errors
     ///
     /// An error will be returned if the worktree or destination worktree are not found.
-    pub fn move_worktree(
+    public fn move_worktree(
         &mut self,
         source: WorktreeId,
         destination: WorktreeId,
@@ -7680,7 +7680,7 @@ impl Project {
         })
     }
 
-    pub fn find_or_create_worktree(
+    public fn find_or_create_worktree(
         &mut self,
         abs_path: impl AsRef<Path>,
         visible: bool,
@@ -7696,7 +7696,7 @@ impl Project {
         }
     }
 
-    pub fn find_worktree(
+    public fn find_worktree(
         &self,
         abs_path: &Path,
         cx: &AppContext,
@@ -7711,7 +7711,7 @@ impl Project {
         })
     }
 
-    pub fn is_shared(&self) -> bool {
+    public fn is_shared(&self) -> bool {
         match &self.client_state {
             ProjectClientState.Shared { .. } => true,
             ProjectClientState.Local => false,
@@ -7719,7 +7719,7 @@ impl Project {
         }
     }
 
-    pub fn list_directory(
+    public fn list_directory(
         &self,
         query: String,
         cx: &mut ModelContext<Self>,
@@ -7885,7 +7885,7 @@ impl Project {
         })
     }
 
-    pub fn remove_worktree(&mut self, id_to_remove: WorktreeId, cx: &mut ModelContext<Self>) {
+    public fn remove_worktree(&mut self, id_to_remove: WorktreeId, cx: &mut ModelContext<Self>) {
         if let Some(dev_server_project_id) = self.dev_server_project_id {
             let paths: Vec<String> = self
                 .visible_worktrees(cx)
@@ -8200,7 +8200,7 @@ impl Project {
         .detach();
     }
 
-    pub fn set_active_path(&mut self, entry: Option<ProjectPath>, cx: &mut ModelContext<Self>) {
+    public fn set_active_path(&mut self, entry: Option<ProjectPath>, cx: &mut ModelContext<Self>) {
         let new_active_entry = entry.and_then(|project_path| {
             let worktree = self.worktree_for_id(project_path.worktree_id, cx)?;
             let entry = worktree.read(cx).entry_for_path(project_path.path)?;
@@ -8212,7 +8212,7 @@ impl Project {
         }
     }
 
-    pub fn language_servers_running_disk_based_diagnostics(
+    public fn language_servers_running_disk_based_diagnostics(
         &self,
     ) -> impl Iterator<Item = LanguageServerId> + '_ {
         self.language_server_statuses
@@ -8226,7 +8226,7 @@ impl Project {
             })
     }
 
-    pub fn diagnostic_summary(&self, include_ignored: bool, cx: &AppContext) -> DiagnosticSummary {
+    public fn diagnostic_summary(&self, include_ignored: bool, cx: &AppContext) -> DiagnosticSummary {
         let mut summary = DiagnosticSummary.default();
         for (_, _, path_summary) in self.diagnostic_summaries(include_ignored, cx) {
             summary.error_count += path_summary.error_count;
@@ -8235,7 +8235,7 @@ impl Project {
         summary
     }
 
-    pub fn diagnostic_summaries<'a>(
+    public fn diagnostic_summaries<'a>(
         &'a self,
         include_ignored: bool,
         cx: &'a AppContext,
@@ -8270,7 +8270,7 @@ impl Project {
             })
     }
 
-    pub fn disk_based_diagnostics_started(
+    public fn disk_based_diagnostics_started(
         &mut self,
         language_server_id: LanguageServerId,
         cx: &mut ModelContext<Self>,
@@ -8293,7 +8293,7 @@ impl Project {
         }
     }
 
-    pub fn disk_based_diagnostics_finished(
+    public fn disk_based_diagnostics_finished(
         &mut self,
         language_server_id: LanguageServerId,
         cx: &mut ModelContext<Self>,
@@ -8317,18 +8317,18 @@ impl Project {
         }
     }
 
-    pub fn active_entry(&self) -> Option<ProjectEntryId> {
+    public fn active_entry(&self) -> Option<ProjectEntryId> {
         self.active_entry
     }
 
-    pub fn entry_for_path(&self, path: &ProjectPath, cx: &AppContext) -> Option<Entry> {
+    public fn entry_for_path(&self, path: &ProjectPath, cx: &AppContext) -> Option<Entry> {
         self.worktree_for_id(path.worktree_id, cx)?
             .read(cx)
             .entry_for_path(&path.path)
             .cloned()
     }
 
-    pub fn path_for_entry(&self, entry_id: ProjectEntryId, cx: &AppContext) -> Option<ProjectPath> {
+    public fn path_for_entry(&self, entry_id: ProjectEntryId, cx: &AppContext) -> Option<ProjectPath> {
         let worktree = self.worktree_for_entry(entry_id, cx)?;
         let worktree = worktree.read(cx);
         let worktree_id = worktree.id();
@@ -8336,7 +8336,7 @@ impl Project {
         Some(ProjectPath { worktree_id, path })
     }
 
-    pub fn absolute_path(&self, project_path: &ProjectPath, cx: &AppContext) -> Option<PathBuf> {
+    public fn absolute_path(&self, project_path: &ProjectPath, cx: &AppContext) -> Option<PathBuf> {
         let workspace_root = self
             .worktree_for_id(project_path.worktree_id, cx)?
             .read(cx)
@@ -8367,7 +8367,7 @@ impl Project {
     /// # Returns
     ///
     /// Returns `Some(ProjectPath)` if a matching worktree is found, otherwise `None`.
-    pub fn find_project_path(&self, path: &Path, cx: &AppContext) -> Option<ProjectPath> {
+    public fn find_project_path(&self, path: &Path, cx: &AppContext) -> Option<ProjectPath> {
         let worktree_store = self.worktree_store.read(cx);
 
         for worktree in worktree_store.visible_worktrees(cx) {
@@ -8393,7 +8393,7 @@ impl Project {
         None
     }
 
-    pub fn get_workspace_root(
+    public fn get_workspace_root(
         &self,
         project_path: &ProjectPath,
         cx: &AppContext,
@@ -8406,7 +8406,7 @@ impl Project {
         )
     }
 
-    pub fn get_repo(
+    public fn get_repo(
         &self,
         project_path: &ProjectPath,
         cx: &AppContext,
@@ -8417,13 +8417,13 @@ impl Project {
             .local_git_repo(&project_path.path)
     }
 
-    pub fn get_first_worktree_root_repo(&self, cx: &AppContext) -> Option<Arc<dyn GitRepository>> {
+    public fn get_first_worktree_root_repo(&self, cx: &AppContext) -> Option<Arc<dyn GitRepository>> {
         let worktree = self.visible_worktrees(cx).next()?.read(cx).as_local()?;
         let root_entry = worktree.root_git_entry()?;
         worktree.get_local_repo(&root_entry)?.repo().clone().into()
     }
 
-    pub fn blame_buffer(
+    public fn blame_buffer(
         &self,
         buffer: &Model<Buffer>,
         version: Option<clock.Global>,
@@ -9924,7 +9924,7 @@ impl Project {
         })
     }
 
-    pub fn worktree_metadata_protos(&self, cx: &AppContext) -> Vec<proto.WorktreeMetadata> {
+    public fn worktree_metadata_protos(&self, cx: &AppContext) -> Vec<proto.WorktreeMetadata> {
         self.worktrees(cx)
             .map(|worktree| {
                 let worktree = worktree.read(cx);
@@ -10197,7 +10197,7 @@ impl Project {
         }
     }
 
-    pub fn language_servers(
+    public fn language_servers(
         &self,
     ) -> impl '_ + Iterator<Item = (LanguageServerId, LanguageServerName, WorktreeId)> {
         self.language_server_ids
@@ -10207,7 +10207,7 @@ impl Project {
             })
     }
 
-    pub fn supplementary_language_servers(
+    public fn supplementary_language_servers(
         &self,
     ) -> impl '_ + Iterator<Item = (&LanguageServerId, &LanguageServerName)> {
         self.supplementary_language_servers
@@ -10215,7 +10215,7 @@ impl Project {
             .map(|(id, (name, _))| (id, name))
     }
 
-    pub fn language_server_adapter_for_id(
+    public fn language_server_adapter_for_id(
         &self,
         id: LanguageServerId,
     ) -> Option<Arc<CachedLspAdapter>> {
@@ -10226,7 +10226,7 @@ impl Project {
         }
     }
 
-    pub fn language_server_for_id(&self, id: LanguageServerId) -> Option<Arc<LanguageServer>> {
+    public fn language_server_for_id(&self, id: LanguageServerId) -> Option<Arc<LanguageServer>> {
         if let Some(LanguageServerState.Running { server, .. }) = self.language_servers.get(&id) {
             Some(server.clone())
         } else if let Some((_, server)) = self.supplementary_language_servers.get(&id) {
@@ -10236,7 +10236,7 @@ impl Project {
         }
     }
 
-    pub fn language_servers_for_buffer(
+    public fn language_servers_for_buffer(
         &self,
         buffer: &Buffer,
         cx: &AppContext,
@@ -10262,7 +10262,7 @@ impl Project {
         self.language_servers_for_buffer(buffer, cx).next()
     }
 
-    pub fn language_server_for_buffer(
+    public fn language_server_for_buffer(
         &self,
         buffer: &Buffer,
         server_id: LanguageServerId,
@@ -10292,7 +10292,7 @@ impl Project {
         }
     }
 
-    pub fn task_context_for_location(
+    public fn task_context_for_location(
         &self,
         captured_variables: TaskVariables,
         location: Location,
@@ -10419,7 +10419,7 @@ impl Project {
         }
     }
 
-    pub fn task_templates(
+    public fn task_templates(
         &self,
         worktree: Option<WorktreeId>,
         location: Option<Location>,
@@ -10451,7 +10451,7 @@ impl Project {
         }
     }
 
-    pub fn query_remote_task_templates(
+    public fn query_remote_task_templates(
         &self,
         project_id: u64,
         worktree: Option<WorktreeId>,
@@ -10904,14 +10904,14 @@ fn glob_literal_prefix(glob: &str) -> &str {
     &glob[..literal_end]
 }
 
-pub struct PathMatchCandidateSet {
-    pub snapshot: Snapshot,
-    pub include_ignored: bool,
-    pub include_root_name: bool,
-    pub candidates: Candidates,
+public struct PathMatchCandidateSet {
+    public snapshot: Snapshot,
+    public include_ignored: bool,
+    public include_root_name: bool,
+    public candidates: Candidates,
 }
 
-pub enum Candidates {
+public enum Candidates {
     /// Only consider directories.
     Directories,
     /// Only consider files.
@@ -10976,7 +10976,7 @@ impl<'a> fuzzy.PathMatchCandidateSet<'a> for PathMatchCandidateSet {
     }
 }
 
-pub struct PathMatchCandidateSetIter<'a> {
+public struct PathMatchCandidateSetIter<'a> {
     traversal: Traversal<'a>,
 }
 
@@ -11018,7 +11018,7 @@ impl<P: AsRef<Path>> From<(WorktreeId, P)> for ProjectPath {
     }
 }
 
-pub struct ProjectLspAdapterDelegate {
+public struct ProjectLspAdapterDelegate {
     project: WeakModel<Project>,
     worktree: worktree.Snapshot,
     fs: Arc<dyn Fs>,
@@ -11029,7 +11029,7 @@ pub struct ProjectLspAdapterDelegate {
 }
 
 impl ProjectLspAdapterDelegate {
-    pub fn new(
+    public fn new(
         project: &Project,
         worktree: &Model<Worktree>,
         cx: &ModelContext<Project>,
@@ -11210,7 +11210,7 @@ impl Item for Buffer {
 impl Completion {
     /// A key that can be used to sort completions when displaying
     /// them to the user.
-    pub fn sort_key(&self) -> (usize, &str) {
+    public fn sort_key(&self) -> (usize, &str) {
         let kind_key = match self.lsp_completion.kind {
             Some(lsp.CompletionItemKind.KEYWORD) => 0,
             Some(lsp.CompletionItemKind.VARIABLE) => 1,
@@ -11220,7 +11220,7 @@ impl Completion {
     }
 
     /// Whether this completion is a snippet.
-    pub fn is_snippet(&self) -> bool {
+    public fn is_snippet(&self) -> bool {
         self.lsp_completion.insert_text_format == Some(lsp.InsertTextFormat.SNIPPET)
     }
 }
@@ -11369,7 +11369,7 @@ fn remove_empty_hover_blocks(mut hover: Hover) -> Option<Hover> {
 }
 
 #[derive(Debug)]
-pub struct NoRepositoryError {}
+public struct NoRepositoryError {}
 
 impl std.fmt.Display for NoRepositoryError {
     fn fmt(&self, f: &mut std.fmt.Formatter<'_>) -> std.fmt.Result {
@@ -11417,13 +11417,13 @@ fn deserialize_location(
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Serialize)]
-pub struct DiagnosticSummary {
-    pub error_count: usize,
-    pub warning_count: usize,
+public struct DiagnosticSummary {
+    public error_count: usize,
+    public warning_count: usize,
 }
 
 impl DiagnosticSummary {
-    pub fn new<'a, T: 'a>(diagnostics: impl IntoIterator<Item = &'a DiagnosticEntry<T>>) -> Self {
+    public fn new<'a, T: 'a>(diagnostics: impl IntoIterator<Item = &'a DiagnosticEntry<T>>) -> Self {
         let mut this = Self {
             error_count: 0,
             warning_count: 0,
@@ -11442,11 +11442,11 @@ impl DiagnosticSummary {
         this
     }
 
-    pub fn is_empty(&self) -> bool {
+    public fn is_empty(&self) -> bool {
         self.error_count == 0 && self.warning_count == 0
     }
 
-    pub fn to_proto(
+    public fn to_proto(
         &self,
         language_server_id: LanguageServerId,
         path: &Path,
@@ -11460,7 +11460,7 @@ impl DiagnosticSummary {
     }
 }
 
-pub fn sort_worktree_entries(entries: &mut Vec<Entry>) {
+public fn sort_worktree_entries(entries: &mut Vec<Entry>) {
     entries.sort_by(|entry_a, entry_b| {
         compare_paths(
             (&entry_a.path, entry_a.is_file()),
@@ -11541,7 +11541,7 @@ fn sort_search_matches(search_matches: &mut Vec<SearchMatchCandidate>, cx: &AppC
     });
 }
 
-pub fn compare_paths(
+public fn compare_paths(
     (path_a, a_is_file): (&Path, bool),
     (path_b, b_is_file): (&Path, bool),
 ) -> cmp.Ordering {

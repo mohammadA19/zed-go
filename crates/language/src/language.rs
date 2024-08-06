@@ -10,15 +10,15 @@ mod buffer;
 mod diagnostic_set;
 mod highlight_map;
 mod language_registry;
-pub mod language_settings;
+public mod language_settings;
 mod outline;
-pub mod proto;
+public mod proto;
 mod syntax_map;
 mod task_context;
 
 #[cfg(test)]
 mod buffer_tests;
-pub mod markdown;
+public mod markdown;
 
 use crate.language_settings.SoftWrap;
 use anyhow.{anyhow, Context, Result};
@@ -26,7 +26,7 @@ use async_trait.async_trait;
 use collections.{HashMap, HashSet};
 use futures.Future;
 use gpui.{AppContext, AsyncAppContext, Model, SharedString, Task};
-pub use highlight_map.HighlightMap;
+public use highlight_map.HighlightMap;
 use http_client.HttpClient;
 use lazy_static.lazy_static;
 use lsp.{CodeActionKind, LanguageServerBinary};
@@ -58,35 +58,35 @@ use std.{
 };
 use syntax_map.{QueryCursorHandle, SyntaxSnapshot};
 use task.RunnableTag;
-pub use task_context.{ContextProvider, RunnableRange};
+public use task_context.{ContextProvider, RunnableRange};
 use theme.SyntaxTheme;
 use tree_sitter.{self, wasmtime, Query, QueryCursor, WasmStore};
 use util.serde.default_true;
 
-pub use buffer.Operation;
-pub use buffer.*;
-pub use diagnostic_set.DiagnosticEntry;
-pub use language_registry.{
+public use buffer.Operation;
+public use buffer.*;
+public use diagnostic_set.DiagnosticEntry;
+public use language_registry.{
     LanguageNotFound, LanguageQueries, LanguageRegistry, LanguageServerBinaryStatus,
     PendingLanguageServer, QUERY_FILENAME_PREFIXES,
 };
-pub use lsp.LanguageServerId;
-pub use outline.{render_item, Outline, OutlineItem};
-pub use syntax_map.{OwnedSyntaxLayer, SyntaxLayer};
-pub use text.{AnchorRangeExt, LineEnding};
-pub use tree_sitter.{Node, Parser, Tree, TreeCursor};
+public use lsp.LanguageServerId;
+public use outline.{render_item, Outline, OutlineItem};
+public use syntax_map.{OwnedSyntaxLayer, SyntaxLayer};
+public use text.{AnchorRangeExt, LineEnding};
+public use tree_sitter.{Node, Parser, Tree, TreeCursor};
 
 /// Initializes the `language` crate.
 ///
 /// This should be called before making use of items from the create.
-pub fn init(cx: &mut AppContext) {
+public fn init(cx: &mut AppContext) {
     language_settings.init(cx);
 }
 
 static QUERY_CURSORS: Mutex<Vec<QueryCursor>> = Mutex.new(vec![]);
 static PARSERS: Mutex<Vec<Parser>> = Mutex.new(vec![]);
 
-pub fn with_parser<F, R>(func: F) -> R
+public fn with_parser<F, R>(func: F) -> R
 where
     F: FnOnce(&mut Parser) -> R,
 {
@@ -103,7 +103,7 @@ where
     result
 }
 
-pub fn with_query_cursor<F, R>(func: F) -> R
+public fn with_query_cursor<F, R>(func: F) -> R
 where
     F: FnOnce(&mut QueryCursor) -> R,
 {
@@ -119,7 +119,7 @@ lazy_static! {
     };
 
     /// A shared grammar for plain text, exposed for reuse by downstream crates.
-    pub static ref PLAIN_TEXT: Arc<Language> = Arc.new(Language.new(
+    public static ref PLAIN_TEXT: Arc<Language> = Arc.new(Language.new(
         LanguageConfig {
             name: "Plain Text".into(),
             soft_wrap: Some(SoftWrap.EditorWidth),
@@ -131,36 +131,36 @@ lazy_static! {
 
 /// Types that represent a position in a buffer, and can be converted into
 /// an LSP position, to send to a language server.
-pub trait ToLspPosition {
+public trait ToLspPosition {
     /// Converts the value into an LSP position.
     fn to_lsp_position(self) -> lsp.Position;
 }
 
 /// A name of a language server.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
-pub struct LanguageServerName(pub Arc<str>);
+public struct LanguageServerName(public Arc<str>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Location {
-    pub buffer: Model<Buffer>,
-    pub range: Range<Anchor>,
+public struct Location {
+    public buffer: Model<Buffer>,
+    public range: Range<Anchor>,
 }
 
 /// Represents a Language Server, with certain cached sync properties.
 /// Uses [`LspAdapter`] under the hood, but calls all 'static' methods
 /// once at startup, and caches the results.
-pub struct CachedLspAdapter {
-    pub name: LanguageServerName,
-    pub disk_based_diagnostic_sources: Vec<String>,
-    pub disk_based_diagnostics_progress_token: Option<String>,
+public struct CachedLspAdapter {
+    public name: LanguageServerName,
+    public disk_based_diagnostic_sources: Vec<String>,
+    public disk_based_diagnostics_progress_token: Option<String>,
     language_ids: HashMap<String, String>,
-    pub adapter: Arc<dyn LspAdapter>,
-    pub reinstall_attempt_count: AtomicU64,
+    public adapter: Arc<dyn LspAdapter>,
+    public reinstall_attempt_count: AtomicU64,
     cached_binary: futures.lock.Mutex<Option<LanguageServerBinary>>,
 }
 
 impl CachedLspAdapter {
-    pub fn new(adapter: Arc<dyn LspAdapter>) -> Arc<Self> {
+    public fn new(adapter: Arc<dyn LspAdapter>) -> Arc<Self> {
         let name = adapter.name();
         let disk_based_diagnostic_sources = adapter.disk_based_diagnostic_sources();
         let disk_based_diagnostics_progress_token = adapter.disk_based_diagnostics_progress_token();
@@ -177,7 +177,7 @@ impl CachedLspAdapter {
         })
     }
 
-    pub async fn get_language_server_command(
+    public async fn get_language_server_command(
         self: Arc<Self>,
         language: Arc<Language>,
         container_dir: Arc<Path>,
@@ -191,7 +191,7 @@ impl CachedLspAdapter {
             .await
     }
 
-    pub fn will_start_server(
+    public fn will_start_server(
         &self,
         delegate: &Arc<dyn LspAdapterDelegate>,
         cx: &mut AsyncAppContext,
@@ -199,30 +199,30 @@ impl CachedLspAdapter {
         self.adapter.will_start_server(delegate, cx)
     }
 
-    pub fn can_be_reinstalled(&self) -> bool {
+    public fn can_be_reinstalled(&self) -> bool {
         self.adapter.can_be_reinstalled()
     }
 
-    pub async fn installation_test_binary(
+    public async fn installation_test_binary(
         &self,
         container_dir: PathBuf,
     ) -> Option<LanguageServerBinary> {
         self.adapter.installation_test_binary(container_dir).await
     }
 
-    pub fn code_action_kinds(&self) -> Option<Vec<CodeActionKind>> {
+    public fn code_action_kinds(&self) -> Option<Vec<CodeActionKind>> {
         self.adapter.code_action_kinds()
     }
 
-    pub fn process_diagnostics(&self, params: &mut lsp.PublishDiagnosticsParams) {
+    public fn process_diagnostics(&self, params: &mut lsp.PublishDiagnosticsParams) {
         self.adapter.process_diagnostics(params)
     }
 
-    pub async fn process_completions(&self, completion_items: &mut [lsp.CompletionItem]) {
+    public async fn process_completions(&self, completion_items: &mut [lsp.CompletionItem]) {
         self.adapter.process_completions(completion_items).await
     }
 
-    pub async fn labels_for_completions(
+    public async fn labels_for_completions(
         &self,
         completion_items: &[lsp.CompletionItem],
         language: &Arc<Language>,
@@ -233,7 +233,7 @@ impl CachedLspAdapter {
             .await
     }
 
-    pub async fn labels_for_symbols(
+    public async fn labels_for_symbols(
         &self,
         symbols: &[(String, lsp.SymbolKind)],
         language: &Arc<Language>,
@@ -244,7 +244,7 @@ impl CachedLspAdapter {
             .await
     }
 
-    pub fn language_id(&self, language: &Language) -> String {
+    public fn language_id(&self, language: &Language) -> String {
         self.language_ids
             .get(language.name().as_ref())
             .cloned()
@@ -260,7 +260,7 @@ impl CachedLspAdapter {
 /// [`LspAdapterDelegate`] allows [`LspAdapter]` implementations to interface with the application
 // e.g. to display a notification or fetch data from the web.
 #[async_trait]
-pub trait LspAdapterDelegate: Send + Sync {
+public trait LspAdapterDelegate: Send + Sync {
     fn show_notification(&self, message: &str, cx: &mut AppContext);
     fn http_client(&self) -> Arc<dyn HttpClient>;
     fn worktree_id(&self) -> u64;
@@ -273,7 +273,7 @@ pub trait LspAdapterDelegate: Send + Sync {
 }
 
 #[async_trait(?Send)]
-pub trait LspAdapter: 'static + Send + Sync {
+public trait LspAdapter: 'static + Send + Sync {
     fn name(&self) -> LanguageServerName;
 
     fn get_language_server_command<'a>(
@@ -532,91 +532,91 @@ async fn try_fetch_server_binary<L: LspAdapter + 'static + Send + Sync + ?Sized>
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct CodeLabel {
+public struct CodeLabel {
     /// The text to display.
-    pub text: String,
+    public text: String,
     /// Syntax highlighting runs.
-    pub runs: Vec<(Range<usize>, HighlightId)>,
+    public runs: Vec<(Range<usize>, HighlightId)>,
     /// The portion of the text that should be used in fuzzy filtering.
-    pub filter_range: Range<usize>,
+    public filter_range: Range<usize>,
 }
 
 #[derive(Clone, Deserialize, JsonSchema)]
-pub struct LanguageConfig {
+public struct LanguageConfig {
     /// Human-readable name of the language.
-    pub name: Arc<str>,
+    public name: Arc<str>,
     /// The name of this language for a Markdown code fence block
-    pub code_fence_block_name: Option<Arc<str>>,
+    public code_fence_block_name: Option<Arc<str>>,
     // The name of the grammar in a WASM bundle (experimental).
-    pub grammar: Option<Arc<str>>,
+    public grammar: Option<Arc<str>>,
     /// The criteria for matching this language to a given file.
     #[serde(flatten)]
-    pub matcher: LanguageMatcher,
+    public matcher: LanguageMatcher,
     /// List of bracket types in a language.
     #[serde(default)]
     #[schemars(schema_with = "bracket_pair_config_json_schema")]
-    pub brackets: BracketPairConfig,
+    public brackets: BracketPairConfig,
     /// If set to true, auto indentation uses last non empty line to determine
     /// the indentation level for a new line.
     #[serde(default = "auto_indent_using_last_non_empty_line_default")]
-    pub auto_indent_using_last_non_empty_line: bool,
+    public auto_indent_using_last_non_empty_line: bool,
     /// A regex that is used to determine whether the indentation level should be
     /// increased in the following line.
     #[serde(default, deserialize_with = "deserialize_regex")]
     #[schemars(schema_with = "regex_json_schema")]
-    pub increase_indent_pattern: Option<Regex>,
+    public increase_indent_pattern: Option<Regex>,
     /// A regex that is used to determine whether the indentation level should be
     /// decreased in the following line.
     #[serde(default, deserialize_with = "deserialize_regex")]
     #[schemars(schema_with = "regex_json_schema")]
-    pub decrease_indent_pattern: Option<Regex>,
+    public decrease_indent_pattern: Option<Regex>,
     /// A list of characters that trigger the automatic insertion of a closing
     /// bracket when they immediately precede the point where an opening
     /// bracket is inserted.
     #[serde(default)]
-    pub autoclose_before: String,
+    public autoclose_before: String,
     /// A placeholder used internally by Semantic Index.
     #[serde(default)]
-    pub collapsed_placeholder: String,
+    public collapsed_placeholder: String,
     /// A line comment string that is inserted in e.g. `toggle comments` action.
     /// A language can have multiple flavours of line comments. All of the provided line comments are
     /// used for comment continuations on the next line, but only the first one is used for Editor.ToggleComments.
     #[serde(default)]
-    pub line_comments: Vec<Arc<str>>,
+    public line_comments: Vec<Arc<str>>,
     /// Starting and closing characters of a block comment.
     #[serde(default)]
-    pub block_comment: Option<(Arc<str>, Arc<str>)>,
+    public block_comment: Option<(Arc<str>, Arc<str>)>,
     /// A list of language servers that are allowed to run on subranges of a given language.
     #[serde(default)]
-    pub scope_opt_in_language_servers: Vec<String>,
+    public scope_opt_in_language_servers: Vec<String>,
     #[serde(default)]
-    pub overrides: HashMap<String, LanguageConfigOverride>,
+    public overrides: HashMap<String, LanguageConfigOverride>,
     /// A list of characters that Zed should treat as word characters for the
     /// purpose of features that operate on word boundaries, like 'move to next word end'
     /// or a whole-word search in buffer search.
     #[serde(default)]
-    pub word_characters: HashSet<char>,
+    public word_characters: HashSet<char>,
     /// Whether to indent lines using tab characters, as opposed to multiple
     /// spaces.
     #[serde(default)]
-    pub hard_tabs: Option<bool>,
+    public hard_tabs: Option<bool>,
     /// How many columns a tab should occupy.
     #[serde(default)]
-    pub tab_size: Option<NonZeroU32>,
+    public tab_size: Option<NonZeroU32>,
     /// How to soft-wrap long lines of text.
     #[serde(default)]
-    pub soft_wrap: Option<SoftWrap>,
+    public soft_wrap: Option<SoftWrap>,
     /// The name of a Prettier parser that will be used for this language when no file path is available.
     /// If there's a parser name in the language settings, that will be used instead.
     #[serde(default)]
-    pub prettier_parser_name: Option<String>,
+    public prettier_parser_name: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, JsonSchema)]
-pub struct LanguageMatcher {
+public struct LanguageMatcher {
     /// Given a list of `LanguageConfig`'s, the language of a file can be determined based on the path extension matching any of the `path_suffixes`.
     #[serde(default)]
-    pub path_suffixes: Vec<String>,
+    public path_suffixes: Vec<String>,
     /// A regex pattern that determines whether the language should be assigned to a file or not.
     #[serde(
         default,
@@ -624,36 +624,36 @@ pub struct LanguageMatcher {
         deserialize_with = "deserialize_regex"
     )]
     #[schemars(schema_with = "regex_json_schema")]
-    pub first_line_pattern: Option<Regex>,
+    public first_line_pattern: Option<Regex>,
 }
 
 /// Represents a language for the given range. Some languages (e.g. HTML)
 /// interleave several languages together, thus a single buffer might actually contain
 /// several nested scopes.
 #[derive(Clone, Debug)]
-pub struct LanguageScope {
+public struct LanguageScope {
     language: Arc<Language>,
     override_id: Option<u32>,
 }
 
 #[derive(Clone, Deserialize, Default, Debug, JsonSchema)]
-pub struct LanguageConfigOverride {
+public struct LanguageConfigOverride {
     #[serde(default)]
-    pub line_comments: Override<Vec<Arc<str>>>,
+    public line_comments: Override<Vec<Arc<str>>>,
     #[serde(default)]
-    pub block_comment: Override<(Arc<str>, Arc<str>)>,
+    public block_comment: Override<(Arc<str>, Arc<str>)>,
     #[serde(skip_deserializing)]
     #[schemars(skip)]
-    pub disabled_bracket_ixs: Vec<u16>,
+    public disabled_bracket_ixs: Vec<u16>,
     #[serde(default)]
-    pub word_characters: Override<HashSet<char>>,
+    public word_characters: Override<HashSet<char>>,
     #[serde(default)]
-    pub opt_into_language_servers: Vec<String>,
+    public opt_into_language_servers: Vec<String>,
 }
 
 #[derive(Clone, Deserialize, Debug, Serialize, JsonSchema)]
 #[serde(untagged)]
-pub enum Override<T> {
+public enum Override<T> {
     Remove { remove: bool },
     Set(T),
 }
@@ -732,15 +732,15 @@ where
 
 #[doc(hidden)]
 #[cfg(any(test, feature = "test-support"))]
-pub struct FakeLspAdapter {
-    pub name: &'static str,
-    pub initialization_options: Option<Value>,
-    pub capabilities: lsp.ServerCapabilities,
-    pub initializer: Option<Box<dyn 'static + Send + Sync + Fn(&mut lsp.FakeLanguageServer)>>,
-    pub disk_based_diagnostics_progress_token: Option<String>,
-    pub disk_based_diagnostics_sources: Vec<String>,
-    pub prettier_plugins: Vec<&'static str>,
-    pub language_server_binary: LanguageServerBinary,
+public struct FakeLspAdapter {
+    public name: &'static str,
+    public initialization_options: Option<Value>,
+    public capabilities: lsp.ServerCapabilities,
+    public initializer: Option<Box<dyn 'static + Send + Sync + Fn(&mut lsp.FakeLanguageServer)>>,
+    public disk_based_diagnostics_progress_token: Option<String>,
+    public disk_based_diagnostics_sources: Vec<String>,
+    public prettier_plugins: Vec<&'static str>,
+    public language_server_binary: LanguageServerBinary,
 }
 
 /// Configuration of handling bracket pairs for a given language.
@@ -748,13 +748,13 @@ pub struct FakeLspAdapter {
 /// This struct includes settings for defining which pairs of characters are considered brackets and
 /// also specifies any language-specific scopes where these pairs should be ignored for bracket matching purposes.
 #[derive(Clone, Debug, Default, JsonSchema)]
-pub struct BracketPairConfig {
+public struct BracketPairConfig {
     /// A list of character pairs that should be treated as brackets in the context of a given language.
-    pub pairs: Vec<BracketPair>,
+    public pairs: Vec<BracketPair>,
     /// A list of tree-sitter scopes for which a given bracket should not be active.
     /// N-th entry in `[Self.disabled_scopes_by_bracket_ix]` contains a list of disabled scopes for an n-th entry in `[Self.pairs]`
     #[schemars(skip)]
-    pub disabled_scopes_by_bracket_ix: Vec<Vec<String>>,
+    public disabled_scopes_by_bracket_ix: Vec<Vec<String>>,
 }
 
 fn bracket_pair_config_json_schema(gen: &mut SchemaGenerator) -> Schema {
@@ -762,11 +762,11 @@ fn bracket_pair_config_json_schema(gen: &mut SchemaGenerator) -> Schema {
 }
 
 #[derive(Deserialize, JsonSchema)]
-pub struct BracketPairContent {
+public struct BracketPairContent {
     #[serde(flatten)]
-    pub bracket_pair: BracketPair,
+    public bracket_pair: BracketPair,
     #[serde(default)]
-    pub not_in: Vec<String>,
+    public not_in: Vec<String>,
 }
 
 impl<'de> Deserialize<'de> for BracketPairConfig {
@@ -792,19 +792,19 @@ impl<'de> Deserialize<'de> for BracketPairConfig {
 /// Describes a single bracket pair and how an editor should react to e.g. inserting
 /// an opening bracket or to a newline character insertion in between `start` and `end` characters.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, JsonSchema)]
-pub struct BracketPair {
+public struct BracketPair {
     /// Starting substring for a bracket.
-    pub start: String,
+    public start: String,
     /// Ending substring for a bracket.
-    pub end: String,
+    public end: String,
     /// True if `end` should be automatically inserted right after `start` characters.
-    pub close: bool,
+    public close: bool,
     /// True if selected text should be surrounded by `start` and `end` characters.
     #[serde(default = "default_true")]
-    pub surround: bool,
+    public surround: bool,
     /// True if an extra newline should be inserted while the cursor is in the middle
     /// of that bracket pair.
-    pub newline: bool,
+    public newline: bool,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
@@ -816,7 +816,7 @@ impl LanguageId {
     }
 }
 
-pub struct Language {
+public struct Language {
     pub(crate) id: LanguageId,
     pub(crate) config: LanguageConfig,
     pub(crate) grammar: Option<Arc<Grammar>>,
@@ -824,7 +824,7 @@ pub struct Language {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub struct GrammarId(pub usize);
+public struct GrammarId(public usize);
 
 impl GrammarId {
     pub(crate) fn new() -> Self {
@@ -832,17 +832,17 @@ impl GrammarId {
     }
 }
 
-pub struct Grammar {
+public struct Grammar {
     id: GrammarId,
-    pub ts_language: tree_sitter.Language,
+    public ts_language: tree_sitter.Language,
     pub(crate) error_query: Query,
     pub(crate) highlights_query: Option<Query>,
     pub(crate) brackets_config: Option<BracketConfig>,
     pub(crate) redactions_config: Option<RedactionConfig>,
     pub(crate) runnable_config: Option<RunnableConfig>,
     pub(crate) indents_config: Option<IndentConfig>,
-    pub outline_config: Option<OutlineConfig>,
-    pub embedding_config: Option<EmbeddingConfig>,
+    public outline_config: Option<OutlineConfig>,
+    public embedding_config: Option<EmbeddingConfig>,
     pub(crate) injection_config: Option<InjectionConfig>,
     pub(crate) override_config: Option<OverrideConfig>,
     pub(crate) highlight_map: Mutex<HighlightMap>,
@@ -856,25 +856,25 @@ struct IndentConfig {
     outdent_capture_ix: Option<u32>,
 }
 
-pub struct OutlineConfig {
-    pub query: Query,
-    pub item_capture_ix: u32,
-    pub name_capture_ix: u32,
-    pub context_capture_ix: Option<u32>,
-    pub extra_context_capture_ix: Option<u32>,
-    pub open_capture_ix: Option<u32>,
-    pub close_capture_ix: Option<u32>,
-    pub annotation_capture_ix: Option<u32>,
+public struct OutlineConfig {
+    public query: Query,
+    public item_capture_ix: u32,
+    public name_capture_ix: u32,
+    public context_capture_ix: Option<u32>,
+    public extra_context_capture_ix: Option<u32>,
+    public open_capture_ix: Option<u32>,
+    public close_capture_ix: Option<u32>,
+    public annotation_capture_ix: Option<u32>,
 }
 
 #[derive(Debug)]
-pub struct EmbeddingConfig {
-    pub query: Query,
-    pub item_capture_ix: u32,
-    pub name_capture_ix: Option<u32>,
-    pub context_capture_ix: Option<u32>,
-    pub collapse_capture_ix: Option<u32>,
-    pub keep_capture_ix: Option<u32>,
+public struct EmbeddingConfig {
+    public query: Query,
+    public item_capture_ix: u32,
+    public name_capture_ix: Option<u32>,
+    public context_capture_ix: Option<u32>,
+    public collapse_capture_ix: Option<u32>,
+    public keep_capture_ix: Option<u32>,
 }
 
 struct InjectionConfig {
@@ -885,8 +885,8 @@ struct InjectionConfig {
 }
 
 struct RedactionConfig {
-    pub query: Query,
-    pub redaction_capture_ix: u32,
+    public query: Query,
+    public redaction_capture_ix: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -896,9 +896,9 @@ enum RunnableCapture {
 }
 
 struct RunnableConfig {
-    pub query: Query,
+    public query: Query,
     /// A mapping from capture indice to capture kind
-    pub extra_captures: Vec<RunnableCapture>,
+    public extra_captures: Vec<RunnableCapture>,
 }
 
 struct OverrideConfig {
@@ -919,7 +919,7 @@ struct BracketConfig {
 }
 
 impl Language {
-    pub fn new(config: LanguageConfig, ts_language: Option<tree_sitter.Language>) -> Self {
+    public fn new(config: LanguageConfig, ts_language: Option<tree_sitter.Language>) -> Self {
         Self.new_with_id(LanguageId.new(), config, ts_language)
     }
 
@@ -952,12 +952,12 @@ impl Language {
         }
     }
 
-    pub fn with_context_provider(mut self, provider: Option<Arc<dyn ContextProvider>>) -> Self {
+    public fn with_context_provider(mut self, provider: Option<Arc<dyn ContextProvider>>) -> Self {
         self.context_provider = provider;
         self
     }
 
-    pub fn with_queries(mut self, queries: LanguageQueries) -> Result<Self> {
+    public fn with_queries(mut self, queries: LanguageQueries) -> Result<Self> {
         if let Some(query) = queries.highlights {
             self = self
                 .with_highlights_query(query.as_ref())
@@ -1006,7 +1006,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_highlights_query(mut self, source: &str) -> Result<Self> {
+    public fn with_highlights_query(mut self, source: &str) -> Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1014,7 +1014,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_runnable_query(mut self, source: &str) -> Result<Self> {
+    public fn with_runnable_query(mut self, source: &str) -> Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1039,7 +1039,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_outline_query(mut self, source: &str) -> Result<Self> {
+    public fn with_outline_query(mut self, source: &str) -> Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1078,7 +1078,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_embedding_query(mut self, source: &str) -> Result<Self> {
+    public fn with_embedding_query(mut self, source: &str) -> Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1111,7 +1111,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_brackets_query(mut self, source: &str) -> Result<Self> {
+    public fn with_brackets_query(mut self, source: &str) -> Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1135,7 +1135,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_indents_query(mut self, source: &str) -> Result<Self> {
+    public fn with_indents_query(mut self, source: &str) -> Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1165,7 +1165,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_injection_query(mut self, source: &str) -> Result<Self> {
+    public fn with_injection_query(mut self, source: &str) -> Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1207,7 +1207,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_override_query(mut self, source: &str) -> anyhow.Result<Self> {
+    public fn with_override_query(mut self, source: &str) -> anyhow.Result<Self> {
         let query = {
             let grammar = self
                 .grammar
@@ -1289,7 +1289,7 @@ impl Language {
         Ok(self)
     }
 
-    pub fn with_redaction_query(mut self, source: &str) -> anyhow.Result<Self> {
+    public fn with_redaction_query(mut self, source: &str) -> anyhow.Result<Self> {
         let grammar = self
             .grammar_mut()
             .ok_or_else(|| anyhow!("cannot mutate grammar"))?;
@@ -1312,22 +1312,22 @@ impl Language {
         Arc.get_mut(self.grammar.as_mut()?)
     }
 
-    pub fn name(&self) -> Arc<str> {
+    public fn name(&self) -> Arc<str> {
         self.config.name.clone()
     }
 
-    pub fn code_fence_block_name(&self) -> Arc<str> {
+    public fn code_fence_block_name(&self) -> Arc<str> {
         self.config
             .code_fence_block_name
             .clone()
             .unwrap_or_else(|| self.config.name.to_lowercase().into())
     }
 
-    pub fn context_provider(&self) -> Option<Arc<dyn ContextProvider>> {
+    public fn context_provider(&self) -> Option<Arc<dyn ContextProvider>> {
         self.context_provider.clone()
     }
 
-    pub fn highlight_text<'a>(
+    public fn highlight_text<'a>(
         self: &'a Arc<Self>,
         text: &'a Rope,
         range: Range<usize>,
@@ -1354,15 +1354,15 @@ impl Language {
         result
     }
 
-    pub fn path_suffixes(&self) -> &[String] {
+    public fn path_suffixes(&self) -> &[String] {
         &self.config.matcher.path_suffixes
     }
 
-    pub fn should_autoclose_before(&self, c: char) -> bool {
+    public fn should_autoclose_before(&self, c: char) -> bool {
         c.is_whitespace() || self.config.autoclose_before.contains(c)
     }
 
-    pub fn set_theme(&self, theme: &SyntaxTheme) {
+    public fn set_theme(&self, theme: &SyntaxTheme) {
         if let Some(grammar) = self.grammar.as_ref() {
             if let Some(highlights_query) = &grammar.highlights_query {
                 *grammar.highlight_map.lock() =
@@ -1371,37 +1371,37 @@ impl Language {
         }
     }
 
-    pub fn grammar(&self) -> Option<&Arc<Grammar>> {
+    public fn grammar(&self) -> Option<&Arc<Grammar>> {
         self.grammar.as_ref()
     }
 
-    pub fn default_scope(self: &Arc<Self>) -> LanguageScope {
+    public fn default_scope(self: &Arc<Self>) -> LanguageScope {
         LanguageScope {
             language: self.clone(),
             override_id: None,
         }
     }
 
-    pub fn lsp_id(&self) -> String {
+    public fn lsp_id(&self) -> String {
         match self.config.name.as_ref() {
             "Plain Text" => "plaintext".to_string(),
             language_name => language_name.to_lowercase(),
         }
     }
 
-    pub fn prettier_parser_name(&self) -> Option<&str> {
+    public fn prettier_parser_name(&self) -> Option<&str> {
         self.config.prettier_parser_name.as_deref()
     }
 }
 
 impl LanguageScope {
-    pub fn collapsed_placeholder(&self) -> &str {
+    public fn collapsed_placeholder(&self) -> &str {
         self.language.config.collapsed_placeholder.as_ref()
     }
 
     /// Returns line prefix that is inserted in e.g. line continuations or
     /// in `toggle comments` action.
-    pub fn line_comment_prefixes(&self) -> &[Arc<str>] {
+    public fn line_comment_prefixes(&self) -> &[Arc<str>] {
         Override.as_option(
             self.config_override().map(|o| &o.line_comments),
             Some(&self.language.config.line_comments),
@@ -1409,7 +1409,7 @@ impl LanguageScope {
         .map_or(&[] as &[_], |e| e.as_slice())
     }
 
-    pub fn block_comment_delimiters(&self) -> Option<(&Arc<str>, &Arc<str>)> {
+    public fn block_comment_delimiters(&self) -> Option<(&Arc<str>, &Arc<str>)> {
         Override.as_option(
             self.config_override().map(|o| &o.block_comment),
             self.language.config.block_comment.as_ref(),
@@ -1422,7 +1422,7 @@ impl LanguageScope {
     /// By default, Zed treats alphanumeric characters (and '_') as word characters for
     /// the purpose of actions like 'move to next word end` or whole-word search.
     /// It additionally accounts for language's additional word characters.
-    pub fn word_characters(&self) -> Option<&HashSet<char>> {
+    public fn word_characters(&self) -> Option<&HashSet<char>> {
         Override.as_option(
             self.config_override().map(|o| &o.word_characters),
             Some(&self.language.config.word_characters),
@@ -1431,7 +1431,7 @@ impl LanguageScope {
 
     /// Returns a list of bracket pairs for a given language with an additional
     /// piece of information about whether the particular bracket pair is currently active for a given language.
-    pub fn brackets(&self) -> impl Iterator<Item = (&BracketPair, bool)> {
+    public fn brackets(&self) -> impl Iterator<Item = (&BracketPair, bool)> {
         let mut disabled_ids = self
             .config_override()
             .map_or(&[] as _, |o| o.disabled_bracket_ixs.as_slice());
@@ -1453,11 +1453,11 @@ impl LanguageScope {
             })
     }
 
-    pub fn should_autoclose_before(&self, c: char) -> bool {
+    public fn should_autoclose_before(&self, c: char) -> bool {
         c.is_whitespace() || self.language.config.autoclose_before.contains(c)
     }
 
-    pub fn language_allowed(&self, name: &LanguageServerName) -> bool {
+    public fn language_allowed(&self, name: &LanguageServerName) -> bool {
         let config = &self.language.config;
         let opt_in_servers = &config.scope_opt_in_language_servers;
         if opt_in_servers.iter().any(|o| *o == *name.0) {
@@ -1502,7 +1502,7 @@ impl Debug for Language {
 }
 
 impl Grammar {
-    pub fn id(&self) -> GrammarId {
+    public fn id(&self) -> GrammarId {
         self.id
     }
 
@@ -1524,11 +1524,11 @@ impl Grammar {
         })
     }
 
-    pub fn highlight_map(&self) -> HighlightMap {
+    public fn highlight_map(&self) -> HighlightMap {
         self.highlight_map.lock().clone()
     }
 
-    pub fn highlight_id_for_name(&self, name: &str) -> Option<HighlightId> {
+    public fn highlight_id_for_name(&self, name: &str) -> Option<HighlightId> {
         let capture_id = self
             .highlights_query
             .as_ref()?
@@ -1538,7 +1538,7 @@ impl Grammar {
 }
 
 impl CodeLabel {
-    pub fn plain(text: String, filter_text: Option<&str>) -> Self {
+    public fn plain(text: String, filter_text: Option<&str>) -> Self {
         let mut result = Self {
             runs: Vec.new(),
             filter_range: 0..text.len(),
@@ -1552,7 +1552,7 @@ impl CodeLabel {
         result
     }
 
-    pub fn push_str(&mut self, text: &str, highlight: Option<HighlightId>) {
+    public fn push_str(&mut self, text: &str, highlight: Option<HighlightId>) {
         let start_ix = self.text.len();
         self.text.push_str(text);
         let end_ix = self.text.len();
@@ -1688,22 +1688,22 @@ fn get_capture_indices(query: &Query, captures: &mut [(&str, &mut Option<u32>)])
     }
 }
 
-pub fn point_to_lsp(point: PointUtf16) -> lsp.Position {
+public fn point_to_lsp(point: PointUtf16) -> lsp.Position {
     lsp.Position.new(point.row, point.column)
 }
 
-pub fn point_from_lsp(point: lsp.Position) -> Unclipped<PointUtf16> {
+public fn point_from_lsp(point: lsp.Position) -> Unclipped<PointUtf16> {
     Unclipped(PointUtf16.new(point.line, point.character))
 }
 
-pub fn range_to_lsp(range: Range<PointUtf16>) -> lsp.Range {
+public fn range_to_lsp(range: Range<PointUtf16>) -> lsp.Range {
     lsp.Range {
         start: point_to_lsp(range.start),
         end: point_to_lsp(range.end),
     }
 }
 
-pub fn range_from_lsp(range: lsp.Range) -> Range<Unclipped<PointUtf16>> {
+public fn range_from_lsp(range: lsp.Range) -> Range<Unclipped<PointUtf16>> {
     let mut start = point_from_lsp(range.start);
     let mut end = point_from_lsp(range.end);
     if start > end {

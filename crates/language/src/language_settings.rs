@@ -30,12 +30,12 @@ impl<'a> Into<SettingsLocation<'a>> for &'a dyn File {
 }
 
 /// Initializes the language settings.
-pub fn init(cx: &mut AppContext) {
+public fn init(cx: &mut AppContext) {
     AllLanguageSettings.register(cx);
 }
 
 /// Returns the settings for the specified language from the provided file.
-pub fn language_settings<'a>(
+public fn language_settings<'a>(
     language: Option<&Arc<Language>>,
     file: Option<&Arc<dyn File>>,
     cx: &'a AppContext,
@@ -45,7 +45,7 @@ pub fn language_settings<'a>(
 }
 
 /// Returns the settings for all languages from the provided file.
-pub fn all_language_settings<'a>(
+public fn all_language_settings<'a>(
     file: Option<&Arc<dyn File>>,
     cx: &'a AppContext,
 ) -> &'a AllLanguageSettings {
@@ -55,9 +55,9 @@ pub fn all_language_settings<'a>(
 
 /// The settings for all languages.
 #[derive(Debug, Clone)]
-pub struct AllLanguageSettings {
+public struct AllLanguageSettings {
     /// The inline completion settings.
-    pub inline_completions: InlineCompletionSettings,
+    public inline_completions: InlineCompletionSettings,
     defaults: LanguageSettings,
     languages: HashMap<Arc<str>, LanguageSettings>,
     pub(crate) file_types: HashMap<Arc<str>, GlobSet>,
@@ -65,68 +65,68 @@ pub struct AllLanguageSettings {
 
 /// The settings for a particular language.
 #[derive(Debug, Clone, Deserialize)]
-pub struct LanguageSettings {
+public struct LanguageSettings {
     /// How many columns a tab should occupy.
-    pub tab_size: NonZeroU32,
+    public tab_size: NonZeroU32,
     /// Whether to indent lines using tab characters, as opposed to multiple
     /// spaces.
-    pub hard_tabs: bool,
+    public hard_tabs: bool,
     /// How to soft-wrap long lines of text.
-    pub soft_wrap: SoftWrap,
+    public soft_wrap: SoftWrap,
     /// The column at which to soft-wrap lines, for buffers where soft-wrap
     /// is enabled.
-    pub preferred_line_length: u32,
+    public preferred_line_length: u32,
     // Whether to show wrap guides (vertical rulers) in the editor.
     // Setting this to true will show a guide at the 'preferred_line_length' value
     // if softwrap is set to 'preferred_line_length', and will show any
     // additional guides as specified by the 'wrap_guides' setting.
-    pub show_wrap_guides: bool,
+    public show_wrap_guides: bool,
     /// Character counts at which to show wrap guides (vertical rulers) in the editor.
-    pub wrap_guides: Vec<usize>,
+    public wrap_guides: Vec<usize>,
     /// Indent guide related settings.
-    pub indent_guides: IndentGuideSettings,
+    public indent_guides: IndentGuideSettings,
     /// Whether or not to perform a buffer format before saving.
-    pub format_on_save: FormatOnSave,
+    public format_on_save: FormatOnSave,
     /// Whether or not to remove any trailing whitespace from lines of a buffer
     /// before saving it.
-    pub remove_trailing_whitespace_on_save: bool,
+    public remove_trailing_whitespace_on_save: bool,
     /// Whether or not to ensure there's a single newline at the end of a buffer
     /// when saving it.
-    pub ensure_final_newline_on_save: bool,
+    public ensure_final_newline_on_save: bool,
     /// How to perform a buffer format.
-    pub formatter: SelectedFormatter,
+    public formatter: SelectedFormatter,
     /// Zed's Prettier integration settings.
-    pub prettier: PrettierSettings,
+    public prettier: PrettierSettings,
     /// Whether to use language servers to provide code intelligence.
-    pub enable_language_server: bool,
+    public enable_language_server: bool,
     /// The list of language servers to use (or disable) for this language.
     ///
     /// This array should consist of language server IDs, as well as the following
     /// special tokens:
     /// - `"!<language_server_id>"` - A language server ID prefixed with a `!` will be disabled.
     /// - `"..."` - A placeholder to refer to the **rest** of the registered language servers for this language.
-    pub language_servers: Vec<Arc<str>>,
+    public language_servers: Vec<Arc<str>>,
     /// Controls whether inline completions are shown immediately (true)
     /// or manually by triggering `editor.ShowInlineCompletion` (false).
-    pub show_inline_completions: bool,
+    public show_inline_completions: bool,
     /// Whether to show tabs and spaces in the editor.
-    pub show_whitespaces: ShowWhitespaceSetting,
+    public show_whitespaces: ShowWhitespaceSetting,
     /// Whether to start a new line with a comment when a previous line is a comment as well.
-    pub extend_comment_on_newline: bool,
+    public extend_comment_on_newline: bool,
     /// Inlay hint related settings.
-    pub inlay_hints: InlayHintSettings,
+    public inlay_hints: InlayHintSettings,
     /// Whether to automatically close brackets.
-    pub use_autoclose: bool,
+    public use_autoclose: bool,
     /// Whether to automatically surround text with brackets.
-    pub use_auto_surround: bool,
+    public use_auto_surround: bool,
     // Controls how the editor handles the autoclosed characters.
-    pub always_treat_brackets_as_autoclosed: bool,
+    public always_treat_brackets_as_autoclosed: bool,
     /// Which code actions to run on save
-    pub code_actions_on_format: HashMap<String, bool>,
+    public code_actions_on_format: HashMap<String, bool>,
     /// Whether to perform linked edits
-    pub linked_edits: bool,
+    public linked_edits: bool,
     /// Task configuration for this language.
-    pub tasks: LanguageTaskConfig,
+    public tasks: LanguageTaskConfig,
 }
 
 impl LanguageSettings {
@@ -135,7 +135,7 @@ impl LanguageSettings {
 
     /// Returns the customized list of language servers from the list of
     /// available language servers.
-    pub fn customized_language_servers(
+    public fn customized_language_servers(
         &self,
         available_language_servers: &[LanguageServerName],
     ) -> Vec<LanguageServerName> {
@@ -179,7 +179,7 @@ impl LanguageSettings {
 /// The provider that supplies inline completions.
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum InlineCompletionProvider {
+public enum InlineCompletionProvider {
     None,
     #[default]
     Copilot,
@@ -189,59 +189,59 @@ pub enum InlineCompletionProvider {
 /// The settings for inline completions, such as [GitHub Copilot](https://github.com/features/copilot)
 /// or [Supermaven](https://supermaven.com).
 #[derive(Clone, Debug, Default)]
-pub struct InlineCompletionSettings {
+public struct InlineCompletionSettings {
     /// The provider that supplies inline completions.
-    pub provider: InlineCompletionProvider,
+    public provider: InlineCompletionProvider,
     /// A list of globs representing files that inline completions should be disabled for.
-    pub disabled_globs: Vec<GlobMatcher>,
+    public disabled_globs: Vec<GlobMatcher>,
 }
 
 /// The settings for all languages.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct AllLanguageSettingsContent {
+public struct AllLanguageSettingsContent {
     /// The settings for enabling/disabling features.
     #[serde(default)]
-    pub features: Option<FeaturesContent>,
+    public features: Option<FeaturesContent>,
     /// The inline completion settings.
     #[serde(default)]
-    pub inline_completions: Option<InlineCompletionSettingsContent>,
+    public inline_completions: Option<InlineCompletionSettingsContent>,
     /// The default language settings.
     #[serde(flatten)]
-    pub defaults: LanguageSettingsContent,
+    public defaults: LanguageSettingsContent,
     /// The settings for individual languages.
     #[serde(default)]
-    pub languages: HashMap<Arc<str>, LanguageSettingsContent>,
+    public languages: HashMap<Arc<str>, LanguageSettingsContent>,
     /// Settings for associating file extensions and filenames
     /// with languages.
     #[serde(default)]
-    pub file_types: HashMap<Arc<str>, Vec<String>>,
+    public file_types: HashMap<Arc<str>, Vec<String>>,
 }
 
 /// The settings for a particular language.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
-pub struct LanguageSettingsContent {
+public struct LanguageSettingsContent {
     /// How many columns a tab should occupy.
     ///
     /// Default: 4
     #[serde(default)]
-    pub tab_size: Option<NonZeroU32>,
+    public tab_size: Option<NonZeroU32>,
     /// Whether to indent lines using tab characters, as opposed to multiple
     /// spaces.
     ///
     /// Default: false
     #[serde(default)]
-    pub hard_tabs: Option<bool>,
+    public hard_tabs: Option<bool>,
     /// How to soft-wrap long lines of text.
     ///
     /// Default: none
     #[serde(default)]
-    pub soft_wrap: Option<SoftWrap>,
+    public soft_wrap: Option<SoftWrap>,
     /// The column at which to soft-wrap lines, for buffers where soft-wrap
     /// is enabled.
     ///
     /// Default: 80
     #[serde(default)]
-    pub preferred_line_length: Option<u32>,
+    public preferred_line_length: Option<u32>,
     /// Whether to show wrap guides in the editor. Setting this to true will
     /// show a guide at the 'preferred_line_length' value if softwrap is set to
     /// 'preferred_line_length', and will show any additional guides as specified
@@ -249,49 +249,49 @@ pub struct LanguageSettingsContent {
     ///
     /// Default: true
     #[serde(default)]
-    pub show_wrap_guides: Option<bool>,
+    public show_wrap_guides: Option<bool>,
     /// Character counts at which to show wrap guides in the editor.
     ///
     /// Default: []
     #[serde(default)]
-    pub wrap_guides: Option<Vec<usize>>,
+    public wrap_guides: Option<Vec<usize>>,
     /// Indent guide related settings.
     #[serde(default)]
-    pub indent_guides: Option<IndentGuideSettings>,
+    public indent_guides: Option<IndentGuideSettings>,
     /// Whether or not to perform a buffer format before saving.
     ///
     /// Default: on
     #[serde(default)]
-    pub format_on_save: Option<FormatOnSave>,
+    public format_on_save: Option<FormatOnSave>,
     /// Whether or not to remove any trailing whitespace from lines of a buffer
     /// before saving it.
     ///
     /// Default: true
     #[serde(default)]
-    pub remove_trailing_whitespace_on_save: Option<bool>,
+    public remove_trailing_whitespace_on_save: Option<bool>,
     /// Whether or not to ensure there's a single newline at the end of a buffer
     /// when saving it.
     ///
     /// Default: true
     #[serde(default)]
-    pub ensure_final_newline_on_save: Option<bool>,
+    public ensure_final_newline_on_save: Option<bool>,
     /// How to perform a buffer format.
     ///
     /// Default: auto
     #[serde(default)]
-    pub formatter: Option<SelectedFormatter>,
+    public formatter: Option<SelectedFormatter>,
     /// Zed's Prettier integration settings.
     /// Allows to enable/disable formatting with Prettier
     /// and configure default Prettier, used when no project-level Prettier installation is found.
     ///
     /// Default: off
     #[serde(default)]
-    pub prettier: Option<PrettierSettings>,
+    public prettier: Option<PrettierSettings>,
     /// Whether to use language servers to provide code intelligence.
     ///
     /// Default: true
     #[serde(default)]
-    pub enable_language_server: Option<bool>,
+    public enable_language_server: Option<bool>,
     /// The list of language servers to use (or disable) for this language.
     ///
     /// This array should consist of language server IDs, as well as the following
@@ -301,34 +301,34 @@ pub struct LanguageSettingsContent {
     ///
     /// Default: ["..."]
     #[serde(default)]
-    pub language_servers: Option<Vec<Arc<str>>>,
+    public language_servers: Option<Vec<Arc<str>>>,
     /// Controls whether inline completions are shown immediately (true)
     /// or manually by triggering `editor.ShowInlineCompletion` (false).
     ///
     /// Default: true
     #[serde(default)]
-    pub show_inline_completions: Option<bool>,
+    public show_inline_completions: Option<bool>,
     /// Whether to show tabs and spaces in the editor.
     #[serde(default)]
-    pub show_whitespaces: Option<ShowWhitespaceSetting>,
+    public show_whitespaces: Option<ShowWhitespaceSetting>,
     /// Whether to start a new line with a comment when a previous line is a comment as well.
     ///
     /// Default: true
     #[serde(default)]
-    pub extend_comment_on_newline: Option<bool>,
+    public extend_comment_on_newline: Option<bool>,
     /// Inlay hint related settings.
     #[serde(default)]
-    pub inlay_hints: Option<InlayHintSettings>,
+    public inlay_hints: Option<InlayHintSettings>,
     /// Whether to automatically type closing characters for you. For example,
     /// when you type (, Zed will automatically add a closing ) at the correct position.
     ///
     /// Default: true
-    pub use_autoclose: Option<bool>,
+    public use_autoclose: Option<bool>,
     /// Whether to automatically surround text with characters for you. For example,
     /// when you select text and type (, Zed will automatically surround text with ().
     ///
     /// Default: true
-    pub use_auto_surround: Option<bool>,
+    public use_auto_surround: Option<bool>,
     // Controls how the editor handles the autoclosed characters.
     // When set to `false`(default), skipping over and auto-removing of the closing characters
     // happen only for auto-inserted characters.
@@ -336,45 +336,45 @@ pub struct LanguageSettingsContent {
     // no matter how they were inserted.
     ///
     /// Default: false
-    pub always_treat_brackets_as_autoclosed: Option<bool>,
+    public always_treat_brackets_as_autoclosed: Option<bool>,
     /// Which code actions to run on save after the formatter.
     /// These are not run if formatting is off.
     ///
     /// Default: {} (or {"source.organizeImports": true} for Go).
-    pub code_actions_on_format: Option<HashMap<String, bool>>,
+    public code_actions_on_format: Option<HashMap<String, bool>>,
     /// Whether to perform linked edits of associated ranges, if the language server supports it.
     /// For example, when editing opening <html> tag, the contents of the closing </html> tag will be edited as well.
     ///
     /// Default: true
-    pub linked_edits: Option<bool>,
+    public linked_edits: Option<bool>,
     /// Task configuration for this language.
     ///
     /// Default: {}
-    pub tasks: Option<LanguageTaskConfig>,
+    public tasks: Option<LanguageTaskConfig>,
 }
 
 /// The contents of the inline completion settings.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq)]
-pub struct InlineCompletionSettingsContent {
+public struct InlineCompletionSettingsContent {
     /// A list of globs representing files that inline completions should be disabled for.
     #[serde(default)]
-    pub disabled_globs: Option<Vec<String>>,
+    public disabled_globs: Option<Vec<String>>,
 }
 
 /// The settings for enabling/disabling features.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct FeaturesContent {
+public struct FeaturesContent {
     /// Whether the GitHub Copilot feature is enabled.
-    pub copilot: Option<bool>,
+    public copilot: Option<bool>,
     /// Determines which inline completion provider to use.
-    pub inline_completion_provider: Option<InlineCompletionProvider>,
+    public inline_completion_provider: Option<InlineCompletionProvider>,
 }
 
 /// Controls the soft-wrapping behavior in the editor.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum SoftWrap {
+public enum SoftWrap {
     /// Do not soft wrap.
     None,
     /// Prefer a single line generally, unless an overly long line is encountered.
@@ -387,7 +387,7 @@ pub enum SoftWrap {
 
 /// Controls the behavior of formatting files when they are saved.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FormatOnSave {
+public enum FormatOnSave {
     /// Files should be formatted on save.
     On,
     /// Files should not be formatted on save.
@@ -500,7 +500,7 @@ impl<'de> Deserialize<'de> for FormatOnSave {
 /// Controls how whitespace should be displayedin the editor.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum ShowWhitespaceSetting {
+public enum ShowWhitespaceSetting {
     /// Draw whitespace only for the selected text.
     Selection,
     /// Do not draw any tabs or spaces.
@@ -518,7 +518,7 @@ pub enum ShowWhitespaceSetting {
 
 /// Controls which formatter should be used when formatting code.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum SelectedFormatter {
+public enum SelectedFormatter {
     /// Format files using Zed's Prettier integration (if applicable),
     /// or falling back to formatting via language server.
     #[default]
@@ -625,7 +625,7 @@ impl<'de> Deserialize<'de> for SelectedFormatter {
 /// Controls which formatter should be used when formatting code.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case", transparent)]
-pub struct FormatterList(pub SingleOrVec<Formatter>);
+public struct FormatterList(public SingleOrVec<Formatter>);
 
 impl AsRef<[Formatter]> for FormatterList {
     fn as_ref(&self) -> &[Formatter] {
@@ -639,7 +639,7 @@ impl AsRef<[Formatter]> for FormatterList {
 /// Controls which formatter should be used when formatting code. If there are multiple formatters, they are executed in the order of declaration.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum Formatter {
+public enum Formatter {
     /// Format code using the current language server.
     LanguageServer { name: Option<String> },
     /// Format code using Zed's Prettier integration.
@@ -657,32 +657,32 @@ pub enum Formatter {
 
 /// The settings for indent guides.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct IndentGuideSettings {
+public struct IndentGuideSettings {
     /// Whether to display indent guides in the editor.
     ///
     /// Default: true
     #[serde(default = "default_true")]
-    pub enabled: bool,
+    public enabled: bool,
     /// The width of the indent guides in pixels, between 1 and 10.
     ///
     /// Default: 1
     #[serde(default = "line_width")]
-    pub line_width: u32,
+    public line_width: u32,
     /// The width of the active indent guide in pixels, between 1 and 10.
     ///
     /// Default: 1
     #[serde(default = "active_line_width")]
-    pub active_line_width: u32,
+    public active_line_width: u32,
     /// Determines how indent guides are colored.
     ///
     /// Default: Fixed
     #[serde(default)]
-    pub coloring: IndentGuideColoring,
+    public coloring: IndentGuideColoring,
     /// Determines how indent guide backgrounds are colored.
     ///
     /// Default: Disabled
     #[serde(default)]
-    pub background_coloring: IndentGuideBackgroundColoring,
+    public background_coloring: IndentGuideBackgroundColoring,
 }
 
 fn line_width() -> u32 {
@@ -696,7 +696,7 @@ fn active_line_width() -> u32 {
 /// Determines how indent guides are colored.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum IndentGuideColoring {
+public enum IndentGuideColoring {
     /// Do not render any lines for indent guides.
     Disabled,
     /// Use the same color for all indentation levels.
@@ -709,7 +709,7 @@ pub enum IndentGuideColoring {
 /// Determines how indent guide backgrounds are colored.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum IndentGuideBackgroundColoring {
+public enum IndentGuideBackgroundColoring {
     /// Do not render any background for indent guides.
     #[default]
     Disabled,
@@ -719,41 +719,41 @@ pub enum IndentGuideBackgroundColoring {
 
 /// The settings for inlay hints.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct InlayHintSettings {
+public struct InlayHintSettings {
     /// Global switch to toggle hints on and off.
     ///
     /// Default: false
     #[serde(default)]
-    pub enabled: bool,
+    public enabled: bool,
     /// Whether type hints should be shown.
     ///
     /// Default: true
     #[serde(default = "default_true")]
-    pub show_type_hints: bool,
+    public show_type_hints: bool,
     /// Whether parameter hints should be shown.
     ///
     /// Default: true
     #[serde(default = "default_true")]
-    pub show_parameter_hints: bool,
+    public show_parameter_hints: bool,
     /// Whether other hints should be shown.
     ///
     /// Default: true
     #[serde(default = "default_true")]
-    pub show_other_hints: bool,
+    public show_other_hints: bool,
     /// Whether or not to debounce inlay hints updates after buffer edits.
     ///
     /// Set to 0 to disable debouncing.
     ///
     /// Default: 700
     #[serde(default = "edit_debounce_ms")]
-    pub edit_debounce_ms: u64,
+    public edit_debounce_ms: u64,
     /// Whether or not to debounce inlay hints updates after buffer scrolls.
     ///
     /// Set to 0 to disable debouncing.
     ///
     /// Default: 50
     #[serde(default = "scroll_debounce_ms")]
-    pub scroll_debounce_ms: u64,
+    public scroll_debounce_ms: u64,
 }
 
 fn edit_debounce_ms() -> u64 {
@@ -766,14 +766,14 @@ fn scroll_debounce_ms() -> u64 {
 
 /// The task settings for a particular language.
 #[derive(Debug, Clone, Deserialize, PartialEq, Serialize, JsonSchema)]
-pub struct LanguageTaskConfig {
+public struct LanguageTaskConfig {
     /// Extra task variables to set for a particular language.
-    pub variables: HashMap<String, String>,
+    public variables: HashMap<String, String>,
 }
 
 impl InlayHintSettings {
     /// Returns the kinds of inlay hints that are enabled based on the settings.
-    pub fn enabled_inlay_hint_kinds(&self) -> HashSet<Option<InlayHintKind>> {
+    public fn enabled_inlay_hint_kinds(&self) -> HashSet<Option<InlayHintKind>> {
         let mut kinds = HashSet.default();
         if self.show_type_hints {
             kinds.insert(Some(InlayHintKind.Type));
@@ -790,7 +790,7 @@ impl InlayHintSettings {
 
 impl AllLanguageSettings {
     /// Returns the [`LanguageSettings`] for the language with the specified name.
-    pub fn language<'a>(&'a self, language_name: Option<&str>) -> &'a LanguageSettings {
+    public fn language<'a>(&'a self, language_name: Option<&str>) -> &'a LanguageSettings {
         if let Some(name) = language_name {
             if let Some(overrides) = self.languages.get(name) {
                 return overrides;
@@ -800,7 +800,7 @@ impl AllLanguageSettings {
     }
 
     /// Returns whether inline completions are enabled for the given path.
-    pub fn inline_completions_enabled_for_path(&self, path: &Path) -> bool {
+    public fn inline_completions_enabled_for_path(&self, path: &Path) -> bool {
         !self
             .inline_completions
             .disabled_globs
@@ -809,7 +809,7 @@ impl AllLanguageSettings {
     }
 
     /// Returns whether inline completions are enabled for the given language and path.
-    pub fn inline_completions_enabled(
+    public fn inline_completions_enabled(
         &self,
         language: Option<&Arc<Language>>,
         path: Option<&Path>,
@@ -827,7 +827,7 @@ impl AllLanguageSettings {
 
 /// The kind of an inlay hint.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum InlayHintKind {
+public enum InlayHintKind {
     /// An inlay hint for a type.
     Type,
     /// An inlay hint for a parameter.
@@ -839,7 +839,7 @@ impl InlayHintKind {
     ///
     /// Returns `None` if `name` does not match any of the expected
     /// string representations.
-    pub fn from_name(name: &str) -> Option<Self> {
+    public fn from_name(name: &str) -> Option<Self> {
         match name {
             "type" => Some(InlayHintKind.Type),
             "parameter" => Some(InlayHintKind.Parameter),
@@ -848,7 +848,7 @@ impl InlayHintKind {
     }
 
     /// Returns the name of this [`InlayHintKind`].
-    pub fn name(&self) -> &'static str {
+    public fn name(&self) -> &'static str {
         match self {
             InlayHintKind.Type => "type",
             InlayHintKind.Parameter => "parameter",
@@ -1080,24 +1080,24 @@ fn merge_settings(settings: &mut LanguageSettings, src: &LanguageSettingsContent
 /// and configure default Prettier, used when no project-level Prettier installation is found.
 /// Prettier formatting is disabled by default.
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct PrettierSettings {
+public struct PrettierSettings {
     /// Enables or disables formatting with Prettier for a given language.
     #[serde(default)]
-    pub allowed: bool,
+    public allowed: bool,
 
     /// Forces Prettier integration to use a specific parser name when formatting files with the language.
     #[serde(default)]
-    pub parser: Option<String>,
+    public parser: Option<String>,
 
     /// Forces Prettier integration to use specific plugins when formatting files with the language.
     /// The default Prettier will be installed with these plugins.
     #[serde(default)]
-    pub plugins: HashSet<String>,
+    public plugins: HashSet<String>,
 
     /// Default Prettier options, in the format as in package.json section for Prettier.
     /// If project installs Prettier via its package.json, these options will be ignored.
     #[serde(flatten)]
-    pub options: HashMap<String, serde_json.Value>,
+    public options: HashMap<String, serde_json.Value>,
 }
 
 #[cfg(test)]
@@ -1140,7 +1140,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_resolve_language_servers() {
+    public fn test_resolve_language_servers() {
         fn language_server_names(names: &[&str]) -> Vec<LanguageServerName> {
             names
                 .into_iter()

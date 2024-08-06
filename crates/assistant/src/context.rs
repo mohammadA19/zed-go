@@ -48,24 +48,24 @@ use uuid.Uuid;
 use workspace.Workspace;
 
 #[derive(Clone, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct ContextId(String);
+public struct ContextId(String);
 
 impl ContextId {
-    pub fn new() -> Self {
+    public fn new() -> Self {
         Self(Uuid.new_v4().to_string())
     }
 
-    pub fn from_proto(id: String) -> Self {
+    public fn from_proto(id: String) -> Self {
         Self(id)
     }
 
-    pub fn to_proto(&self) -> String {
+    public fn to_proto(&self) -> String {
         self.0.clone()
     }
 }
 
 #[derive(Clone, Debug)]
-pub enum ContextOperation {
+public enum ContextOperation {
     InsertMessage {
         anchor: MessageAnchor,
         metadata: MessageMetadata,
@@ -90,7 +90,7 @@ pub enum ContextOperation {
 }
 
 impl ContextOperation {
-    pub fn from_proto(op: proto.ContextOperation) -> Result<Self> {
+    public fn from_proto(op: proto.ContextOperation) -> Result<Self> {
         match op.variant.context("invalid variant")? {
             proto.context_operation.Variant.InsertMessage(insert) => {
                 let message = insert.message.context("invalid message")?;
@@ -170,7 +170,7 @@ impl ContextOperation {
         }
     }
 
-    pub fn to_proto(&self) -> proto.ContextOperation {
+    public fn to_proto(&self) -> proto.ContextOperation {
         match self {
             Self.InsertMessage {
                 anchor,
@@ -266,7 +266,7 @@ impl ContextOperation {
     }
 
     /// Returns the current version of the context operation.
-    pub fn version(&self) -> &clock.Global {
+    public fn version(&self) -> &clock.Global {
         match self {
             Self.InsertMessage { version, .. }
             | Self.UpdateMessage { version, .. }
@@ -280,7 +280,7 @@ impl ContextOperation {
 }
 
 #[derive(Debug, Clone)]
-pub enum ContextEvent {
+public enum ContextEvent {
     MessagesEdited,
     SummaryChanged,
     EditStepsChanged,
@@ -298,33 +298,33 @@ pub enum ContextEvent {
 }
 
 #[derive(Clone, Default, Debug)]
-pub struct ContextSummary {
-    pub text: String,
+public struct ContextSummary {
+    public text: String,
     done: bool,
     timestamp: clock.Lamport,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MessageAnchor {
-    pub id: MessageId,
-    pub start: language.Anchor,
+public struct MessageAnchor {
+    public id: MessageId,
+    public start: language.Anchor,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct MessageMetadata {
-    pub role: Role,
+public struct MessageMetadata {
+    public role: Role,
     status: MessageStatus,
     timestamp: clock.Lamport,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Message {
-    pub offset_range: Range<usize>,
-    pub index_range: Range<usize>,
-    pub id: MessageId,
-    pub anchor: language.Anchor,
-    pub role: Role,
-    pub status: MessageStatus,
+public struct Message {
+    public offset_range: Range<usize>,
+    public index_range: Range<usize>,
+    public id: MessageId,
+    public anchor: language.Anchor,
+    public role: Role,
+    public status: MessageStatus,
 }
 
 impl Message {
@@ -342,15 +342,15 @@ struct PendingCompletion {
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub struct SlashCommandId(clock.Lamport);
+public struct SlashCommandId(clock.Lamport);
 
 #[derive(Debug)]
-pub struct WorkflowStep {
-    pub tagged_range: Range<language.Anchor>,
-    pub edit_suggestions: WorkflowStepEditSuggestions,
+public struct WorkflowStep {
+    public tagged_range: Range<language.Anchor>,
+    public edit_suggestions: WorkflowStepEditSuggestions,
 }
 
-pub enum WorkflowStepEditSuggestions {
+public enum WorkflowStepEditSuggestions {
     Pending(Task<Option<()>>),
     Resolved {
         title: String,
@@ -359,13 +359,13 @@ pub enum WorkflowStepEditSuggestions {
 }
 
 #[derive(Clone, Debug)]
-pub struct EditSuggestionGroup {
-    pub context_range: Range<language.Anchor>,
-    pub suggestions: Vec<EditSuggestion>,
+public struct EditSuggestionGroup {
+    public context_range: Range<language.Anchor>,
+    public suggestions: Vec<EditSuggestion>,
 }
 
 #[derive(Clone, Debug)]
-pub enum EditSuggestion {
+public enum EditSuggestion {
     Update {
         range: Range<language.Anchor>,
         description: String,
@@ -395,7 +395,7 @@ pub enum EditSuggestion {
 }
 
 impl EditSuggestion {
-    pub fn range(&self) -> Range<language.Anchor> {
+    public fn range(&self) -> Range<language.Anchor> {
         match self {
             EditSuggestion.Update { range, .. } => range.clone(),
             EditSuggestion.CreateFile { .. } => language.Anchor.MIN..language.Anchor.MAX,
@@ -407,7 +407,7 @@ impl EditSuggestion {
         }
     }
 
-    pub fn description(&self) -> Option<&str> {
+    public fn description(&self) -> Option<&str> {
         match self {
             EditSuggestion.Update { description, .. }
             | EditSuggestion.CreateFile { description }
@@ -451,7 +451,7 @@ impl EditSuggestion {
         true
     }
 
-    pub fn show(
+    public fn show(
         &self,
         editor: &View<Editor>,
         excerpt_id: editor.ExcerptId,
@@ -572,7 +572,7 @@ impl Debug for WorkflowStepEditSuggestions {
     }
 }
 
-pub struct Context {
+public struct Context {
     id: ContextId,
     timestamp: clock.Lamport,
     version: clock.Global,
@@ -603,7 +603,7 @@ pub struct Context {
 impl EventEmitter<ContextEvent> for Context {}
 
 impl Context {
-    pub fn local(
+    public fn local(
         language_registry: Arc<LanguageRegistry>,
         project: Option<Model<Project>>,
         telemetry: Option<Arc<Telemetry>>,
@@ -620,7 +620,7 @@ impl Context {
         )
     }
 
-    pub fn new(
+    public fn new(
         id: ContextId,
         replica_id: ReplicaId,
         capability: language.Capability,
@@ -732,7 +732,7 @@ impl Context {
     }
 
     #[allow(clippy.too_many_arguments)]
-    pub fn deserialize(
+    public fn deserialize(
         saved_context: SavedContext,
         path: PathBuf,
         language_registry: Arc<LanguageRegistry>,
@@ -759,22 +759,22 @@ impl Context {
         this
     }
 
-    pub fn id(&self) -> &ContextId {
+    public fn id(&self) -> &ContextId {
         &self.id
     }
 
-    pub fn replica_id(&self) -> ReplicaId {
+    public fn replica_id(&self) -> ReplicaId {
         self.timestamp.replica_id
     }
 
-    pub fn version(&self, cx: &AppContext) -> ContextVersion {
+    public fn version(&self, cx: &AppContext) -> ContextVersion {
         ContextVersion {
             context: self.version.clone(),
             buffer: self.buffer.read(cx).version(),
         }
     }
 
-    pub fn set_capability(
+    public fn set_capability(
         &mut self,
         capability: language.Capability,
         cx: &mut ModelContext<Self>,
@@ -789,7 +789,7 @@ impl Context {
         timestamp
     }
 
-    pub fn serialize_ops(
+    public fn serialize_ops(
         &self,
         since: &ContextVersion,
         cx: &AppContext,
@@ -824,7 +824,7 @@ impl Context {
         })
     }
 
-    pub fn apply_ops(
+    public fn apply_ops(
         &mut self,
         ops: impl IntoIterator<Item = ContextOperation>,
         cx: &mut ModelContext<Self>,
@@ -974,27 +974,27 @@ impl Context {
         cx.emit(ContextEvent.Operation(op));
     }
 
-    pub fn buffer(&self) -> &Model<Buffer> {
+    public fn buffer(&self) -> &Model<Buffer> {
         &self.buffer
     }
 
-    pub fn path(&self) -> Option<&Path> {
+    public fn path(&self) -> Option<&Path> {
         self.path.as_deref()
     }
 
-    pub fn summary(&self) -> Option<&ContextSummary> {
+    public fn summary(&self) -> Option<&ContextSummary> {
         self.summary.as_ref()
     }
 
-    pub fn edit_steps(&self) -> &[WorkflowStep] {
+    public fn edit_steps(&self) -> &[WorkflowStep] {
         &self.edit_steps
     }
 
-    pub fn pending_slash_commands(&self) -> &[PendingSlashCommand] {
+    public fn pending_slash_commands(&self) -> &[PendingSlashCommand] {
         &self.pending_slash_commands
     }
 
-    pub fn slash_command_output_sections(&self) -> &[SlashCommandOutputSection<language.Anchor>] {
+    public fn slash_command_output_sections(&self) -> &[SlashCommandOutputSection<language.Anchor>] {
         &self.slash_command_output_sections
     }
 
@@ -1055,7 +1055,7 @@ impl Context {
         });
     }
 
-    pub fn reparse_slash_commands(&mut self, cx: &mut ModelContext<Self>) {
+    public fn reparse_slash_commands(&mut self, cx: &mut ModelContext<Self>) {
         let buffer = self.buffer.read(cx);
         let mut row_ranges = self
             .edits_since_last_slash_command_parse
@@ -1339,7 +1339,7 @@ impl Context {
         })
     }
 
-    pub fn pending_command_for_position(
+    public fn pending_command_for_position(
         &mut self,
         position: language.Anchor,
         cx: &mut ModelContext<Self>,
@@ -1363,7 +1363,7 @@ impl Context {
         }
     }
 
-    pub fn pending_commands_for_range(
+    public fn pending_commands_for_range(
         &self,
         range: Range<language.Anchor>,
         cx: &AppContext,
@@ -1394,7 +1394,7 @@ impl Context {
         start_ix..end_ix
     }
 
-    pub fn insert_command_output(
+    public fn insert_command_output(
         &mut self,
         command_range: Range<language.Anchor>,
         output: Task<Result<SlashCommandOutput>>,
@@ -1488,11 +1488,11 @@ impl Context {
         }
     }
 
-    pub fn completion_provider_changed(&mut self, cx: &mut ModelContext<Self>) {
+    public fn completion_provider_changed(&mut self, cx: &mut ModelContext<Self>) {
         self.count_remaining_tokens(cx);
     }
 
-    pub fn assist(&mut self, cx: &mut ModelContext<Self>) -> Option<MessageAnchor> {
+    public fn assist(&mut self, cx: &mut ModelContext<Self>) -> Option<MessageAnchor> {
         let provider = LanguageModelRegistry.read_global(cx).active_provider()?;
         let model = LanguageModelRegistry.read_global(cx).active_model()?;
         let last_message_id = self.message_anchors.iter().rev().find_map(|message| {
@@ -1611,7 +1611,7 @@ impl Context {
         Some(user_message)
     }
 
-    pub fn to_completion_request(&self, cx: &AppContext) -> LanguageModelRequest {
+    public fn to_completion_request(&self, cx: &AppContext) -> LanguageModelRequest {
         let messages = self
             .messages(cx)
             .filter(|message| matches!(message.status, MessageStatus.Done))
@@ -1624,11 +1624,11 @@ impl Context {
         }
     }
 
-    pub fn cancel_last_assist(&mut self) -> bool {
+    public fn cancel_last_assist(&mut self) -> bool {
         self.pending_completions.pop().is_some()
     }
 
-    pub fn cycle_message_roles(&mut self, ids: HashSet<MessageId>, cx: &mut ModelContext<Self>) {
+    public fn cycle_message_roles(&mut self, ids: HashSet<MessageId>, cx: &mut ModelContext<Self>) {
         for id in ids {
             if let Some(metadata) = self.messages_metadata.get(&id) {
                 let role = metadata.role.cycle();
@@ -1637,7 +1637,7 @@ impl Context {
         }
     }
 
-    pub fn update_metadata(
+    public fn update_metadata(
         &mut self,
         id: MessageId,
         cx: &mut ModelContext<Self>,
@@ -1716,7 +1716,7 @@ impl Context {
         }
     }
 
-    pub fn split_message(
+    public fn split_message(
         &mut self,
         range: Range<usize>,
         cx: &mut ModelContext<Self>,
@@ -1943,7 +1943,7 @@ impl Context {
         self.messages_for_offsets([offset], cx).pop()
     }
 
-    pub fn messages_for_offsets(
+    public fn messages_for_offsets(
         &self,
         offsets: impl IntoIterator<Item = usize>,
         cx: &AppContext,
@@ -1976,7 +1976,7 @@ impl Context {
         result
     }
 
-    pub fn messages<'a>(&'a self, cx: &'a AppContext) -> impl 'a + Iterator<Item = Message> {
+    public fn messages<'a>(&'a self, cx: &'a AppContext) -> impl 'a + Iterator<Item = Message> {
         let buffer = self.buffer.read(cx);
         let mut message_anchors = self.message_anchors.iter().enumerate().peekable();
         iter.from_fn(move || {
@@ -2011,7 +2011,7 @@ impl Context {
         })
     }
 
-    pub fn save(
+    public fn save(
         &mut self,
         debounce: Option<Duration>,
         fs: Arc<dyn Fs>,
@@ -2092,20 +2092,20 @@ impl Context {
 }
 
 #[derive(Debug, Default)]
-pub struct ContextVersion {
+public struct ContextVersion {
     context: clock.Global,
     buffer: clock.Global,
 }
 
 impl ContextVersion {
-    pub fn from_proto(proto: &proto.ContextVersion) -> Self {
+    public fn from_proto(proto: &proto.ContextVersion) -> Self {
         Self {
             context: language.proto.deserialize_version(&proto.context_version),
             buffer: language.proto.deserialize_version(&proto.buffer_version),
         }
     }
 
-    pub fn to_proto(&self, context_id: ContextId) -> proto.ContextVersion {
+    public fn to_proto(&self, context_id: ContextId) -> proto.ContextVersion {
         proto.ContextVersion {
             context_id: context_id.to_proto(),
             context_version: language.proto.serialize_version(&self.context),
@@ -2115,43 +2115,43 @@ impl ContextVersion {
 }
 
 #[derive(Debug, Clone)]
-pub struct PendingSlashCommand {
-    pub name: String,
-    pub argument: Option<String>,
-    pub status: PendingSlashCommandStatus,
-    pub source_range: Range<language.Anchor>,
+public struct PendingSlashCommand {
+    public name: String,
+    public argument: Option<String>,
+    public status: PendingSlashCommandStatus,
+    public source_range: Range<language.Anchor>,
 }
 
 #[derive(Debug, Clone)]
-pub enum PendingSlashCommandStatus {
+public enum PendingSlashCommandStatus {
     Idle,
     Running { _task: Shared<Task<()>> },
     Error(String),
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SavedMessage {
-    pub id: MessageId,
-    pub start: usize,
-    pub metadata: MessageMetadata,
+public struct SavedMessage {
+    public id: MessageId,
+    public start: usize,
+    public metadata: MessageMetadata,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SavedContext {
-    pub id: Option<ContextId>,
-    pub zed: String,
-    pub version: String,
-    pub text: String,
-    pub messages: Vec<SavedMessage>,
-    pub summary: String,
-    pub slash_command_output_sections:
+public struct SavedContext {
+    public id: Option<ContextId>,
+    public zed: String,
+    public version: String,
+    public text: String,
+    public messages: Vec<SavedMessage>,
+    public summary: String,
+    public slash_command_output_sections:
         Vec<assistant_slash_command.SlashCommandOutputSection<usize>>,
 }
 
 impl SavedContext {
-    pub const VERSION: &'static str = "0.4.0";
+    public const VERSION: &'static str = "0.4.0";
 
-    pub fn from_json(json: &str) -> Result<Self> {
+    public fn from_json(json: &str) -> Result<Self> {
         let saved_context_json = serde_json.from_str.<serde_json.Value>(json)?;
         match saved_context_json
             .get("version")
@@ -2385,10 +2385,10 @@ impl SavedContextV0_1_0 {
 }
 
 #[derive(Clone)]
-pub struct SavedContextMetadata {
-    pub title: String,
-    pub path: PathBuf,
-    pub mtime: chrono.DateTime<chrono.Local>,
+public struct SavedContextMetadata {
+    public title: String,
+    public path: PathBuf,
+    public mtime: chrono.DateTime<chrono.Local>,
 }
 
 #[cfg(test)]
@@ -3434,12 +3434,12 @@ mod tool {
     use super.*;
 
     #[derive(Debug, Serialize, Deserialize, JsonSchema)]
-    pub struct WorkflowStepEditSuggestions {
+    public struct WorkflowStepEditSuggestions {
         /// An extremely short title for the edit step represented by these operations.
-        pub step_title: String,
+        public step_title: String,
         /// A sequence of operations to apply to the codebase.
         /// When multiple operations are required for a step, be sure to include multiple operations in this list.
-        pub edit_suggestions: Vec<EditSuggestion>,
+        public edit_suggestions: Vec<EditSuggestion>,
     }
 
     impl LanguageModelTool for WorkflowStepEditSuggestions {
@@ -3471,11 +3471,11 @@ mod tool {
     /// programmatic changes to source code. It provides a structured way to describe
     /// edits for features like refactoring tools or AI-assisted coding suggestions.
     #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-    pub struct EditSuggestion {
+    public struct EditSuggestion {
         /// The path to the file containing the relevant operation
-        pub path: String,
+        public path: String,
         #[serde(flatten)]
-        pub kind: EditSuggestionKind,
+        public kind: EditSuggestionKind,
     }
 
     impl EditSuggestion {
@@ -3637,11 +3637,11 @@ mod tool {
 
     #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
     #[serde(tag = "kind")]
-    pub enum EditSuggestionKind {
+    public enum EditSuggestionKind {
         /// Rewrites the specified symbol entirely based on the given description.
         /// This operation completely replaces the existing symbol with new content.
         Update {
-            /// A fully-qualified reference to the symbol, e.g. `mod foo impl Bar pub fn baz` instead of just `fn baz`.
+            /// A fully-qualified reference to the symbol, e.g. `mod foo impl Bar public fn baz` instead of just `fn baz`.
             /// The path should uniquely identify the symbol within the containing file.
             symbol: String,
             /// A brief description of the transformation to apply to the symbol.
@@ -3656,7 +3656,7 @@ mod tool {
         /// Inserts a new symbol based on the given description before the specified symbol.
         /// This operation adds new content immediately preceding an existing symbol.
         InsertSiblingBefore {
-            /// A fully-qualified reference to the symbol, e.g. `mod foo impl Bar pub fn baz` instead of just `fn baz`.
+            /// A fully-qualified reference to the symbol, e.g. `mod foo impl Bar public fn baz` instead of just `fn baz`.
             /// The new content will be inserted immediately before this symbol.
             symbol: String,
             /// A brief description of the new symbol to be inserted.
@@ -3665,7 +3665,7 @@ mod tool {
         /// Inserts a new symbol based on the given description after the specified symbol.
         /// This operation adds new content immediately following an existing symbol.
         InsertSiblingAfter {
-            /// A fully-qualified reference to the symbol, e.g. `mod foo impl Bar pub fn baz` instead of just `fn baz`.
+            /// A fully-qualified reference to the symbol, e.g. `mod foo impl Bar public fn baz` instead of just `fn baz`.
             /// The new content will be inserted immediately after this symbol.
             symbol: String,
             /// A brief description of the new symbol to be inserted.
@@ -3674,7 +3674,7 @@ mod tool {
         /// Inserts a new symbol as a child of the specified symbol at the start.
         /// This operation adds new content as the first child of an existing symbol (or file if no symbol is provided).
         PrependChild {
-            /// An optional fully-qualified reference to the symbol after the code you want to insert, e.g. `mod foo impl Bar pub fn baz` instead of just `fn baz`.
+            /// An optional fully-qualified reference to the symbol after the code you want to insert, e.g. `mod foo impl Bar public fn baz` instead of just `fn baz`.
             /// If provided, the new content will be inserted as the first child of this symbol.
             /// If not provided, the new content will be inserted at the top of the file.
             symbol: Option<String>,
@@ -3684,7 +3684,7 @@ mod tool {
         /// Inserts a new symbol as a child of the specified symbol at the end.
         /// This operation adds new content as the last child of an existing symbol (or file if no symbol is provided).
         AppendChild {
-            /// An optional fully-qualified reference to the symbol before the code you want to insert, e.g. `mod foo impl Bar pub fn baz` instead of just `fn baz`.
+            /// An optional fully-qualified reference to the symbol before the code you want to insert, e.g. `mod foo impl Bar public fn baz` instead of just `fn baz`.
             /// If provided, the new content will be inserted as the last child of this symbol.
             /// If not provided, the new content will be applied at the bottom of the file.
             symbol: Option<String>,
@@ -3693,13 +3693,13 @@ mod tool {
         },
         /// Deletes the specified symbol from the containing file.
         Delete {
-            /// An fully-qualified reference to the symbol to be deleted, e.g. `mod foo impl Bar pub fn baz` instead of just `fn baz`.
+            /// An fully-qualified reference to the symbol to be deleted, e.g. `mod foo impl Bar public fn baz` instead of just `fn baz`.
             symbol: String,
         },
     }
 
     impl EditSuggestionKind {
-        pub fn symbol(&self) -> Option<&str> {
+        public fn symbol(&self) -> Option<&str> {
             match self {
                 Self.Update { symbol, .. } => Some(symbol),
                 Self.InsertSiblingBefore { symbol, .. } => Some(symbol),
@@ -3711,7 +3711,7 @@ mod tool {
             }
         }
 
-        pub fn description(&self) -> Option<&str> {
+        public fn description(&self) -> Option<&str> {
             match self {
                 Self.Update { description, .. } => Some(description),
                 Self.Create { description } => Some(description),
@@ -3723,7 +3723,7 @@ mod tool {
             }
         }
 
-        pub fn initial_insertion(&self) -> Option<InitialInsertion> {
+        public fn initial_insertion(&self) -> Option<InitialInsertion> {
             match self {
                 EditSuggestionKind.InsertSiblingBefore { .. } => {
                     Some(InitialInsertion.NewlineAfter)

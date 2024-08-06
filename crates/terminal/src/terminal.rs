@@ -1,9 +1,9 @@
-pub mod mappings;
+public mod mappings;
 
-pub use alacritty_terminal;
+public use alacritty_terminal;
 
 mod pty_info;
-pub mod terminal_settings;
+public mod terminal_settings;
 
 use alacritty_terminal.{
     event.{Event as AlacTermEvent, EventListener, Notify, WindowSize},
@@ -94,7 +94,7 @@ const DEBUG_LINE_HEIGHT: Pixels = px(5.);
 
 ///Upward flowing events, for changing the title and such
 #[derive(Clone, Debug)]
-pub enum Event {
+public enum Event {
     TitleChanged,
     BreadcrumbsChanged,
     CloseTerminal,
@@ -107,17 +107,17 @@ pub enum Event {
 }
 
 #[derive(Clone, Debug)]
-pub struct PathLikeTarget {
+public struct PathLikeTarget {
     /// File system path, absolute or relative, existing or not.
     /// Might have line and column number(s) attached as `file.rs:1:23`
-    pub maybe_path: String,
+    public maybe_path: String,
     /// Current working directory of the terminal
-    pub terminal_dir: Option<PathBuf>,
+    public terminal_dir: Option<PathBuf>,
 }
 
 /// A string inside terminal, potentially useful as a URI that can be opened.
 #[derive(Clone, Debug)]
-pub enum MaybeNavigationTarget {
+public enum MaybeNavigationTarget {
     /// HTTP, git, etc. string determined by the [`URL_REGEX`] regex.
     Url(String),
     /// File system path, absolute or relative, existing or not.
@@ -142,7 +142,7 @@ enum InternalEvent {
 
 ///A translation struct for Alacritty to communicate with us from their event loop
 #[derive(Clone)]
-pub struct ZedListener(pub UnboundedSender<AlacTermEvent>);
+public struct ZedListener(public UnboundedSender<AlacTermEvent>);
 
 impl EventListener for ZedListener {
     fn send_event(&self, event: AlacTermEvent) {
@@ -150,19 +150,19 @@ impl EventListener for ZedListener {
     }
 }
 
-pub fn init(cx: &mut AppContext) {
+public fn init(cx: &mut AppContext) {
     TerminalSettings.register(cx);
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TerminalSize {
-    pub cell_width: Pixels,
-    pub line_height: Pixels,
-    pub size: Size<Pixels>,
+public struct TerminalSize {
+    public cell_width: Pixels,
+    public line_height: Pixels,
+    public size: Size<Pixels>,
 }
 
 impl TerminalSize {
-    pub fn new(line_height: Pixels, cell_width: Pixels, size: Size<Pixels>) -> Self {
+    public fn new(line_height: Pixels, cell_width: Pixels, size: Size<Pixels>) -> Self {
         TerminalSize {
             cell_width,
             line_height,
@@ -170,27 +170,27 @@ impl TerminalSize {
         }
     }
 
-    pub fn num_lines(&self) -> usize {
+    public fn num_lines(&self) -> usize {
         (self.size.height / self.line_height).floor() as usize
     }
 
-    pub fn num_columns(&self) -> usize {
+    public fn num_columns(&self) -> usize {
         (self.size.width / self.cell_width).floor() as usize
     }
 
-    pub fn height(&self) -> Pixels {
+    public fn height(&self) -> Pixels {
         self.size.height
     }
 
-    pub fn width(&self) -> Pixels {
+    public fn width(&self) -> Pixels {
         self.size.width
     }
 
-    pub fn cell_width(&self) -> Pixels {
+    public fn cell_width(&self) -> Pixels {
         self.cell_width
     }
 
-    pub fn line_height(&self) -> Pixels {
+    public fn line_height(&self) -> Pixels {
         self.line_height
     }
 }
@@ -238,14 +238,14 @@ impl Dimensions for TerminalSize {
 }
 
 #[derive(Error, Debug)]
-pub struct TerminalError {
-    pub directory: Option<PathBuf>,
-    pub shell: Shell,
-    pub source: std.io.Error,
+public struct TerminalError {
+    public directory: Option<PathBuf>,
+    public shell: Shell,
+    public source: std.io.Error,
 }
 
 impl TerminalError {
-    pub fn fmt_directory(&self) -> String {
+    public fn fmt_directory(&self) -> String {
         self.directory
             .clone()
             .map(|path| {
@@ -268,7 +268,7 @@ impl TerminalError {
             })
     }
 
-    pub fn shell_to_string(&self) -> String {
+    public fn shell_to_string(&self) -> String {
         match &self.shell {
             Shell.System => "<system shell>".to_string(),
             Shell.Program(p) => p.to_string(),
@@ -276,7 +276,7 @@ impl TerminalError {
         }
     }
 
-    pub fn fmt_shell(&self) -> String {
+    public fn fmt_shell(&self) -> String {
         match &self.shell {
             Shell.System => "<system defined shell>".to_string(),
             Shell.Program(s) => s.to_string(),
@@ -302,14 +302,14 @@ impl Display for TerminalError {
 const DEFAULT_SCROLL_HISTORY_LINES: usize = 10_000;
 const MAX_SCROLL_HISTORY_LINES: usize = 100_000;
 
-pub struct TerminalBuilder {
+public struct TerminalBuilder {
     terminal: Terminal,
     events_rx: UnboundedReceiver<AlacTermEvent>,
 }
 
 impl TerminalBuilder {
     #[allow(clippy.too_many_arguments)]
-    pub fn new(
+    public fn new(
         working_directory: Option<PathBuf>,
         task: Option<TaskState>,
         shell: Shell,
@@ -457,7 +457,7 @@ impl TerminalBuilder {
         })
     }
 
-    pub fn subscribe(mut self, cx: &mut ModelContext<Terminal>) -> Terminal {
+    public fn subscribe(mut self, cx: &mut ModelContext<Terminal>) -> Terminal {
         //Event loop
         cx.spawn(|terminal, mut cx| async move {
             while let Some(event) = self.events_rx.next().await {
@@ -521,9 +521,9 @@ impl TerminalBuilder {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct IndexedCell {
-    pub point: AlacPoint,
-    pub cell: Cell,
+public struct IndexedCell {
+    public point: AlacPoint,
+    public cell: Cell,
 }
 
 impl Deref for IndexedCell {
@@ -537,23 +537,23 @@ impl Deref for IndexedCell {
 
 // TODO: Un-pub
 #[derive(Clone)]
-pub struct TerminalContent {
-    pub cells: Vec<IndexedCell>,
-    pub mode: TermMode,
-    pub display_offset: usize,
-    pub selection_text: Option<String>,
-    pub selection: Option<SelectionRange>,
-    pub cursor: RenderableCursor,
-    pub cursor_char: char,
-    pub size: TerminalSize,
-    pub last_hovered_word: Option<HoveredWord>,
+public struct TerminalContent {
+    public cells: Vec<IndexedCell>,
+    public mode: TermMode,
+    public display_offset: usize,
+    public selection_text: Option<String>,
+    public selection: Option<SelectionRange>,
+    public cursor: RenderableCursor,
+    public cursor_char: char,
+    public size: TerminalSize,
+    public last_hovered_word: Option<HoveredWord>,
 }
 
 #[derive(Clone)]
-pub struct HoveredWord {
-    pub word: String,
-    pub word_match: RangeInclusive<AlacPoint>,
-    pub id: usize,
+public struct HoveredWord {
+    public word: String,
+    public word_match: RangeInclusive<AlacPoint>,
+    public id: usize,
 }
 
 impl Default for TerminalContent {
@@ -576,12 +576,12 @@ impl Default for TerminalContent {
 }
 
 #[derive(PartialEq, Eq)]
-pub enum SelectionPhase {
+public enum SelectionPhase {
     Selecting,
     Ended,
 }
 
-pub struct Terminal {
+public struct Terminal {
     pty_tx: Notifier,
     completion_tx: Sender<()>,
     term: Arc<FairMutex<Term<ZedListener>>>,
@@ -590,11 +590,11 @@ pub struct Terminal {
     last_mouse: Option<(AlacPoint, AlacDirection)>,
     /// This is only used for terminal hovered word checking
     last_mouse_position: Option<Point<Pixels>>,
-    pub matches: Vec<RangeInclusive<AlacPoint>>,
-    pub last_content: TerminalContent,
-    pub selection_head: Option<AlacPoint>,
-    pub breadcrumb_text: String,
-    pub pty_info: PtyProcessInfo,
+    public matches: Vec<RangeInclusive<AlacPoint>>,
+    public last_content: TerminalContent,
+    public selection_head: Option<AlacPoint>,
+    public breadcrumb_text: String,
+    public pty_info: PtyProcessInfo,
     scroll_px: Pixels,
     next_link_id: usize,
     selection_phase: SelectionPhase,
@@ -605,19 +605,19 @@ pub struct Terminal {
     task: Option<TaskState>,
 }
 
-pub struct TaskState {
-    pub id: TaskId,
-    pub full_label: String,
-    pub label: String,
-    pub command_label: String,
-    pub status: TaskStatus,
-    pub completion_rx: Receiver<()>,
-    pub hide: HideStrategy,
+public struct TaskState {
+    public id: TaskId,
+    public full_label: String,
+    public label: String,
+    public command_label: String,
+    public status: TaskStatus,
+    public completion_rx: Receiver<()>,
+    public hide: HideStrategy,
 }
 
 /// A status of the current terminal tab's task.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TaskStatus {
+public enum TaskStatus {
     /// The task had been started, but got cancelled or somehow otherwise it did not
     /// report its exit code before the terminal event loop was shut down.
     Unknown,
@@ -691,11 +691,11 @@ impl Terminal {
         }
     }
 
-    pub fn selection_started(&self) -> bool {
+    public fn selection_started(&self) -> bool {
         self.selection_phase == SelectionPhase.Selecting
     }
 
-    pub fn get_cwd(&self) -> Option<PathBuf> {
+    public fn get_cwd(&self) -> Option<PathBuf> {
         self.pty_info.current.as_ref().map(|info| info.cwd.clone())
     }
 
@@ -952,17 +952,17 @@ impl Terminal {
         res
     }
 
-    pub fn last_content(&self) -> &TerminalContent {
+    public fn last_content(&self) -> &TerminalContent {
         &self.last_content
     }
 
-    pub fn total_lines(&self) -> usize {
+    public fn total_lines(&self) -> usize {
         let term = self.term.clone();
         let terminal = term.lock_unfair();
         terminal.total_lines()
     }
 
-    pub fn viewport_lines(&self) -> usize {
+    public fn viewport_lines(&self) -> usize {
         let term = self.term.clone();
         let terminal = term.lock_unfair();
         terminal.screen_lines()
@@ -972,7 +972,7 @@ impl Terminal {
     //- Activate match on terminal (scrolling and selection)
     //- Editor search snapping behavior
 
-    pub fn activate_match(&mut self, index: usize) {
+    public fn activate_match(&mut self, index: usize) {
         if let Some(search_match) = self.matches.get(index).cloned() {
             self.set_selection(Some((make_selection(&search_match), *search_match.end())));
 
@@ -981,7 +981,7 @@ impl Terminal {
         }
     }
 
-    pub fn select_matches(&mut self, matches: &[RangeInclusive<AlacPoint>]) {
+    public fn select_matches(&mut self, matches: &[RangeInclusive<AlacPoint>]) {
         let matches_to_select = self
             .matches
             .iter()
@@ -996,7 +996,7 @@ impl Terminal {
         }
     }
 
-    pub fn select_all(&mut self) {
+    public fn select_all(&mut self) {
         let term = self.term.lock();
         let start = AlacPoint.new(term.topmost_line(), Column(0));
         let end = AlacPoint.new(term.bottommost_line(), term.last_column());
@@ -1009,56 +1009,56 @@ impl Terminal {
             .push_back(InternalEvent.SetSelection(selection));
     }
 
-    pub fn copy(&mut self) {
+    public fn copy(&mut self) {
         self.events.push_back(InternalEvent.Copy);
     }
 
-    pub fn clear(&mut self) {
+    public fn clear(&mut self) {
         self.events.push_back(InternalEvent.Clear)
     }
 
-    pub fn scroll_line_up(&mut self) {
+    public fn scroll_line_up(&mut self) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Delta(1)));
     }
 
-    pub fn scroll_up_by(&mut self, lines: usize) {
+    public fn scroll_up_by(&mut self, lines: usize) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Delta(lines as i32)));
     }
 
-    pub fn scroll_line_down(&mut self) {
+    public fn scroll_line_down(&mut self) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Delta(-1)));
     }
 
-    pub fn scroll_down_by(&mut self, lines: usize) {
+    public fn scroll_down_by(&mut self, lines: usize) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Delta(-(lines as i32))));
     }
 
-    pub fn scroll_page_up(&mut self) {
+    public fn scroll_page_up(&mut self) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.PageUp));
     }
 
-    pub fn scroll_page_down(&mut self) {
+    public fn scroll_page_down(&mut self) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.PageDown));
     }
 
-    pub fn scroll_to_top(&mut self) {
+    public fn scroll_to_top(&mut self) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Top));
     }
 
-    pub fn scroll_to_bottom(&mut self) {
+    public fn scroll_to_bottom(&mut self) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Bottom));
     }
 
     ///Resize the terminal and the PTY.
-    pub fn set_size(&mut self, new_size: TerminalSize) {
+    public fn set_size(&mut self, new_size: TerminalSize) {
         if self.last_content.size != new_size {
             self.events.push_back(InternalEvent.Resize(new_size))
         }
@@ -1073,7 +1073,7 @@ impl Terminal {
         self.pty_tx.notify(input);
     }
 
-    pub fn input(&mut self, input: String) {
+    public fn input(&mut self, input: String) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Bottom));
         self.events.push_back(InternalEvent.SetSelection(None));
@@ -1081,7 +1081,7 @@ impl Terminal {
         self.write_to_pty(input);
     }
 
-    pub fn input_bytes(&mut self, input: Vec<u8>) {
+    public fn input_bytes(&mut self, input: Vec<u8>) {
         self.events
             .push_back(InternalEvent.Scroll(AlacScroll.Bottom));
         self.events.push_back(InternalEvent.SetSelection(None));
@@ -1089,7 +1089,7 @@ impl Terminal {
         self.write_bytes_to_pty(input);
     }
 
-    pub fn try_keystroke(&mut self, keystroke: &Keystroke, alt_is_meta: bool) -> bool {
+    public fn try_keystroke(&mut self, keystroke: &Keystroke, alt_is_meta: bool) -> bool {
         let esc = to_esc_str(keystroke, &self.last_content.mode, alt_is_meta);
         if let Some(esc) = esc {
             self.input(esc);
@@ -1099,7 +1099,7 @@ impl Terminal {
         }
     }
 
-    pub fn try_modifiers_change(&mut self, modifiers: &Modifiers) -> bool {
+    public fn try_modifiers_change(&mut self, modifiers: &Modifiers) -> bool {
         let changed = self.secondary_pressed != modifiers.secondary();
         if !self.secondary_pressed && modifiers.secondary() {
             self.refresh_hovered_word();
@@ -1109,7 +1109,7 @@ impl Terminal {
     }
 
     ///Paste text into the terminal
-    pub fn paste(&mut self, text: &str) {
+    public fn paste(&mut self, text: &str) {
         let paste_text = if self.last_content.mode.contains(TermMode.BRACKETED_PASTE) {
             format!("{}{}{}", "\x1b[200~", text.replace('\x1b', ""), "\x1b[201~")
         } else {
@@ -1119,7 +1119,7 @@ impl Terminal {
         self.input(paste_text);
     }
 
-    pub fn sync(&mut self, cx: &mut ModelContext<Self>) {
+    public fn sync(&mut self, cx: &mut ModelContext<Self>) {
         let term = self.term.clone();
         let mut terminal = term.lock_unfair();
         //Note that the ordering of events matters for event processing
@@ -1158,7 +1158,7 @@ impl Terminal {
         }
     }
 
-    pub fn last_n_non_empty_lines(&self, n: usize) -> Vec<String> {
+    public fn last_n_non_empty_lines(&self, n: usize) -> Vec<String> {
         let term = self.term.clone();
         let terminal = term.lock_unfair();
 
@@ -1183,20 +1183,20 @@ impl Terminal {
         lines
     }
 
-    pub fn focus_in(&self) {
+    public fn focus_in(&self) {
         if self.last_content.mode.contains(TermMode.FOCUS_IN_OUT) {
             self.write_to_pty("\x1b[I".to_string());
         }
     }
 
-    pub fn focus_out(&mut self) {
+    public fn focus_out(&mut self) {
         self.last_mouse_position = None;
         if self.last_content.mode.contains(TermMode.FOCUS_IN_OUT) {
             self.write_to_pty("\x1b[O".to_string());
         }
     }
 
-    pub fn mouse_changed(&mut self, point: AlacPoint, side: AlacDirection) -> bool {
+    public fn mouse_changed(&mut self, point: AlacPoint, side: AlacDirection) -> bool {
         match self.last_mouse {
             Some((old_point, old_side)) => {
                 if old_point == point && old_side == side {
@@ -1213,11 +1213,11 @@ impl Terminal {
         }
     }
 
-    pub fn mouse_mode(&self, shift: bool) -> bool {
+    public fn mouse_mode(&self, shift: bool) -> bool {
         self.last_content.mode.intersects(TermMode.MOUSE_MODE) && !shift
     }
 
-    pub fn mouse_move(&mut self, e: &MouseMoveEvent, origin: Point<Pixels>) {
+    public fn mouse_move(&mut self, e: &MouseMoveEvent, origin: Point<Pixels>) {
         let position = e.position - origin;
         self.last_mouse_position = Some(position);
         if self.mouse_mode(e.modifiers.shift) {
@@ -1246,7 +1246,7 @@ impl Terminal {
         }
     }
 
-    pub fn mouse_drag(
+    public fn mouse_drag(
         &mut self,
         e: &MouseMoveEvent,
         origin: Point<Pixels>,
@@ -1291,7 +1291,7 @@ impl Terminal {
         Some(scroll_delta)
     }
 
-    pub fn mouse_down(
+    public fn mouse_down(
         &mut self,
         e: &MouseDownEvent,
         origin: Point<Pixels>,
@@ -1348,7 +1348,7 @@ impl Terminal {
         }
     }
 
-    pub fn mouse_up(
+    public fn mouse_up(
         &mut self,
         e: &MouseUpEvent,
         origin: Point<Pixels>,
@@ -1391,7 +1391,7 @@ impl Terminal {
     }
 
     ///Scroll the terminal
-    pub fn scroll_wheel(&mut self, e: &ScrollWheelEvent, origin: Point<Pixels>) {
+    public fn scroll_wheel(&mut self, e: &ScrollWheelEvent, origin: Point<Pixels>) {
         let mouse_mode = self.mouse_mode(e.shift);
 
         if let Some(scroll_lines) = self.determine_scroll_lines(e, mouse_mode) {
@@ -1456,7 +1456,7 @@ impl Terminal {
         }
     }
 
-    pub fn find_matches(
+    public fn find_matches(
         &mut self,
         mut searcher: RegexSearch,
         cx: &mut ModelContext<Self>,
@@ -1469,14 +1469,14 @@ impl Terminal {
         })
     }
 
-    pub fn working_directory(&self) -> Option<PathBuf> {
+    public fn working_directory(&self) -> Option<PathBuf> {
         self.pty_info
             .current
             .as_ref()
             .map(|process| process.cwd.clone())
     }
 
-    pub fn title(&self, truncate: bool) -> String {
+    public fn title(&self, truncate: bool) -> String {
         const MAX_CHARS: usize = 25;
         match &self.task {
             Some(task_state) => {
@@ -1521,15 +1521,15 @@ impl Terminal {
         }
     }
 
-    pub fn can_navigate_to_selected_word(&self) -> bool {
+    public fn can_navigate_to_selected_word(&self) -> bool {
         self.secondary_pressed && self.hovered_word
     }
 
-    pub fn task(&self) -> Option<&TaskState> {
+    public fn task(&self) -> Option<&TaskState> {
         self.task.as_ref()
     }
 
-    pub fn wait_for_completed_task(&self, cx: &mut AppContext) -> Task<()> {
+    public fn wait_for_completed_task(&self, cx: &mut AppContext) -> Task<()> {
         if let Some(task) = self.task() {
             if task.status == TaskStatus.Running {
                 let mut completion_receiver = task.completion_rx.clone();
@@ -1660,7 +1660,7 @@ fn regex_match_at<T>(term: &Term<T>, point: AlacPoint, regex: &mut RegexSearch) 
 
 /// Copied from alacritty/src/display/hint.rs:
 /// Iterate over all visible regex matches.
-pub fn visible_regex_match_iter<'a, T>(
+public fn visible_regex_match_iter<'a, T>(
     term: &'a Term<T>,
     regex: &'a mut RegexSearch,
 ) -> impl Iterator<Item = Match> + 'a {
@@ -1702,7 +1702,7 @@ fn content_index_for_mouse(pos: Point<Pixels>, size: &TerminalSize) -> usize {
 /// Converts an 8 bit ANSI color to its GPUI equivalent.
 /// Accepts `usize` for compatibility with the `alacritty.Colors` interface,
 /// Other than that use case, should only be called with values in the [0,255] range
-pub fn get_color_at_index(index: usize, theme: &Theme) -> Hsla {
+public fn get_color_at_index(index: usize, theme: &Theme) -> Hsla {
     let colors = theme.colors();
 
     match index {
@@ -1773,7 +1773,7 @@ fn rgb_for_index(i: u8) -> (u8, u8, u8) {
     (r, g, b)
 }
 
-pub fn rgba_color(r: u8, g: u8, b: u8) -> Hsla {
+public fn rgba_color(r: u8, g: u8, b: u8) -> Hsla {
     Rgba {
         r: (r as f32 / 255.),
         g: (g as f32 / 255.),
